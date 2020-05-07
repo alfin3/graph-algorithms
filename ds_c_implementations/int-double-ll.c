@@ -1,14 +1,16 @@
 /**
-   double-ll.c
+   int-double-ll.c
 
-   Imlementation of a dynamicaly allocated doubly linked list.
+   Imlementation of a dynamicaly allocated non-generic doubly linked list
+   of integer entries.
+   
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 
 typedef struct node{
-  int data;
+  int data; 
   struct node *next;
   struct node *prev;
 } node_t;
@@ -35,11 +37,11 @@ void insert(node_t **head, int data){
    Frees a dynamically allocated doubly linked list.
 */
 void free_ll(node_t *head){
-  if (head == NULL){return;}
-  else if (head->next != NULL){
+  if (head == NULL){
+    return;
+  } else if (head->next != NULL){
     free_ll(head->next);
-  }
-  else if (head->prev != NULL){
+  } else if (head->prev != NULL){
     head->prev->next = NULL;
     node_t *n = head->prev;
     free(head);
