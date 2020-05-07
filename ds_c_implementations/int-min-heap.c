@@ -102,7 +102,7 @@ void swap(int *elt_arr, int *pty_arr, int i, int j){
 }
 
 /**
-   Heapifies a heap structure from an inserted/updated element upwards.
+   Heapifies heap structure from ith element in array representation upwards.
 */
 void heapify_up(heap_t *h, int i){
   int ju = (i - 1) / 2; // if i is even, equivalent to (i - 2) / 2
@@ -114,7 +114,7 @@ void heapify_up(heap_t *h, int i){
 }
 
 /**
-   Heapifies a heap structure from the root downwards.
+   Heapifies heap structure from ith element in array representation downwards.
 */
 void heapify_down(heap_t *h, int i){
   int jl = 2 * i + 1;
