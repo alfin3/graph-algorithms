@@ -8,18 +8,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-typedef struct{
-  int heap_size;
-  int num_elts;
-  int *elt_arr;
-  int *pty_arr;
-} heap_t;
+#include "int-min-heap.h"
 
 /** Main functions */
 
-void heapify_up(heap_t *h, int i);
-void heapify_down(heap_t *h, int i);
+static void heapify_up(heap_t *h, int i);
+static void heapify_down(heap_t *h, int i);
 
 /**
    Initializes a dynamically allocated min heap.
@@ -92,7 +86,7 @@ void heap_free(heap_t *h){
 /**
    Swaps elements at indeces i and j in both element and priority arrays.
 */
-void swap(int *elt_arr, int *pty_arr, int i, int j){
+static void swap(int *elt_arr, int *pty_arr, int i, int j){
   int temp_pty = pty_arr[i];
   int temp_elt = elt_arr[i];
   pty_arr[i] = pty_arr[j];
@@ -104,7 +98,7 @@ void swap(int *elt_arr, int *pty_arr, int i, int j){
 /**
    Heapifies heap structure from ith element in array representation upwards.
 */
-void heapify_up(heap_t *h, int i){
+static void heapify_up(heap_t *h, int i){
   int ju = (i - 1) / 2; // if i is even, equivalent to (i - 2) / 2
   while(ju >= 0 && h->pty_arr[ju] > h->pty_arr[i]){
       swap(h->elt_arr, h->pty_arr, i, ju);
@@ -116,7 +110,7 @@ void heapify_up(heap_t *h, int i){
 /**
    Heapifies heap structure from ith element in array representation downwards.
 */
-void heapify_down(heap_t *h, int i){
+static void heapify_down(heap_t *h, int i){
   int jl = 2 * i + 1;
   int jr = 2 * i + 2;
   while (jr < h->num_elts && (h->pty_arr[i] > h->pty_arr[jl] ||
@@ -134,52 +128,4 @@ void heapify_down(heap_t *h, int i){
   if (jl == h->num_elts - 1 && h->pty_arr[i] > h->pty_arr[jl]){
     swap(h->elt_arr, h->pty_arr, i, jl);
   }
-}
-
-/**
-   Prints a specified number of elements of an integer array.
-*/
-void print_arr(int *arr, int num_elts){
-  for (int i = 0; i < num_elts; i++){
-    printf("%d ", arr[i]);
-  }
-  printf("\n");
-}
-
-/** Use examples */
-
-int main(){
-  heap_t h;
-  int min_elt;
-  int min_pty;
-  int pty_start = 10;
-  int updated_p;
-  int new_pty[3] = {10, 0, 10};
-  int elts[3] = {5, 5, 11};
-  heap_init(1, &h);
-  for (int i = 0; i < pty_start; i++){
-    heap_push(i, pty_start - i, &h);
-    printf("Element array: ");
-    print_arr(h.elt_arr, h.num_elts);
-    printf("Priority array: ");
-    print_arr(h.pty_arr, h.num_elts);
-  }
-  for (int i = 0; i < 2; i++){
-    heap_pop(&min_elt, &min_pty, &h);
-    printf("min element: %d, min priority: %d\n", min_elt, min_pty);
-    printf("Element array: ");
-    print_arr(h.elt_arr, h.num_elts);
-    printf("Priority array: ");
-    print_arr(h.pty_arr, h.num_elts);
-  }
-  for (int i = 0; i < 2; i++){
-    updated_p = heap_update(elts[i], new_pty[i], &h);
-    printf("updated? %d\n", updated_p);
-    printf("Element array: ");
-    print_arr(h.elt_arr, h.num_elts);
-    printf("Priority array: ");
-    print_arr(h.pty_arr, h.num_elts);
-  }
-  heap_free(&h);
-  return 0;
 }

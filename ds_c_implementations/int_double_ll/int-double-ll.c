@@ -8,14 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-typedef struct node{
-  int data; 
-  struct node *next;
-  struct node *prev;
-} node_t;
-
-/** Main functions */
+#include "int-double-ll.h"
 
 /**
    Inserts a new node in a dynamically allocated doubly linked list.
@@ -51,8 +44,6 @@ void free_ll(node_t *head){
   }
 }
 
-/** Helper functions */
-
 /**
    Prints a doubly linked list.
 */
@@ -63,21 +54,4 @@ void print_ll(node_t *head){
   } else {
     printf("\n");
   }
-}
-
-/** Use examples */
-
-int main(){
-  node_t *head = NULL;
-  int num_nodes = 10;
-  for (int i = 0; i < num_nodes; i++){
-    insert(&head, i + 1);
-  }
-  printf("Before freeing.\n");
-  print_ll(head);
-  free_ll(head);
-  printf("After freeing.\n");
-  printf("%d \n", head->data);
-  head = NULL;
-  return 0;
 }
