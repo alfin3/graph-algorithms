@@ -43,21 +43,21 @@ int main(){
   dbll_node_t **head;
   int num_nodes = 10;
   int int_elt;
-  two_int_t struct_elt;
+  two_int_t two_int_elt;
   dbll_init(head);
   for (int i = 0; i < num_nodes; i++){
     int_elt = i;
     dbll_insert(head, &int_elt, sizeof(int));
   }
-  printf("Linked list of integers:\n");
+  printf("Linked list of ints:\n");
   int_ll_print(*head);
   dbll_free(head);
   for (int i = 0; i < num_nodes; i++){
-    struct_elt.val_0 = i;
-    struct_elt.val_1 = i;
-    dbll_insert(head, &struct_elt, sizeof(two_int_t));
+    two_int_elt.val_0 = i;
+    two_int_elt.val_1 = i;
+    dbll_insert(head, &two_int_elt, sizeof(two_int_t));
   }
-  printf("Linked list of structs:\n");
+  printf("Linked list of two_int_t structs:\n");
   two_int_ll_print(*head);
   dbll_free(head);
   return 0;
