@@ -1,24 +1,24 @@
 /**
-   int-min-heap.c
+   int-heap.c
 
-   Implementation of a dynamicaly allocated non-generic version of min heap.
+   Implementation of a non-generic dynamicaly allocated min heap.
    Each entry consists of an integer element and integer priority value.
 
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "int-min-heap.h"
+#include "int-heap.h"
 
 /** Main functions */
 
-static void heapify_up(heap_t *h, int i);
-static void heapify_down(heap_t *h, int i);
+static void heapify_up(int_heap_t *h, int i);
+static void heapify_down(int_heap_t *h, int i);
 
 /**
-   Initializes a dynamically allocated min heap.
+   Initializes a min heap.
 */
-void heap_init(int heap_size, heap_t *h){
+void int_heap_init(int heap_size, int_heap_t *h){
   h->heap_size = heap_size;
   h->num_elts = 0;
   h->elt_arr = (int *)malloc(heap_size * sizeof(int));
@@ -28,7 +28,7 @@ void heap_init(int heap_size, heap_t *h){
 /**
    Pushes integer element associated with integer priority onto a min heap.
 */
-void heap_push(int elt, int pty, heap_t *h){
+void int_heap_push(int elt, int pty, int_heap_t *h){
   //amortized constant overhead in worst case of realloc calls
   if (h->heap_size == h->num_elts){
     h->elt_arr = (int *)realloc(h->elt_arr, 2 * h->heap_size * sizeof(int));
@@ -44,7 +44,7 @@ void heap_push(int elt, int pty, heap_t *h){
 /**
    Pops an element associated with the minimal priority.
 */
-void heap_pop(int *elt, int *pty, heap_t *h){
+void int_heap_pop(int *elt, int *pty, int_heap_t *h){
   *elt = h->elt_arr[0];
   *pty = h->pty_arr[0];
   h->elt_arr[0] = h->elt_arr[h->num_elts - 1];
@@ -57,7 +57,7 @@ void heap_pop(int *elt, int *pty, heap_t *h){
    If element is present on the heap, updates its priority and returns 1.
    Returns 0 otherwise.
 */
-int heap_update(int elt, int pty, heap_t *h){
+int int_heap_update(int elt, int pty, int_heap_t *h){
   // at this time, implementation w/o hash table => O(n) instead of O(logn)
   for (int i = 0; i < h->num_elts; i++){
     if (h->elt_arr[i] == elt){
@@ -76,7 +76,7 @@ int heap_update(int elt, int pty, heap_t *h){
 /**
    Frees dynamically allocated arrays in a struct of heap_t type.
 */
-void heap_free(heap_t *h){
+void int_heap_free(int_heap_t *h){
   free(h->elt_arr);
   free(h->pty_arr);
 }
@@ -98,7 +98,7 @@ static void swap(int *elt_arr, int *pty_arr, int i, int j){
 /**
    Heapifies heap structure from ith element in array representation upwards.
 */
-static void heapify_up(heap_t *h, int i){
+static void heapify_up(int_heap_t *h, int i){
   int ju = (i - 1) / 2; // if i is even, equivalent to (i - 2) / 2
   while(ju >= 0 && h->pty_arr[ju] > h->pty_arr[i]){
       swap(h->elt_arr, h->pty_arr, i, ju);
@@ -110,7 +110,7 @@ static void heapify_up(heap_t *h, int i){
 /**
    Heapifies heap structure from ith element in array representation downwards.
 */
-static void heapify_down(heap_t *h, int i){
+static void heapify_down(int_heap_t *h, int i){
   int jl = 2 * i + 1;
   int jr = 2 * i + 2;
   while (jr < h->num_elts && (h->pty_arr[i] > h->pty_arr[jl] ||
