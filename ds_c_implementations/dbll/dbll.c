@@ -42,26 +42,25 @@ void dbll_insert(dbll_node_t **head, void *elt, int elt_size){
 /**
    Frees a generic doubly linked list.
 */
-static void dbll_free_helper(dbll_node_t *head);
+static void dbll_free_helper(dbll_node_t *node);
 
 void dbll_free(dbll_node_t **head){
+  if (*head == NULL){return;}
   dbll_free_helper(*head);
   *head = NULL;  
 }
 
-static void dbll_free_helper(dbll_node_t *head){
-  if (head == NULL){
-    return;
-  }else if (head->next != NULL){
-    dbll_free_helper(head->next);
-  } else if (head->prev != NULL){
-    dbll_node_t *n = head->prev;
+static void dbll_free_helper(dbll_node_t *node){
+  if (node->next != NULL){
+    dbll_free_helper(node->next);
+  } else if (node->prev != NULL){
+    dbll_node_t *n = node->prev;
     free(n->next->elt);
     free(n->next);
     n->next = NULL;
     dbll_free_helper(n);
   } else {
-    free(head->elt);
-    free(head);
+    free(node->elt);
+    free(node);
   }
 }
