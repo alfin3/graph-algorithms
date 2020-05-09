@@ -44,6 +44,7 @@ void dbll_insert(dbll_node_t **head, void *elt, int elt_size){
    element does not point to additional blocks (e.g. basic type).
 */
 static void dbll_free_helper(dbll_node_t *node, void (*elt_free_fn)(void *));
+static void elt_free_helper(void *elt, void (*elt_free_fn)(void *));
 
 void dbll_free(dbll_node_t **head, void (*elt_free_fn)(void *)){
   if (*head == NULL){return;}
@@ -56,21 +57,22 @@ static void dbll_free_helper(dbll_node_t *node, void (*elt_free_fn)(void *)){
     dbll_free_helper(node->next, elt_free_fn);
   } else if (node->prev != NULL){
     dbll_node_t *n = node->prev;
-    if (elt_free_fn != NULL){
-      elt_free_fn(n->next->elt);
-    } else {
-      free(n->next->elt);
-    }
+    elt_free_helper(n->next->elt, elt_free_fn);
     free(n->next);
     n->next = NULL;
     dbll_free_helper(n, elt_free_fn);
   } else {
-    if (elt_free_fn != NULL){
-      elt_free_fn(node->elt);
-    } else {
-      free(node->elt);
-    }
+    elt_free_helper(node->elt, elt_free_fn);
     free(node);
     node = NULL;
   }
 }
+
+static void elt_free_helper(void *elt, void (*elt_free_fn)(void *)){
+  if (elt_free_fn != NULL){
+    elt_free_fn(elt);
+  } else {
+    free(elt);
+  }
+}
+  
