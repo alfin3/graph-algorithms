@@ -5,7 +5,7 @@
    dynamicaly allocated (min) heap. 
 
    Through user-defined comparison and deallocation functions, the 
-   implementation enables a dynamic set in heap form of any objects 
+   implementation provides a dynamic set in heap form of any objects 
    associated with priority values of basic type of choice (e.g. char, int, 
    long, double).
 */
@@ -27,11 +27,12 @@ typedef struct{
 
 /**
    Initializes a heap. 
-   cmp_elt_fn: returns 0 if both pointers point to identical elements,
+   init_heap_size: integer > 0.
+   cmp_elt_fn: returns 0 if both pointers point to elements that match
                        non-zero otherwise.
-   cmp_pty_fn returns: 0 if both pointers point to the same priority value,
-                       >0 if the first pointer points to greater priority value
-                       <0 if the first pointer points to lower priority value.
+   cmp_pty_fn: returns  0 if both pointers point to the same priority value,
+                       > 0 if first pointer points to greater priority value
+                       < 0 if first pointer points to lower priority value.
    free_elt_fn: can be NULL if each element does not point to additional 
                 memory blocks (e.g. basic type).                    
 */
@@ -44,18 +45,20 @@ void heap_init(heap_t *h,
 	       void (*free_elt_fn)(void *));
 
 /**
-   Pushes an element onto a heap.
+   Pushes an element onto a heap. Copies only the top level object of 
+   an element into heap, including pointers from the top level object
+   to (dynamically allocated) objects that are part of the element.
 */
 void heap_push(heap_t *h, void *elt, void *pty);
 
 /**
-    Pops an element and the minimal priority value according to cmp_elts_fn.
+    Pops an element and the minimal priority value according to cmp_pty_fn.
 */
 void heap_pop(heap_t *h, void *elt, void *pty);
 
 /**
-   If element is present on a heap, updates its priority and returns 1,
-   otherwise returns 0.
+   If element is present on a heap according to cmp_elt_fn, updates its 
+   priority and returns 1, otherwise returns 0.
 */
 int heap_update(heap_t *h, void *elt, void *pty);
 

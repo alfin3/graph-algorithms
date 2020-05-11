@@ -4,7 +4,7 @@
    Implementation of generic dynamicaly allocated (min) heap.
 
    Through user-defined comparison and deallocation functions, the 
-   implementation enables a dynamic set in heap form of any objects 
+   implementation provides a dynamic set in heap form of any objects 
    associated with priority values of basic type of choice (e.g. char, int, 
    long, double).
 */
@@ -35,6 +35,7 @@ void heap_init(heap_t *h,
 	       int (*cmp_pty_fn)(void *, void *),
 	       void (*free_elt_fn)(void *)){
   h->heap_size = init_heap_size;
+  assert(h->heap_size > 0);
   h->num_elts = 0;
   h->elt_size = elt_size;
   h->pty_size = pty_size;
@@ -48,43 +49,47 @@ void heap_init(heap_t *h,
 }
 
 /**
-   Pushes an element onto a heap.
+   Pushes an element onto a heap. Copies only the top level object of 
+   an element into heap, including pointers from the top level object
+   to (dynamically allocated) objects that are part of the element.
 */
 void heap_push(heap_t *h, void *elt, void *pty){
+  int ix = h->num_elts;
   if (h->heap_size == h->num_elts){heap_grow(h);}
-  h->elts[h->num_elts] = malloc(h->elt_size);
-  assert(h->elts[h->num_elts] != NULL);
-  void *elt_target = h->elts[h->num_elts];
-  void *pty_target = pty_ptr(h, h->num_elts);
+  h->elts[ix] = malloc(h->elt_size);
+  assert(h->elts[ix] != NULL);
+  void *elt_target = h->elts[ix];
+  void *pty_target = pty_ptr(h, ix);
   memcpy(elt_target, elt, h->elt_size);
   memcpy(pty_target, pty, h->pty_size);
+  heapify_up(h, ix);
   h->num_elts++;
-  heapify_up(h, h->num_elts - 1);
 }
 
 /**
-   Pops an element and the minimal priority value according to cmp_elts_fn.
+   Pops an element and the minimal priority value according to cmp_pty_fn.
 */
 void heap_pop(heap_t *h, void *elt, void *pty){
-  void *elt_source = h->elts[0];
-  void *pty_source = pty_ptr(h, 0);
+  int ix = 0;
+  void *elt_source = h->elts[ix];
+  void *pty_source = pty_ptr(h, ix);
   memcpy(elt, elt_source, h->elt_size);
   memcpy(pty, pty_source, h->pty_size);
-  swap(h, 0, h->num_elts - 1);
+  swap(h, ix, h->num_elts - 1);
+  heapify_down(h, ix);
   h->num_elts--;
-  heapify_down(h, 0);
 }
 
 /**
-   If element is present on a heap, updates its priority and returns 1,
-   otherwise returns 0.
+   If element is present on a heap according to cmp_elt_fn, updates its 
+   priority and returns 1, otherwise returns 0.
 */
 int heap_update(heap_t *h, void *elt, void *pty){
-  // at this time, implementation w/o hash table => O(n) instead of O(logn)
+  // at this time, w/o hash table => O(n) instead of O(logn)
   for (int i = 0; i < h->num_elts; i++){
     if (h->cmp_elt_fn(h->elts[i], elt) == 0){
-      void *pty_target = pty_ptr(h, i);
       int ju = (i - 1) / 2;
+      void *pty_target = pty_ptr(h, i);
       memcpy(pty_target, pty, h->pty_size);
       if (ju >= 0 && h->cmp_pty_fn(pty_ptr(h, ju), pty_ptr(h, i)) > 0){
 	heapify_up(h, i);
@@ -98,8 +103,8 @@ int heap_update(heap_t *h, void *elt, void *pty){
 }
 
 /**
-   Frees dynamically allocated elements and priority values. Memory allocated
-   to elements pointed to from elts is freed according to free_elt_fn.
+   Frees dynamically allocated elements and priority values. Memory 
+   dynamically allocated to each element is freed according to free_elt_fn.
 */
 void heap_free(heap_t *h){
   for (int i = 0; i < h->num_elts; i++){
@@ -123,7 +128,7 @@ static void *pty_ptr(heap_t *h, int i){
 }
 
 /**
-   Swaps priority values and element pointers at indeces i and j.
+   Swaps element pointers and priority values at indeces i and j.
 */
 static void swap(heap_t *h, int i, int j){
   // swap element pointers
@@ -138,15 +143,15 @@ static void swap(heap_t *h, int i, int j){
 }
 
 /**
-   Doubles the size of heap. Amortized constant overhead in worst case 
-   of realloc calls when a memory block cannot be extended.
+   Doubles the size of heap. Amortized constant overhead in worst case of 
+   realloc calls across heap_grow calls.
 */
 static void heap_grow(heap_t *h){
   h->elts = (void **)realloc(h->elts, 2 * h->heap_size * sizeof(char *));
   assert(h->elts != NULL);
   h->ptys = realloc(h->ptys, 2 * h->heap_size * h->pty_size);
   assert(h->ptys != NULL);
-  h->heap_size = h->heap_size * 2;
+  h->heap_size *= 2;
 }
 
 /**
@@ -154,8 +159,7 @@ static void heap_grow(heap_t *h){
 */
 static void heapify_up(heap_t *h, int i){
   int ju = (i - 1) / 2; // if i is even, equivalent to (i - 2) / 2
-  while(ju >= 0 &&
-	h->cmp_pty_fn(pty_ptr(h, ju), pty_ptr(h, i)) > 0){
+  while(ju >= 0 && h->cmp_pty_fn(pty_ptr(h, ju), pty_ptr(h, i)) > 0){
       swap(h, i, ju);
       i = ju;
       ju = (i - 1) / 2;
