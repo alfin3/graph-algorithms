@@ -6,7 +6,7 @@
 
    Through user-defined comparison and deallocation functions, the 
    implementation enables a dynamic set in heap form of any objects 
-   associated with priority values of type of choice (e.g. char, int, 
+   associated with priority values of basic type of choice (e.g. char, int, 
    long, double).
 */
 
@@ -27,7 +27,7 @@ typedef struct{
 
 /**
    Initializes a heap. 
-   cmp_elt_fn: returns 0 if both pointers point to bitwise identical elements,
+   cmp_elt_fn: returns 0 if both pointers point to identical elements,
                        non-zero otherwise.
    cmp_pty_fn returns: 0 if both pointers point to the same priority value,
                        >0 if the first pointer points to greater priority value
@@ -36,9 +36,9 @@ typedef struct{
                 memory blocks (e.g. basic type).                    
 */
 void heap_init(heap_t *h,
-	       int heap_size,
+	       int init_heap_size,
 	       int elt_size,
-	       int pty_size;
+	       int pty_size,
 	       int (*cmp_elt_fn)(void *, void *),
 	       int (*cmp_pty_fn)(void *, void *),
 	       void (*free_elt_fn)(void *));
@@ -54,10 +54,10 @@ void heap_push(heap_t *h, void *elt, void *pty);
 void heap_pop(heap_t *h, void *elt, void *pty);
 
 /**
-   If element is present on a heap, updates its priority and returns true,
-   otherwise returns false.
+   If element is present on a heap, updates its priority and returns 1,
+   otherwise returns 0.
 */
-int heap_update(heap_t *h, void *elt);
+int heap_update(heap_t *h, void *elt, void *pty);
 
 /**
    Frees a dynamically allocated heap. Memory dynamically allocated to 
