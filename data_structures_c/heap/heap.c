@@ -20,6 +20,7 @@
 
 static void *pty_ptr(heap_t *h, int i);
 static void swap(heap_t *h, int i, int j);
+static void free_elt(heap_t *h, int i);
 static void heap_grow(heap_t *h);
 static void heapify_up(heap_t *h, int i);
 static void heapify_down(heap_t *h, int i);
@@ -62,8 +63,8 @@ void heap_push(heap_t *h, void *elt, void *pty){
   void *pty_target = pty_ptr(h, ix);
   memcpy(elt_target, elt, h->elt_size);
   memcpy(pty_target, pty, h->pty_size);
-  heapify_up(h, ix);
   h->num_elts++;
+  heapify_up(h, ix);
 }
 
 /**
@@ -76,8 +77,9 @@ void heap_pop(heap_t *h, void *elt, void *pty){
   memcpy(elt, elt_source, h->elt_size);
   memcpy(pty, pty_source, h->pty_size);
   swap(h, ix, h->num_elts - 1);
+  free_elt(h, h->num_elts - 1);
+  h->num_elts--; // decrement prior to heapify_down
   heapify_down(h, ix);
-  h->num_elts--;
 }
 
 /**
@@ -108,11 +110,7 @@ int heap_update(heap_t *h, void *elt, void *pty){
 */
 void heap_free(heap_t *h){
   for (int i = 0; i < h->num_elts; i++){
-    if (h->free_elt_fn != NULL){
-       h->free_elt_fn(h->elts[i]);
-    } else {
-      free(h->elts[i]);
-    }
+    free_elt(h, i);
   } 
   free(h->elts);
   free(h->ptys);
@@ -140,6 +138,17 @@ static void swap(heap_t *h, int i, int j){
   memcpy(buffer, pty_ptr(h, i), h->pty_size);
   memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pty_size);
   memcpy(pty_ptr(h, j), buffer, h->pty_size);
+}
+
+/**
+   Deallocates an element at index i according to free_elt_fn.
+*/
+static void free_elt(heap_t *h, int i){
+  if (h->free_elt_fn != NULL){
+    h->free_elt_fn(h->elts[i]);
+  }else{
+    free(h->elts[i]);
+  }
 }
 
 /**

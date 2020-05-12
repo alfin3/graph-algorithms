@@ -219,8 +219,6 @@ void run_int_ptr_t_long_double_heap(){
   heap_free(&h);
 }
 
-
-
 int main(){
   run_int_int_heap();
   run_int_ptr_t_long_double_heap();
