@@ -36,8 +36,7 @@ typedef struct{
    cmp_pty_fn: returns  0 if both pointers point to equal priority values,
                        > 0 if first pointer points to greater priority value,
                        < 0 if first pointer points to lower priority value.
-   free_elt_fn: is non-NULL regardless if elements are on memory heap 
-                or memory stack.
+   free_elt_fn: is non-NULL regardless of location of elements in memory.
 */
 void heap_init(heap_t *h,
 	       int init_heap_size,
@@ -48,10 +47,9 @@ void heap_init(heap_t *h,
 	       void (*free_elt_fn)(void *));
 
 /**
-   Pushes an element onto a heap. Copies a priority value and pointer to 
-   element, preserving element's location in memory. 
-   elt: pointer to element pointer
-   pty: pointer to object of basic type
+   Pushes an element onto a heap.
+   elt: pointer to element pointer,
+   pty: pointer to object of basic type.
 */
 void heap_push(heap_t *h, void *elt, void *pty);
 
@@ -67,8 +65,7 @@ void heap_pop(heap_t *h, void *elt, void *pty);
 int heap_update(heap_t *h, void *elt, void *pty);
 
 /**
-   Frees element and priority arrays. Memory allocated to each element is 
-   freed according to free_elt_fn.
+   Frees elements, according to free_elt_fn, and element and priority arrays.
 */
 void heap_free(heap_t *h);
 

@@ -54,8 +54,7 @@ void print_int_ptys(void *ptys, int n){
 }
 
 /**
-   Prints integer elements pointed from elts array and integer priorities 
-   of ptys array.
+   Prints integer elements and integer priorities.
 */
 void print_int_elts_int_ptys(heap_t *h){
   printf("Element array: ");
@@ -172,8 +171,7 @@ void print_long_double_ptys(void *ptys, int n){
 }
 
 /**
-   Prints integer values across int_ptr_t elements pointed from elts array,
-   and long double priority values of ptys array.
+   Prints integer values across int_ptr_t elements and long double priorities.
 */
 void print_int_ptr_t_elts_long_double_ptys(heap_t *h){
   printf("Element array: ");
