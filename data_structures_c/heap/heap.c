@@ -6,7 +6,10 @@
    Through user-defined comparison and deallocation functions, the 
    implementation provides a dynamic set in heap form of any objects 
    associated with priority values of basic type of choice (e.g. char, int, 
-   long, double).
+   long, double). 
+
+   Push and pop operations do not change the location of elements in memory,
+   whereas priority values are copied.
 */
 
 #include <stdio.h>
@@ -20,13 +23,20 @@
 
 static void *pty_ptr(heap_t *h, int i);
 static void swap(heap_t *h, int i, int j);
-static void free_elt(heap_t *h, int i);
 static void heap_grow(heap_t *h);
 static void heapify_up(heap_t *h, int i);
 static void heapify_down(heap_t *h, int i);
 
 /**
-   Initializes a heap.                  
+   Initializes a heap. 
+   init_heap_size: integer > 0.
+   cmp_elt_fn: returns 0 if both pointers point to elements that match,
+                       non-zero otherwise.
+   cmp_pty_fn: returns  0 if both pointers point to equal priority values,
+                       > 0 if first pointer points to greater priority value,
+                       < 0 if first pointer points to lower priority value.
+   free_elt_fn: is non-NULL regardless if elements are on memory heap 
+                or memory stack.
 */
 void heap_init(heap_t *h,
 	       int init_heap_size,
@@ -50,18 +60,16 @@ void heap_init(heap_t *h,
 }
 
 /**
-   Pushes an element onto a heap. Copies only the top level object of 
-   an element into heap, including pointers from the top level object
-   to (dynamically allocated) objects that are part of the element.
+   Pushes an element onto a heap. Copies a priority value and pointer to 
+   element, preserving element's location in memory. 
+   elt: pointer to element pointer
+   pty: pointer to object of basic type
 */
 void heap_push(heap_t *h, void *elt, void *pty){
-  int ix = h->num_elts;
   if (h->heap_size == h->num_elts){heap_grow(h);}
-  h->elts[ix] = malloc(h->elt_size);
-  assert(h->elts[ix] != NULL);
-  void *elt_target = h->elts[ix];
+  int ix = h->num_elts;
+  h->elts[ix] = *(void **)elt;
   void *pty_target = pty_ptr(h, ix);
-  memcpy(elt_target, elt, h->elt_size);
   memcpy(pty_target, pty, h->pty_size);
   h->num_elts++;
   heapify_up(h, ix);
@@ -72,25 +80,23 @@ void heap_push(heap_t *h, void *elt, void *pty){
 */
 void heap_pop(heap_t *h, void *elt, void *pty){
   int ix = 0;
-  void *elt_source = h->elts[ix];
-  void *pty_source = pty_ptr(h, ix);
-  memcpy(elt, elt_source, h->elt_size);
-  memcpy(pty, pty_source, h->pty_size);
-  free(h->elts[ix]); //only the top level object of element
+  *(void **)elt = h->elts[ix];
   h->elts[ix] = NULL;
+  void *pty_source = pty_ptr(h, ix);
+  memcpy(pty, pty_source, h->pty_size);
   swap(h, ix, h->num_elts - 1);
   h->num_elts--; // decrement prior to heapify_down
   heapify_down(h, ix);
 }
 
 /**
-   If element is present on a heap according to cmp_elt_fn, updates its 
+   If element is present on heap according to cmp_elt_fn, updates its 
    priority and returns 1, otherwise returns 0.
 */
 int heap_update(heap_t *h, void *elt, void *pty){
   // at this time, w/o hash table => O(n) instead of O(logn)
   for (int i = 0; i < h->num_elts; i++){
-    if (h->cmp_elt_fn(h->elts[i], elt) == 0){
+    if (h->cmp_elt_fn(h->elts[i], *(void **)elt) == 0){
       int ju = (i - 1) / 2;
       void *pty_target = pty_ptr(h, i);
       memcpy(pty_target, pty, h->pty_size);
@@ -106,12 +112,13 @@ int heap_update(heap_t *h, void *elt, void *pty){
 }
 
 /**
-   Frees dynamically allocated elements and priority values. Memory 
-   dynamically allocated to each element is freed according to free_elt_fn.
+   Frees element and priority arrays. Memory allocated to each element is 
+   freed according to free_elt_fn.
 */
 void heap_free(heap_t *h){
   for (int i = 0; i < h->num_elts; i++){
-    free_elt(h, i);
+    h->free_elt_fn(h->elts[i]);
+    if (h->elts[i] != NULL) {h->elts[i] = NULL;}
   } 
   free(h->elts);
   h->elts = NULL;
@@ -141,18 +148,6 @@ static void swap(heap_t *h, int i, int j){
   memcpy(buffer, pty_ptr(h, i), h->pty_size);
   memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pty_size);
   memcpy(pty_ptr(h, j), buffer, h->pty_size);
-}
-
-/**
-   Deallocates an element at index i according to free_elt_fn.
-*/
-static void free_elt(heap_t *h, int i){
-  if (h->free_elt_fn != NULL){
-    h->free_elt_fn(h->elts[i]);
-  }else{
-    free(h->elts[i]);
-    h->elts[i] = NULL;
-  }
 }
 
 /**
