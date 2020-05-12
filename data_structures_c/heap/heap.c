@@ -76,8 +76,9 @@ void heap_pop(heap_t *h, void *elt, void *pty){
   void *pty_source = pty_ptr(h, ix);
   memcpy(elt, elt_source, h->elt_size);
   memcpy(pty, pty_source, h->pty_size);
+  free(h->elts[ix]); //only the top level object of element
+  h->elts[ix] = NULL;
   swap(h, ix, h->num_elts - 1);
-  free_elt(h, h->num_elts - 1);
   h->num_elts--; // decrement prior to heapify_down
   heapify_down(h, ix);
 }
