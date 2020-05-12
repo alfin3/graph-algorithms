@@ -113,7 +113,9 @@ void heap_free(heap_t *h){
     free_elt(h, i);
   } 
   free(h->elts);
+  h->elts = NULL;
   free(h->ptys);
+  h->ptys = NULL;
 }
 
 /** Helper functions */
@@ -148,6 +150,7 @@ static void free_elt(heap_t *h, int i){
     h->free_elt_fn(h->elts[i]);
   }else{
     free(h->elts[i]);
+    h->elts[i] = NULL;
   }
 }
 

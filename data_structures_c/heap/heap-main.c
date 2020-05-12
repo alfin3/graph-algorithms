@@ -121,9 +121,10 @@ int cmp_long_double_pty(void *a, void *b){
 }
 
 void free_elt_fn(void *a){
-  int *a_val = ((int_ptr_t *)a)->val;
-  free(a_val);
+  free(((int_ptr_t *)a)->val);
+  ((int_ptr_t *)a)->val = NULL;
   free(a);
+  a = NULL;
 }
 
 /**
