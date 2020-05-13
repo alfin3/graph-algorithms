@@ -7,10 +7,7 @@
    Through user-defined comparison and deallocation functions, the 
    implementation provides a dynamic set in heap form of any objects 
    associated with priority values of basic type of choice (e.g. char, int, 
-   long, double). 
-
-   Push and pop operations do not change the location of elements in memory,
-   whereas priority values are copied.
+   long, double).
 */
 
 #ifndef HEAP_H  
@@ -21,7 +18,7 @@ typedef struct{
   int num_elts;
   int elt_size;
   int pty_size;
-  void **elts;
+  void *elts;
   void *ptys;
   int (*cmp_elt_fn)(void *, void *);
   int (*cmp_pty_fn)(void *, void *);
@@ -31,12 +28,11 @@ typedef struct{
 /**
    Initializes a heap. 
    init_heap_size: integer > 0.
-   cmp_elt_fn: returns 0 if both pointers point to elements that match,
-                       non-zero otherwise.
-   cmp_pty_fn: returns  0 if both pointers point to equal priority values,
-                       > 0 if first pointer points to greater priority value,
-                       < 0 if first pointer points to lower priority value.
-   free_elt_fn: is non-NULL regardless of location of elements in memory.
+   cmp_elt_fn: returns 0 if elements match, non-zero otherwise.
+   cmp_pty_fn: returns  0 if equal priorities are equal,
+                       > 0 if first priority is greater,
+                       < 0 if first priority is lower.
+   free_elt_fn: non-NULL.
 */
 void heap_init(heap_t *h,
 	       int init_heap_size,
@@ -47,14 +43,17 @@ void heap_init(heap_t *h,
 	       void (*free_elt_fn)(void *));
 
 /**
-   Pushes an element onto a heap.
-   elt: pointer to element pointer,
-   pty: pointer to object of basic type.
+   Pushes an element and priority value onto a heap.
+   elt: pointer to element pointer, if element is a multilayer object,
+        pointer to element, if element is fully stored in elts array,
+        elt_size reflects these cases.
+   pty: pointer to object of basic type (e.g. char, int, long, double),
+        pty_size reflects a chosen basic type.
 */
 void heap_push(heap_t *h, void *elt, void *pty);
 
 /**
-    Pops an element and the minimal priority value according to cmp_pty_fn.
+   Pops an element and a minimal priority according to cmp_pty_fn.
 */
 void heap_pop(heap_t *h, void *elt, void *pty);
 
