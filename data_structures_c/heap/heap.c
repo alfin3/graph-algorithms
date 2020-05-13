@@ -157,8 +157,9 @@ static void swap(heap_t *h, int i, int j){
 }
 
 /**
-   Doubles the size of heap. Amortized constant overhead in worst case of 
-   realloc calls across heap_grow calls.
+   Doubles the size of heap. Amortized constant overhead for copying in 
+   worst case of realloc calls. realloc's search of heap is O(size of heap), 
+   in worst case.
 */
 static void heap_grow(heap_t *h){
   h->heap_size *= 2;
