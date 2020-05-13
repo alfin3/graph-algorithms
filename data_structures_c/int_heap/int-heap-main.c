@@ -24,7 +24,7 @@ void print_arr(int *arr, int num_elts){
 /**
    Prints element and priority arrays in a heap.
 */
-void print_els_ptys(int_heap_t *h){
+void print_elts_ptys(int_heap_t *h){
   printf("Element array: ");
   print_arr(h->elts, h->num_elts);
   printf("Priority array: ");
@@ -43,19 +43,19 @@ int main(){
   for (int i = 0; i < start_pty; i++){
     int pty = start_pty - i;
     int_heap_push(&h, &i, &pty);
-    print_els_ptys(&h);
+    print_elts_ptys(&h);
   }
   printf("\n");
   for (int i = 0; i < 2; i++){
     int_heap_pop(&h, &min_elt, &min_pty);
     printf("min element: %d, min priority: %d\n", min_elt, min_pty);
-    print_els_ptys(&h);
+    print_elts_ptys(&h);
   }
   printf("\n");
   for (int i = 0; i < 2; i++){
     updated_p = int_heap_update(&h, &elts[i], &new_pty[i]);
     printf("updated? %d\n", updated_p);
-    print_els_ptys(&h);
+    print_elts_ptys(&h);
   }
   printf("\n");
   int_heap_free(&h);
