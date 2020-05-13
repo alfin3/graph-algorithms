@@ -1,7 +1,7 @@
 /**
    dbll.c
 
-   Imlementation of a generic dynamicaly allocated doubly linked list.
+   Imlementation of a generic dynamically allocated doubly linked list.
    
 */
 
@@ -41,7 +41,7 @@ void dbll_insert(dbll_node_t **head, void *elt, int elt_size){
 
 /**
    Frees a generic doubly linked list. elt_free_fn can be NULL if each 
-   element does not point to additional blocks (e.g. basic type).
+   element does not point to additional memory blocks (e.g. basic type).
 */
 static void dbll_free_helper(dbll_node_t *node, void (*elt_free_fn)(void *));
 static void elt_free_helper(void *elt, void (*elt_free_fn)(void *));

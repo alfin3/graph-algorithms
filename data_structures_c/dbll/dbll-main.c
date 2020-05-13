@@ -1,7 +1,7 @@
 /**
    dbll-main.c
 
-   Examples of a generic dynamicaly allocated doubly linked list.
+   Examples of a generic dynamically allocated doubly linked list.
    
 */
 
@@ -19,7 +19,7 @@ typedef struct{
 } int_ptr_t;
 
 /**
-   Frees a int_ptr_t structure.
+   Frees an int_ptr_t structure.
 */
 void int_ptr_t_free(void *s){
   free(((int_ptr_t *)s)->val);
@@ -71,8 +71,7 @@ int main(){
   int_t int_t_elt;
   int_ptr_t int_ptr_t_elt;
   dbll_init(&head);
-
-  // Create, print, and free a doubly linked list of integers.
+  //create, print, and free a doubly linked list of integers.
   for (int i = 0; i < num_nodes; i++){
     int_elt = i;
     dbll_insert(&head, &int_elt, sizeof(int));
@@ -82,8 +81,7 @@ int main(){
   printf("Last int_elt value before freeing: %d\n", int_elt);
   dbll_free(&head, NULL);
   printf("Last int_elt value after freeing: %d\n\n", int_elt);
-
-  // Create, print, and free a doubly linked list of int_t structs.
+  // create, print, and free a doubly linked list of int_t structs.
   for (int i = 0; i < num_nodes; i++){
     int_t_elt.val = i;
     dbll_insert(&head, &int_t_elt, sizeof(int_t_elt));
@@ -93,8 +91,7 @@ int main(){
   printf("Last int_t value before freeing: %d\n", int_t_elt.val);
   dbll_free(&head, NULL);
   printf("Last int_t value after freeing: %d\n\n", int_t_elt.val);
-
-  // Create, print, and free a doubly linked list of int_ptr_t structs.
+  //create, print, and free a doubly linked list of int_ptr_t structs.
   for (int i = 0; i < num_nodes; i++){
     int_ptr_t_elt.val = (int *)malloc(sizeof(int));
     assert(int_ptr_t_elt.val != NULL);
