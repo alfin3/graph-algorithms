@@ -1,7 +1,7 @@
 /**
    int-heap.c
 
-   Implementation of a non-generic dynamicaly allocated min heap.
+   Non-generic dynamicaly allocated (min) heap.
    Each entry consists of an integer element and integer priority value.
 
 */
@@ -13,6 +13,7 @@
 
 /** Main functions */
 
+static void int_heap_grow(int_heap_t *h);
 static void heapify_up(int_heap_t *h, int i);
 static void heapify_down(int_heap_t *h, int i);
 
@@ -21,6 +22,7 @@ static void heapify_down(int_heap_t *h, int i);
 */
 void int_heap_init(int_heap_t *h, int heap_size){
   h->heap_size = heap_size;
+  assert(h->heap_size > 0);
   h->num_elts = 0;
   h->elts = (int *)malloc(heap_size * sizeof(int));
   assert(h->elts != NULL);
@@ -31,17 +33,10 @@ void int_heap_init(int_heap_t *h, int heap_size){
 /**
    Pushes integer element associated with integer priority onto a min heap.
 */
-void int_heap_push(int_heap_t *h, int elt, int pty){
-  //amortized constant overhead in worst case of realloc calls
-  if (h->heap_size == h->num_elts){
-    h->elts = (int *)realloc(h->elts, 2 * h->heap_size * sizeof(int));
-    assert(h->elts != NULL);
-    h->ptys = (int *)realloc(h->ptys, 2 * h->heap_size * sizeof(int));
-    assert(h->ptys != NULL);
-    h->heap_size = h->heap_size * 2; 
-  }
-  h->elts[h->num_elts] = elt;
-  h->ptys[h->num_elts] = pty;
+void int_heap_push(int_heap_t *h, int *elt, int *pty){
+  if (h->heap_size == h->num_elts){int_heap_grow(h);}
+  h->elts[h->num_elts] = *elt;
+  h->ptys[h->num_elts] = *pty;
   h->num_elts++;
   heapify_up(h, h->num_elts - 1);
 }
@@ -62,16 +57,17 @@ void int_heap_pop(int_heap_t *h, int *elt, int *pty){
    If element is present on the heap, updates its priority and returns 1.
    Returns 0 otherwise.
 */
-int int_heap_update(int_heap_t *h, int elt, int pty){
+int int_heap_update(int_heap_t *h, int *elt, int *pty){
   // at this time, implementation w/o hash table => O(n) instead of O(logn)
   for (int i = 0; i < h->num_elts; i++){
-    if (h->elts[i] == elt){
-      h->elts[i] = elt;
-      h->ptys[i] = pty;
+    if (h->elts[i] == *elt){
+      h->ptys[i] = *pty;
       int ju = (i - 1) / 2;
       if (ju >= 0 && h->ptys[ju] > h->ptys[i]){
 	heapify_up(h, i);
-      } else {heapify_down(h, i);}
+      }else{
+	heapify_down(h, i);
+      }
       return 1;
     }
   }
@@ -79,25 +75,38 @@ int int_heap_update(int_heap_t *h, int elt, int pty){
 }
 
 /**
-   Frees dynamically allocated arrays in a struct of heap_t type.
+   Frees dynamically allocated arrays in a heap.
 */
 void int_heap_free(int_heap_t *h){
   free(h->elts);
+  h->elts = NULL;
   free(h->ptys);
+  h->ptys = NULL;
 }
 
 /** Helper functions */
 
 /**
-   Swaps elements at indeces i and j in both element and priority arrays.
+   Doubles the size of heap.
 */
-static void swap(int *elts, int *ptys, int i, int j){
-  int temp_pty = ptys[i];
-  int temp_elt = elts[i];
-  ptys[i] = ptys[j];
-  elts[i] = elts[j];
-  ptys[j] = temp_pty;
-  elts[j] = temp_elt;
+static void int_heap_grow(int_heap_t *h){
+  h->heap_size *= 2;
+  h->elts = (int *)realloc(h->elts, h->heap_size * sizeof(int));
+  assert(h->elts != NULL);
+  h->ptys = (int *)realloc(h->ptys, h->heap_size * sizeof(int));
+  assert(h->ptys != NULL);
+}
+
+/**
+   Swaps elements and priorities at indeces i and j.
+*/
+static void swap(int_heap_t *h, int i, int j){
+  int temp_elt = h->elts[i];
+  int temp_pty = h->ptys[i];
+  h->elts[i] = h->elts[j];
+  h->ptys[i] = h->ptys[j];
+  h->elts[j] = temp_elt;
+  h->ptys[j] = temp_pty;
 }
 
 /**
@@ -106,7 +115,7 @@ static void swap(int *elts, int *ptys, int i, int j){
 static void heapify_up(int_heap_t *h, int i){
   int ju = (i - 1) / 2; // if i is even, equivalent to (i - 2) / 2
   while(ju >= 0 && h->ptys[ju] > h->ptys[i]){
-      swap(h->elts, h->ptys, i, ju);
+      swap(h, i, ju);
       i = ju;
       ju = (i - 1) / 2;
   }
@@ -121,16 +130,16 @@ static void heapify_down(int_heap_t *h, int i){
   while (jr < h->num_elts && (h->ptys[i] > h->ptys[jl] ||
 			      h->ptys[i] > h->ptys[jr])){
       if (h->ptys[jl] < h->ptys[jr]){
-	swap(h->elts, h->ptys, i, jl);
+	swap(h, i, jl);
 	i = jl;
       } else {
-	swap(h->elts, h->ptys, i, jr);
+	swap(h, i, jr);
 	i = jr;
       }
       jl = 2 * i + 1;
       jr = 2 * i + 2;
   }
   if (jl == h->num_elts - 1 && h->ptys[i] > h->ptys[jl]){
-    swap(h->elts, h->ptys, i, jl);
+    swap(h, i, jl);
   }
 }
