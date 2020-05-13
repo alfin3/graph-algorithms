@@ -29,7 +29,7 @@ static void heapify_down(heap_t *h, int i);
    Initializes a heap. 
    init_heap_size: integer > 0.
    cmp_elt_fn: returns 0 if elements match, non-zero otherwise.
-   cmp_pty_fn: returns  0 if equal priorities are equal,
+   cmp_pty_fn: returns  0 if priorities are equal,
                        > 0 if first priority is greater,
                        < 0 if first priority is lower.
    free_elt_fn: non-NULL.
@@ -62,7 +62,7 @@ void heap_init(heap_t *h,
         pointer to element, if element is fully stored in elts array,
         elt_size reflects these cases.
    pty: pointer to object of basic type (e.g. char, int, long, double),
-        pty_size reflects a chosen basic type.
+        pty_size reflects a type.
 */
 void heap_push(heap_t *h, void *elt, void *pty){
   if (h->heap_size == h->num_elts){heap_grow(h);}

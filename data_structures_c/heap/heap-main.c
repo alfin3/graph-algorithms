@@ -17,8 +17,8 @@
 
 /** 
     Dynamically allocated heap of integer elements and integer priorities.
-    In this example, pointer to element is passed to heap_push that 
-    fully copies the element to elts array of heap.
+    In this example, a pointer to element is passed to heap_push that 
+    fully copies the element to element array of heap.
 */
 
 int cmp_int_elt(void *a, void *b){
@@ -32,7 +32,7 @@ int cmp_int_pty(void *a, void *b){
 void free_int_fn(void *a){} //fully in elts array, freed with free(h->elts)
 
 /**
-   Prints a specified number of integer elements in elts array.
+   Prints a specified number of integer elements in element array.
 */
 void print_int_elts(void *elts, int n){
   for (int i = 0; i < n; i++){
@@ -42,7 +42,7 @@ void print_int_elts(void *elts, int n){
 }
 
 /**
-   Prints a specified number of integer priorities in ptys array.
+   Prints a specified number of integer priorities in priority array.
 */
 void print_int_ptys(void *ptys, int n){
   for (int i = 0; i < n; i++){
@@ -110,8 +110,8 @@ void run_int_int_heap(){
 
 /** 
     Dynamically allocated heap of int_ptr_t elements and long double 
-    priorities. In this example, pointer to element pointer is passed 
-    to heap_push that copies the element pointer to elts array of heap.
+    priorities. In this example, a pointer to an element pointer is passed 
+    to heap_push that copies the element pointer to element array of heap.
 */
 
 typedef struct{
@@ -147,7 +147,7 @@ void free_int_ptr_t_fn(void *a){
 
 /**
    Prints a specified number of integer values across int_ptr_t elements
-   in elts array.
+   in element array.
 */
 void print_int_ptr_t_elts(void *elts, int n){
   int_ptr_t **s = elts;
@@ -160,7 +160,7 @@ void print_int_ptr_t_elts(void *elts, int n){
 }
 
 /**
-   Prints a specified number of long double priority values in ptys array.
+   Prints a specified number of long double priorities in priority array.
 */
 void print_long_double_ptys(void *ptys, int n){
   for (int i = 0; i < n; i++){
