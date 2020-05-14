@@ -39,12 +39,34 @@ void print_all_int_elts(queue_t *q){
 }
 
 /**
+   Pushes n elements into queue.
+*/
+void push_int_elts(queue_t *q, int n){
+  print_all_int_elts(q);
+  for (int i = 0; i < n; i++){
+    queue_push(q, &i);
+    print_all_int_elts(q);
+  }
+  printf("\n");
+}
+
+/**
+   Pops all elements of queue.
+*/
+void pop_all_int_elts(queue_t *q){
+  int a;
+  while(q->num_elts > 0){
+    queue_pop(q, &a);
+    printf("E: %d \n", a);
+    print_all_int_elts(q);
+  }
+  printf("\n");
+}
+/**
    Runs a test example of queue of integer elements.
 */
-
 void run_int_queue_test(){
   printf("Running int queue test... \n\n");
-  
   //initialize a queue
   queue_t q;
   int queue_init_size = 1;
@@ -52,35 +74,16 @@ void run_int_queue_test(){
 	     queue_init_size,
 	     sizeof(int),
 	     free_int_fn);
-  
   //push elements 
   int num_push = 10;
   printf("Pushing %d elements... \n\n", num_push);
-  print_all_int_elts(&q);
-  for (int i = 0; i < num_push; i++){
-    queue_push(&q, &i);
-    print_all_int_elts(&q);
-  }
-  printf("\n");
-  
+  push_int_elts(&q, num_push);
   //pop all elements
-  int popped_elt;
   printf("Popping all elements... \n\n");
-  while(q.num_elts > 0){
-    queue_pop(&q, &popped_elt);
-    printf("E: %d \n", popped_elt);
-    print_all_int_elts(&q);
-  }
-  printf("\n");
-
-  //dynamically allocate, push elements, and free queue
+  pop_all_int_elts(&q);
+  //push elements and free queue
   printf("Pushing %d elements again... \n\n", num_push);
-  print_all_int_elts(&q);
-  for (int i = 0; i < num_push; i++){
-    queue_push(&q, &i);
-    print_all_int_elts(&q);
-  }
-  printf("\n");
+  push_int_elts(&q, num_push);
   printf("Freeing queue... \n\n");
   queue_free(&q);
 }
@@ -126,11 +129,44 @@ void print_all_int_ptr_t_elts(queue_t *q){
 }
 
 /**
+   Dynamically allocates and pushes n elements into queue.
+*/
+void push_int_ptr_t_elts(queue_t *q, int n){
+  int_ptr_t *a;
+  print_all_int_ptr_t_elts(q);
+  for (int i = 0; i < n; i++){
+    a = malloc(sizeof(int_ptr_t));
+    assert(a != NULL);
+    a->val = malloc(sizeof(int));
+    assert(a->val != NULL);
+    *(a->val) = i;
+    queue_push(q, &a);
+    print_all_int_ptr_t_elts(q);
+    a = NULL;
+  }
+  printf("\n");
+}
+
+/**
+   Pops all elements of the queue.
+*/
+void pop_all_int_ptr_t_elts(queue_t *q){
+  int_ptr_t *a;
+  while(q->num_elts > 0){
+    queue_pop(q, &a);
+    printf("E: %d \n", *(a->val));
+    print_all_int_ptr_t_elts(q);
+    free_int_ptr_t_fn(&a);
+    a = NULL;
+  }
+  printf("\n"); 
+}
+
+/**
    Runs a test example of queue of int_ptr_t elements.
 */
 void run_int_ptr_t_queue_test(){
   printf("Running int_ptr_t queue test... \n\n");
-  
   //initialize a queue
   queue_t q;
   int queue_init_size = 1;
@@ -138,50 +174,16 @@ void run_int_ptr_t_queue_test(){
 	     queue_init_size,
 	     sizeof(int_ptr_t *),
 	     free_int_ptr_t_fn);
-  
   //dynamically allocate and push elements
-  int_ptr_t *a;
   int num_push = 10;
   printf("Pushing %d elements... \n\n", num_push);
-  print_all_int_ptr_t_elts(&q);
-  for (int i = 0; i < num_push; i++){
-    a = malloc(sizeof(int_ptr_t));
-    assert(a != NULL);
-    a->val = malloc(sizeof(int));
-    assert(a->val != NULL);
-    *(a->val) = i;
-    queue_push(&q, &a);
-    print_all_int_ptr_t_elts(&q);
-    a = NULL;
-  }
-  printf("\n");
-  
+  push_int_ptr_t_elts(&q, num_push);
   //pop all elements
-  int_ptr_t *popped_elt;
   printf("Popping all elements... \n\n");
-  while(q.num_elts > 0){
-    queue_pop(&q, &popped_elt);
-    printf("E: %d \n", *(popped_elt->val));
-    print_all_int_ptr_t_elts(&q);
-    free_int_ptr_t_fn(&popped_elt);
-    popped_elt = NULL;
-  }
-  printf("\n");
-
+  pop_all_int_ptr_t_elts(&q);
   //dynamically allocate, push elements, and free queue
   printf("Pushing %d elements again... \n\n", num_push);
-  print_all_int_ptr_t_elts(&q);
-  for (int i = 0; i < num_push; i++){
-    a = malloc(sizeof(int_ptr_t));
-    assert(a != NULL);
-    a->val = malloc(sizeof(int));
-    assert(a->val != NULL);
-    *(a->val) = i;
-    queue_push(&q, &a);
-    print_all_int_ptr_t_elts(&q);
-    a = NULL;
-  }
-  printf("\n");
+  push_int_ptr_t_elts(&q, num_push);
   printf("Freeing queue... \n\n");
   queue_free(&q);
 }
