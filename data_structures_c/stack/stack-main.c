@@ -63,15 +63,25 @@ void run_int_stack_test(){
   }
   printf("\n");
   
-  //pop num_push elements
+  //pop all elements
   int popped_elt;
-  printf("Popping %d elements... \n\n", num_push);
-  for (int i = 0; i < num_push; i++){
+  printf("Popping all elements... \n\n");
+  while (s.num_elts > 0){
     stack_pop(&s, &popped_elt);
     printf("E: %d \n", popped_elt);
     print_all_int_elts(&s);
   }
   printf("\n");
+
+  //push elements again and free stack
+  printf("Pushing %d elements again... \n\n", num_push);
+  print_all_int_elts(&s);
+  for (int i = 0; i < num_push; i++){
+    stack_push(&s, &i);
+    print_all_int_elts(&s);
+  }
+  printf("\n");
+  printf("Freeing stack... \n\n");
   stack_free(&s);
 }
 
@@ -135,9 +145,9 @@ void run_int_ptr_t_stack_test(){
   printf("Pushing %d elements... \n\n", num_push);
   print_all_int_ptr_t_elts(&s);
   for (int i = 0; i < num_push; i++){
-    a = (int_ptr_t *)malloc(sizeof(int_ptr_t));
+    a = malloc(sizeof(int_ptr_t));
     assert(a != NULL);
-    a->val = (int *)malloc(sizeof(int));
+    a->val = malloc(sizeof(int));
     assert(a->val != NULL);
     *(a->val) = i;
     stack_push(&s, &a);
@@ -146,10 +156,10 @@ void run_int_ptr_t_stack_test(){
   }
   printf("\n");
   
-  //pop num_push elements
+  //pop all elements
   int_ptr_t *popped_elt;
-  printf("Popping %d elements... \n\n", num_push);
-  for (int i = 0; i < num_push; i++){
+  printf("Popping all elements... \n\n");
+  while (s.num_elts > 0){
     stack_pop(&s, &popped_elt);
     printf("E: %d \n", *(popped_elt->val));
     print_all_int_ptr_t_elts(&s);
@@ -157,6 +167,22 @@ void run_int_ptr_t_stack_test(){
     popped_elt = NULL;
   }
   printf("\n");
+
+  //push elements again and free stack
+  printf("Pushing %d elements again... \n\n", num_push);
+  print_all_int_ptr_t_elts(&s);
+  for (int i = 0; i < num_push; i++){
+    a = malloc(sizeof(int_ptr_t));
+    assert(a != NULL);
+    a->val = malloc(sizeof(int));
+    assert(a->val != NULL);
+    *(a->val) = i;
+    stack_push(&s, &a);
+    print_all_int_ptr_t_elts(&s);
+    a = NULL;
+  }
+  printf("\n");
+  printf("Freeing stack... \n\n");
   stack_free(&s);
 }
 
