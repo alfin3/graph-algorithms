@@ -101,6 +101,7 @@ static void int_heap_grow(int_heap_t *h){
    Swaps elements and priorities at indeces i and j.
 */
 static void swap(int_heap_t *h, int i, int j){
+  assert(i >= 0 && j >= 0);
   int temp_elt = h->elts[i];
   int temp_pty = h->ptys[i];
   h->elts[i] = h->elts[j];
