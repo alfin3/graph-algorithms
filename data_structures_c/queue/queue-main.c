@@ -67,21 +67,17 @@ void pop_all_int_elts(queue_t *q){
 */
 void run_int_queue_test(){
   printf("Running int queue test... \n\n");
-  //initialize a queue
   queue_t q;
   int queue_init_size = 1;
   queue_init(&q,
 	     queue_init_size,
 	     sizeof(int),
 	     free_int_fn);
-  //push elements 
   int num_push = 10;
   printf("Pushing %d elements... \n\n", num_push);
   push_int_elts(&q, num_push);
-  //pop all elements
   printf("Popping all elements... \n\n");
   pop_all_int_elts(&q);
-  //push elements and free queue
   printf("Pushing %d elements again... \n\n", num_push);
   push_int_elts(&q, num_push);
   printf("Freeing queue... \n\n");
@@ -167,21 +163,17 @@ void pop_all_int_ptr_t_elts(queue_t *q){
 */
 void run_int_ptr_t_queue_test(){
   printf("Running int_ptr_t queue test... \n\n");
-  //initialize a queue
   queue_t q;
   int queue_init_size = 1;
   queue_init(&q,
 	     queue_init_size,
 	     sizeof(int_ptr_t *),
 	     free_int_ptr_t_fn);
-  //dynamically allocate and push elements
   int num_push = 10;
   printf("Pushing %d elements... \n\n", num_push);
   push_int_ptr_t_elts(&q, num_push);
-  //pop all elements
   printf("Popping all elements... \n\n");
   pop_all_int_ptr_t_elts(&q);
-  //dynamically allocate, push elements, and free queue
   printf("Pushing %d elements again... \n\n", num_push);
   push_int_ptr_t_elts(&q, num_push);
   printf("Freeing queue... \n\n");
