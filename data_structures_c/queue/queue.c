@@ -101,6 +101,7 @@ static void queue_grow(queue_t *q){
    is moved at most once.
 */
 static void queue_move(queue_t *q){
+  assert(q->num_popped_elts >= q->num_elts - q->num_popped_elts);
   void *target = q->elts;
   void *source = elt_ptr(q, q->num_popped_elts);
   int block_size = (q->num_elts - q->num_popped_elts) * q->elt_size;
