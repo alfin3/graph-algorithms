@@ -43,7 +43,6 @@ void queue_push(queue_t *q, void *elt);
 */
 void queue_pop(queue_t *q, void *elt);
 
-
 /**
    Frees elements, according to free_elt_fn, and element array.
 */

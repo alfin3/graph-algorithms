@@ -21,7 +21,7 @@ static void queue_move(queue_t *q);
 
 /**
    Initializes a queue. 
-   init_queue_size: integer > 0.
+   init_queue_size: > 0.
    free_elt_fn: non-NULL.
 */
 void queue_init(queue_t *q,
@@ -46,8 +46,8 @@ void queue_init(queue_t *q,
         elt_size reflects these cases.
 */
 void queue_push(queue_t *q, void *elt){
-  if (q->queue_size == q->num_elts){queue_grow(q);}
-  int ix = q->num_elts;
+  if (q->queue_size == q->num_popped_elts + q->num_elts){queue_grow(q);}
+  int ix = q->num_popped_elts + q->num_elts;
   void *elt_target = elt_ptr(q, ix);
   memcpy(elt_target, elt, q->elt_size);
   q->num_elts++;
@@ -57,10 +57,11 @@ void queue_push(queue_t *q, void *elt){
    Pops an element from queue.
 */
 void queue_pop(queue_t *q, void *elt){
-  assert(q->num_elts - q->num_popped_elts > 0);
+  assert(q->num_elts > 0);
   int ix = q->num_popped_elts;
   void *elt_source = elt_ptr(q, ix);
   memcpy(elt, elt_source, q->elt_size);
+  q->num_elts--;
   q->num_popped_elts++;
   if (q->queue_size <= 2 * q->num_popped_elts){queue_move(q);}
 }
@@ -69,8 +70,8 @@ void queue_pop(queue_t *q, void *elt){
    Frees remaining elements, according to free_elt_fn, and element array.
 */
 void queue_free(queue_t *q){
-  for (int i = q->num_popped_elts; i < q->num_elts; i++){
-    q->free_elt_fn(elt_ptr(q, i));
+  for (int i = 0; i < q->num_elts; i++){ 
+    q->free_elt_fn(elt_ptr(q, q->num_popped_elts + i));
   } 
   free(q->elts);
   q->elts = NULL;
@@ -97,15 +98,14 @@ static void queue_grow(queue_t *q){
 }
 
 /**
-   Moves elements to the beginning of element array. Each popped element 
-   is moved at most once.
+   Moves elements to the beginning of element array. Constant overhead in 
+   worst case because each element is moved at most once.
 */
 static void queue_move(queue_t *q){
-  assert(q->num_popped_elts >= q->num_elts - q->num_popped_elts);
+  assert(q->num_popped_elts >= q->num_elts);
   void *target = q->elts;
   void *source = elt_ptr(q, q->num_popped_elts);
-  int block_size = (q->num_elts - q->num_popped_elts) * q->elt_size;
+  int block_size = q->num_elts * q->elt_size;
   memcpy(target, source, block_size); //no overlap guarantee
-  q->num_elts -= q->num_popped_elts;
   q->num_popped_elts = 0;
 }
