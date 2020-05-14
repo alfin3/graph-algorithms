@@ -65,7 +65,9 @@ void print_int_elts_int_ptys(heap_t *h){
    Runs an example of heap of integer elements and integer priorities.
 */
 
-void run_int_int_heap(){
+void run_int_int_heap_test(){
+  printf("Running int int heap test... \n\n");
+  
   //initialize a heap
   heap_t h;
   int heap_init_size = 1;
@@ -76,32 +78,53 @@ void run_int_int_heap(){
 	    cmp_int_elt,
 	    cmp_int_pty,
 	    free_int_fn);
-  //push elements 
-  int start_pty_val = 10;
-  for (int i = 0; i < start_pty_val; i++){
-    int pty = start_pty_val - i;
+  
+  //push elements
+  int num_push = 10;
+  printf("Pushing %d elements... \n\n", num_push);
+  print_int_elts_int_ptys(&h);
+  for (int i = 0; i < num_push; i++){
+    int pty = num_push - i;
     heap_push(&h, &i, &pty);
     print_int_elts_int_ptys(&h);
   }
   printf("\n");
+  
   //pop num_pops elements and priority values
   int min_elt;
   int min_pty;
   int num_pops = 2;
+  printf("Popping %d elements... \n\n", num_pops);
   for (int i = 0; i < num_pops; i++){
     heap_pop(&h, &min_elt, &min_pty);
-    printf("min elt: %d, min pty: %d\n", min_elt, min_pty);
+    printf("E: %d, P: %d\n", min_elt, min_pty);
     print_int_elts_int_ptys(&h);
   }
   printf("\n");
+  
   //update heap
   int updated_p;
   int num_new_ptys = 3;
   int elts_upd[] = {5, 5, 11};
   int new_ptys[] = {10, 0, 10};
+  printf("Updating with the following E, P pairs... \n\n");
+  for (int i = 0; i < num_new_ptys; i++){
+    printf("E: %d P: %d\n", elts_upd[i], new_ptys[i]);
+  }
+  printf("\n");
   for (int i = 0; i < num_new_ptys; i++){
     updated_p = heap_update(&h, &elts_upd[i], &new_ptys[i]);
-    printf("updated? %d\n", updated_p);
+    printf("Updated? %d\n", updated_p);
+    print_int_elts_int_ptys(&h);
+  }
+  printf("\n");
+  
+  // continue popping
+  int num_res_pops = num_push - num_pops;
+  printf("Continue popping %d elements... \n\n", num_res_pops);
+  for (int i = 0; i < num_res_pops; i++){
+    heap_pop(&h, &min_elt, &min_pty);
+    printf("E: %d, P: %d\n", min_elt, min_pty);
     print_int_elts_int_ptys(&h);
   }
   printf("\n");
@@ -164,7 +187,7 @@ void print_int_ptr_t_elts(void *elts, int n){
 */
 void print_long_double_ptys(void *ptys, int n){
   for (int i = 0; i < n; i++){
-    printf("%Lf ", *((long double *)ptys + i));
+    printf("%.2Lf ", *((long double *)ptys + i));
   }
   printf("\n");
 }
@@ -182,7 +205,9 @@ void print_int_ptr_t_elts_long_double_ptys(heap_t *h){
 /**
    Runs an example of heap of int_ptr_t elements and long double priorities.
 */
-void run_int_ptr_t_long_double_heap(){
+void run_int_ptr_t_long_double_heap_test(){
+  printf("Running int_ptr_t long double heap test... \n\n");
+  
   //initialize a heap
   heap_t h;
   int heap_init_size = 1;
@@ -193,11 +218,14 @@ void run_int_ptr_t_long_double_heap(){
 	    cmp_int_ptr_t_elt,
 	    cmp_long_double_pty,
 	    free_int_ptr_t_fn);
+  
   //dynamically allocate and push elements
   int_ptr_t *s;
-  int start_pty_val = 10;
-  for (int i = 0; i < start_pty_val; i++){
-    long double pty = start_pty_val - i;
+  int num_push = 10;
+  printf("Pushing %d elements... \n\n", num_push);
+  print_int_ptr_t_elts_long_double_ptys(&h);
+  for (int i = 0; i < num_push; i++){
+    long double pty = num_push - i;
     s = (int_ptr_t *)malloc(sizeof(int_ptr_t));
     assert(s != NULL);
     s->val = (int *)malloc(sizeof(int));
@@ -208,23 +236,31 @@ void run_int_ptr_t_long_double_heap(){
     s = NULL;
   }
   printf("\n");
+  
   //pop num_pops elements and priority values
   int_ptr_t *min_elt;
   long double min_pty;
   int num_pops = 2;
+  printf("Popping %d elements... \n\n", num_pops);
   for (int i = 0; i < num_pops; i++){
     heap_pop(&h, &min_elt, &min_pty);
-    printf("min elt: %d, min pty: %Lf\n", *(min_elt->val), min_pty);
+    printf("E: %d, P: %.2Lf\n", *(min_elt->val), min_pty);
     print_int_ptr_t_elts_long_double_ptys(&h);
     free_int_ptr_t_fn(&min_elt);
     min_elt = NULL;
   }
   printf("\n");
+  
   //update heap
   int updated_p;
   int num_new_ptys = 3;
   int elt_vals[] = {5, 5, 11};
   long double new_ptys[] = {10.0, 0.0, 10.0};
+  printf("Updating with the following E, P pairs... \n\n");
+  for (int i = 0; i < num_new_ptys; i++){
+    printf("E: %d P: %.2Lf\n", elt_vals[i], new_ptys[i]);
+  }
+  printf("\n");
   for (int i = 0; i < num_new_ptys; i++){
     s = (int_ptr_t *)malloc(sizeof(int_ptr_t));
     assert(s != NULL);
@@ -232,17 +268,29 @@ void run_int_ptr_t_long_double_heap(){
     assert(s->val != NULL);
     *(s->val) = elt_vals[i];
     updated_p = heap_update(&h, &s, &new_ptys[i]);
-    printf("updated? %d\n", updated_p);
+    printf("Updated? %d\n", updated_p);
     print_int_ptr_t_elts_long_double_ptys(&h);
     free_int_ptr_t_fn(&s);
     s = NULL;
+  }
+  printf("\n");
+  
+  // continue popping
+  int num_res_pops = num_push - num_pops;
+  printf("Continue popping %d elements... \n\n", num_res_pops);
+  for (int i = 0; i < num_res_pops; i++){
+    heap_pop(&h, &min_elt, &min_pty);
+    printf("E: %d, P: %.2Lf\n", *(min_elt->val), min_pty);
+    print_int_ptr_t_elts_long_double_ptys(&h);
+    free_int_ptr_t_fn(&min_elt);
+    min_elt = NULL;
   }
   printf("\n");
   heap_free(&h);
 }
 
 int main(){
-  run_int_int_heap();
-  run_int_ptr_t_long_double_heap();
+  run_int_int_heap_test();
+  run_int_ptr_t_long_double_heap_test();
   return 0;
 }

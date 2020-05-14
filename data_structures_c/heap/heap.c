@@ -144,6 +144,8 @@ static void *pty_ptr(heap_t *h, int i){
    Swaps elements and priorities at indeces i and j.
 */
 static void swap(heap_t *h, int i, int j){
+  assert(i >= 0 && j >= 0);
+  if (i == j){return;}
   // swap elements
   char buffer_elt[h->elt_size]; //char used for exact # of bytes
   memcpy(buffer_elt, elt_ptr(h, i), h->elt_size);
