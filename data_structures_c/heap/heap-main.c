@@ -54,7 +54,7 @@ void print_int_ptys(void *ptys, int n){
 /**
    Prints integer elements and integer priorities.
 */
-void print_int_elts_int_ptys(heap_t *h){
+void print_int_elts_ptys(heap_t *h){
   printf("Element array: ");
   print_int_elts(h->elts, h->num_elts);
   printf("Priority array: ");
@@ -65,11 +65,11 @@ void print_int_elts_int_ptys(heap_t *h){
    Pushes n integer elements and priorities onto heap.
 */
 void push_int_elts(heap_t *h, int n){
-  print_int_elts_int_ptys(h);
+  print_int_elts_ptys(h);
   for (int i = 0; i < n; i++){
     int pty = n - i;
     heap_push(h, &i, &pty);
-    print_int_elts_int_ptys(h);
+    print_int_elts_ptys(h);
   }
   printf("\n");
 }
@@ -83,7 +83,7 @@ void pop_int_elts(heap_t *h, int n){
   for (int i = 0; i < n; i++){
     heap_pop(h, &min_elt, &min_pty);
     printf("E: %d, P: %d\n", min_elt, min_pty);
-    print_int_elts_int_ptys(h);
+    print_int_elts_ptys(h);
   }
   printf("\n"); 
 }
@@ -97,7 +97,7 @@ void pop_all_int_elts(heap_t *h){
   while (h->num_elts > 0){
     heap_pop(h, &min_elt, &min_pty);
     printf("E: %d, P: %d\n", min_elt, min_pty);
-    print_int_elts_int_ptys(h);
+    print_int_elts_ptys(h);
   }
   printf("\n"); 
 }
@@ -115,7 +115,7 @@ void update_int_elts(heap_t *h, int n, int elts_upd[], int new_ptys[]){
   for (int i = 0; i < n; i++){
     updated_p = heap_update(h, &elts_upd[i], &new_ptys[i]);
     printf("Updated? %d\n", updated_p);
-    print_int_elts_int_ptys(h);
+    print_int_elts_ptys(h);
   }
   printf("\n");
 }
@@ -123,7 +123,7 @@ void update_int_elts(heap_t *h, int n, int elts_upd[], int new_ptys[]){
 /**
    Runs an example of heap of integer elements and integer priorities.
 */
-void run_int_int_heap_test(){
+void run_int_heap_test(){
   printf("Running int int heap test... \n\n");
   heap_t h;
   int heap_init_size = 1;
@@ -169,7 +169,7 @@ int cmp_int_ptr_t_elt(void *a, void *b){
   return *a_val - *b_val;
 }
 
-int cmp_long_double_pty(void *a, void *b){
+int cmp_int_ptr_t_pty(void *a, void *b){
   long double *a_val = a;
   long double *b_val = b;
   if (*a_val == *b_val){
@@ -206,7 +206,7 @@ void print_int_ptr_t_elts(void *elts, int n){
 /**
    Prints a specified number of long double priorities in priority array.
 */
-void print_l_dbl_ptys(void *ptys, int n){
+void print_int_ptr_t_ptys(void *ptys, int n){
   for (int i = 0; i < n; i++){
     printf("%.2Lf ", *((long double *)ptys + i));
   }
@@ -216,11 +216,11 @@ void print_l_dbl_ptys(void *ptys, int n){
 /**
    Prints integer values across int_ptr_t elements and long double priorities.
 */
-void print_int_ptr_t_elts_l_dbl_ptys(heap_t *h){
+void print_int_ptr_t_elts_ptys(heap_t *h){
   printf("Element array: ");
   print_int_ptr_t_elts(h->elts, h->num_elts);
   printf("Priority array: ");
-  print_l_dbl_ptys(h->ptys, h->num_elts);
+  print_int_ptr_t_ptys(h->ptys, h->num_elts);
 }
 
 /**
@@ -228,7 +228,7 @@ void print_int_ptr_t_elts_l_dbl_ptys(heap_t *h){
 */
 void push_int_ptr_t_elts(heap_t *h, int n){
   int_ptr_t *s;
-  print_int_ptr_t_elts_l_dbl_ptys(h);
+  print_int_ptr_t_elts_ptys(h);
   for (int i = 0; i < n; i++){
     long double pty = n - i;
     s = malloc(sizeof(int_ptr_t));
@@ -237,7 +237,7 @@ void push_int_ptr_t_elts(heap_t *h, int n){
     assert(s->val != NULL);
     *(s->val) = i;
     heap_push(h, &s, &pty);
-    print_int_ptr_t_elts_l_dbl_ptys(h);
+    print_int_ptr_t_elts_ptys(h);
     s = NULL;
   }
   printf("\n");
@@ -252,7 +252,7 @@ void pop_int_ptr_t_elts(heap_t *h, int n){
   for (int i = 0; i < n; i++){
     heap_pop(h, &min_elt, &min_pty);
     printf("E: %d, P: %.2Lf\n", *(min_elt->val), min_pty);
-    print_int_ptr_t_elts_l_dbl_ptys(h);
+    print_int_ptr_t_elts_ptys(h);
     free_int_ptr_t_fn(&min_elt);
     min_elt = NULL;
   }
@@ -268,7 +268,7 @@ void pop_all_int_ptr_t_elts(heap_t *h){
   while (h->num_elts > 0){
     heap_pop(h, &min_elt, &min_pty);
     printf("E: %d, P: %.2Lf\n", *(min_elt->val), min_pty);
-    print_int_ptr_t_elts_l_dbl_ptys(h);
+    print_int_ptr_t_elts_ptys(h);
     free_int_ptr_t_fn(&min_elt);
     min_elt = NULL;
   }
@@ -297,7 +297,7 @@ void update_int_ptr_t_elts(heap_t *h,
     *(s->val) = elt_vals[i];
     updated_p = heap_update(h, &s, &new_ptys[i]);
     printf("Updated? %d\n", updated_p);
-    print_int_ptr_t_elts_l_dbl_ptys(h);
+    print_int_ptr_t_elts_ptys(h);
     free_int_ptr_t_fn(&s);
     s = NULL;
   }
@@ -307,7 +307,7 @@ void update_int_ptr_t_elts(heap_t *h,
 /**
    Runs an example of heap of int_ptr_t elements and long double priorities.
 */
-void run_int_ptr_t_l_dbl_heap_test(){
+void run_int_ptr_t_heap_test(){
   printf("Running int_ptr_t long double heap test... \n\n");
   heap_t h;
   int heap_init_size = 1;
@@ -316,7 +316,7 @@ void run_int_ptr_t_l_dbl_heap_test(){
 	    sizeof(int_ptr_t *),
 	    sizeof(long double),
 	    cmp_int_ptr_t_elt,
-	    cmp_long_double_pty,
+	    cmp_int_ptr_t_pty,
 	    free_int_ptr_t_fn);
   int num_push = 10;
   printf("Pushing %d elements... \n\n", num_push);
@@ -339,7 +339,7 @@ void run_int_ptr_t_l_dbl_heap_test(){
 }
 
 int main(){
-  run_int_int_heap_test();
-  run_int_ptr_t_l_dbl_heap_test();
+  run_int_heap_test();
+  run_int_ptr_t_heap_test();
   return 0;
 }
