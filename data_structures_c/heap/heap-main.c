@@ -77,10 +77,10 @@ void push_int_elts(heap_t *h, int n){
 /**
    Pops n elements and priorities of heap.
 */
-void pop_int_elts(heap_t *h, int num_pops){
+void pop_int_elts(heap_t *h, int n){
   int min_elt;
   int min_pty;
-  for (int i = 0; i < num_pops; i++){
+  for (int i = 0; i < n; i++){
     heap_pop(h, &min_elt, &min_pty);
     printf("E: %d, P: %d\n", min_elt, min_pty);
     print_int_elts_int_ptys(h);
@@ -105,14 +105,14 @@ void pop_all_int_elts(heap_t *h){
 /**
    Updates priorities of elements that are present on heap.
 */
-void update_int_elts(heap_t *h, int num_upd, int elts_upd[], int new_ptys[]){
+void update_int_elts(heap_t *h, int n, int elts_upd[], int new_ptys[]){
   int updated_p;
   printf("The following element priority pairs are used for updates: \n\n");
-  for (int i = 0; i < num_upd; i++){
+  for (int i = 0; i < n; i++){
     printf("E: %d P: %d\n", elts_upd[i], new_ptys[i]);
   }
   printf("\n");
-  for (int i = 0; i < num_upd; i++){
+  for (int i = 0; i < n; i++){
     updated_p = heap_update(h, &elts_upd[i], &new_ptys[i]);
     printf("Updated? %d\n", updated_p);
     print_int_elts_int_ptys(h);
@@ -137,9 +137,9 @@ void run_int_int_heap_test(){
   int num_push = 10;
   printf("Pushing %d elements... \n\n", num_push);
   push_int_elts(&h, num_push);
-  int num_pops = 2;
-  printf("Popping %d elements... \n\n", num_pops);
-  pop_int_elts(&h, num_pops);
+  int num_pop = 2;
+  printf("Popping %d elements... \n\n", num_pop);
+  pop_int_elts(&h, num_pop);
   printf("Updating... \n\n");
   int num_upd = 3;
   int elts_upd[] = {5, 5, 11};
@@ -246,10 +246,10 @@ void push_int_ptr_t_elts(heap_t *h, int n){
 /**
    Pops n int_ptr_t elements and long double priorities of heap.
 */
-void pop_int_ptr_t_elts(heap_t *h, int num_pops){
+void pop_int_ptr_t_elts(heap_t *h, int n){
   int_ptr_t *min_elt;
   long double min_pty;
-  for (int i = 0; i < num_pops; i++){
+  for (int i = 0; i < n; i++){
     heap_pop(h, &min_elt, &min_pty);
     printf("E: %d, P: %.2Lf\n", *(min_elt->val), min_pty);
     print_int_ptr_t_elts_l_dbl_ptys(h);
@@ -279,17 +279,17 @@ void pop_all_int_ptr_t_elts(heap_t *h){
    Updates priorities of elements that are present on heap.
 */
 void update_int_ptr_t_elts(heap_t *h,
-			   int num_upd,
+			   int n,
 			   int elt_vals[],
 			   long double new_ptys[]){
   int updated_p;
   int_ptr_t *s;
   printf("The following element priority pairs are used for updates: \n\n");
-  for (int i = 0; i < num_upd; i++){
+  for (int i = 0; i < n; i++){
     printf("E: %d P: %.2Lf\n", elt_vals[i], new_ptys[i]);
   }
   printf("\n");
-  for (int i = 0; i < num_upd; i++){
+  for (int i = 0; i < n; i++){
     s = malloc(sizeof(int_ptr_t));
     assert(s != NULL);
     s->val = malloc(sizeof(int));
@@ -321,9 +321,9 @@ void run_int_ptr_t_l_dbl_heap_test(){
   int num_push = 10;
   printf("Pushing %d elements... \n\n", num_push);
   push_int_ptr_t_elts(&h, num_push);  
-  int num_pops = 2;
-  printf("Popping %d elements... \n\n", num_pops);
-  pop_int_ptr_t_elts(&h, num_pops);
+  int num_pop = 2;
+  printf("Popping %d elements... \n\n", num_pop);
+  pop_int_ptr_t_elts(&h, num_pop);
   printf("Updating... \n\n");
   int num_upd = 3;
   int elt_vals[] = {5, 5, 11};
