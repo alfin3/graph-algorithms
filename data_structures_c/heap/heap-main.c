@@ -113,7 +113,7 @@ void update_int_elts(heap_t *h, int n, int elts_upd[], int new_ptys[]){
   }
   printf("\n");
   for (int i = 0; i < n; i++){
-    updated_p = heap_update(h, &elts_upd[i], &new_ptys[i]);
+    updated_p = heap_update(h, &(elts_upd[i]), &(new_ptys[i]));
     printf("Updated? %d\n", updated_p);
     print_int_elts_ptys(h);
   }
@@ -295,7 +295,7 @@ void update_int_ptr_t_elts(heap_t *h,
     s->val = malloc(sizeof(int));
     assert(s->val != NULL);
     *(s->val) = elt_vals[i];
-    updated_p = heap_update(h, &s, &new_ptys[i]);
+    updated_p = heap_update(h, &s, &(new_ptys[i]));
     printf("Updated? %d\n", updated_p);
     print_int_ptr_t_elts_ptys(h);
     free_int_ptr_t_fn(&s);
