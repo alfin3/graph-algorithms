@@ -20,8 +20,8 @@ typedef struct{
   int num_vts;
   int num_e;
   int wt_size; // 0 if no weights
-  int *u; // u's of edges (u, v)
-  int *v; // v's of edges (u, v)
+  int *u; // u's of edges (u, v), NULL if disconnected
+  int *v; // v's of edges (u, v), NULL if disconnected
   void *wts; // NULL if no weights
 } graph_t;
 
