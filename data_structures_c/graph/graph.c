@@ -28,6 +28,8 @@ static void adj_lst_init_helper(stack_t **s, int elt_size);
 
 void adj_lst_init(graph_t *g, adj_lst_t *a){
   a->num_vts = g->num_vts;
+  a->num_e = g->num_e;
+  a->wt_size = g->wt_size;
   a->vts = malloc(a->num_vts * sizeof(stack_t *));
   assert(a->vts != NULL);
   if (g->wts != NULL){

@@ -27,6 +27,8 @@ typedef struct{
 
 typedef struct{
   int num_vts;
+  int num_e;
+  int wt_size;
   stack_t **vts;
   stack_t **wts; // NULL if no edges or edge weights
 } adj_lst_t;

@@ -170,11 +170,11 @@ void run_long_double_graph_test(){
 }
 
 /** 
-    Graph with no edges.
+    Graph with no edges and no weights.
 */
 
 /**
-   Initializes an instance of a graph with no edges.
+   Initializes an instance of a graph with no edges and no weights.
 */
 void no_edges_graph_init(graph_t *g){
   g->num_vts = 5;
@@ -186,7 +186,7 @@ void no_edges_graph_init(graph_t *g){
 }
 
 /**
-   Prints the adjacency list of a graph with no edges.
+   Prints the adjacency list of a graph with no edges and no weights.
 */
 void print_no_edges_adj_lst(adj_lst_t *a){
   printf("Print vertices... \n\n");
@@ -198,18 +198,18 @@ void print_no_edges_adj_lst(adj_lst_t *a){
 }
 
 /**
-   Runs a test example of a graph with no edges.
+   Runs a test example of a graph with no edges and no weights.
 */
 void run_no_edges_graph_test(){
   graph_t g;
   adj_lst_t a;
   no_edges_graph_init(&g);
-  printf("Running directed graph with no edges test... \n\n");
+  printf("Running directed graph with no edges and no weights test...\n\n");
   adj_lst_init(&g, &a);
   adj_lst_dir_build(&g, &a);
   print_no_edges_adj_lst(&a);
   adj_lst_free(&a);
-  printf("Running undirected graph with no edges test... \n\n");
+  printf("Running undirected graph with no edges and no weights test...\n\n");
   adj_lst_init(&g, &a);
   adj_lst_undir_build(&g, &a);
   print_no_edges_adj_lst(&a);
