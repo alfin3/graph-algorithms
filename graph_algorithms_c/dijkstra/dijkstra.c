@@ -29,10 +29,6 @@ void dijkstra(adj_lst_t *a,
 	      void (*init_wt_fn)(int, int, void *),
 	      void (*add_wt_fn)(void *, void *, void *),
 	      int (*cmp_wt_fn)(void *, void *)){
-  for (int i = 0; i < a->num_vts; i++){
-    init_wt_fn(s, i, wt_ptr(a, dist, i));
-  }
-  if (a->wts == NULL){return;} //no edges
   heap_t h;
   int h_size = 1;
   int vt_size = sizeof(int);
@@ -43,6 +39,9 @@ void dijkstra(adj_lst_t *a,
   assert(wt != NULL);
   bool *in_heap = calloc(a->num_vts, sizeof(bool));
   assert(in_heap != NULL);
+  for (int i = 0; i < a->num_vts; i++){
+    init_wt_fn(s, i, wt_ptr(a, dist, i));
+  }
   heap_init(&h, h_size, vt_size, wt_size, cmp_vt_fn, cmp_wt_fn, free_vt_fn);
   heap_push(&h, &s, wt_ptr(a, dist, s));
   in_heap[s] = true;
