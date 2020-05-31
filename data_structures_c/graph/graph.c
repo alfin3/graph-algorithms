@@ -6,8 +6,8 @@
    Adjacency list : 
 
    Each list is represented by a dynamically growing generic stack.
-   A vertex is an int index starting from 0. If a graph has edges, 
-   edge weights are of any basic type (e.g. char, int, double). 
+   A vertex is an int index starting from 0. If a graph has edges and 
+   edge weights, edge weights are of any basic type (e.g. char, int, double).
 */
 
 #include <stdio.h>
@@ -36,7 +36,7 @@ void adj_lst_init(graph_t *g, adj_lst_t *a){
   }else{a->wts = NULL;}
   for (int i = 0; i < a->num_vts; i++){
     adj_lst_init_helper(&(a->vts[i]), sizeof(int));
-    if (g->wts != NULL){
+    if (a->wts != NULL){
       adj_lst_init_helper(&(a->wts[i]), g->wt_size);
     }
   }

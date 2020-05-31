@@ -1,7 +1,7 @@
 /**
    graph-main.c
 
-   Examples of graph with generic weights.
+   Examples of graphs with generic weights.
 */
 
 #include <stdio.h>
@@ -14,7 +14,7 @@
 */
 
 /**
-   Initializes an instance of a graph with integer weights.
+   Initializes a graph with integer weights.
 */
 void int_graph_init(graph_t *g){
   int u[] = {0, 0, 0, 1};
@@ -43,6 +43,9 @@ void graph_free(graph_t *g){
   free(g->u);
   free(g->v);
   free(g->wts);
+  g->u = NULL;
+  g->v = NULL;
+  g->wts = NULL;
 }
 
 /**
@@ -171,7 +174,7 @@ void run_long_double_graph_test(){
 */
 
 /**
-   Initializes an instance of a disconnected graph.
+   Initializes an instance of a graph with no edges.
 */
 void disconnected_graph_init(graph_t *g){
   g->num_vts = 5;
@@ -183,7 +186,7 @@ void disconnected_graph_init(graph_t *g){
 }
 
 /**
-   Prints adjacency list of a disconnected graph.
+   Prints the adjacency list of a graph with no edges.
 */
 void print_disconnected_adj_lst(adj_lst_t *a){
   printf("Print vertices... \n\n");
@@ -195,18 +198,18 @@ void print_disconnected_adj_lst(adj_lst_t *a){
 }
 
 /**
-   Runs a test example of a disconnected graph.
+   Runs a test example of a graph with no edges.
 */
 void run_disconnected_graph_test(){
   graph_t g;
   adj_lst_t a;
   disconnected_graph_init(&g);
-  printf("Running directed disconnected graph test... \n\n");
+  printf("Running directed graph with no edges test... \n\n");
   adj_lst_init(&g, &a);
   adj_lst_dir_build(&g, &a);
   print_disconnected_adj_lst(&a);
   adj_lst_free(&a);
-  printf("Running undirected disconnected graph test... \n\n");
+  printf("Running undirected graph with no edges test... \n\n");
   adj_lst_init(&g, &a);
   adj_lst_undir_build(&g, &a);
   print_disconnected_adj_lst(&a);
