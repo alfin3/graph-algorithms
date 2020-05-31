@@ -170,13 +170,13 @@ void run_long_double_graph_test(){
 }
 
 /** 
-    Disconnected graph.
+    Graph with no edges.
 */
 
 /**
    Initializes an instance of a graph with no edges.
 */
-void disconnected_graph_init(graph_t *g){
+void no_edges_graph_init(graph_t *g){
   g->num_vts = 5;
   g->num_e = 0;
   g->wt_size = 0;
@@ -188,7 +188,7 @@ void disconnected_graph_init(graph_t *g){
 /**
    Prints the adjacency list of a graph with no edges.
 */
-void print_disconnected_adj_lst(adj_lst_t *a){
+void print_no_edges_adj_lst(adj_lst_t *a){
   printf("Print vertices... \n\n");
   for (int i = 0; i < a->num_vts; i++){
     printf("%d : ", i);
@@ -200,19 +200,19 @@ void print_disconnected_adj_lst(adj_lst_t *a){
 /**
    Runs a test example of a graph with no edges.
 */
-void run_disconnected_graph_test(){
+void run_no_edges_graph_test(){
   graph_t g;
   adj_lst_t a;
-  disconnected_graph_init(&g);
+  no_edges_graph_init(&g);
   printf("Running directed graph with no edges test... \n\n");
   adj_lst_init(&g, &a);
   adj_lst_dir_build(&g, &a);
-  print_disconnected_adj_lst(&a);
+  print_no_edges_adj_lst(&a);
   adj_lst_free(&a);
   printf("Running undirected graph with no edges test... \n\n");
   adj_lst_init(&g, &a);
   adj_lst_undir_build(&g, &a);
-  print_disconnected_adj_lst(&a);
+  print_no_edges_adj_lst(&a);
   adj_lst_free(&a);
   graph_free(&g);
 }
@@ -220,6 +220,6 @@ void run_disconnected_graph_test(){
 int main(){
   run_int_graph_test();
   run_long_double_graph_test();
-  run_disconnected_graph_test();
+  run_no_edges_graph_test();
   return 0;
 }
