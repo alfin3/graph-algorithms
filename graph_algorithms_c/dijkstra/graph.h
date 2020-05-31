@@ -7,8 +7,8 @@
    Adjacency list : 
 
    Each list is represented by a dynamically growing generic stack.
-   A vertex is an int index starting from 0. If a graph has edges, 
-   edge weights are of any basic type (e.g. char, int, double). 
+   A vertex is an int index starting from 0. If a graph has edges and 
+   edge weights, edge weights are of any basic type (e.g. char, int, double). 
 */
 
 #ifndef GRAPH_H  
@@ -19,16 +19,18 @@
 typedef struct{
   int num_vts;
   int num_e;
-  int wt_size; // 0 if no weights
-  int *u; // u's of edges (u, v), NULL if disconnected
-  int *v; // v's of edges (u, v), NULL if disconnected
-  void *wts; // NULL if no weights
+  int wt_size;
+  int *u; // u's of edges (u, v), NULL if no edges
+  int *v; // v's of edges (u, v), NULL if no edges
+  void *wts; // NULL if no edges or edge weights
 } graph_t;
 
 typedef struct{
   int num_vts;
+  int num_e;
+  int wt_size;
   stack_t **vts;
-  stack_t **wts; // NULL if no weights
+  stack_t **wts; // NULL if no edges or edge weights
 } adj_lst_t;
 
 /**

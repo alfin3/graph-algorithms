@@ -5,8 +5,8 @@
    a graph with generic non-negative weights.
 
    Edge weights are of any basic type (e.g. char, int, double, long double).
-   Edge weight initialization and operations are defined in init_wt_fn, add_wt_fn, 
-   and cmp_wt_fn functions. 
+   Edge weight initialization and operations are defined in init_wt_fn, 
+   add_wt_fn, and cmp_wt_fn functions. 
 */
 
 #ifndef DIJKSTRA_H  
