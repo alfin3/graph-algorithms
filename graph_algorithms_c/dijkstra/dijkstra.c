@@ -21,12 +21,14 @@ static int cmp_vt_fn(void *a, void *b){return *(int *)a - *(int *)b;}
 static void free_vt_fn(void *a){}
 
 /**
-   Computes and copies the shortest distances from s to a distance array.
+   Computes and copies the shortest distances from s to dist array and 
+   previous vertex to prev array, with -1 in prev for unreached vertices.
 */
 void dijkstra(adj_lst_t *a,
 	      int s,
 	      void *dist,
-	      void (*init_wt_fn)(int, int, void *),
+	      int *prev,
+	      void (*init_wt_fn)(void *),
 	      void (*add_wt_fn)(void *, void *, void *),
 	      int (*cmp_wt_fn)(void *, void *)){
   heap_t h;
@@ -40,11 +42,13 @@ void dijkstra(adj_lst_t *a,
   bool *in_heap = calloc(a->num_vts, sizeof(bool));
   assert(in_heap != NULL);
   for (int i = 0; i < a->num_vts; i++){
-    init_wt_fn(s, i, wt_ptr(a, dist, i));
+    init_wt_fn(wt_ptr(a, dist, i));
+    prev[i] = -1; //use as infinity
   }
   heap_init(&h, h_size, vt_size, wt_size, cmp_vt_fn, cmp_wt_fn, free_vt_fn);
   heap_push(&h, &s, wt_ptr(a, dist, s));
   in_heap[s] = true;
+  prev[s] = s;
   while (h.num_elts > 0){
     heap_pop(&h, &u, wt);
     in_heap[u] = false;
@@ -54,8 +58,9 @@ void dijkstra(adj_lst_t *a,
       add_wt_fn(wt,
 		wt_ptr(a, dist, u),
 		wt_ptr(a, a->wts[u]->elts, i));
-      if (cmp_wt_fn(wt_ptr(a, dist, v), wt) > 0){
+      if (prev[v] < 0 || cmp_wt_fn(wt_ptr(a, dist, v), wt) > 0){
 	memcpy(wt_ptr(a, dist, v), wt, wt_size);
+	prev[v] = u;
 	if (in_heap[v]){
 	  heap_update(&h, &v, wt_ptr(a, dist, v));
 	}else{

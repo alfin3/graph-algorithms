@@ -89,12 +89,8 @@ void print_int_arr(int *arr, int n){
 /**
    Run a test example of a graph with integer weights.
 */
-void init_int_fn(int s, int i, void *dist_wt){
-  if (s == i){
-    *(int *)dist_wt = 0;
-  }else{
-    *(int *)dist_wt = -1; //-1 as infinity
-  }
+void init_int_fn(void *dist_wt){
+  *(int *)dist_wt = 0;
 }
 
 void add_int_fn(void *sum, void *u_dist, void *u_v_wt){
@@ -102,20 +98,23 @@ void add_int_fn(void *sum, void *u_dist, void *u_v_wt){
 }
   
 int cmp_int_fn(void *v_dist, void *sum){
-  if (*(int *)v_dist == -1){return 1;}
   return *(int *)v_dist - *(int *)sum;
 }
 
 void run_int_dijkstra(adj_lst_t *a){
   int *dist = malloc(a->num_vts * sizeof(int));
+  int *prev = malloc(a->num_vts * sizeof(int));
   for (int i = 0; i < a->num_vts; i++){
-    printf("start vertex: %d \n", i);
-    dijkstra(a, i, dist, init_int_fn, add_int_fn, cmp_int_fn);
+    dijkstra(a, i, dist, prev, init_int_fn, add_int_fn, cmp_int_fn);
+    printf("distances and previous vertices with %d as start \n", i);
     print_int_arr(dist, a->num_vts);
+    print_int_arr(prev, a->num_vts);
   }
   printf("\n");
   free(dist);
+  free(prev);
   dist = NULL;
+  prev = NULL;
 }
   
 void run_int_graph_test(){
@@ -200,12 +199,8 @@ void print_long_double_arr(long double *arr, int n){
 /**
    Run a test example of a graph with long double weights.
 */
-void init_long_double_fn(int s, int i, void *dist_wt){
-  if (s == i){
-    *(long double *)dist_wt = 0.0;
-  }else{
-    *(long double *)dist_wt = -1.0; //-1.0 as infinity
-  }
+void init_long_double_fn(void *dist_wt){
+  *(long double *)dist_wt = 0.0;
 }
 
 void add_long_double_fn(void *sum, void *u_dist, void *u_v_wt){
@@ -215,7 +210,7 @@ void add_long_double_fn(void *sum, void *u_dist, void *u_v_wt){
 int cmp_long_double_fn(void *v_dist, void *sum){
   long double v_dist_val = *(long double *)v_dist;
   long double sum_val = *(long double *)sum;
-  if (v_dist_val < 0.0 || v_dist_val > sum_val){
+  if (v_dist_val > sum_val){
     return 1;
   }else if (v_dist_val < sum_val){
     return -1;
@@ -226,19 +221,24 @@ int cmp_long_double_fn(void *v_dist, void *sum){
 
 void run_long_double_dijkstra(adj_lst_t *a){
   long double *dist = malloc(a->num_vts * sizeof(long double));
+  int *prev = malloc(a->num_vts * sizeof(int));
   for (int i = 0; i < a->num_vts; i++){
-    printf("start vertex: %d \n", i);
     dijkstra(a,
 	     i,
 	     dist,
+	     prev,
 	     init_long_double_fn,
 	     add_long_double_fn,
 	     cmp_long_double_fn);
+    printf("distances and previous vertices with %d as start \n", i);
     print_long_double_arr(dist, a->num_vts);
+    print_int_arr(prev, a->num_vts);
   }
   printf("\n");
   free(dist);
+  free(prev);
   dist = NULL;
+  prev = NULL;
 }
 
 void run_long_double_graph_test(){

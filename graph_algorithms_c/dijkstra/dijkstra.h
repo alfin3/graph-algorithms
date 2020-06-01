@@ -16,12 +16,14 @@
 #include "graph.h"
 
 /**
-   Computes and copies the shortest distances from s to a distance array.
+   Computes and copies the shortest distances from s to dist array and 
+   previous vertex to prev array, with -1 in prev for unreached vertices.
 */
 void dijkstra(adj_lst_t *a,
 	      int s,
 	      void *dist,
-	      void (*init_wt_fn)(int, int, void *),
+	      int *prev,
+	      void (*init_wt_fn)(void *),
 	      void (*add_wt_fn)(void *, void *, void *),
 	      int (*cmp_wt_fn)(void *, void *));
 
