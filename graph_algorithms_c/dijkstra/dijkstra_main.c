@@ -12,6 +12,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "stack.h"
+#include "heap.h"
+#include "graph.h"
 #include "dijkstra.h"
 
 /** 

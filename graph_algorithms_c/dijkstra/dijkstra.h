@@ -12,7 +12,6 @@
 #ifndef DIJKSTRA_H  
 #define DIJKSTRA_H
 
-#include "heap.h"
 #include "graph.h"
 
 /**

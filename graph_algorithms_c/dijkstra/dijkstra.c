@@ -13,6 +13,9 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include "stack.h"
+#include "heap.h"
+#include "graph.h"
 #include "dijkstra.h"
 
 static int *vt_ptr(adj_lst_t *a, void *vts, int i);

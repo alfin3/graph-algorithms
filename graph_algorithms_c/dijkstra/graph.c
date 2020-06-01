@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include "stack.h"
 #include "graph.h"
 
 static int *u_ptr(graph_t *g, int i);
