@@ -2,8 +2,8 @@
    bfs.c
 
    Functions for running the BFS algorithm. 
-
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
