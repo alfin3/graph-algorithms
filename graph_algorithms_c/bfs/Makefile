@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -I.
 OBJ = bfs_main.o bfs.o graph.o queue.o stack.o
 
-dijkstra : $(OBJ)
+bfs : $(OBJ)
 	$(CC) -o bfs $(OBJ)
 
 bfs_main.o : bfs.h graph.h stack.h
