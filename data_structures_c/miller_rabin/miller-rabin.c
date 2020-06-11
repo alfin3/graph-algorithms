@@ -56,18 +56,18 @@ static bool composite(uint64_t n, int num_iter){
   assert(n > 2);
   uint64_t rand_max_64 = RAND_MAX;
   uint64_t a;
-  uint64_t r;
+  uint64_t upper;
   srandom (time (0)); //sec resolution
   for (int i = 0; i < num_iter; i++){
     if (n - 1 <= 2 + rand_max_64){
-      r = n - 2; // n - 3 + 1
-      a = 2 + random_range(r);
+      upper = n - 2; // n - 3 + 1
+      a = 2 + random_range(upper);
     }else{
       //need two calls to the generator
-      r = rand_max_64 + 1;
-      a = 2 + random_range(r);
-      r = n - 2 - rand_max_64;
-      a += random_range(r);
+      upper = rand_max_64 + 1;
+      a = 2 + random_range(upper);
+      upper = n - 2 - rand_max_64;
+      a += random_range(upper);
     }
     if (witness(a, n)){
       return true;
@@ -120,7 +120,7 @@ static void represent(uint64_t n, int *t, uint64_t *u){
 */
 static uint64_t rep_sq_pow_mod(uint64_t a, uint64_t m, uint64_t n){
   //"no overflow" guarantee
-  assert(a <= pow_of_two(32) - 1);
+  assert(a <= pow_of_two(32) - 2);
   assert(n <= pow_of_two(32) - 1);
   //initial mods
   uint64_t r = 1; //1 mod n
@@ -145,18 +145,18 @@ static uint64_t random_range(uint64_t n){
   uint64_t rand_max_64 = RAND_MAX;
   uint64_t cut;
   uint64_t rand_num;
-  uint64_t ret;
+  uint64_t r;
   if (rand_max_64 % n == n - 1){
-    ret =  random() % n;
+    r =  random() % n;
   }else{
     cut = (rand_max_64 % n) + 1;
     rand_num = random();
     while(rand_num > rand_max_64 - cut){
       rand_num = random();
     }
-    ret = rand_num % n;
+    r = rand_num % n;
   }
-  return ret;
+  return r;
 }
 
 /**
