@@ -115,8 +115,9 @@ static void represent(uint64_t n, int *t, uint64_t *u){
 
 /**
    Computes mod n of the mth power in O(logm) time, based on the 
-   binary representation of m and modular arithmetic :
-   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then a1 a2 ≡ b1 b2 (mod n).
+   binary representation of m and the following relations :
+   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
+   a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
 */
 static uint64_t rep_sq_pow_mod(uint64_t a, uint64_t m, uint64_t n){
   //"no overflow" guarantee
