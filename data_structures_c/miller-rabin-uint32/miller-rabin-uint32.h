@@ -1,5 +1,5 @@
 /**
-   miller-rabin.h
+   miller-rabin-uint32.h
 
    Declarations of accessible functions for randomized primality testing 
    for hashing applications.
@@ -14,15 +14,15 @@
    processes.
 */
 
-#ifndef MILLER_RABIN_H  
-#define MILLER_RABIN_H
+#ifndef MILLER_RABIN_UINT32_H  
+#define MILLER_RABIN_UINT32_H
 
 #include <stdint.h>
 #include <stdbool.h>
 
 /**
-   
+   Runs a randomized primality test.
 */
-bool miller_rabin_prime(uint64_t n);
+bool miller_rabin_uint32(uint32_t n);
 
 #endif

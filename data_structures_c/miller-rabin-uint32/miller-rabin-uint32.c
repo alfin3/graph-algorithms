@@ -1,5 +1,5 @@
 /**
-   miller-rabin.c
+   miller-rabin-uint32.c
 
    Struct declarations and declarations of accessible functions for 
    randomized primality testing for hashing applications.
@@ -11,7 +11,7 @@
    
    The implementation provides a "no overflow" guarantee given a number of
    type uint32_t, and preserves the generator-provided uniformity in random 
-   processes.
+   processes. 
 */
 
 #include <stdio.h>
@@ -30,9 +30,9 @@ static uint64_t random_range(uint64_t n);
 static uint64_t pow_of_two(int i);
 
 /**
-   Runs a randomized primality test, with a "no overflow" guarantee.
+   Runs a randomized primality test.
 */
-bool miller_rabin_prime(uint32_t n){
+bool miller_rabin_uint32(uint32_t n){
   int num_iter = 100;
   uint64_t num = n; //<= 2^32 - 1 within 64 bits
   if (num == 2){
