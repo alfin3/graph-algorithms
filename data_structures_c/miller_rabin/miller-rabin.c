@@ -8,34 +8,38 @@
    Please note that "the GNU C Library does not provide a cryptographic 
    random number generator"
    https://www.gnu.org/software/libc/manual/html_node/Unpredictable-Bytes.html
-
-   TODO
-   1) make a function for generating a with generator-provided 
-   uniformity and full range 
-   2) to make sure that no overflow can occur keep a and n at 
-   <= 2^32 - 1 within a 64 bit cast, because (2^32 - 2)^2 < 2^64 - 1, 
-   thus no overflow in product prior to mod n in rep_sq_pow_mod.
+   
+   The implementation provides a "no overflow" guarantee given a number of
+   type uint32_t, and preserves the generator-provided uniformity in random 
+   processes.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
 
-static bool composite(uint64_t n, uint8_t num_iter);
+static bool composite(uint64_t n, int num_iter);
 static bool witness(uint64_t a, uint64_t n);
-static void represent(uint64_t n, unsigned int *t, uint64_t *u);
-static uint64_t rep_sq_pow_mod(uint64_t b, uint64_t n, uint64_t m);
+static void represent(uint64_t n, int *t, uint64_t *u);
+static uint64_t rep_sq_pow_mod(uint64_t a, uint64_t m, uint64_t n);
+static uint64_t random_range(uint64_t n);
+static uint64_t pow_of_two(int i);
 
-bool miller_rabin_prime(uint64_t n){
+/**
+   Runs a randomized primality test, with a "no overflow" guarantee.
+*/
+bool miller_rabin_prime(uint32_t n){
   int num_iter = 100;
-  if (n == 2){
+  uint64_t num = n; //<= 2^32 - 1 within 64 bits
+  if (num == 2){
     return true;
-  }else if (n == 1 || !(n % 2)){
+  }else if (num == 1 || !(num % 2)){
     return false;
-  }else if (composite(n, num_iter)){
+  }else if (composite(num, num_iter)){
     return false;
   }else{
     return true;
@@ -44,18 +48,26 @@ bool miller_rabin_prime(uint64_t n){
 
 /**
    Runs a randomized composite test on n with num_iter random bases. 
-   Returns true, if a witness is detected. If after num_iter rounds 
-   no witness is detected, returns false.
+   Returns true, if a witness is detected. If after num_iter rounds no 
+   witness is detected, returns false.
 */
-static bool composite(uint64_t n, uint8_t num_iter){
+static bool composite(uint64_t n, int num_iter){
+  assert(RAND_MAX == 2147483647);
+  assert(n > 2);
+  uint64_t rand_max_64 = RAND_MAX;
   uint64_t a;
+  uint64_t r;
   srandom (time (0)); //sec resolution
   for (int i = 0; i < num_iter; i++){
-    //2 <= a <= min(2^31 + 2, n - 1), within 64 bits
-    if (n - 1 > (uint64_t)RAND_MAX + 2){ 
-      a = 2 + (uint64_t)random(); //uniform, but range problem
+    if (n - 1 <= 2 + rand_max_64){
+      r = n - 2; // n - 3 + 1
+      a = 2 + random_range(r);
     }else{
-      a = 2 + (uint64_t)random() % (n - 2); //currently nonuniform
+      //need two calls to the generator
+      r = rand_max_64 + 1;
+      a = 2 + random_range(r);
+      r = n - 2 - rand_max_64;
+      a += random_range(r);
     }
     if (witness(a, n)){
       return true;
@@ -65,11 +77,11 @@ static bool composite(uint64_t n, uint8_t num_iter){
 }
 
 /**
-   Determines if n is composite and a is its witness, otherwise n is 
-   likely a prime.
+   Determines if n is composite and a is its witness, otherwise n is likely 
+   a prime.
 */
 static bool witness(uint64_t a, uint64_t n){
-  unsigned int t;
+  int t;
   uint64_t u;
   uint64_t x[2];
   represent(n - 1, &t, &u);
@@ -90,7 +102,7 @@ static bool witness(uint64_t a, uint64_t n){
 /**
    Represents n-1 as u*2^t for repetitive squaring in nontrivial root tests.
 */
-static void represent(uint64_t n, unsigned int *t, uint64_t *u){
+static void represent(uint64_t n, int *t, uint64_t *u){
   int c = 0;
   uint64_t shift_n = n;
   while(shift_n){
@@ -102,21 +114,56 @@ static void represent(uint64_t n, unsigned int *t, uint64_t *u){
 }
 
 /**
-   Computes mod m of the nth power in O(logn) time, based on the 
-   binary representation of n and modular arithmetic :
-   if a1 ≡ b1 (mod m) and a2 ≡ b2 (mod m) then a1 a2 ≡ b1 b2 (mod m).
- */
-static uint64_t rep_sq_pow_mod(uint64_t b, uint64_t n, uint64_t m){
-  // initial mods
-  uint64_t a = 1; //1 mod m
-  b = b % m;
-  // mods of products
-  while (n){
-    if (n & 1){
-      a = (a * b) % m; //update for each set bit
+   Computes mod n of the mth power in O(logm) time, based on the 
+   binary representation of m and modular arithmetic :
+   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then a1 a2 ≡ b1 b2 (mod n).
+*/
+static uint64_t rep_sq_pow_mod(uint64_t a, uint64_t m, uint64_t n){
+  //"no overflow" guarantee
+  assert(a <= pow_of_two(32) - 1);
+  assert(n <= pow_of_two(32) - 1);
+  //initial mods
+  uint64_t r = 1; //1 mod n
+  a = a % n;
+  //mods of products
+  while (m){
+    if (m & 1){
+      r = (r * a) % n; //update for each set bit
     }
-    b = (b * b) % m; //repetitive squaring between updates
-    n >>= 1;
+    a = (a * a) % n; //repetitive squaring between updates
+    m >>= 1;
   }
-  return a;
+  return r;
 }
+
+/**
+   Returns a uniformly random uint64_t in [0 , n),where 0 < n <= RAND_MAX + 1.
+*/
+static uint64_t random_range(uint64_t n){
+  assert(RAND_MAX == 2147483647);
+  assert(0 < n);
+  uint64_t rand_max_64 = RAND_MAX;
+  uint64_t cut;
+  uint64_t rand_num;
+  uint64_t ret;
+  if (rand_max_64 % n == n - 1){
+    ret =  random() % n;
+  }else{
+    cut = (rand_max_64 % n) + 1;
+    rand_num = random();
+    while(rand_num > rand_max_64 - cut){
+      rand_num = random();
+    }
+    ret = rand_num % n;
+  }
+  return ret;
+}
+
+/**
+   Returns the ith power of 2, where 0 <= i <= 63.
+*/
+static uint64_t pow_of_two(int i){
+  assert(0 <= i && i <= 63);
+  uint64_t r = 1;
+  return r << i;
+} 

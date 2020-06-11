@@ -1,5 +1,16 @@
 /**
    miller-rabin-main.c
+
+   Examples of randomized primality testing for hashing applications.
+
+   See man random for additional information on random number generation. 
+   Please note that "the GNU C Library does not provide a cryptographic 
+   random number generator"
+   https://www.gnu.org/software/libc/manual/html_node/Unpredictable-Bytes.html
+   
+   The implementation provides a "no overflow" guarantee given a number of
+   type uint32_t, and preserves the generator-provided uniformity in random 
+   processes.
 */
 
 #include <stdio.h>
@@ -17,14 +28,25 @@ int main(){
 			     75361, 101101, 115921, 126217, 162401,
 			     172081, 188461, 252601, 278545, 294409,
 			     314821, 334153, 340561, 399001, 410041};
-  bool result;
+  bool result = true;
+  printf("TEST PRIMES: ");
   for (int i = 0; i < 18; i++){
-    result = miller_rabin_prime(primes[i]);
-    printf("prime result: %d\n", result);
+    result *= miller_rabin_prime(primes[i]);
   }
+  if (result){
+    printf("SUCCESS\n");
+  }else{
+    printf("FAILURE\n");
+  }
+  printf("TEST CARMICHAEL NUMBERS: ");
+  result = false;
   for (int i = 0; i < 30; i++){
-    result = miller_rabin_prime(carmichael_nums[i]);
-    printf("carmichael result: %d\n", result);
+    result += miller_rabin_prime(carmichael_nums[i]);
+  }
+  if (!result){
+    printf("SUCCESS\n");
+  }else{
+    printf("FAILURE\n");
   }
   return 0;
 }
