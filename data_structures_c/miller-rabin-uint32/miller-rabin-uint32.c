@@ -52,8 +52,8 @@ bool miller_rabin_uint32(uint32_t n){
    witness is detected, returns false.
 */
 static bool composite(uint64_t n, int num_iter){
+  assert(n & 1 && n > 2);
   assert(RAND_MAX == 2147483647);
-  assert(n > 2);
   uint64_t rand_max_64 = RAND_MAX;
   uint64_t a;
   uint64_t upper;
@@ -85,8 +85,9 @@ static bool witness(uint64_t a, uint64_t n){
   uint64_t u;
   uint64_t x[2];
   represent(n - 1, &t, &u);
+  assert(t > 0); //n - 1 is even and >= 2
   x[0] = rep_sq_pow_mod(a, u, n);
-  for (int i = 1; i < t + 1; i++){
+  for (int i = 0; i < t; i++){
     x[1] = rep_sq_pow_mod(x[0], 2, n);
     //nontrivial root => not prime => composite
     if (x[1] == 1 && !(x[0] == 1 || x[0] == n - 1)){

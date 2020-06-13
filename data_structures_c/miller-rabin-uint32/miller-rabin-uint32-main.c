@@ -67,7 +67,7 @@ int main(){;
 			     314821, 334153, 340561, 399001, 410041};
   printf("Test primes: ");
   run_true_test(primes, 30);
-  printf("Test non-prime numbers: ");
+  printf("Test non-primes: ");
   run_false_test(non_primes, 30);
   printf("Test Carmichael numbers: ");
   run_false_test(carmichael_nums, 30);
