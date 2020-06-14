@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/13/2020
+   Update: 6/14/2020
 */
 
 #include <stdio.h>
@@ -26,7 +26,7 @@ void run_random_range_uint32_test(){
   int result = 1;
   uint32_t rand_num;
   uint32_t upper = 1;
-  printf("Run random_range_uint32 test: n = %u --> ", upper);
+  printf("Run random_range_uint32 test, n = %u --> ", upper);
   srandom (time (0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_range_uint32(upper);
@@ -35,7 +35,7 @@ void run_random_range_uint32_test(){
   print_test_result(result);
   int id_count[2] = {0, 0};
   upper = 2;
-  printf("Run random_range_uint32 test: n = %u --> ", upper);
+  printf("Run random_range_uint32 test, n = %u --> ", upper);
   srandom (time (0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_range_uint32(upper);
@@ -64,7 +64,7 @@ void run_pow_mod_uint32_test(){
   uint32_t rand_n;
   uint64_t r;
   uint64_t r_wo_pow;
-  printf("Run pow_mod_uint32 random test: --> ");
+  printf("Run pow_mod_uint32 random test --> ");
   srandom (time (0));
   for (int i = 0; i < num_trials; i++){
     rand_a = random_range_uint32(upper_a);
@@ -79,7 +79,7 @@ void run_pow_mod_uint32_test(){
     result *= (r ==  r_wo_pow);
   }
   print_test_result(result);
-  printf("Run pow_mod_uint32 corner cases test: --> ");
+  printf("Run pow_mod_uint32 corner cases test --> ");
   result = 1;
   result *= (pow_mod_uint32(0, 0, 1) == 0);
   result *= (pow_mod_uint32(2, 0, 1) == 0);
@@ -108,7 +108,7 @@ void run_represent_uint64_test(){
 		      33, 35, 39, 45, 49,
 		      103999, 104001, 104005, 104023, 104025};
   uint64_t num;
-  printf("Run represent_uint64 primes test: --> ");
+  printf("Run represent_uint64 primes test --> ");
   for (int i = 0; i < arr_len; i++){
     represent_uint64(primes[i], &k, &u);
     if (primes[i] == 2){
@@ -119,14 +119,14 @@ void run_represent_uint64_test(){
   }
   print_test_result(result);
   result = 1;
-  printf("Run represent_uint32 odds test: --> ");
+  printf("Run represent_uint64 odds test --> ");
   for (int i = 0; i < arr_len; i++){
     represent_uint64(odds[i], &k, &u);
     result *= (k == 0 && u == odds[i]);
   }
   print_test_result(result);
   result = 1;
-  printf("Run represent_uint32 odds product test: --> ");
+  printf("Run represent_uint64 odds * 2^k test --> ");
   for (int i = 0; i < arr_len; i++){
     for (int j = 0; j < upper_k; j++){
       num = pow_two_uint64(j) * odds[i];
@@ -136,7 +136,7 @@ void run_represent_uint64_test(){
   }
   print_test_result(result);
   result = 1;
-  printf("Run represent_uint32 corner cases test: --> ");
+  printf("Run represent_uint64 corner cases test --> ");
   represent_uint64(0, &k, &u);
   result *= (k == 64, u == 0);
   represent_uint64(1, &k, &u);
@@ -155,7 +155,7 @@ void run_pow_two_uint64_test(){
     result *= (prod == pow_two_uint64(i));
     prod *= 2;
   }
-  printf("Run pow_two_uint64 test: --> ");
+  printf("Run pow_two_uint64 test --> ");
   print_test_result(result);
 }
 
