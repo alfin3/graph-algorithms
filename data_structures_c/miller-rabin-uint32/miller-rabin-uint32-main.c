@@ -22,16 +22,14 @@
 /**
    Run a randomized primality tests on subsets of numbers.
 */
+void print_test_result(int result);
+
 void run_true_test(uint32_t arr[], int arr_size){
   bool result = true;
   for (int i = 0; i < arr_size; i++){
     result *= miller_rabin_uint32(arr[i]);
   }
-  if (result){
-    printf("SUCCESS\n");
-  }else{
-    printf("FAILURE\n");
-  }
+  print_test_result(result);
 }
 
 void run_false_test(uint32_t arr[], int arr_size){
@@ -39,7 +37,11 @@ void run_false_test(uint32_t arr[], int arr_size){
   for (int i = 0; i < arr_size; i++){
     result += miller_rabin_uint32(arr[i]);
   }
-  if (!result){
+  print_test_result(!result);
+}
+
+void print_test_result(int result){
+  if (result){
     printf("SUCCESS\n");
   }else{
     printf("FAILURE\n");
