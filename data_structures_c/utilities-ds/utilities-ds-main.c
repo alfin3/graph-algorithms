@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/14/2020
+   Update: 6/14/2020, 5:36pm
 */
 
 #include <stdio.h>
@@ -90,6 +90,28 @@ void run_pow_mod_uint32_test(){
   print_test_result(result);
 }
 
+/**
+   Tests mem_mod_uint32. A little-endian machine is assumed for test purposes.
+*/
+void run_mem_mod_uint32_test(){
+  int num_trials = 1000000;
+  int result;
+  int size;
+  uint32_t upper_num = (uint32_t)(pow_two_uint64(32) - 1);
+  uint32_t upper_n = (uint32_t)(pow_two_uint64(32) - 1);
+  uint32_t rand_num;
+  uint32_t rand_n;
+  size = 4;
+  result = 1;
+  printf("Run mem_mod_uint32 in a random test, size = %d bytes  --> ", size);
+  for (int i = 0; i < num_trials; i++){
+    rand_num = random_range_uint32(upper_num);
+    rand_n = random_range_uint32(upper_n);
+    result *= (rand_num % rand_n == mem_mod_uint32(&rand_num, size, rand_n));
+  }
+  print_test_result(result);
+}
+
 /** Binary representation */
 
 /**
@@ -170,6 +192,7 @@ void print_test_result(int result){
 int main(){;
   run_random_range_uint32_test();
   run_pow_mod_uint32_test();
+  run_mem_mod_uint32_test();
   run_represent_uint64_test();
   run_pow_two_uint64_test();
   return 0;
