@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/14/2020, 5:36pm
+   Update: 6/14/2020, 10:00pm
 */
 
 #include <stdio.h>

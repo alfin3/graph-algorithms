@@ -4,7 +4,7 @@
    Declarations of accessible utility functions across the areas of 
    randomness, modular arithmetic, and binary representation.
 
-   Update: 6/14/2020, 5:36pm
+   Update: 6/14/2020, 10:00pm
 */
 
 #ifndef UTILITIES_DS_H  
@@ -18,7 +18,7 @@
 uint32_t random_range_uint32(uint32_t n);
 
 /**
-   Computes mod n of the kth power in O(logk) time.
+   Computes mod n of the kth power.
 */
 uint32_t pow_mod_uint32(uint32_t a, uint32_t k, uint32_t n);
 
