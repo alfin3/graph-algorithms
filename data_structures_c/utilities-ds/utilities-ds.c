@@ -14,9 +14,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-uint32_t random_range_uint32(uint32_t n);
-uint32_t pow_mod_uint32(uint32_t a, uint32_t k, uint32_t n);
-void represent_uint64(uint64_t n, int *k, uint64_t *u);
 uint64_t pow_two_uint64(int k);
 
 /** Randomness */
@@ -109,11 +106,12 @@ uint32_t mem_mod_uint32(void *s, int size, uint32_t n){
   assert(n > 0);
   if(n == 1){return 0;}
   uint8_t *ptr;
+  //"no overflow" guarantee
   uint64_t n64 = n;
   uint64_t byte_val;
   uint64_t pow_two = 1; //1 mod n
-  uint64_t prod = 1;
-  uint64_t ret = 0; 
+  uint64_t prod = 1; //1 mod n
+  uint64_t ret = 0; //0 mod n
   uint64_t pow_two_inc = pow_two_uint64(8) % n64;
   for (int i = 0; i < size; i++){
     ptr = (uint8_t *)s + i;
