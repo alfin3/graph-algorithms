@@ -68,8 +68,8 @@ static uint32_t random_range_helper(uint32_t n){
 /** Modular arithmetic */
 
 /**
-   Computes mod n of the kth power in O(logk) time and O(1) space, 
-   based on the binary representation of k and inductively 
+   Computes mod n of the kth power in O(logk) time and O(1) space
+   overhead, based on the binary representation of k and inductively 
    applying the following relations :
    if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
    a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
@@ -98,8 +98,8 @@ uint32_t pow_mod_uint32(uint32_t a, uint32_t k, uint32_t n){
 
 /**
    Computes mod n of a memory block in O(block size) time and O(1) 
-   space, treating each byte of the block in the little-endian 
-   order and inductively applying the following relations:
+   space overhead, treating each byte of the block in the little-
+   endian order and inductively applying the following relations:
    if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
    a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
    Does not require a little-endian machine.
