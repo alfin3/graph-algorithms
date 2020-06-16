@@ -117,8 +117,8 @@ void run_mem_mod_uint32_test(){
     size = (uint32_t)pow_two_uint64(i); //KB, MB, GB
     printf("   Memory block of %u bytes \n", size);
     mem_block = calloc(size, 1);
-    mem_block[size - 1] = (uint8_t)pow_two_uint64(7);
     assert(mem_block != NULL);
+    mem_block[size - 1] = (uint8_t)pow_two_uint64(7);
     t = clock();
     mod_n = mem_mod_uint32(mem_block, size, rand_n);
     t = clock() - t;
