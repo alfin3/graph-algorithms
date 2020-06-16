@@ -64,14 +64,12 @@ static bool composite(uint32_t n, int num_iter){
 */
 static bool witness(uint32_t a, uint32_t n){
   int t;
-  uint32_t u;
   uint32_t x[2];
-  uint64_t u64;
+  uint64_t u;
   uint64_t n64 = n;
-  represent_uint64(n64 - 1, &t, &u64);
+  represent_uint64(n64 - 1, &t, &u);
   assert(t > 0); //n - 1 is even and >= 2
-  assert(u64 < pow_two_uint64(32));
-  u = u64;
+  assert(u < pow_two_uint64(32));
   x[0] = pow_mod_uint32(a, u, n);
   for (int i = 0; i < t; i++){
     x[1] = pow_mod_uint32(x[0], 2, n);
