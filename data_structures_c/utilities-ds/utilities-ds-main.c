@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/14/2020, 10:00pm
+   Update: 6/16/2020, 12:00pm
 */
 
 #include <stdio.h>
@@ -70,7 +70,7 @@ void run_pow_mod_uint32_test(){
     rand_a = random_range_uint32(upper_a);
     rand_k = random_range_uint32(upper_k);
     rand_n = random_range_uint32(upper_n);
-    r = pow_mod_uint32(rand_a, rand_k, rand_n);
+    r = pow_mod_uint32(rand_a, rand_k, rand_n); //to uint64_t
     r_wo_pow = 1;
     for (uint32_t i = 0; i < rand_k; i++){
       r_wo_pow *= (uint64_t)rand_a;
@@ -95,21 +95,39 @@ void run_pow_mod_uint32_test(){
 */
 void run_mem_mod_uint32_test(){
   int num_trials = 1000000;
-  int result;
-  int size;
-  uint32_t upper_num = (uint32_t)(pow_two_uint64(32) - 1);
-  uint32_t upper_n = (uint32_t)(pow_two_uint64(32) - 1);
+  int result = 1;
+  uint32_t size;
+  uint32_t upper = (uint32_t)(pow_two_uint64(32) - 1);
   uint32_t rand_num;
   uint32_t rand_n;
+  uint32_t mod_n;
+  uint8_t *mem_block;
+  clock_t t;
   size = 4;
-  result = 1;
-  printf("Run mem_mod_uint32 in a random test, size = %d bytes  --> ", size);
+  printf("Run mem_mod_uint32 in a random test, size = %u bytes  --> ", size);
   for (int i = 0; i < num_trials; i++){
-    rand_num = random_range_uint32(upper_num);
-    rand_n = random_range_uint32(upper_n);
+    rand_num = random_range_uint32(upper);
+    rand_n = random_range_uint32(upper);
     result *= (rand_num % rand_n == mem_mod_uint32(&rand_num, size, rand_n));
   }
   print_test_result(result);
+  printf("Run mem_mod_uint32 on large memory blocks \n");
+  rand_n = random_range_uint32(upper);
+  for (int i = 10; i <= 30; i += 10){
+    size = (uint32_t)pow_two_uint64(i); //KB, MB, GB
+    printf("   Memory block of %u bytes \n", size);
+    mem_block = calloc(size, 1);
+    mem_block[size - 1] = (uint8_t)pow_two_uint64(7);
+    assert(mem_block != NULL);
+    t = clock();
+    mod_n = mem_mod_uint32(mem_block, size, rand_n);
+    t = clock() - t;
+    printf("   Time: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
+    result = (mod_n == pow_mod_uint32(2, pow_two_uint64(i) * 8 - 1, rand_n));
+    printf("   Correctness: block bits = %u (mod %u)  --> ", mod_n, rand_n);
+    print_test_result(result);
+    free(mem_block);
+  } 
 }
 
 /** Binary representation */
