@@ -36,7 +36,7 @@ void run_random_range_uint32_test(){
   int id_count[2] = {0, 0};
   upper = 2;
   printf("Run random_range_uint32 test, n = %u --> ", upper);
-  srandom (time (0));
+  srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_range_uint32(upper);
     if (rand_num == 0){id_count[0]++;};
@@ -57,26 +57,26 @@ void run_pow_mod_uint32_test(){
   int num_trials = 1000000;
   int result = 1;
   uint32_t upper_a = 16;
-  uint32_t upper_k = 17;
   uint32_t upper_n = (uint32_t)(pow_two_uint64(32) - 1);
+  uint32_t upper_k = 17;
   uint32_t rand_a;
-  uint32_t rand_k; //for uint64_t parameter
   uint32_t rand_n;
+  uint64_t rand_k; 
   uint64_t r;
   uint64_t r_wo_pow;
   printf("Run pow_mod_uint32 random test --> ");
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_a = random_range_uint32(upper_a);
-    rand_k = random_range_uint32(upper_k);
     rand_n = random_range_uint32(upper_n);
-    r = pow_mod_uint32(rand_a, rand_k, rand_n); //to uint64_t
+    rand_k = (uint64_t)random_range_uint32(upper_k);
+    r = (uint64_t)pow_mod_uint32(rand_a, rand_k, rand_n);
     r_wo_pow = 1;
-    for (uint32_t i = 0; i < rand_k; i++){
+    for (uint64_t i = 0; i < rand_k; i++){
       r_wo_pow *= (uint64_t)rand_a;
     }
     r_wo_pow = r_wo_pow % (uint64_t)rand_n;
-    result *= (r ==  r_wo_pow);
+    result *= (r == r_wo_pow);
   }
   print_test_result(result);
   printf("Run pow_mod_uint32 corner cases test --> ");
@@ -101,10 +101,10 @@ void run_mem_mod_uint32_test(){
   uint32_t rand_num;
   uint32_t rand_n;
   uint32_t mod_n;
-  uint32_t size; //for uint64_t parameter
+  uint64_t size;
   clock_t t;
   size = 4;
-  printf("Run mem_mod_uint32 in a random test, size = %u bytes  --> ", size);
+  printf("Run mem_mod_uint32 in a random test, size = %lu bytes  --> ", size);
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_range_uint32(upper);
@@ -116,8 +116,8 @@ void run_mem_mod_uint32_test(){
   srandom(time(0));
   rand_n = random_range_uint32(upper);
   for (int i = 10; i <= 30; i += 10){
-    size = pow_two_uint64(i); //KB, MB, GB, to uint32_t
-    printf("   Memory block of %u bytes \n", size);
+    size = pow_two_uint64(i); //KB, MB, GB
+    printf("   Memory block of %lu bytes \n", size);
     mem_block = calloc(size, 1);
     assert(mem_block != NULL);
     mem_block[size - 1] = (uint8_t)pow_two_uint64(7);
@@ -217,4 +217,3 @@ int main(){;
   run_pow_two_uint64_test();
   return 0;
 }
-
