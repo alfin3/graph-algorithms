@@ -116,7 +116,7 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n){
   uint64_t pow_two_inc = pow_two_uint64(8) % n64;
   for (uint64_t i = 0; i < size; i++){
     ptr = (uint8_t *)s + i;
-    byte_val = *ptr; //uint8_t to uint64_t
+    byte_val = (uint64_t)(*ptr);
     prod = (pow_two * (byte_val % n64)) % n64;
     ret = (ret + prod) % n64;
     pow_two = (pow_two * pow_two_inc) % n64;

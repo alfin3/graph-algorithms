@@ -15,7 +15,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <time.h>
 #include <assert.h>
 #include <stdint.h>
@@ -50,7 +49,7 @@ static bool composite(uint32_t n, int num_iter){
   assert(n & 1 && n > 2);
   uint32_t a;
   uint32_t upper = n - 2; //random in [2, n - 1] 
-  srandom (time (0)); //sec resolution
+  srandom(time(0)); //sec resolution
   for (int i = 0; i < num_iter; i++){
     a = 2 + random_range_uint32(upper);
     if (witness(a, n)){return true;}
