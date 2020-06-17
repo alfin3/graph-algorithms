@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/16/2020 12:00pm
+   Update: 6/16/2020 9:00pm
 */
 
 #include <stdio.h>
@@ -73,22 +73,22 @@ static uint32_t random_range_helper(uint32_t n){
    applying the following relation :
    if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then a1 a2 ≡ b1 b2 (mod n).
 */
-uint32_t pow_mod_uint32(uint32_t a, uintmax_t k, uint32_t n){
+uint32_t pow_mod_uint32(uint32_t a, uint64_t k, uint32_t n){
   assert(n > 0);
   if(n == 1){return 0;}
   if(!k){return 1;};
   //"no overflow" guarantee
-  uint64_t new_a = a;
-  uint64_t new_n = n;
+  uint64_t a64 = a;
+  uint64_t n64 = n;
   //initial mods
   uint64_t ret = 1;
-  new_a = new_a % new_n;
+  a64 = a64 % n64;
   //mods of products
   while (k){
     if (k & 1){
-      ret = (ret * new_a) % new_n; //update for each set bit
+      ret = (ret * a64) % n64; //update for each set bit
     }
-    new_a = (new_a * new_a) % new_n; //repetitive squaring between updates
+    a64 = (a64 * a64) % n64; //repetitive squaring between updates
     k >>= 1;
   }
   assert(ret < pow_two_uint64(32));
@@ -103,7 +103,7 @@ uint32_t pow_mod_uint32(uint32_t a, uintmax_t k, uint32_t n){
    a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
    Does not require a little-endian machine.
 */
-uint32_t mem_mod_uint32(void *s, uintmax_t size, uint32_t n){
+uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n){
   assert(n > 0);
   if(n == 1){return 0;}
   uint8_t *ptr;
@@ -114,7 +114,7 @@ uint32_t mem_mod_uint32(void *s, uintmax_t size, uint32_t n){
   uint64_t prod = 1; //1 mod n
   uint64_t ret = 0; //0 mod n
   uint64_t pow_two_inc = pow_two_uint64(8) % n64;
-  for (uintmax_t i = 0; i < size; i++){
+  for (uint64_t i = 0; i < size; i++){
     ptr = (uint8_t *)s + i;
     byte_val = *ptr; //uint8_t to uint64_t
     prod = (pow_two * (byte_val % n64)) % n64;

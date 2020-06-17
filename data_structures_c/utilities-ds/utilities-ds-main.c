@@ -27,7 +27,7 @@ void run_random_range_uint32_test(){
   uint32_t rand_num;
   uint32_t upper = 1;
   printf("Run random_range_uint32 test, n = %u --> ", upper);
-  srandom (time (0));
+  srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_range_uint32(upper);
     result *= (rand_num == 0);
@@ -60,12 +60,12 @@ void run_pow_mod_uint32_test(){
   uint32_t upper_k = 17;
   uint32_t upper_n = (uint32_t)(pow_two_uint64(32) - 1);
   uint32_t rand_a;
-  uint32_t rand_k;
+  uint32_t rand_k; //for uint64_t parameter
   uint32_t rand_n;
   uint64_t r;
   uint64_t r_wo_pow;
   printf("Run pow_mod_uint32 random test --> ");
-  srandom (time (0));
+  srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_a = random_range_uint32(upper_a);
     rand_k = random_range_uint32(upper_k);
@@ -96,15 +96,16 @@ void run_pow_mod_uint32_test(){
 void run_mem_mod_uint32_test(){
   int num_trials = 1000000;
   int result = 1;
-  uint32_t size;
+  uint8_t *mem_block;
   uint32_t upper = (uint32_t)(pow_two_uint64(32) - 1);
   uint32_t rand_num;
   uint32_t rand_n;
   uint32_t mod_n;
-  uint8_t *mem_block;
+  uint32_t size; //for uint64_t parameter
   clock_t t;
   size = 4;
   printf("Run mem_mod_uint32 in a random test, size = %u bytes  --> ", size);
+  srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_range_uint32(upper);
     rand_n = random_range_uint32(upper);
@@ -112,9 +113,10 @@ void run_mem_mod_uint32_test(){
   }
   print_test_result(result);
   printf("Run mem_mod_uint32 on large memory blocks \n");
+  srandom(time(0));
   rand_n = random_range_uint32(upper);
   for (int i = 10; i <= 30; i += 10){
-    size = (uint32_t)pow_two_uint64(i); //KB, MB, GB
+    size = pow_two_uint64(i); //KB, MB, GB, to uint32_t
     printf("   Memory block of %u bytes \n", size);
     mem_block = calloc(size, 1);
     assert(mem_block != NULL);
