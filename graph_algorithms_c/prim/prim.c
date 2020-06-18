@@ -40,11 +40,10 @@ void prim(adj_lst_t *a,
   int h_size = 1;
   int vt_size = sizeof(int);
   int wt_size = a->wt_size;
-  int u;
-  int v;
-  void *wt = malloc(wt_size); //edge weight buffer
-  assert(wt != NULL);
-  void *uv_wt; 
+  int u, v;
+  void *wt_buf = malloc(wt_size); //single edge weight buffer
+  assert(wt_buf != NULL);
+  void *uv_wt_ptr; //edge weight pointer
   bool *in_heap = calloc(a->num_vts, sizeof(bool));
   assert(in_heap != NULL);
   bool *popped = calloc(a->num_vts, sizeof(bool)); 
@@ -58,31 +57,31 @@ void prim(adj_lst_t *a,
   in_heap[s] = true;
   prev[s] = s;
   while (h.num_elts > 0){
-    heap_pop(&h, &u, wt);
+    heap_pop(&h, &u, wt_buf); //popped edge weight in wt_buf discarded
     in_heap[u] = false;
     popped[u] = true;
     for (int i = 0; i < a->vts[u]->num_elts; i++){
       v = *vt_ptr(a, a->vts[u]->elts, i);
-      uv_wt = wt_ptr(a, a->wts[u]->elts, i);
+      uv_wt_ptr = wt_ptr(a, a->wts[u]->elts, i);
       //not popped and not in heap <=> not reached <=> infinity
       if (!popped[v] && !in_heap[v]){
-	memcpy(wt_ptr(a, dist, v), uv_wt, wt_size);
+	memcpy(wt_ptr(a, dist, v), uv_wt_ptr, wt_size);
 	heap_push(&h, &v, wt_ptr(a, dist, v));
 	in_heap[v] = true;
 	prev[v] = u;
       //not popped and in heap => reached => not infinity
-      }else if (!popped[v] && cmp_wt_fn(wt_ptr(a, dist, v), uv_wt) > 0){
-	memcpy(wt_ptr(a, dist, v), uv_wt, wt_size);
+      }else if (!popped[v] && cmp_wt_fn(wt_ptr(a, dist, v), uv_wt_ptr) > 0){
+	memcpy(wt_ptr(a, dist, v), uv_wt_ptr, wt_size);
 	heap_update(&h, &v, wt_ptr(a, dist, v));
 	prev[v] = u;
       }
     }
   }
   heap_free(&h);
-  free(wt);
+  free(wt_buf);
   free(in_heap);
   free(popped);
-  wt = NULL;
+  wt_buf = NULL;
   in_heap = NULL;
   popped = NULL;
 }
