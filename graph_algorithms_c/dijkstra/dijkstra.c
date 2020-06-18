@@ -39,7 +39,7 @@ void dijkstra(adj_lst_t *a,
   int vt_size = sizeof(int);
   int wt_size = a->wt_size;
   int u, v;
-  void *wt_buf = malloc(wt_size); //single edge weight buffer
+  void *wt_buf = malloc(wt_size); //single weight buffer
   assert(wt_buf != NULL);
   bool *in_heap = calloc(a->num_vts, sizeof(bool));
   assert(in_heap != NULL);
