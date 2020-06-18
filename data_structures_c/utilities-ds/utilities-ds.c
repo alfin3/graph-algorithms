@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/16/2020 9:00pm
+   Update: 6/18/2020 1:00pm
 */
 
 #include <stdio.h>
@@ -17,6 +17,25 @@
 uint64_t pow_two_uint64(int k);
 
 /** Randomness */
+/**
+   Returns a generator-uniform random uint64_t.
+*/
+uint32_t random_uint32();
+
+uint64_t random_uint64(){
+  return ((uint64_t)random_uint32() +
+	  (uint64_t)random_uint32() * pow_two_uint64(32));
+}
+
+/**
+   Returns a generator-uniform random uint32_t.
+*/
+uint32_t random_range_uint32(uint32_t n);
+
+uint32_t random_uint32(){
+  uint32_t max_uint32 = (uint32_t)(pow_two_uint64(32) - 1);
+  return random_range_uint32(max_uint32) + random_range_uint32(2);
+}
 
 /**
    Returns a generator-uniform random uint32_t in [0 , n) where 

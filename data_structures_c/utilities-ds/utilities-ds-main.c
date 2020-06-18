@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/16/2020, 12:00pm
+   Update: 6/18/2020, 1:00pm
 */
 
 #include <stdio.h>
@@ -17,6 +17,51 @@
 void print_test_result(int result);
 
 /** Randomness */
+/**
+   Tests random_uint64.
+*/
+void run_random_uint64_test(){
+  int num_trials = 10000000;
+  int id_count[2] = {0, 0};
+  int result = 1;
+  uint64_t rand_num;
+  uint64_t threshold = pow_two_uint64(63);
+  printf("Run random_uint64 test --> ");
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_num = random_uint64();
+    if (rand_num < threshold){
+      id_count[0]++;
+    }else{
+      id_count[1]++;
+    }
+  }
+  result *= (abs(id_count[0] - id_count[1]) < num_trials/1000);
+  print_test_result(result);
+}
+
+/**
+   Tests random_uint32.
+*/
+void run_random_uint32_test(){
+  int num_trials = 10000000;
+  int id_count[2] = {0, 0};
+  int result = 1;
+  uint32_t rand_num;
+  uint32_t threshold = (uint32_t)pow_two_uint64(31);
+  printf("Run random_uint32 test --> ");
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_num = random_uint32();
+    if (rand_num < threshold){
+      id_count[0]++;
+    }else{
+      id_count[1]++;
+    }
+  }
+  result *= (abs(id_count[0] - id_count[1]) < num_trials/1000);
+  print_test_result(result);
+}
 
 /**
    Tests random_range_uint32.
@@ -209,7 +254,9 @@ void print_test_result(int result){
   }
 }
 
-int main(){;
+int main(){
+  run_random_uint64_test();
+  run_random_uint32_test();
   run_random_range_uint32_test();
   run_pow_mod_uint32_test();
   run_mem_mod_uint32_test();
