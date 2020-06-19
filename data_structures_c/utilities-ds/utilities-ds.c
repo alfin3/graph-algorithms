@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/18/2020 1:00pm
+   Update: 6/19/2020 10:00am
 */
 
 #include <stdio.h>
@@ -14,14 +14,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+uint32_t random_uint32();
+uint32_t random_range_uint32(uint32_t n);
 uint64_t pow_two_uint64(int k);
 
 /** Randomness */
+
 /**
    Returns a generator-uniform random uint64_t.
 */
-uint32_t random_uint32();
-
 uint64_t random_uint64(){
   return ((uint64_t)random_uint32() +
 	  (uint64_t)random_uint32() * pow_two_uint64(32));
@@ -30,11 +31,41 @@ uint64_t random_uint64(){
 /**
    Returns a generator-uniform random uint32_t.
 */
-uint32_t random_range_uint32(uint32_t n);
-
 uint32_t random_uint32(){
-  uint32_t max_uint32 = (uint32_t)(pow_two_uint64(32) - 1);
-  return random_range_uint32(max_uint32) + random_range_uint32(2);
+  uint32_t upper = (uint32_t)(pow_two_uint64(32) - 1);
+  return random_range_uint32(upper) + random_range_uint32(2);
+}
+
+/**
+   Returns a generator-uniform random uint64_t in [0 , n) where 
+   0 < n <= 2^64 - 1.
+*/
+uint64_t random_range_uint64(uint64_t n){
+  assert(0 < n);
+  uint32_t upper;
+  uint64_t upper_max = pow_two_uint64(32) - 1;
+  uint64_t ret;
+  uint64_t high_bits;
+  uint64_t low_bits;
+  if (n <= upper_max){
+    upper = (uint32_t)n; 
+    ret = (uint64_t)random_range_uint32(upper);
+  }else{
+    high_bits = n >> 32;
+    low_bits = n - high_bits * pow_two_uint64(32);
+    //[0, (high_bits * 2^32) - 1], assume low_bits == 0
+    ret = (uint64_t)random_uint32();
+    upper = (uint32_t)high_bits;
+    ret += (uint64_t)random_range_uint32(upper) * pow_two_uint64(32);
+    if (low_bits > 0){
+      //[0, 1]
+      ret += (uint64_t)random_range_uint32(2);
+      //[0, low_bits - 1]
+      upper = (uint32_t)low_bits;
+      ret += (uint64_t)random_range_uint32(upper);
+    }
+  }
+  return ret;
 }
 
 /**
@@ -46,10 +77,10 @@ static uint32_t random_range_helper(uint32_t n);
 uint32_t random_range_uint32(uint32_t n){
   assert(RAND_MAX == 2147483647);
   assert(0 < n);
-  uint32_t rand_max = RAND_MAX;
   uint32_t upper;
+  uint32_t rand_max = RAND_MAX;
   uint32_t ret;
-  if (n - 1 <= rand_max){
+  if (n <= rand_max + 1){
     upper = n; 
     ret = random_range_helper(upper);
   }else{

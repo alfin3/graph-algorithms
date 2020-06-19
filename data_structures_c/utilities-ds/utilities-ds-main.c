@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/18/2020, 1:00pm
+   Update: 6/19/2020 10:00am
 */
 
 #include <stdio.h>
@@ -17,26 +17,24 @@
 void print_test_result(int result);
 
 /** Randomness */
+
 /**
    Tests random_uint64.
 */
 void run_random_uint64_test(){
   int num_trials = 10000000;
   int id_count[2] = {0, 0};
-  int result = 1;
+  int result;
   uint64_t rand_num;
   uint64_t threshold = pow_two_uint64(63);
   printf("Run random_uint64 test --> ");
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_uint64();
-    if (rand_num < threshold){
-      id_count[0]++;
-    }else{
-      id_count[1]++;
-    }
+    if (rand_num < threshold){id_count[0]++;}
+    if (rand_num >= threshold){id_count[1]++;}
   }
-  result *= (abs(id_count[0] - id_count[1]) < num_trials/1000);
+  result = (abs(id_count[0] - id_count[1]) < num_trials/1000);
   print_test_result(result);
 }
 
@@ -46,31 +44,92 @@ void run_random_uint64_test(){
 void run_random_uint32_test(){
   int num_trials = 10000000;
   int id_count[2] = {0, 0};
-  int result = 1;
+  int result;
   uint32_t rand_num;
   uint32_t threshold = (uint32_t)pow_two_uint64(31);
   printf("Run random_uint32 test --> ");
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_uint32();
-    if (rand_num < threshold){
-      id_count[0]++;
-    }else{
-      id_count[1]++;
-    }
+    if (rand_num < threshold){id_count[0]++;}
+    if (rand_num >= threshold){id_count[1]++;}
   }
-  result *= (abs(id_count[0] - id_count[1]) < num_trials/1000);
+  result = (abs(id_count[0] - id_count[1]) < num_trials/1000);
   print_test_result(result);
 }
 
 /**
-   Tests random_range_uint32.
+   Test random_range_uint64.
 */
+static void eq_split_uint64_test(uint64_t upper,
+				 uint64_t threshold,
+				 int num_trials,
+				 int precision);
+
+void run_random_range_uint64_test(){
+  int num_trials = 10000000;
+  int precision = 1000;
+  int result;
+  int arr_len = 9;
+  int upper_pow_two[9] = {1, 7, 15, 23, 31, 39, 47, 55, 63};
+  uint64_t rand_num;
+  uint64_t upper;
+  uint64_t threshold;
+  result = 1;
+  upper = 1;
+  printf("Run random_range_uint64 test, n = %lu --> ", upper);
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_num = random_range_uint64(upper);
+    result *= (rand_num == 0);
+  }
+  print_test_result(result);
+  for (int i = 0; i < arr_len; i++){
+    upper = pow_two_uint64(upper_pow_two[i]);
+    threshold = pow_two_uint64(upper_pow_two[i] - 1);
+    printf("Run random_range_uint64 test, n = %lu --> ", upper);
+    eq_split_uint64_test(upper, threshold, num_trials, precision);
+  }
+}
+
+static void eq_split_uint64_test(uint64_t upper,
+				 uint64_t threshold,
+				 int num_trials,
+				 int precision){
+  assert(upper > 1);
+  int id_count[2] = {0, 0};
+  int result;
+  uint64_t rand_num;
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_num = random_range_uint64(upper);
+    if (rand_num < threshold){id_count[0]++;};
+    if (rand_num >= threshold && rand_num < upper){id_count[1]++;};
+  }
+  result = (abs(id_count[0] - id_count[1]) < num_trials/precision &&
+	    id_count[0] + id_count[1] == num_trials);
+  print_test_result(result);
+}
+
+/**
+   Test random_range_uint32.
+*/
+static void eq_split_uint32_test(uint32_t upper,
+				 uint32_t threshold,
+				 int num_trials,
+				 int precision);
+
 void run_random_range_uint32_test(){
   int num_trials = 10000000;
-  int result = 1;
+  int precision = 1000;
+  int result;
+  int arr_len = 5;
+  int upper_pow_two[5] = {1, 7, 15, 23, 31};
   uint32_t rand_num;
-  uint32_t upper = 1;
+  uint32_t upper;
+  uint32_t threshold;
+  result = 1;
+  upper = 1;
   printf("Run random_range_uint32 test, n = %u --> ", upper);
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
@@ -78,17 +137,33 @@ void run_random_range_uint32_test(){
     result *= (rand_num == 0);
   }
   print_test_result(result);
+  for (int i = 0; i < arr_len; i++){
+    upper = (uint32_t)pow_two_uint64(upper_pow_two[i]);
+    threshold = (uint32_t)pow_two_uint64(upper_pow_two[i] - 1);
+    printf("Run random_range_uint32 test, n = %u --> ", upper);
+    eq_split_uint32_test(upper, threshold, num_trials, precision);
+  }
+  upper = (uint32_t)(pow_two_uint64(32) - 1);
+  threshold = (uint32_t)pow_two_uint64(31);
+  printf("Run random_range_uint64 test, n = %u --> ", upper);
+  eq_split_uint32_test(upper, threshold, num_trials, precision);
+}
+
+static void eq_split_uint32_test(uint32_t upper,
+				 uint32_t threshold,
+				 int num_trials,
+				 int precision){
+  assert(upper > 1);
   int id_count[2] = {0, 0};
-  upper = 2;
-  printf("Run random_range_uint32 test, n = %u --> ", upper);
+  int result;
+  uint32_t rand_num;
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_range_uint32(upper);
-    if (rand_num == 0){id_count[0]++;};
-    if (rand_num == 1){id_count[1]++;};   
+    if (rand_num < threshold){id_count[0]++;};
+    if (rand_num >= threshold && rand_num < upper){id_count[1]++;};
   }
-  result = (id_count[0] > 0 &&
-	    id_count[1] > 0 &&
+  result = (abs(id_count[0] - id_count[1]) < num_trials/precision &&
 	    id_count[0] + id_count[1] == num_trials);
   print_test_result(result);
 }
@@ -257,6 +332,7 @@ void print_test_result(int result){
 int main(){
   run_random_uint64_test();
   run_random_uint32_test();
+  run_random_range_uint64_test();
   run_random_range_uint32_test();
   run_pow_mod_uint32_test();
   run_mem_mod_uint32_test();
