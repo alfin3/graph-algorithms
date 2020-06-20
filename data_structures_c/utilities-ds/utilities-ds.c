@@ -16,24 +16,26 @@
 
 uint32_t random_uint32();
 uint32_t random_range_uint32(uint32_t n);
+static uint32_t random_gen_range(uint32_t n);
 uint64_t pow_two_uint64(int k);
 
 /** Randomness */
 
 /**
-   Returns a random uint64_t. Currently non-uniform.
+   Returns a generator-uniform random uint64_t.
 */
 uint64_t random_uint64(){
   return ((uint64_t)random_uint32() +
-	  (uint64_t)random_uint32() * pow_two_uint64(32));
+	  pow_two_uint64(32) * (uint64_t)random_uint32());
 }
 
 /**
-   Returns a random uint32_t. Currently non-uniform.
+   Returns a generator-uniform random uint32_t. 
 */
 uint32_t random_uint32(){
-  uint32_t upper = (uint32_t)(pow_two_uint64(32) - 1);
-  return random_range_uint32(upper) + random_range_uint32(2);
+  uint32_t upper = (uint32_t)pow_two_uint64(16);
+  return (random_gen_range(upper) +
+	  (uint32_t)pow_two_uint64(16) * random_gen_range(upper));
 }
 
 /**
@@ -72,8 +74,6 @@ uint64_t random_range_uint64(uint64_t n){
    Returns a random uint32_t in [0 , n) where 0 < n <= 2^32 - 1.
    currently non-uniform.
 */
-static uint32_t random_range_helper(uint32_t n);
-
 uint32_t random_range_uint32(uint32_t n){
   assert(RAND_MAX == 2147483647);
   assert(0 < n);
@@ -82,13 +82,13 @@ uint32_t random_range_uint32(uint32_t n){
   uint32_t ret;
   if (n <= rand_max + 1){
     upper = n; 
-    ret = random_range_helper(upper);
+    ret = random_gen_range(upper);
   }else{
     //need two calls to the generator
     upper = rand_max + 1;
-    ret = random_range_helper(upper);
+    ret = random_gen_range(upper);
     upper = n - rand_max;
-    ret += random_range_helper(upper);
+    ret += random_gen_range(upper);
   }
   return ret;
 }
@@ -97,7 +97,7 @@ uint32_t random_range_uint32(uint32_t n){
    Returns a generator-uniform random uint32_t in [0 , n) where 
    0 < n <= RAND_MAX + 1.
 */
-static uint32_t random_range_helper(uint32_t n){
+static uint32_t random_gen_range(uint32_t n){
   uint32_t rand_max = RAND_MAX;
   uint32_t cut;
   uint32_t rand_num;
