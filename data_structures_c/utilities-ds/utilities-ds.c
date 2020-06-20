@@ -60,9 +60,8 @@ uint64_t random_range_uint64(uint64_t n){
     upper = (uint32_t)high_bits;
     ret += (uint64_t)random_range_uint32(upper) * pow_two_uint64(32);
     if (low_bits > 0){
-      //[0, 1]
+      //to avoid convolution, need to flip a biased coin
       ret += (uint64_t)random_range_uint32(2);
-      //[0, low_bits - 1]
       upper = (uint32_t)low_bits;
       ret += (uint64_t)random_range_uint32(upper);
     }
@@ -84,7 +83,9 @@ uint32_t random_range_uint32(uint32_t n){
     upper = n; 
     ret = random_gen_range(upper);
   }else{
-    //need two calls to the generator
+    //to avoid convolution, need to flip a biased coin to set the 
+    //most significant bit, and based on it the other bits 
+    //with random_gen_range
     upper = rand_max + 1;
     ret = random_gen_range(upper);
     upper = n - rand_max;
