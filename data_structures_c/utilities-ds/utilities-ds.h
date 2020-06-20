@@ -13,22 +13,22 @@
 #include <stdint.h>
 
 /**
-   Returns a generator-uniform random uint64_t.
+   Returns a random uint64_t. Currently non-uniform.
 */
 uint64_t random_uint64();
 
 /**
-   Returns a generator-uniform random uint32_t.
+   Returns a random uint32_t. Currently non-uniform.
 */
 uint32_t random_uint32();
 
 /**
-   Returns a generator-uniform random uint64_t in [0 , n).
+   Returns a random uint64_t in [0 , n). Currently non-uniform.
 */
 uint64_t random_range_uint64(uint64_t n);
 
 /**
-   Returns a generator-uniform random uint32_t in [0 , n).
+   Returns a random uint32_t in [0 , n). Currently non-uniform.
 */
 uint32_t random_range_uint32(uint32_t n);
 

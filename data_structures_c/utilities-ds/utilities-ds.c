@@ -21,7 +21,7 @@ uint64_t pow_two_uint64(int k);
 /** Randomness */
 
 /**
-   Returns a generator-uniform random uint64_t.
+   Returns a random uint64_t. Currently non-uniform.
 */
 uint64_t random_uint64(){
   return ((uint64_t)random_uint32() +
@@ -29,7 +29,7 @@ uint64_t random_uint64(){
 }
 
 /**
-   Returns a generator-uniform random uint32_t.
+   Returns a random uint32_t. Currently non-uniform.
 */
 uint32_t random_uint32(){
   uint32_t upper = (uint32_t)(pow_two_uint64(32) - 1);
@@ -37,8 +37,8 @@ uint32_t random_uint32(){
 }
 
 /**
-   Returns a generator-uniform random uint64_t in [0 , n) where 
-   0 < n <= 2^64 - 1.
+   Returns a random uint64_t in [0 , n) where 0 < n <= 2^64 - 1.
+   currently non-uniform.
 */
 uint64_t random_range_uint64(uint64_t n){
   assert(0 < n);
@@ -69,8 +69,8 @@ uint64_t random_range_uint64(uint64_t n){
 }
 
 /**
-   Returns a generator-uniform random uint32_t in [0 , n) where 
-   0 < n <= 2^32 - 1.
+   Returns a random uint32_t in [0 , n) where 0 < n <= 2^32 - 1.
+   currently non-uniform.
 */
 static uint32_t random_range_helper(uint32_t n);
 
