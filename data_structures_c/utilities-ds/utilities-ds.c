@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/21/2020 8:00pm
+   Update: 6/22/2020 10:00am
 */
 
 #include <stdio.h>
@@ -42,7 +42,9 @@ uint32_t random_uint32(){
 
 /**
    Returns a generator-uniform random uint64_t in [0 , n],
-   where 0 <= n <= 2^64 - 1.
+   where 0 <= n <= 2^64 - 1. Bernoulli for the lowest set bit in the 
+   highest 32 bits is used as the prior for number construction, when n
+   exceeds 32 bits.
 */
 uint64_t random_range_uint64(uint64_t n){
   uint32_t upper;
@@ -59,12 +61,12 @@ uint64_t random_range_uint64(uint64_t n){
     assert(high_bits);
     low_bits = n - high_bits * pow_two_uint64(32); //[0, 2^32 - 1]
     if (bern_uint64(low_bits + 1, 0, n)){
-      //lowest significant set bit in high_bits is set
+      //lowest set bit in high_bits is set
       upper = (uint32_t)low_bits;
       ret = (uint64_t)random_range_uint32(upper);
       ret += high_bits * pow_two_uint64(32);
     }else{
-      //lowest significant set bit in high_bits is not set
+      //lowest set bit in high_bits is not set
       upper = (uint32_t)(pow_two_uint64(32) - 1);
       ret = (uint64_t)random_range_uint32(upper);
       upper = (uint32_t)(high_bits - 1);
@@ -77,7 +79,8 @@ uint64_t random_range_uint64(uint64_t n){
 
 /**
    Returns a generator-uniform random uint32_t in [0 , n],
-   where 0 <= n <= 2^32 - 1.
+   where 0 <= n <= 2^32 - 1. Bernoulli for the most significant (32nd) bit 
+   is used as the prior for number construction, when n exceeds 31 bits.
 */
 uint32_t random_range_uint32(uint32_t n){
   assert(RAND_MAX == 2147483647);
@@ -136,9 +139,14 @@ bool bern_uint64(uint64_t threshold, uint64_t low, uint64_t high){
   assert(sizeof(long double) == 16);
   if(threshold == high){return true;} //p = 1.0
   if(threshold == low){return false;} //p = 0.0
+  uint64_t rand_n = random_uint64();
   uint64_t denom = (pow_two_uint64(63) - 1) + pow_two_uint64(63);
+  //rand_n in [0, denom - 2], need <= denom + 1 - 2 values for any high - low
+  while (rand_n > denom - 2){
+    rand_n = random_uint64();
+  }
   long double p = (long double)(threshold - low) / (long double)(high - low);
-  long double f = (long double)random_uint64() / (long double)denom;
+  long double f = (long double)rand_n / (long double)denom;
   return f < p;
 }
 
@@ -151,9 +159,14 @@ bool bern_uint32(uint32_t threshold, uint32_t low, uint32_t high){
   assert(sizeof(double) == 8);
   if(threshold == high){return true;} //p = 1.0
   if(threshold == low){return false;} //p = 0.0
+  uint32_t rand_n = random_uint32();
   uint32_t denom = (uint32_t)(pow_two_uint64(32) - 1);
+  //rand_n in [0, denom - 2], need <= denom + 1 - 2 values for any high - low
+  while (rand_n > denom - 2){
+    rand_n = random_uint32();
+  }
   double p = (double)(threshold - low) / (double)(high - low);
-  double f = (double)random_uint32() / (double)denom;
+  double f = (double)rand_n / (double)denom;
   return f < p;
 }
 
