@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/22/2020 10:00am
+   Update: 6/22/2020 4:00pm
 */
 
 #include <stdio.h>
@@ -228,6 +228,24 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n){
   }
   assert(ret < pow_two_uint64(32));
   return (uint32_t)ret;
+}
+
+/**
+   Computes overflow-safe unsigned (a + b) mod n, where a, b < n.
+*/
+uint64_t sum_mod_uint64(uint64_t a, uint64_t b, uint64_t n){
+  assert(a < n && b < n); //if passed, n > 0
+  if(n == 1){return 0;}
+  uint64_t ret;
+  uint64_t rem;
+  //a, b < n, can subtract at most one n from a + b
+  rem = n - a; //>= 1
+  if (rem <= b){
+    ret = b - rem;
+  }else{
+    ret = a + b;
+  }
+  return ret;
 }
 
 /** Binary representation */

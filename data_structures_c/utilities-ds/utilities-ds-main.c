@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/21/2020 8:00pm
+   Update: 6/22/2020 4:00pm
 */
 
 #include <stdio.h>
@@ -331,6 +331,54 @@ void run_mem_mod_uint32_test(){
   } 
 }
 
+/**
+   Tests sum_mod_uint64.
+*/
+void run_sum_mod_uint64_test(){
+  int num_trials = 1000000;
+  int result = 1;
+  uint64_t upper_a = pow_two_uint64(63) - 1;
+  uint64_t upper_b = pow_two_uint64(63) - 1;
+  uint64_t upper_n = (pow_two_uint64(63) - 1) + (pow_two_uint64(63) - 1);
+  uint64_t rand_a;
+  uint64_t rand_b;
+  uint64_t rand_n;
+  uint64_t r;
+  uint64_t r_wo_sum_mod;
+  printf("Run sum_mod_uint64 random test, a, b <= 2^63 - 1 (mod n), "
+	 "0 < n <= 2^64 - 1 --> ");
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_a = random_range_uint64(upper_a);
+    rand_b = random_range_uint64(upper_b);
+    rand_n = 1 + random_range_uint64(upper_n);
+    rand_a = rand_a % rand_n;
+    rand_b = rand_b % rand_n; 
+    r = sum_mod_uint64(rand_a, rand_b, rand_n);
+    r_wo_sum_mod = (rand_a + rand_b) % rand_n;
+    result *= (r == r_wo_sum_mod);
+  }
+  print_test_result(result);
+  printf("Run sum_mod_uint64 random test, a = 2^64 - 2, b <= 2^64 - 2, "
+          "n = 2^64 - 1 --> ");
+  result = 1;
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_b = random_range_uint64(upper_n); //[0, 2^64 - 2]
+    r = sum_mod_uint64(upper_n, rand_b, upper_n + 1);
+    result *= (r == rand_b - 1);
+  }
+  print_test_result(result);
+  printf("Run sum_mod_uint64 corner cases test --> ");
+  result = 1;
+  result *= (sum_mod_uint64(0, 0, 1) == 0);
+  result *= (sum_mod_uint64(1, 0, 2) == 1);
+  result *= (sum_mod_uint64(0, 1, 2) == 1);
+  result *= (sum_mod_uint64(1, 1, 2) == 0);
+  result *= (sum_mod_uint64(upper_n, upper_n, upper_n + 1) == upper_n - 1);
+  print_test_result(result);
+}
+
 /** Binary representation */
 
 /**
@@ -417,6 +465,7 @@ int main(){
   run_bern_uint64_test();
   run_pow_mod_uint32_test();
   run_mem_mod_uint32_test();
+  run_sum_mod_uint64_test();
   run_represent_uint64_test();
   run_pow_two_uint64_test();
   return 0;
