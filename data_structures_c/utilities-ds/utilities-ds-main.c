@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/21/2020 6:00pm
+   Update: 6/21/2020 8:00pm
 */
 
 #include <stdio.h>
@@ -55,6 +55,49 @@ void run_random_uint32_test(){
     if (rand_num >= threshold){id_count[1]++;}
   }
   result = (abs(id_count[0] - id_count[1]) < num_trials/1000);
+  print_test_result(result);
+}
+
+/**
+   Test random_range_uint64.
+*/
+static void eq_split_uint64_test(uint64_t upper,
+				 uint64_t threshold,
+				 int num_trials,
+				 int precision);
+
+void run_random_range_uint64_test(){
+  int num_trials = 10000000;
+  int precision = 1000;
+  int result;
+  int arr_len = 9;
+  int upper_pow_two[9] = {1, 7, 15, 23, 31, 39, 47, 55, 63};
+  uint64_t rand_num;
+  uint64_t upper;
+  uint64_t threshold;
+  for (int i = 0; i < arr_len; i++){
+    upper = pow_two_uint64(upper_pow_two[i]) - 1;
+    threshold = pow_two_uint64(upper_pow_two[i] - 1) - 1;
+    printf("Run random_range_uint64 test, n = %lu --> ", upper);
+    eq_split_uint64_test(upper, threshold, num_trials, precision);
+  }
+}
+
+static void eq_split_uint64_test(uint64_t upper,
+				 uint64_t threshold,
+				 int num_trials,
+				 int precision){
+  int id_count[2] = {0, 0};
+  int result;
+  uint64_t rand_num;
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_num = random_range_uint64(upper);
+    if (rand_num <= threshold){id_count[0]++;};
+    if (rand_num > threshold && rand_num <= upper){id_count[1]++;}
+  }
+  result = (abs(id_count[0] - id_count[1]) < num_trials / precision &&
+	    id_count[0] + id_count[1] == num_trials);
   print_test_result(result);
 }
 
@@ -368,6 +411,7 @@ void print_test_result(int result){
 int main(){
   run_random_uint64_test();
   run_random_uint32_test();
+  run_random_range_uint64_test();
   run_random_range_uint32_test();
   run_bern_uint32_test();
   run_bern_uint64_test();

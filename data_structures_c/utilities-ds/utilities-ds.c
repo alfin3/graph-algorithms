@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/21/2020 6:00pm
+   Update: 6/21/2020 8:00pm
 */
 
 #include <stdio.h>
@@ -38,6 +38,41 @@ uint32_t random_uint32(){
   uint32_t upper = (uint32_t)pow_two_uint64(16);
   return (random_gen_range(upper) +
 	  (uint32_t)pow_two_uint64(16) * random_gen_range(upper));
+}
+
+/**
+   Returns a generator-uniform random uint64_t in [0 , n],
+   where 0 <= n <= 2^64 - 1.
+*/
+uint64_t random_range_uint64(uint64_t n){
+  uint32_t upper;
+  uint64_t upper_max = pow_two_uint64(32) - 1;
+  uint64_t ret;
+  uint64_t high_bits;
+  uint64_t low_bits;
+  if (n <= upper_max){
+    upper = (uint32_t)n; 
+    ret = (uint64_t)random_range_uint32(upper);
+  }else{
+    //n >= 2^32
+    high_bits = n >> 32;
+    assert(high_bits);
+    low_bits = n - high_bits * pow_two_uint64(32); //[0, 2^32 - 1]
+    if (bern_uint64(low_bits + 1, 0, n)){
+      //lowest significant set bit in high_bits is set
+      upper = (uint32_t)low_bits;
+      ret = (uint64_t)random_range_uint32(upper);
+      ret += high_bits * pow_two_uint64(32);
+    }else{
+      //lowest significant set bit in high_bits is not set
+      upper = (uint32_t)(pow_two_uint64(32) - 1);
+      ret = (uint64_t)random_range_uint32(upper);
+      upper = (uint32_t)(high_bits - 1);
+      ret += ((uint64_t)random_range_uint32(upper) *
+	      (uint64_t)pow_two_uint64(32));
+    }
+  }
+  return ret;
 }
 
 /**

@@ -4,7 +4,7 @@
    Declarations of accessible utility functions across the areas of 
    randomness, modular arithmetic, and binary representation.
 
-   Update: 6/21/2020 6:00pm
+   Update: 6/21/2020 8:00pm
 */
 
 #ifndef UTILITIES_DS_H  
@@ -22,6 +22,11 @@ uint64_t random_uint64();
    Returns a generator-uniform random uint32_t. 
 */
 uint32_t random_uint32();
+
+/**
+   Returns a generator-uniform random uint64_t in [0 , n].
+*/
+uint64_t random_range_uint64(uint64_t n);
 
 /**
    Returns a generator-uniform random uint32_t in [0 , n].
