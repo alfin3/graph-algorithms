@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/19/2020 10:00am
+   Update: 6/21/2020 6:00pm
 */
 
 #include <stdio.h>
@@ -17,6 +17,8 @@
 uint32_t random_uint32();
 uint32_t random_range_uint32(uint32_t n);
 static uint32_t random_gen_range(uint32_t n);
+bool bern_uint64(uint64_t threshold, uint64_t low, uint64_t high);
+bool bern_uint32(uint32_t threshold, uint32_t low, uint32_t high);
 uint64_t pow_two_uint64(int k);
 
 /** Randomness */
@@ -39,57 +41,31 @@ uint32_t random_uint32(){
 }
 
 /**
-   Returns a random uint64_t in [0 , n) where 0 < n <= 2^64 - 1.
-   currently non-uniform.
-*/
-uint64_t random_range_uint64(uint64_t n){
-  assert(0 < n);
-  uint32_t upper;
-  uint64_t upper_max = pow_two_uint64(32) - 1;
-  uint64_t ret;
-  uint64_t high_bits;
-  uint64_t low_bits;
-  if (n <= upper_max){
-    upper = (uint32_t)n; 
-    ret = (uint64_t)random_range_uint32(upper);
-  }else{
-    high_bits = n >> 32;
-    low_bits = n - high_bits * pow_two_uint64(32);
-    //[0, (high_bits * 2^32) - 1], assume low_bits == 0
-    ret = (uint64_t)random_uint32();
-    upper = (uint32_t)high_bits;
-    ret += (uint64_t)random_range_uint32(upper) * pow_two_uint64(32);
-    if (low_bits > 0){
-      //to avoid convolution, need to flip a biased coin
-      ret += (uint64_t)random_range_uint32(2);
-      upper = (uint32_t)low_bits;
-      ret += (uint64_t)random_range_uint32(upper);
-    }
-  }
-  return ret;
-}
-
-/**
-   Returns a random uint32_t in [0 , n) where 0 < n <= 2^32 - 1.
-   currently non-uniform.
+   Returns a generator-uniform random uint32_t in [0 , n],
+   where 0 <= n <= 2^32 - 1.
 */
 uint32_t random_range_uint32(uint32_t n){
   assert(RAND_MAX == 2147483647);
-  assert(0 < n);
   uint32_t upper;
-  uint32_t rand_max = RAND_MAX;
+  uint32_t rand_max = RAND_MAX; //2^31 - 1
+  uint32_t low_bits;
   uint32_t ret;
-  if (n <= rand_max + 1){
-    upper = n; 
+  if (n <= rand_max){
+    upper = n + 1; 
     ret = random_gen_range(upper);
   }else{
-    //to avoid convolution, need to flip a biased coin to set the 
-    //most significant bit, and based on it the other bits 
-    //with random_gen_range
-    upper = rand_max + 1;
-    ret = random_gen_range(upper);
-    upper = n - rand_max;
-    ret += random_gen_range(upper);
+    //n >= 2^31
+    assert(n >> 31);
+    low_bits = n - (uint32_t)pow_two_uint64(31); //[0, 2^31 - 1]
+    if (bern_uint32(low_bits + 1, 0, n)){
+      //most significant bit set
+      upper = low_bits + 1;
+      ret = random_gen_range(upper) + (uint32_t)pow_two_uint64(31);
+    }else{
+      //most significant bit not set
+      upper = (uint32_t)pow_two_uint64(31);
+      ret = random_gen_range(upper);
+    }
   }
   return ret;
 }
@@ -114,6 +90,36 @@ static uint32_t random_gen_range(uint32_t n){
     ret = rand_num % n;
   }
   return ret;
+}
+
+/**
+   Given a threshold in [low, high], where high > low, returns true with 
+   probability (threshold - low)/(high - low). 
+*/
+bool bern_uint64(uint64_t threshold, uint64_t low, uint64_t high){
+  assert(high > low && threshold >= low && threshold <= high);
+  assert(sizeof(long double) == 16);
+  if(threshold == high){return true;} //p = 1.0
+  if(threshold == low){return false;} //p = 0.0
+  uint64_t denom = (pow_two_uint64(63) - 1) + pow_two_uint64(63);
+  long double p = (long double)(threshold - low) / (long double)(high - low);
+  long double f = (long double)random_uint64() / (long double)denom;
+  return f < p;
+}
+
+/**
+   Given a threshold in [low, high], where high > low, returns true with 
+   probability (threshold - low)/(high - low). 
+*/
+bool bern_uint32(uint32_t threshold, uint32_t low, uint32_t high){
+  assert(high > low && threshold >= low && threshold <= high);
+  assert(sizeof(double) == 8);
+  if(threshold == high){return true;} //p = 1.0
+  if(threshold == low){return false;} //p = 0.0
+  uint32_t denom = (uint32_t)(pow_two_uint64(32) - 1);
+  double p = (double)(threshold - low) / (double)(high - low);
+  double f = (double)random_uint32() / (double)denom;
+  return f < p;
 }
 
 /** Modular arithmetic */

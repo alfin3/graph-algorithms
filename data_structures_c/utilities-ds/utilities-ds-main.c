@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/19/2020 10:00am
+   Update: 6/21/2020 6:00pm
 */
 
 #include <stdio.h>
@@ -59,59 +59,6 @@ void run_random_uint32_test(){
 }
 
 /**
-   Test random_range_uint64.
-*/
-static void eq_split_uint64_test(uint64_t upper,
-				 uint64_t threshold,
-				 int num_trials,
-				 int precision);
-
-void run_random_range_uint64_test(){
-  int num_trials = 10000000;
-  int precision = 1000;
-  int result;
-  int arr_len = 9;
-  int upper_pow_two[9] = {1, 7, 15, 23, 31, 39, 47, 55, 63};
-  uint64_t rand_num;
-  uint64_t upper;
-  uint64_t threshold;
-  result = 1;
-  upper = 1;
-  printf("Run random_range_uint64 test, n = %lu --> ", upper);
-  srandom(time(0));
-  for (int i = 0; i < num_trials; i++){
-    rand_num = random_range_uint64(upper);
-    result *= (rand_num == 0);
-  }
-  print_test_result(result);
-  for (int i = 0; i < arr_len; i++){
-    upper = pow_two_uint64(upper_pow_two[i]);
-    threshold = pow_two_uint64(upper_pow_two[i] - 1);
-    printf("Run random_range_uint64 test, n = %lu --> ", upper);
-    eq_split_uint64_test(upper, threshold, num_trials, precision);
-  }
-}
-
-static void eq_split_uint64_test(uint64_t upper,
-				 uint64_t threshold,
-				 int num_trials,
-				 int precision){
-  assert(upper > 1);
-  int id_count[2] = {0, 0};
-  int result;
-  uint64_t rand_num;
-  srandom(time(0));
-  for (int i = 0; i < num_trials; i++){
-    rand_num = random_range_uint64(upper);
-    if (rand_num < threshold){id_count[0]++;};
-    if (rand_num >= threshold && rand_num < upper){id_count[1]++;};
-  }
-  result = (abs(id_count[0] - id_count[1]) < num_trials/precision &&
-	    id_count[0] + id_count[1] == num_trials);
-  print_test_result(result);
-}
-
-/**
    Test random_range_uint32.
 */
 static void eq_split_uint32_test(uint32_t upper,
@@ -128,43 +75,132 @@ void run_random_range_uint32_test(){
   uint32_t rand_num;
   uint32_t upper;
   uint32_t threshold;
-  result = 1;
-  upper = 1;
-  printf("Run random_range_uint32 test, n = %u --> ", upper);
-  srandom(time(0));
-  for (int i = 0; i < num_trials; i++){
-    rand_num = random_range_uint32(upper);
-    result *= (rand_num == 0);
-  }
-  print_test_result(result);
   for (int i = 0; i < arr_len; i++){
-    upper = (uint32_t)pow_two_uint64(upper_pow_two[i]);
-    threshold = (uint32_t)pow_two_uint64(upper_pow_two[i] - 1);
+    upper = (uint32_t)(pow_two_uint64(upper_pow_two[i]) - 1);
+    threshold = (uint32_t)(pow_two_uint64(upper_pow_two[i] - 1) - 1);
     printf("Run random_range_uint32 test, n = %u --> ", upper);
     eq_split_uint32_test(upper, threshold, num_trials, precision);
   }
-  upper = (uint32_t)(pow_two_uint64(32) - 1);
-  threshold = (uint32_t)pow_two_uint64(31);
-  printf("Run random_range_uint64 test, n = %u --> ", upper);
-  eq_split_uint32_test(upper, threshold, num_trials, precision);
 }
 
 static void eq_split_uint32_test(uint32_t upper,
 				 uint32_t threshold,
 				 int num_trials,
 				 int precision){
-  assert(upper > 1);
   int id_count[2] = {0, 0};
   int result;
   uint32_t rand_num;
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_num = random_range_uint32(upper);
-    if (rand_num < threshold){id_count[0]++;};
-    if (rand_num >= threshold && rand_num < upper){id_count[1]++;};
+    if (rand_num <= threshold){id_count[0]++;};
+    if (rand_num > threshold && rand_num <= upper){id_count[1]++;}
   }
-  result = (abs(id_count[0] - id_count[1]) < num_trials/precision &&
+  result = (abs(id_count[0] - id_count[1]) < num_trials / precision &&
 	    id_count[0] + id_count[1] == num_trials);
+  print_test_result(result);
+}
+
+/**
+   Test bern_uint64.
+*/
+static void bern_uint64_test_helper(uint64_t threshold,
+				    uint64_t low,
+			            uint64_t high,
+			            int num_trials,
+			            double p,
+			            double precision);
+  
+void run_bern_uint64_test(){
+  int num_trials = 10000000;
+  double precision = 0.0005;
+  double p[] = {0.5, 0.25, 0.125, 0.0625};
+  int pow_two_high_start[] = {2, 3, 4, 5};
+  int pow_two_diff[] = {1, 2, 3, 4};
+  int arr_len = 4;
+  uint64_t threshold;
+  uint64_t low = 0;
+  uint64_t high;
+  for (int i = 0; i < arr_len; i++){
+    printf("Run bern_uint64 p = %lf test\n ", p[i]);
+    for (int j = pow_two_high_start[i]; j < 64; j += 8){
+      threshold = pow_two_uint64(j - pow_two_diff[i]);
+      high = pow_two_uint64(j);
+      bern_uint64_test_helper(threshold, low, high,
+			      num_trials, p[i], precision);
+    }
+  }
+}
+
+static void bern_uint64_test_helper(uint64_t threshold,
+				    uint64_t low,
+			            uint64_t high,
+			            int num_trials,
+			            double p,
+			            double precision){
+  int id_count = 0;
+  int result;
+  double gen_p;
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    if(bern_uint64(threshold, low, high)){id_count++;}
+  }
+  printf("\t[%lu, %lu], true: %d, false: %d --> ",
+	 low, high, id_count, num_trials - id_count);
+  gen_p = (double)id_count / (double)num_trials;
+  result = (gen_p < p + precision && gen_p > p - precision);
+  print_test_result(result);
+}
+
+/**
+   Test bern_uint32.
+*/
+
+static void bern_uint32_test_helper(uint32_t threshold,
+				    uint32_t low,
+			            uint32_t high,
+			            int num_trials,
+			            double p,
+			            double precision);
+
+void run_bern_uint32_test(){
+  int num_trials = 10000000;
+  double precision = 0.0005;
+  double p[] = {0.5, 0.25, 0.125, 0.0625};
+  int pow_two_high_start[] = {2, 3, 4, 5};
+  int pow_two_diff[] = {1, 2, 3, 4};
+  int arr_len = 4;
+  uint32_t threshold;
+  uint32_t low = 0;
+  uint32_t high;
+  for (int i = 0; i < arr_len; i++){
+    printf("Run bern_uint32 p = %lf test\n ", p[i]);
+    for (int j = pow_two_high_start[i]; j < 32; j += 4){
+      threshold = (uint32_t)pow_two_uint64(j - pow_two_diff[i]);
+      high = (uint32_t)pow_two_uint64(j);
+      bern_uint32_test_helper(threshold, low, high,
+			      num_trials, p[i], precision);
+    }
+  }
+}
+
+static void bern_uint32_test_helper(uint32_t threshold,
+				    uint32_t low,
+			            uint32_t high,
+			            int num_trials,
+			            double p,
+			            double precision){
+  int id_count = 0;
+  int result;
+  double gen_p;
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    if(bern_uint32(threshold, low, high)){id_count++;}
+  }
+  printf("\t[%u, %u], true: %d, false: %d --> ",
+	 low, high, id_count, num_trials - id_count);
+  gen_p = (double)id_count / (double)num_trials;
+  result = (gen_p < p + precision && gen_p > p - precision);
   print_test_result(result);
 }
 
@@ -176,9 +212,9 @@ static void eq_split_uint32_test(uint32_t upper,
 void run_pow_mod_uint32_test(){
   int num_trials = 1000000;
   int result = 1;
-  uint32_t upper_a = 16;
+  uint32_t upper_a = 15;
   uint32_t upper_n = (uint32_t)(pow_two_uint64(32) - 1);
-  uint32_t upper_k = 17;
+  uint32_t upper_k = 16;
   uint32_t rand_a;
   uint32_t rand_n;
   uint64_t rand_k; 
@@ -237,16 +273,16 @@ void run_mem_mod_uint32_test(){
   rand_n = random_range_uint32(upper);
   for (int i = 10; i <= 30; i += 10){
     size = pow_two_uint64(i); //KB, MB, GB
-    printf("   Memory block of %lu bytes \n", size);
+    printf("\tMemory block of %lu bytes \n", size);
     mem_block = calloc(size, 1);
     assert(mem_block != NULL);
     mem_block[size - 1] = (uint8_t)pow_two_uint64(7);
     t = clock();
     mod_n = mem_mod_uint32(mem_block, size, rand_n);
     t = clock() - t;
-    printf("   Time: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
+    printf("\tTime: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
     result = (mod_n == pow_mod_uint32(2, pow_two_uint64(i) * 8 - 1, rand_n));
-    printf("   Correctness: block bits = %u (mod %u)  --> ", mod_n, rand_n);
+    printf("\tCorrectness: block bits = %u (mod %u)  --> ", mod_n, rand_n);
     print_test_result(result);
     free(mem_block);
   } 
@@ -332,8 +368,9 @@ void print_test_result(int result){
 int main(){
   run_random_uint64_test();
   run_random_uint32_test();
-  run_random_range_uint64_test();
   run_random_range_uint32_test();
+  run_bern_uint32_test();
+  run_bern_uint64_test();
   run_pow_mod_uint32_test();
   run_mem_mod_uint32_test();
   run_represent_uint64_test();

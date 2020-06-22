@@ -4,13 +4,14 @@
    Declarations of accessible utility functions across the areas of 
    randomness, modular arithmetic, and binary representation.
 
-   Update: 6/19/2020 10:00am
+   Update: 6/21/2020 6:00pm
 */
 
 #ifndef UTILITIES_DS_H  
 #define UTILITIES_DS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
    Returns a generator-uniform random uint64_t.
@@ -23,14 +24,21 @@ uint64_t random_uint64();
 uint32_t random_uint32();
 
 /**
-   Returns a random uint64_t in [0 , n). Currently non-uniform.
-*/
-uint64_t random_range_uint64(uint64_t n);
-
-/**
-   Returns a random uint32_t in [0 , n). Currently non-uniform.
+   Returns a generator-uniform random uint32_t in [0 , n].
 */
 uint32_t random_range_uint32(uint32_t n);
+
+/**
+   Given a threshold in [low, high], where high > low, returns true with 
+   probability (threshold - low)/(high - low). 
+*/
+bool bern_uint64(uint64_t threshold, uint64_t low, uint64_t high);
+
+/**
+   Given a threshold in [low, high], where high > low, returns true with 
+   probability (threshold - low)/(high - low). 
+*/
+bool bern_uint32(uint32_t threshold, uint32_t low, uint32_t high);
 
 /**
    Computes mod n of the kth power.
