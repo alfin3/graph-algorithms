@@ -69,10 +69,8 @@ static void eq_split_uint64_test(uint64_t upper,
 void run_random_range_uint64_test(){
   int num_trials = 10000000;
   int precision = 1000;
-  int result;
   int arr_len = 9;
   int upper_pow_two[9] = {1, 7, 15, 23, 31, 39, 47, 55, 63};
-  uint64_t rand_num;
   uint64_t upper;
   uint64_t threshold;
   for (int i = 0; i < arr_len; i++){
@@ -112,10 +110,8 @@ static void eq_split_uint32_test(uint32_t upper,
 void run_random_range_uint32_test(){
   int num_trials = 10000000;
   int precision = 1000;
-  int result;
   int arr_len = 5;
   int upper_pow_two[5] = {1, 7, 15, 23, 31};
-  uint32_t rand_num;
   uint32_t upper;
   uint32_t threshold;
   for (int i = 0; i < arr_len; i++){
@@ -556,9 +552,9 @@ void run_represent_uint64_test(){
   result = 1;
   printf("Run represent_uint64 corner cases test --> ");
   represent_uint64(0, &k, &u);
-  result *= (k == 64, u == 0);
+  result *= (k == 64 && u == 0);
   represent_uint64(1, &k, &u);
-  result *= (k == 0, u == 1);
+  result *= (k == 0 && u == 1);
   print_test_result(result);
 }
 
