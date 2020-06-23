@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 6/22/2020 7:00pm
+   Update: 6/23/2020 11:00am
 */
 
 #include <stdio.h>
@@ -250,6 +250,84 @@ static void bern_uint32_test_helper(uint32_t threshold,
 /** Modular arithmetic */
 
 /**
+   Tests pow_mod_uint64.
+*/
+void run_pow_mod_uint64_test(){
+  int num_trials = 100000;
+  int result = 1;
+  uint64_t upper_a = 15;
+  uint64_t upper_k = 16;
+  uint64_t upper_n = pow_two_uint64(32) - 2;
+  uint64_t rand_a;
+  uint64_t rand_k;
+  uint64_t rand_n;
+  uint64_t r;
+  uint64_t r_wo_pow;
+  printf("Run pow_mod_uint64 random test\n ");
+  printf("\t0 <= a <= 15, 0 <= k <= 16, 0 < n <= 2^32 - 1 --> ");
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_a = random_range_uint64(upper_a);
+    rand_n = 1 + random_range_uint64(upper_n);
+    rand_k = random_range_uint64(upper_k);
+    r = pow_mod_uint64(rand_a, rand_k, rand_n);
+    r_wo_pow = 1;
+    for (uint64_t i = 0; i < rand_k; i++){
+      r_wo_pow *= rand_a;
+    }
+    r_wo_pow = r_wo_pow % rand_n;
+    result *= (r == r_wo_pow);
+  }
+  print_test_result(result);
+  printf("\ta = x^2, where 0 <= x <= 2^32 - 1, 0 <= k <= 2^64 - 1, "
+	 "0 < n <= 2^32 - 1 --> ");
+  upper_a = pow_two_uint64(32) - 1;
+  upper_k = (pow_two_uint64(63) - 1) + pow_two_uint64(63);
+  upper_n = pow_two_uint64(32) - 2;
+  srandom(time(0));
+  result = 1;
+  for (int i = 0; i < num_trials; i++){
+    rand_a = random_range_uint64(upper_a);
+    rand_k = random_range_uint64(upper_k);
+    rand_n = 1 + random_range_uint64(upper_n);
+    r = pow_mod_uint64(rand_a * rand_a, rand_k, rand_n);
+    r_wo_pow = (uint64_t)pow_mod_uint32((uint32_t)rand_a,
+					rand_k,
+					(uint32_t)rand_n);
+    result *= (r == (r_wo_pow * r_wo_pow) % rand_n);
+  }
+  print_test_result(result);
+  printf("\ta = n - 1, 0 <= k <= 2^64 - 1, where 0 = k (mod 2), "
+	 "1 < n <= 2^64 - 1 --> ");
+  upper_k = (pow_two_uint64(63) - 1) + pow_two_uint64(63);
+  upper_n = (pow_two_uint64(63) - 1) + (pow_two_uint64(63) - 2);
+  srandom(time(0));
+  result = 1;
+  for (int i = 0; i < num_trials; i++){
+    rand_k = random_range_uint64(upper_k);
+    while (rand_k & 1){
+      rand_k = random_range_uint64(upper_k);
+    }
+    rand_n = 2 + random_range_uint64(upper_n);
+    rand_a = rand_n - 1;
+    r = pow_mod_uint64(rand_a, rand_k, rand_n);
+    result *= (r == 1);
+  }
+  print_test_result(result);
+  printf("\tcorner cases --> ");
+  result = 1;
+  upper_n = (pow_two_uint64(63) - 1) + pow_two_uint64(63);
+  result *= (pow_mod_uint64(0, 0, 1) == 0);
+  result *= (pow_mod_uint64(2, 0, 1) == 0);
+  result *= (pow_mod_uint64(0, 0, 2) == 1);
+  result *= (pow_mod_uint64(2, 0, 2) == 1);
+  result *= (pow_mod_uint64(upper_n, upper_n, upper_n) == 0);
+  result *= (pow_mod_uint64(upper_n - 1, upper_n, upper_n) == upper_n - 1);
+  result *= (pow_mod_uint64(upper_n, upper_n - 1, upper_n) == 0);
+  print_test_result(result);
+}
+
+/**
    Tests pow_mod_uint32.
 */
 void run_pow_mod_uint32_test(){
@@ -263,7 +341,8 @@ void run_pow_mod_uint32_test(){
   uint64_t rand_k; 
   uint64_t r;
   uint64_t r_wo_pow;
-  printf("Run pow_mod_uint32 random test --> ");
+  printf("Run pow_mod_uint32 random test \n");
+  printf("\t0 <= a <= 15, 0 <= k <= 16, 0 < n <= 2^32 - 1 --> ");
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
     rand_a = random_range_uint32(upper_a);
@@ -278,7 +357,7 @@ void run_pow_mod_uint32_test(){
     result *= (r == r_wo_pow);
   }
   print_test_result(result);
-  printf("Run pow_mod_uint32 corner cases test --> ");
+  printf("\tcorner cases --> ");
   result = 1;
   result *= (pow_mod_uint32(0, 0, 1) == 0);
   result *= (pow_mod_uint32(2, 0, 1) == 0);
@@ -286,6 +365,104 @@ void run_pow_mod_uint32_test(){
   result *= (pow_mod_uint32(2, 0, 2) == 1);
   result *= (pow_mod_uint32(4294967295, 4294967295, 4294967295) == 0);
   result *= (pow_mod_uint32(4294967294, 4294967295, 4294967295) == 4294967294);
+  print_test_result(result);
+}
+
+/**
+   Tests mul_mod_uint64.
+*/
+void run_mul_mod_uint64_test(){
+  int num_trials = 1000000;
+  int result = 1;
+  uint64_t upper_a = pow_two_uint64(32) - 1;
+  uint64_t upper_b = pow_two_uint64(32) - 1;
+  uint64_t upper_n = (pow_two_uint64(63) - 1) + (pow_two_uint64(63) - 1);
+  uint64_t rand_a;
+  uint64_t rand_b;
+  uint64_t rand_n;
+  uint64_t r;
+  uint64_t r_wo_mul_mod;
+  printf("Run mul_mod_uint64 random test\n");
+  printf("\ta, b <= 2^32 - 1, 0 < n <= 2^64 - 1 --> ");
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_a = random_range_uint64(upper_a);
+    rand_b = random_range_uint64(upper_b);
+    rand_n = 1 + random_range_uint64(upper_n); 
+    r = mul_mod_uint64(rand_a, rand_b, rand_n);
+    r_wo_mul_mod = (rand_a * rand_b) % rand_n;
+    result *= (r == r_wo_mul_mod);
+  }
+  print_test_result(result);
+  printf("\ta, b = n - 1, 1 < n <= 2^64 - 1 --> ");
+  result = 1;
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_n = 2 + random_range_uint64(upper_n - 1);
+    r = mul_mod_uint64(rand_n - 1, rand_n - 1, rand_n);
+    result *= (r == 1);
+  }
+  print_test_result(result);
+  printf("\tcorner cases --> ");
+  result = 1;
+  result *= (mul_mod_uint64(0, 0, 1) == 0);
+  result *= (mul_mod_uint64(1, 0, 2) == 0);
+  result *= (mul_mod_uint64(0, 1, 2) == 0);
+  result *= (mul_mod_uint64(0, 2, 2) == 0);
+  result *= (mul_mod_uint64(1, 1, 2) == 1);
+  result *= (mul_mod_uint64(0, upper_n, upper_n + 1) == 0);
+  result *= (mul_mod_uint64(upper_n, 0, upper_n + 1) == 0);
+  result *= (mul_mod_uint64(upper_n, 1, upper_n + 1) == upper_n);
+  result *= (mul_mod_uint64(1, upper_n, upper_n + 1) == upper_n);
+  result *= (mul_mod_uint64(upper_n, upper_n, upper_n) == 0);
+  result *= (mul_mod_uint64(upper_n, upper_n, upper_n + 1) == 1);
+  print_test_result(result);
+}
+
+/**
+   Tests sum_mod_uint64.
+*/
+void run_sum_mod_uint64_test(){
+  int num_trials = 1000000;
+  int result = 1;
+  uint64_t upper_a = pow_two_uint64(63) - 1;
+  uint64_t upper_b = pow_two_uint64(63) - 1;
+  uint64_t upper_n = (pow_two_uint64(63) - 1) + (pow_two_uint64(63) - 1);
+  uint64_t rand_a;
+  uint64_t rand_b;
+  uint64_t rand_n;
+  uint64_t r;
+  uint64_t r_wo_sum_mod;
+  printf("Run sum_mod_uint64 random test\n");
+  printf("\ta, b <= 2^63 - 1 (mod n), 0 < n <= 2^64 - 1 --> ");
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_a = random_range_uint64(upper_a);
+    rand_b = random_range_uint64(upper_b);
+    rand_n = 1 + random_range_uint64(upper_n);
+    rand_a = rand_a % rand_n;
+    rand_b = rand_b % rand_n; 
+    r = sum_mod_uint64(rand_a, rand_b, rand_n);
+    r_wo_sum_mod = (rand_a + rand_b) % rand_n;
+    result *= (r == r_wo_sum_mod);
+  }
+  print_test_result(result);
+  printf("\ta = 2^64 - 2, 0 < b <= 2^64 - 1, n = 2^64 - 1 --> ");
+  result = 1;
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_b = 1 + random_range_uint64(upper_n); //[1, 2^64 - 1]
+    r = sum_mod_uint64(upper_n, rand_b, upper_n + 1);
+    result *= (r == rand_b - 1);
+  }
+  print_test_result(result);
+  printf("\tcorner cases --> ");
+  result = 1;
+  result *= (sum_mod_uint64(0, 0, 1) == 0);
+  result *= (sum_mod_uint64(1, 0, 2) == 1);
+  result *= (sum_mod_uint64(0, 1, 2) == 1);
+  result *= (sum_mod_uint64(1, 1, 2) == 0);
+  result *= (sum_mod_uint64(upper_n, upper_n, upper_n + 1) == upper_n - 1);
   print_test_result(result);
 }
 
@@ -329,104 +506,6 @@ void run_mem_mod_uint32_test(){
     print_test_result(result);
     free(mem_block);
   } 
-}
-
-/**
-   Tests sum_mod_uint64.
-*/
-void run_sum_mod_uint64_test(){
-  int num_trials = 1000000;
-  int result = 1;
-  uint64_t upper_a = pow_two_uint64(63) - 1;
-  uint64_t upper_b = pow_two_uint64(63) - 1;
-  uint64_t upper_n = (pow_two_uint64(63) - 1) + (pow_two_uint64(63) - 1);
-  uint64_t rand_a;
-  uint64_t rand_b;
-  uint64_t rand_n;
-  uint64_t r;
-  uint64_t r_wo_sum_mod;
-  printf("Run sum_mod_uint64 random test\n");
-  printf("\ta, b <= 2^63 - 1 (mod n), 0 < n <= 2^64 - 1 --> ");
-  srandom(time(0));
-  for (int i = 0; i < num_trials; i++){
-    rand_a = random_range_uint64(upper_a);
-    rand_b = random_range_uint64(upper_b);
-    rand_n = 1 + random_range_uint64(upper_n);
-    rand_a = rand_a % rand_n;
-    rand_b = rand_b % rand_n; 
-    r = sum_mod_uint64(rand_a, rand_b, rand_n);
-    r_wo_sum_mod = (rand_a + rand_b) % rand_n;
-    result *= (r == r_wo_sum_mod);
-  }
-  print_test_result(result);
-  printf("\ta = 2^64 - 2, b <= 2^64 - 2, n = 2^64 - 1 --> ");
-  result = 1;
-  srandom(time(0));
-  for (int i = 0; i < num_trials; i++){
-    rand_b = random_range_uint64(upper_n); //[0, 2^64 - 2]
-    r = sum_mod_uint64(upper_n, rand_b, upper_n + 1);
-    result *= (r == rand_b - 1);
-  }
-  print_test_result(result);
-  printf("\tcorner cases --> ");
-  result = 1;
-  result *= (sum_mod_uint64(0, 0, 1) == 0);
-  result *= (sum_mod_uint64(1, 0, 2) == 1);
-  result *= (sum_mod_uint64(0, 1, 2) == 1);
-  result *= (sum_mod_uint64(1, 1, 2) == 0);
-  result *= (sum_mod_uint64(upper_n, upper_n, upper_n + 1) == upper_n - 1);
-  print_test_result(result);
-}
-
-/**
-   Tests mul_mod_uint64.
-*/
-void run_mul_mod_uint64_test(){
-  int num_trials = 1000000;
-  int result = 1;
-  uint64_t upper_a = pow_two_uint64(32) - 1;
-  uint64_t upper_b = pow_two_uint64(32) - 1;
-  uint64_t upper_n = (pow_two_uint64(63) - 1) + (pow_two_uint64(63) - 1);
-  uint64_t rand_a;
-  uint64_t rand_b;
-  uint64_t rand_n;
-  uint64_t r;
-  uint64_t r_wo_mul_mod;
-  printf("Run mul_mod_uint64 random test\n");
-  printf("\ta, b <= 2^32 - 1 (mod n), 0 < n <= 2^64 - 1 --> ");
-  srandom(time(0));
-  for (int i = 0; i < num_trials; i++){
-    rand_a = random_range_uint64(upper_a);
-    rand_b = random_range_uint64(upper_b);
-    rand_n = 1 + random_range_uint64(upper_n);
-    rand_a = rand_a % rand_n;
-    rand_b = rand_b % rand_n; 
-    r = mul_mod_uint64(rand_a, rand_b, rand_n);
-    r_wo_mul_mod = (rand_a * rand_b) % rand_n;
-    result *= (r == r_wo_mul_mod);
-  }
-  print_test_result(result);
-  printf("\ta, b = n - 1, 0 < n <= 2^64 - 1 --> ");
-  result = 1;
-  srandom(time(0));
-  for (int i = 0; i < num_trials; i++){
-    rand_n = 1 + random_range_uint64(upper_n);
-    r = mul_mod_uint64(rand_n - 1, rand_n - 1, rand_n);
-    result *= (r == 1);
-  }
-  print_test_result(result);
-  printf("\tcorner cases --> ");
-  result = 1;
-  result *= (mul_mod_uint64(0, 0, 1) == 0);
-  result *= (mul_mod_uint64(1, 0, 2) == 0);
-  result *= (mul_mod_uint64(0, 1, 2) == 0);
-  result *= (mul_mod_uint64(1, 1, 2) == 1);
-  result *= (mul_mod_uint64(0, upper_n, upper_n + 1) == 0);
-  result *= (mul_mod_uint64(upper_n, 0, upper_n + 1) == 0);
-  result *= (mul_mod_uint64(upper_n, 1, upper_n + 1) == upper_n);
-  result *= (mul_mod_uint64(1, upper_n, upper_n + 1) == upper_n);
-  result *= (mul_mod_uint64(upper_n, upper_n, upper_n + 1) == 1);
-  print_test_result(result);
 }
 
 /** Binary representation */
@@ -511,12 +590,13 @@ int main(){
   run_random_uint32_test();
   run_random_range_uint64_test();
   run_random_range_uint32_test();
-  run_bern_uint32_test();
   run_bern_uint64_test();
+  run_bern_uint32_test();
+  run_pow_mod_uint64_test();
   run_pow_mod_uint32_test();
-  run_mem_mod_uint32_test();
-  run_sum_mod_uint64_test();
   run_mul_mod_uint64_test();
+  run_sum_mod_uint64_test();
+  run_mem_mod_uint32_test();
   run_represent_uint64_test();
   run_pow_two_uint64_test();
   return 0;

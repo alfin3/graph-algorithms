@@ -4,7 +4,7 @@
    Declarations of accessible utility functions across the areas of 
    randomness, modular arithmetic, and binary representation.
 
-   Update: 6/22/2020 7:00pm
+   Update: 6/23/2020 11:00am
 */
 
 #ifndef UTILITIES_DS_H  
@@ -46,25 +46,30 @@ bool bern_uint64(uint64_t threshold, uint64_t low, uint64_t high);
 bool bern_uint32(uint32_t threshold, uint32_t low, uint32_t high);
 
 /**
-   Computes mod n of the kth power.
+   Computes overflow-safe unsigned mod n of the kth power.
+*/
+uint64_t pow_mod_uint64(uint64_t a, uint64_t k, uint64_t n);
+
+/**
+   Computes overflow-safe unsigned mod n of the kth power.
 */
 uint32_t pow_mod_uint32(uint32_t a, uint64_t k, uint32_t n);
+
+/**
+   Computes overflow-safe unsigned (a * b) mod n.
+*/
+uint64_t mul_mod_uint64(uint64_t a, uint64_t b, uint64_t n);
+
+/**
+   Computes overflow-safe unsigned (a + b) mod n.
+*/
+uint64_t sum_mod_uint64(uint64_t a, uint64_t b, uint64_t n);
 
 /**
    Computes mod n of a memory block, treating each byte of the block in the 
    little-endian order. Does not require a little-endian machine.
 */
 uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n);
-
-/**
-   Computes overflow-safe unsigned (a + b) mod n, where a, b < n.
-*/
-uint64_t sum_mod_uint64(uint64_t a, uint64_t b, uint64_t n);
-
-/**
-   Computes overflow-safe unsigned (a * b) mod n, where a, b < n.
-*/
-uint64_t mul_mod_uint64(uint64_t a, uint64_t b, uint64_t n);
 
 /**
    Represents n as u * 2^k, where u is odd.
