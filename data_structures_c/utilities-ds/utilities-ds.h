@@ -4,7 +4,7 @@
    Declarations of accessible utility functions across the areas of 
    randomness, modular arithmetic, and binary representation.
 
-   Update: 6/22/2020 4:00pm
+   Update: 6/22/2020 7:00pm
 */
 
 #ifndef UTILITIES_DS_H  
@@ -60,6 +60,11 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n);
    Computes overflow-safe unsigned (a + b) mod n, where a, b < n.
 */
 uint64_t sum_mod_uint64(uint64_t a, uint64_t b, uint64_t n);
+
+/**
+   Computes overflow-safe unsigned (a * b) mod n, where a, b < n.
+*/
+uint64_t mul_mod_uint64(uint64_t a, uint64_t b, uint64_t n);
 
 /**
    Represents n as u * 2^k, where u is odd.

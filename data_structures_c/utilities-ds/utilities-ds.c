@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/22/2020 4:00pm
+   Update: 6/22/2020 7:00pm
 */
 
 #include <stdio.h>
@@ -245,6 +245,36 @@ uint64_t sum_mod_uint64(uint64_t a, uint64_t b, uint64_t n){
   }else{
     ret = a + b;
   }
+  return ret;
+}
+
+/**
+   Computes overflow-safe unsigned (a * b) mod n, where a, b < n.
+*/
+uint64_t mul_mod_uint64(uint64_t a, uint64_t b, uint64_t n){
+  assert(a < n && b < n); //if passed, n > 0
+  if(n == 1){return 0;}
+  uint64_t ah = a >> 32;
+  uint64_t al = a - ah * pow_two_uint64(32);
+  uint64_t bh = b >> 32;
+  uint64_t bl = b - bh * pow_two_uint64(32);
+  //a{h,l}, b{h,l} <= 2^32 - 1
+  uint64_t ah_bh = (ah * bh) % n;
+  uint64_t ah_bl = (ah * bl) % n;
+  uint64_t al_bh = (al * bh) % n;
+  uint64_t al_bl = (al * bl) % n;
+  uint64_t ret;
+  //ah_bh * 2^32
+  for (int i = 0; i < 32; i++){
+    ah_bh = sum_mod_uint64(ah_bh, ah_bh, n);
+  }
+  ret = sum_mod_uint64(ah_bh, ah_bl, n);
+  ret = sum_mod_uint64(ret, al_bh, n);
+  //2^32 * (ah_bh * 2^32 + ah_bl + al_bh)
+  for (int i = 0; i < 32; i++){
+    ret = sum_mod_uint64(ret, ret, n);
+  }
+  ret = sum_mod_uint64(ret, al_bl, n);
   return ret;
 }
 
