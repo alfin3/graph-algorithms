@@ -53,14 +53,14 @@ void print_test_result(int result){
 /**
    Tests miller_rabin_uint32 on random composites.
 */
-void run_pow_mod_uint32_test(){
+void run_random_composite_test(){
   int num_trials = 10000000;
   int result = 0;
   uint32_t upper_a = (uint32_t)(pow_two_uint64(16) - 3);
   uint32_t upper_b = (uint32_t)(pow_two_uint64(16) - 3);
   uint32_t rand_a;
   uint32_t rand_b;
-  printf("Run pow_mod_uint32 random composite test \n");
+  printf("Run miller_rabin_uint32 test on random composites \n");
   printf("\tn = a * b, where 2 <= a <= 2^16 - 1, 2 <= b <= 2^16 - 1 --> ");
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
@@ -91,14 +91,14 @@ int main(){;
 			     172081, 188461, 252601, 278545, 294409,
 			     314821, 334153, 340561, 399001, 410041};
   srandom(time(0));
-  printf("Run pow_mod_uint32 test on primes --> ");
+  printf("Run miller_rabin_uint32 test on primes --> ");
   run_true_test(primes, 30);
-  printf("Run pow_mod_uint32 test on non-primes --> ");
+  printf("Run miller_rabin_uint32 test on non-primes --> ");
   run_false_test(non_primes, 30);
-  printf("Run pow_mod_uint32 test on Carmichael numbers --> ");
+  printf("Run miller_rabin_uint32 test on Carmichael numbers --> ");
   run_false_test(carmichael_nums, 30);
   srandom(time(0));
-  run_pow_mod_uint32_test();
+  run_random_composite_test();
   return 0;
 }
 
