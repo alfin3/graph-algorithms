@@ -10,6 +10,10 @@ miller-rabin-uint32-main.o : miller-rabin-uint32.h $(UTILS_DIR)utilities-ds.h
 miller-rabin-uint32.o : miller-rabin-uint32.h $(UTILS_DIR)utilities-ds.h 
 $(UTILS_DIR)utilities-ds.o : $(UTILS_DIR)utilities-ds.h
 
-.PHONY : clean
+.PHONY : clean clean-all
+
 clean :
 	rm $(OBJ)
+
+clean-all : 
+	rm -f miller-rabin-uint32 $(OBJ)
