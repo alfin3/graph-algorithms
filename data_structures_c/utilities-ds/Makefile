@@ -10,4 +10,4 @@ utilities-ds.o : utilities-ds.h
 
 .PHONY : clean
 clean :
-	rm utilities-ds $(OBJ)
+	rm $(OBJ)

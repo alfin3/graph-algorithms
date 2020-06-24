@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/23/2020 11:00am
+   Update: 6/24/2020 10:00am
 */
 
 #include <stdio.h>
@@ -13,15 +13,9 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "utilities-ds.h"
 
-uint32_t random_uint32();
-uint32_t random_range_uint32(uint32_t n);
 static uint32_t random_gen_range(uint32_t n);
-bool bern_uint64(uint64_t threshold, uint64_t low, uint64_t high);
-bool bern_uint32(uint32_t threshold, uint32_t low, uint32_t high);
-uint64_t mul_mod_uint64(uint64_t a, uint64_t b, uint64_t n);
-uint64_t sum_mod_uint64(uint64_t a, uint64_t b, uint64_t n);
-uint64_t pow_two_uint64(int k);
 
 /** Randomness */
 
