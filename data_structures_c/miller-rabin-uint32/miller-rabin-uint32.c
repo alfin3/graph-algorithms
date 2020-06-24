@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "miller-rabin-uint32.h"
 #include "utilities-ds.h"
 
 static bool composite(uint32_t n, int num_iter);
