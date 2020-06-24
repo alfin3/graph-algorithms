@@ -10,24 +10,22 @@
    
    The implementation provides a "no overflow" guarantee given a number of
    type uint32_t, and preserves the generator-provided uniformity in random 
-   processes. The generator is not seeded by miller_rabin_uint32.
+   processes.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <assert.h>
 #include <stdint.h>
 #include "miller-rabin-uint32.h"
-#include "utilities-ds.h"
 
 /**
-   Test miller_rabin_uint32 on pre-defined subsets of numbers.
+   Run a randomized primality tests on subsets of numbers.
 */
 void print_test_result(int result);
 
 void run_true_test(uint32_t arr[], int arr_size){
-  int result = 1;
+  bool result = true;
   for (int i = 0; i < arr_size; i++){
     result *= miller_rabin_uint32(arr[i]);
   }
@@ -35,7 +33,7 @@ void run_true_test(uint32_t arr[], int arr_size){
 }
 
 void run_false_test(uint32_t arr[], int arr_size){
-  int result = 0;
+  bool result = false;
   for (int i = 0; i < arr_size; i++){
     result += miller_rabin_uint32(arr[i]);
   }
@@ -48,27 +46,6 @@ void print_test_result(int result){
   }else{
     printf("FAILURE\n");
   }
-}
-
-/**
-   Tests miller_rabin_uint32 on random composites.
-*/
-void run_pow_mod_uint32_test(){
-  int num_trials = 10000000;
-  int result = 0;
-  uint32_t upper_a = (uint32_t)(pow_two_uint64(16) - 3);
-  uint32_t upper_b = (uint32_t)(pow_two_uint64(16) - 3);
-  uint32_t rand_a;
-  uint32_t rand_b;
-  printf("Run pow_mod_uint32 random composite test \n");
-  printf("\tn = a * b, where 2 <= a <= 2^16 - 1, 2 <= b <= 2^16 - 1 --> ");
-  srandom(time(0));
-  for (int i = 0; i < num_trials; i++){
-    rand_a = 2 + random_range_uint32(upper_a);
-    rand_b = 2 + random_range_uint32(upper_b);
-    result += miller_rabin_uint32(rand_a * rand_b);
-  }
-  print_test_result(result == 0);
 }
 
 int main(){;
@@ -90,15 +67,12 @@ int main(){;
 			     75361, 101101, 115921, 126217, 162401,
 			     172081, 188461, 252601, 278545, 294409,
 			     314821, 334153, 340561, 399001, 410041};
-  srandom(time(0));
-  printf("Run pow_mod_uint32 test on primes --> ");
+  printf("Test primes: ");
   run_true_test(primes, 30);
-  printf("Run pow_mod_uint32 test on non-primes --> ");
+  printf("Test non-primes: ");
   run_false_test(non_primes, 30);
-  printf("Run pow_mod_uint32 test on Carmichael numbers --> ");
+  printf("Test Carmichael numbers: ");
   run_false_test(carmichael_nums, 30);
-  srandom(time(0));
-  run_pow_mod_uint32_test();
   return 0;
 }
 

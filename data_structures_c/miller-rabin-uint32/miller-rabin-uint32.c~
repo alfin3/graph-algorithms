@@ -10,11 +10,12 @@
    
    The implementation provides a "no overflow" guarantee given a number of
    type uint32_t, and preserves the generator-provided uniformity in random 
-   processes. The generator is not seeded by miller_rabin_uint32.
+   processes. 
 */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -48,6 +49,7 @@ static bool composite(uint32_t n, int num_iter){
   assert(n & 1 && n > 2);
   uint32_t a;
   uint32_t upper = n - 3; //random in [2, n - 1] 
+  srandom(time(0)); //sec resolution
   for (int i = 0; i < num_iter; i++){
     a = 2 + random_range_uint32(upper);
     if (witness(a, n)){return true;}

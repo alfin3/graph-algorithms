@@ -11,7 +11,7 @@
    
    The implementation provides a "no overflow" guarantee given a number of
    type uint32_t, and preserves the generator-provided uniformity in random 
-   processes. The generator is not seeded by miller_rabin_uint32.
+   processes.
 */
 
 #ifndef MILLER_RABIN_UINT32_H  
