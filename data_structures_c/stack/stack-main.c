@@ -169,7 +169,7 @@ static void int_ptr_t_stack_test_helper(stack_t *s,
   t = clock() - t;
   result *= (s->num_elts == 0);
   result *= (s->stack_size >= num_elts);
-  printf("\tTime of popping: %.4f seconds (incl. element allocation)\n",
+  printf("\tTime of popping: %.4f seconds (incl. element deallocation)\n",
 	 (float)t / CLOCKS_PER_SEC);
   printf("\tOrder correctness --> ");
   print_test_result(result);
