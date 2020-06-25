@@ -16,7 +16,7 @@
 void print_test_result(int result);
 
 /**
-   Run a test of a stack of integer elements. A pointer to an integer is 
+   Run tests of a stack of integer elements. A pointer to an integer is 
    passed as elt in stack_push and the integer element is fully copied into 
    the elts array. NULL as free_int_fn is sufficient to free the stack.
 */
@@ -60,8 +60,24 @@ static void int_stack_test_helper(stack_t *s, int num_elts){
   print_test_result(result);
 }
 
+void run_int_stack_free_test(){
+  stack_t s;
+  int num_elts = 100000000;
+  int stack_init_size = 1;
+  clock_t t;
+  stack_init(&s, stack_init_size, sizeof(int), NULL);
+  printf("Run stack_free test on %d int elements \n", num_elts);
+  for (int i = 0; i < num_elts; i++){
+    stack_push(&s, &i);
+  }
+  t = clock();
+  stack_free(&s);
+  t = clock() - t;
+  printf("\tTime of freeing: %.4f seconds \n", (float)t / CLOCKS_PER_SEC);
+}
+
 /**
-   Run a test of a stack of int_ptr_t elements. A pointer to a pointer to an
+   Run tests of a stack of int_ptr_t elements. A pointer to a pointer to an
    int_ptr_t element is passed as elt in stack_push and the pointer to the
    int_ptr_t element is copied into the elts array. A int_ptr_t-specific 
    free_int_fn is necessary to free the stack.
@@ -132,6 +148,29 @@ static void int_ptr_t_stack_test_helper(stack_t *s, int num_elts){
   print_test_result(result);
 }
 
+void run_int_ptr_t_stack_free_test(){
+  stack_t s;
+  int_ptr_t *pushed;
+  int num_elts = 10000000;
+  int stack_init_size = 1;
+  clock_t t;
+  stack_init(&s, stack_init_size, sizeof(int_ptr_t *), free_int_ptr_t_fn);
+  printf("Run stack_free test on %d int_ptr_t elements \n", num_elts);
+  for (int i = 0; i < num_elts; i++){
+    pushed = malloc(sizeof(int_ptr_t));
+    assert(pushed != NULL);
+    pushed->val = malloc(sizeof(int));
+    assert(pushed->val != NULL);
+    *(pushed->val) = i;
+    stack_push(&s, &pushed);
+    pushed = NULL;
+  }
+  t = clock();
+  stack_free(&s);
+  t = clock() - t;
+  printf("\tTime of freeing: %.4f seconds \n", (float)t / CLOCKS_PER_SEC);
+}
+
 void print_test_result(int result){
   if (result){
     printf("SUCCESS\n");
@@ -143,5 +182,7 @@ void print_test_result(int result){
 int main(){
   run_int_stack_test();
   run_int_ptr_t_stack_test();
+  run_int_stack_free_test();
+  run_int_ptr_t_stack_free_test();
   return 0;
 }
