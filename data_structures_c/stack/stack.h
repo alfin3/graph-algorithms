@@ -2,7 +2,7 @@
    stack.h
 
    Struct declarations and declarations of accessible functions for a generic 
-   dynamicaly allocated stack.
+   dynamically allocated stack.
 
    Through a user-defined deallocation function, the implementation provides 
    a dynamic set of any objects in the stack form.
@@ -31,7 +31,7 @@ typedef struct{
                 then the element is fully copied into the elts array, and a 
                 NULL as free_elt_fn is sufficient to free the stack;
                 - if an element is multilayered, and a pointer to a pointer
-                to the element is passed as elt in stack_push, then a 
+                to the element is passed as elt in stack_push, then the 
                 pointer to the element is copied into the elts array, and an
                 element-specific free_elt_fn is necessary to free the stack.
 */
