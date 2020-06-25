@@ -1,93 +1,100 @@
 /**
    queue-main.c
 
-   Examples of generic dynamicaly allocated queue.
+   Examples of a generic dynamically allocated fifo queue.
 
    Through a user-defined deallocation function, the implementation provides 
-   a dynamic set of any objects, in fifo queue form.
+   a dynamic set of any objects in the fifo queue form.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 #include "queue.h"
 
-/** 
-    Dynamically allocated queue of integer elements. In this test example, 
-    a pointer to element is passed to queue_push that fully copies the 
-    element to element array of queue.
-*/
-
-void free_int_fn(void *a){} //every element is fully copied to element array
+void print_test_result(int result);
 
 /**
-   Prints a specified number of integer elements in element array of queue.
+   Run tests of a queue of integer elements. A pointer to an integer is 
+   passed as elt in queue_push and the integer element is fully copied into 
+   the elts array. NULL as free_int_fn is sufficient to free the queue.
 */
-void print_int_elts(void *elts, int start_ix, int n){
-  for (int i = 0; i < n; i++){
-    printf("%d ", *((int *)elts + start_ix + i));
-  }
-  printf("\n");
-}
+static void int_queue_test_helper(queue_t *q,
+				  int init_val,
+				  int num_elts);
 
-/**
-   Prints all current integer elements in element array of queue.
-*/
-void print_all_int_elts(queue_t *q){
-  printf("Element array: ");
-  print_int_elts(q->elts, q->num_popped_elts, q->num_elts);
-}
-
-/**
-   Pushes n elements into queue.
-*/
-void push_int_elts(queue_t *q, int n){
-  print_all_int_elts(q);
-  for (int i = 0; i < n; i++){
-    queue_push(q, &i);
-    print_all_int_elts(q);
-  }
-  printf("\n");
-}
-
-/**
-   Pops all elements of queue.
-*/
-void pop_all_int_elts(queue_t *q){
-  int a;
-  while(q->num_elts > 0){
-    queue_pop(q, &a);
-    printf("E: %d \n", a);
-    print_all_int_elts(q);
-  }
-  printf("\n");
-}
-/**
-   Runs a test example of queue of integer elements.
-*/
 void run_int_queue_test(){
-  printf("Running int queue test... \n\n");
   queue_t q;
-  int queue_init_size = 1;
-  queue_init(&q,
-	     queue_init_size,
-	     sizeof(int),
-	     free_int_fn);
-  int num_push = 10;
-  printf("Pushing %d elements... \n\n", num_push);
-  push_int_elts(&q, num_push);
-  printf("Popping all elements... \n\n");
-  pop_all_int_elts(&q);
-  printf("Pushing %d elements again... \n\n", num_push);
-  push_int_elts(&q, num_push);
-  printf("Freeing queue... \n\n");
+  int num_elts = 100000000;
+  int init_queue_size = 1;
+  int init_val;
+  queue_init(&q, init_queue_size, sizeof(int), NULL);
+  init_val = 0;
+  printf("Run queue test on int elements, initial queue size: %d, "
+	 "initial value: %d, number of elements: %d\n",
+	 init_queue_size, init_val, num_elts);
+  int_queue_test_helper(&q, init_val, num_elts);
+  printf("Run queue test on int elements, same queue, "
+	 "initial value: %d, number of elements: %d\n",
+	 init_val, num_elts);
+  int_queue_test_helper(&q, init_val, num_elts);
+  init_val = num_elts;
+  printf("Run queue test on int elements, same queue, "
+	 "initial value: %d, number of elements: %d\n",
+	 init_val, num_elts);
+  int_queue_test_helper(&q, init_val, num_elts);
   queue_free(&q);
 }
 
-/** 
-    Dynamically allocated queue of int_ptr_t elements. In this test example, 
-    a pointer to an element pointer is passed to queue_push that copies 
-    the element pointer to element array of queue.
+static void int_queue_test_helper(queue_t *q,
+				  int init_val,
+				  int num_elts){
+  int popped;
+  int cur_val = init_val;
+  int result = 1;
+  clock_t t;
+  t = clock();
+  for (int i = init_val; i < init_val + num_elts; i++){
+    queue_push(q, &i);
+  }
+  t = clock() - t;
+  printf("\tTime of pushing: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  t = clock();
+  for (int i = 0; i < num_elts; i++){
+    queue_pop(q, &popped);
+    result *= (cur_val == popped);
+    cur_val++;
+  }
+  t = clock() - t;
+  result *= (q->num_elts == 0);
+  result *= (q->queue_size >= num_elts);
+  printf("\tTime of popping: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  printf("\tOrder correctness --> ");
+  print_test_result(result);
+}
+
+void run_int_queue_free_test(){
+  queue_t q;
+  int num_elts = 100000000;
+  int init_queue_size = 1;
+  clock_t t;
+  queue_init(&q, init_queue_size, sizeof(int), NULL);
+  printf("Run queue_free test on %d int elements\n", num_elts);
+  for (int i = 0; i < num_elts; i++){
+    queue_push(&q, &i);
+  }
+  t = clock();
+  queue_free(&q);
+  t = clock() - t;
+  printf("\tTime of freeing: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+}
+
+/**
+   Run tests of a queue of int_ptr_t elements. A pointer to a pointer to an
+   int_ptr_t element is passed as elt in queue_push and the pointer to the
+   int_ptr_t element is copied into the elts array. A int_ptr_t-specific 
+   free_int_fn is necessary to free the queue.
 */
 
 typedef struct{
@@ -103,85 +110,106 @@ void free_int_ptr_t_fn(void *a){
   s = NULL;
 }
 
-/**
-   Prints a specified number of integer values across int_ptr_t elements
-   in element array of queue.
-*/
-void print_int_ptr_t_elts(void *elts, int start_ix, int n){
-  int_ptr_t **s = elts;
-  for (int i = 0; i < n; i++){
-    int *val = (*(s + start_ix + i))->val;
-    printf("%d ", *val);
-  }
-  printf("\n");
-}
+static void int_ptr_t_queue_test_helper(queue_t *q,
+					int init_val,
+					int num_elts);
 
-/**
-   Prints integer values across current int_ptr_t elements in element array.
-*/
-void print_all_int_ptr_t_elts(queue_t *q){
-  printf("Element array: ");
-  print_int_ptr_t_elts(q->elts, q->num_popped_elts, q->num_elts);
-}
-
-/**
-   Dynamically allocates and pushes n elements into queue.
-*/
-void push_int_ptr_t_elts(queue_t *q, int n){
-  int_ptr_t *a;
-  print_all_int_ptr_t_elts(q);
-  for (int i = 0; i < n; i++){
-    a = malloc(sizeof(int_ptr_t));
-    assert(a != NULL);
-    a->val = malloc(sizeof(int));
-    assert(a->val != NULL);
-    *(a->val) = i;
-    queue_push(q, &a);
-    print_all_int_ptr_t_elts(q);
-    a = NULL;
-  }
-  printf("\n");
-}
-
-/**
-   Pops all elements of the queue.
-*/
-void pop_all_int_ptr_t_elts(queue_t *q){
-  int_ptr_t *a;
-  while(q->num_elts > 0){
-    queue_pop(q, &a);
-    printf("E: %d \n", *(a->val));
-    print_all_int_ptr_t_elts(q);
-    free_int_ptr_t_fn(&a);
-    a = NULL;
-  }
-  printf("\n"); 
-}
-
-/**
-   Runs a test example of queue of int_ptr_t elements.
-*/
 void run_int_ptr_t_queue_test(){
-  printf("Running int_ptr_t queue test... \n\n");
   queue_t q;
-  int queue_init_size = 1;
-  queue_init(&q,
-	     queue_init_size,
-	     sizeof(int_ptr_t *),
-	     free_int_ptr_t_fn);
-  int num_push = 10;
-  printf("Pushing %d elements... \n\n", num_push);
-  push_int_ptr_t_elts(&q, num_push);
-  printf("Popping all elements... \n\n");
-  pop_all_int_ptr_t_elts(&q);
-  printf("Pushing %d elements again... \n\n", num_push);
-  push_int_ptr_t_elts(&q, num_push);
-  printf("Freeing queue... \n\n");
+  int num_elts = 10000000;
+  int init_queue_size = 1;
+  int init_val;
+  queue_init(&q, init_queue_size, sizeof(int_ptr_t *), free_int_ptr_t_fn);
+  init_val = 0;
+  printf("Run queue test on int_ptr_t elements, initial queue size: %d, "
+	 "initial value: %d, number of elements: %d\n",
+	 init_queue_size, init_val, num_elts);
+  int_ptr_t_queue_test_helper(&q, init_val, num_elts);
+  printf("Run queue test on int_ptr_t elements, same queue, "
+	 "initial value: %d, number of elements: %d\n",
+	 init_val, num_elts);
+  int_ptr_t_queue_test_helper(&q, init_val, num_elts);
+  init_val = num_elts;
+  printf("Run queue test on int_ptr_t elements, same queue, "
+	 "initial value: %d, number of elements: %d\n",
+	 init_val, num_elts);
+  int_ptr_t_queue_test_helper(&q, init_val, num_elts);
   queue_free(&q);
+}
+
+static void int_ptr_t_queue_test_helper(queue_t *q,
+					int init_val,
+					int num_elts){
+  int_ptr_t *pushed;
+  int_ptr_t *popped;
+  int cur_val = init_val;
+  int result = 1;
+  clock_t t;
+  t = clock();
+  for (int i = init_val; i < init_val + num_elts; i++){
+    pushed = malloc(sizeof(int_ptr_t));
+    assert(pushed != NULL);
+    pushed->val = malloc(sizeof(int));
+    assert(pushed->val != NULL);
+    *(pushed->val) = i;
+    queue_push(q, &pushed);
+    pushed = NULL;
+  }
+  t = clock() - t;
+  printf("\tTime of pushing: %.4f seconds (incl. element allocation)\n",
+	 (float)t / CLOCKS_PER_SEC);
+  t = clock();
+  for (int i = 0; i < num_elts; i++){
+    queue_pop(q, &popped);
+    result *= (cur_val == *(popped->val));
+    cur_val++;
+    free_int_ptr_t_fn(&popped);
+    popped = NULL;
+  }
+  t = clock() - t;
+  result *= (q->num_elts == 0);
+  result *= (q->queue_size >= num_elts);
+  printf("\tTime of popping: %.4f seconds (incl. element deallocation)\n",
+	 (float)t / CLOCKS_PER_SEC);
+  printf("\tOrder correctness --> ");
+  print_test_result(result);
+}
+
+void run_int_ptr_t_queue_free_test(){
+  queue_t q;
+  int_ptr_t *pushed;
+  int num_elts = 10000000;
+  int init_queue_size = 1;
+  clock_t t;
+  queue_init(&q, init_queue_size, sizeof(int_ptr_t *), free_int_ptr_t_fn);
+  printf("Run queue_free test on %d int_ptr_t elements\n", num_elts);
+  for (int i = 0; i < num_elts; i++){
+    pushed = malloc(sizeof(int_ptr_t));
+    assert(pushed != NULL);
+    pushed->val = malloc(sizeof(int));
+    assert(pushed->val != NULL);
+    *(pushed->val) = i;
+    queue_push(&q, &pushed);
+    pushed = NULL;
+  }
+  t = clock();
+  queue_free(&q);
+  t = clock() - t;
+  printf("\tTime of freeing: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+}
+
+void print_test_result(int result){
+  if (result){
+    printf("SUCCESS\n");
+  }else{
+    printf("FAILURE\n");
+  }
 }
 
 int main(){
   run_int_queue_test();
   run_int_ptr_t_queue_test();
+  run_int_queue_free_test();
+  run_int_ptr_t_queue_free_test();
   return 0;
 }
