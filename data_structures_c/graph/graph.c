@@ -6,20 +6,20 @@
    Adjacency list : 
 
    Each list is represented by a dynamically growing generic stack.
-   A vertex is an int index starting from 0. If a graph has edges and 
-   edge weights, edge weights are of any basic type (e.g. char, int, double).
+   A vertex is an int index starting from 0. If a graph has edge weights, 
+   the edge weights are of any basic type (e.g. char, int, double). 
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include "stack.h"
 #include "graph.h"
 
 static int *u_ptr(graph_t *g, int i);
 static int *v_ptr(graph_t *g, int i);
-static void *wts_ptr(graph_t *g, int i);
-static void free_fn(void *a){}
+static void *wt_ptr(graph_t *g, int i);
 
 /**
    Initializes an adjacency list.
@@ -28,7 +28,7 @@ static void adj_lst_init_helper(stack_t **s, int elt_size);
 
 void adj_lst_init(graph_t *g, adj_lst_t *a){
   a->num_vts = g->num_vts;
-  a->num_e = g->num_e;
+  a->num_es = g->num_es;
   a->wt_size = g->wt_size;
   a->vts = malloc(a->num_vts * sizeof(stack_t *));
   assert(a->vts != NULL);
@@ -45,10 +45,10 @@ void adj_lst_init(graph_t *g, adj_lst_t *a){
 }
 
 static void adj_lst_init_helper(stack_t **s, int elt_size){
-  int stack_init_size = 1;
+  int init_stack_size = 1;
   *s = malloc(sizeof(stack_t));
   assert(*s != NULL);
-  stack_init(*s, stack_init_size, elt_size, free_fn);
+  stack_init(*s, init_stack_size, elt_size, NULL);
 }
    
 /**
@@ -56,35 +56,36 @@ static void adj_lst_init_helper(stack_t **s, int elt_size){
 */
 void adj_lst_dir_build(graph_t *g, adj_lst_t *a){
   int u_ix;
-  for (int i = 0; i < g->num_e; i++){
-    int u_ix = *(u_ptr(g, i));
+  for (int i = 0; i < g->num_es; i++){
+    u_ix = *(u_ptr(g, i));
     stack_push(a->vts[u_ix], v_ptr(g, i));
     if (a->wts != NULL){
-      stack_push(a->wts[u_ix], wts_ptr(g, i));
+      stack_push(a->wts[u_ix], wt_ptr(g, i));
     }
   }
 }
 
 /**
-   Builds the adjacency of an undirected graph.
+   Builds the adjacency list of an undirected graph.
 */
 void adj_lst_undir_build(graph_t *g, adj_lst_t *a){
   int u_ix;
   int v_ix;
-  for (int i = 0; i < g->num_e; i++){
+  for (int i = 0; i < g->num_es; i++){
     u_ix = *(u_ptr(g, i));
     v_ix = *(v_ptr(g, i));
     stack_push(a->vts[u_ix], v_ptr(g, i));
     stack_push(a->vts[v_ix], u_ptr(g, i));
     if (a->wts != NULL){
-      stack_push(a->wts[u_ix], wts_ptr(g, i));
-      stack_push(a->wts[v_ix], wts_ptr(g, i));
+      stack_push(a->wts[u_ix], wt_ptr(g, i));
+      stack_push(a->wts[v_ix], wt_ptr(g, i));
     }
   }
 }
 
 /**
-   Deallocates the arrays of stacks of an adjacency list.
+   Deallocates the arrays in the stacks of an adjacency list, as well as the 
+   stack pointer arrays of the adjacency list.
 */
 void adj_lst_free(adj_lst_t *a){
   for (int i = 0; i < a->num_vts; i++){
@@ -112,6 +113,6 @@ static int *v_ptr(graph_t *g, int i){
   return &(g->v[i]);
 }
 
-static void *wts_ptr(graph_t *g, int i){
+static void *wt_ptr(graph_t *g, int i){
   return (void *)((char *)g->wts + i * g->wt_size);
 }
