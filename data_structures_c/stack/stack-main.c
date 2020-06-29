@@ -31,17 +31,15 @@ void run_int_stack_test(){
   int init_val;
   stack_init(&s, stack_init_size, sizeof(int), NULL);
   init_val = 0;
-  printf("Run stack test on int elements, initial stack size: %d, "
-	 "initial value: %d, number of elements: %d\n",
-	 stack_init_size, init_val, num_elts);
+  printf("Run stack tests on int elements \n");
+  printf("\tinitial stack size: %d, initial value: %d, "
+	 "number of elements: %d\n", stack_init_size, init_val, num_elts);
   int_stack_test_helper(&s, init_val, num_elts);
-  printf("Run stack test on int elements, same stack, "
-	 "initial value: %d, number of elements: %d\n",
+  printf("\tsame stack, initial value: %d, number of elements: %d\n",
 	 init_val, num_elts);
   int_stack_test_helper(&s, init_val, num_elts);
   init_val = num_elts;
-  printf("Run stack test on int elements, same stack, "
-	 "initial value: %d, number of elements: %d\n",
+  printf("\tsame stack, initial value: %d, number of elements: %d\n",
 	 init_val, num_elts);
   int_stack_test_helper(&s, init_val, num_elts);
   stack_free(&s);
@@ -59,7 +57,7 @@ static void int_stack_test_helper(stack_t *s,
     stack_push(s, &i);
   }
   t = clock() - t;
-  printf("\tTime of pushing: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  printf("\t\tpush time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
   t = clock();
   for (int i = 0; i < num_elts; i++){
     stack_pop(s, &popped);
@@ -69,8 +67,8 @@ static void int_stack_test_helper(stack_t *s,
   t = clock() - t;
   result *= (s->num_elts == 0);
   result *= (s->stack_size >= num_elts);
-  printf("\tTime of popping: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
-  printf("\tOrder correctness --> ");
+  printf("\t\tpop time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  printf("\t\torder correctness --> ");
   print_test_result(result);
 }
 
@@ -80,14 +78,14 @@ void run_int_stack_free_test(){
   int stack_init_size = 1;
   clock_t t;
   stack_init(&s, stack_init_size, sizeof(int), NULL);
-  printf("Run stack_free test on %d int elements\n", num_elts);
+  printf("Run a stack_free test on %d int elements\n", num_elts);
   for (int i = 0; i < num_elts; i++){
     stack_push(&s, &i);
   }
   t = clock();
   stack_free(&s);
   t = clock() - t;
-  printf("\tTime of freeing: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  printf("\t\tfree time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
 }
 
 /**
@@ -121,17 +119,15 @@ void run_int_ptr_t_stack_test(){
   int init_val;
   stack_init(&s, stack_init_size, sizeof(int_ptr_t *), free_int_ptr_t_fn);
   init_val = 0;
-  printf("Run stack test on int_ptr_t elements, initial stack size: %d, "
-	 "initial value: %d, number of elements: %d\n",
-	 stack_init_size, init_val, num_elts);
+  printf("Run stack tests on int_ptr_t elements (multilayered objects)\n");
+  printf("\tinitial stack size: %d, initial value: %d, "
+	 "number of elements: %d\n", stack_init_size, init_val, num_elts);
   int_ptr_t_stack_test_helper(&s, init_val, num_elts);
-  printf("Run stack test on int_ptr_t elements, same stack, "
-	 "initial value: %d, number of elements: %d\n",
+  printf("\tsame stack, initial value: %d, number of elements: %d\n",
 	 init_val, num_elts);
   int_ptr_t_stack_test_helper(&s, init_val, num_elts);
   init_val = num_elts;
-  printf("Run stack test on int_ptr_t elements, same stack, "
-	 "initial value: %d, number of elements: %d\n",
+  printf("\tsame stack, initial value: %d, number of elements: %d\n",
 	 init_val, num_elts);
   int_ptr_t_stack_test_helper(&s, init_val, num_elts);
   stack_free(&s);
@@ -156,7 +152,7 @@ static void int_ptr_t_stack_test_helper(stack_t *s,
     pushed = NULL;
   }
   t = clock() - t;
-  printf("\tTime of pushing: %.4f seconds (incl. element allocation)\n",
+  printf("\t\tpush time: %.4f seconds (incl. element allocation)\n",
 	 (float)t / CLOCKS_PER_SEC);
   t = clock();
   for (int i = 0; i < num_elts; i++){
@@ -169,9 +165,9 @@ static void int_ptr_t_stack_test_helper(stack_t *s,
   t = clock() - t;
   result *= (s->num_elts == 0);
   result *= (s->stack_size >= num_elts);
-  printf("\tTime of popping: %.4f seconds (incl. element deallocation)\n",
+  printf("\t\tpop time: %.4f seconds (incl. element deallocation)\n",
 	 (float)t / CLOCKS_PER_SEC);
-  printf("\tOrder correctness --> ");
+  printf("\t\torder correctness --> ");
   print_test_result(result);
 }
 
@@ -182,7 +178,8 @@ void run_int_ptr_t_stack_free_test(){
   int stack_init_size = 1;
   clock_t t;
   stack_init(&s, stack_init_size, sizeof(int_ptr_t *), free_int_ptr_t_fn);
-  printf("Run stack_free test on %d int_ptr_t elements\n", num_elts);
+  printf("Run a stack_free test on %d int_ptr_t elements "
+	 "(multilayered objects)\n", num_elts);
   for (int i = 0; i < num_elts; i++){
     pushed = malloc(sizeof(int_ptr_t));
     assert(pushed != NULL);
@@ -195,7 +192,7 @@ void run_int_ptr_t_stack_free_test(){
   t = clock();
   stack_free(&s);
   t = clock() - t;
-  printf("\tTime of freeing: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  printf("\t\tfree time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
 }
 
 void print_test_result(int result){
