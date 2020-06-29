@@ -38,15 +38,14 @@ void run_int_dll_test(){
   int init_val;
   dll_init(&head);
   init_val = 0;
-  printf("Run dll test on int elements, initial value: %d, "
-	 "number of elements: %d\n", init_val, num_elts);
+  printf("Run dll tests on int elements \n");
+  printf("\tinitial value: %d, number of elements: %d\n", init_val, num_elts);
   int_dll_test_helper(&head, init_val, num_elts);
-  printf("Run dll test again on int elements, initial value: %d, "
-	 "number of elements: %d\n", init_val, num_elts);
+  printf("\tinitial value: %d, number of elements: %d (repeat test)\n",
+	 init_val, num_elts);
   int_dll_test_helper(&head, init_val, num_elts);
   init_val = num_elts;
-  printf("Run dll test on int elements, initial value: %d, "
-	 "number of elements: %d\n", init_val, num_elts);
+  printf("\tinitial value: %d, number of elements: %d\n", init_val, num_elts);
   int_dll_test_helper(&head, init_val, num_elts);
 }
 
@@ -61,15 +60,15 @@ static void int_dll_test_helper(dll_node_t **head,
     dll_insert(head, &i, sizeof(int));
   }
   t = clock() - t;
-  printf("\tTime of inserting: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  printf("\t\tinsert time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
   dll_traverse(head, init_val, end_val, &result, int_val_fn);
   t = clock();
   dll_free(head, NULL);
   t = clock() - t;
   result *= (head != NULL && *head == NULL);
-  printf("\tOrder correctness --> ");
+  printf("\t\torder correctness --> ");
   print_test_result(result);
-  printf("\tTime of freeing: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  printf("\t\tfree time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
 }
 
 /**
@@ -108,15 +107,14 @@ void run_int_ptr_t_dll_test(){
   int init_val;
   dll_init(&head);
   init_val = 0;
-  printf("Run dll test on int_ptr_t elements, initial value: %d, "
-	 "number of elements: %d\n", init_val, num_elts);
+  printf("Run dll tests on int_ptr_t elements (multilayered objects)\n");
+  printf("\tinitial value: %d, number of elements: %d\n", init_val, num_elts);
   int_ptr_t_dll_test_helper(&head, init_val, num_elts);
-  printf("Run dll test again on int_ptr_t elements, initial value: %d, "
-	 "number of elements: %d\n", init_val, num_elts);
+  printf("\tinitial value: %d, number of elements: %d (repeat test)\n",
+	 init_val, num_elts);
   int_ptr_t_dll_test_helper(&head, init_val, num_elts);
   init_val = num_elts;
-  printf("Run dll test on int_ptr_t elements, initial value: %d, "
-	 "number of elements: %d\n", init_val, num_elts);
+  printf("\tinitial value: %d, number of elements: %d\n", init_val, num_elts);
   int_ptr_t_dll_test_helper(&head, init_val, num_elts);
 }
 
@@ -138,16 +136,16 @@ static void int_ptr_t_dll_test_helper(dll_node_t **head,
     ins = NULL;
   }
   t = clock() - t;
-  printf("\tTime of inserting: %.4f seconds (incl. element allocation)\n",
+  printf("\t\tinsert time: %.4f seconds (incl. element allocation)\n",
 	 (float)t / CLOCKS_PER_SEC);
   dll_traverse(head, init_val, end_val, &result, int_ptr_t_val_fn);
   t = clock();
   dll_free(head, free_int_ptr_t_fn);
   t = clock() - t;
   result *= (head != NULL && *head == NULL);
-  printf("\tOrder correctness --> ");
+  printf("\t\torder correctness --> ");
   print_test_result(result);
-  printf("\tTime of freeing: %.4f seconds\n", 
+  printf("\t\tfree time: %.4f seconds\n", 
          (float)t / CLOCKS_PER_SEC);
 }
 
