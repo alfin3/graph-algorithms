@@ -15,21 +15,21 @@
 #include "utilities-ds.h"
 
 void print_test_result(int result);
-int int_sum(int *a, int num_elts);
 
 /** 
-   Test adj_lst_init, adj_lst_dir_build, adj_lst_undir_build, and 
-   adj_lst_free on a graph with integer weights.
+   Test adj_lst_{init, dir_build, undir_build, free} on a graph with edges 
+   and integer weights.
 */
 
 /**
    Initializes a graph with integer weights.
 */
-void int_graph_init(graph_t *g){
+void int_wts_graph_init(graph_t *g){
   int u[] = {0, 0, 0, 1};
   int v[] = {1, 2, 3, 3};
   int wts[] = {4, 3, 2, 1};
-  g->num_vts = 5;
+  int num_vts = 5;
+  graph_base_init(g, num_vts);
   g->num_es = 4;
   g->wt_size = sizeof(int);
   g->u = malloc(g->num_es * sizeof(int));
@@ -43,18 +43,6 @@ void int_graph_init(graph_t *g){
     g->v[i] = v[i];
     *((int *)(g->wts) + i) = wts[i];
   }
-}
-
-/**
-   Frees the dynamically allocated arrays of a graph.
-*/
-void graph_free(graph_t *g){
-  free(g->u);
-  free(g->v);
-  free(g->wts);
-  g->u = NULL;
-  g->v = NULL;
-  g->wts = NULL;
 }
 
 /**
@@ -84,16 +72,16 @@ void print_all_int_elts(stack_t *s){
 }
 
 /**
-   Runs a test of adj_lst_init, adj_lst_dir_build, adj_lst_undir_build, and 
-   adj_lst_free on a graph with integer weights. The test relies on the 
-   construction order in adj_lst_dir_build and adj_lst_undir_build.
+   Runs a test of adj_lst_{init, dir_build, undir_build, free} on a graph
+   with edges and integer weights. The test relies on the construction 
+   order in adj_lst_{dir_build, undir_build}.
 */
-static void int_graph_test_helper(adj_lst_t *a,
-				  int split[],
-				  int vts[],
-				  int wts[]);
+static void int_wts_graph_test_helper(adj_lst_t *a,
+				      int split[],
+				      int vts[],
+				      int wts[]);
 
-void run_int_graph_test(){
+void run_int_wts_graph_test(){
   graph_t g;
   adj_lst_t a;
   int split_dir[] = {3, 1, 0, 0, 0};
@@ -102,27 +90,28 @@ void run_int_graph_test(){
   int split_undir[] = {3, 2, 1, 2, 0};
   int vts_undir[] = {1, 2, 3, 0, 3, 0, 0, 1};
   int wts_undir[] = {4, 3, 2, 4, 1, 3, 2, 1};
-  int_graph_init(&g);
-  printf("Test the adjacency list of a directed graph with int weights --> ");
+  int_wts_graph_init(&g);
+  printf("Test adj_lst_{init, dir_build, free} on a directed graph "
+	 "with edges and integer weights --> ");
   adj_lst_init(&g, &a);
   adj_lst_dir_build(&g, &a);
-  int_graph_test_helper(&a, split_dir, vts_dir, wts_dir);
+  int_wts_graph_test_helper(&a, split_dir, vts_dir, wts_dir);
   print_int_adj_lst(&a);
   adj_lst_free(&a);
-  printf("Test the adjacency list of an undirected graph with "
-	 "int weights --> ");
+  printf("Test adj_lst_{init, undir_build, free} on an undirected graph "
+	 "with edges and integer weights --> ");
   adj_lst_init(&g, &a);
   adj_lst_undir_build(&g, &a);
-  int_graph_test_helper(&a, split_undir, vts_undir, wts_undir); 
+  int_wts_graph_test_helper(&a, split_undir, vts_undir, wts_undir);
   print_int_adj_lst(&a);
   adj_lst_free(&a);
   graph_free(&g);
 }
 
-static void int_graph_test_helper(adj_lst_t *a,
-				  int split[],
-				  int vts[],
-				  int wts[]){
+static void int_wts_graph_test_helper(adj_lst_t *a,
+				      int split[],
+				      int vts[],
+				      int wts[]){
   int result = 1;
   int ix = 0;
   for (int i = 0; i < a->num_vts; i++){
@@ -137,18 +126,19 @@ static void int_graph_test_helper(adj_lst_t *a,
 }
 
 /** 
-   Test adj_lst_init, adj_lst_dir_build, adj_lst_undir_build, and 
-   adj_lst_free on a graph with double weights.
+   Test adj_lst_{init, dir_build, undir_build, free} on a graph with edges
+   and double weights.
 */
 
 /**
    Initializes a graph with double weights.
 */
-void double_graph_init(graph_t *g){
+void double_wts_graph_init(graph_t *g){
   int u[] = {0, 0, 0, 1};
   int v[] = {1, 2, 3, 3};
   double wts[] = {4.0, 3.0, 2.0, 1.0};
-  g->num_vts = 5;
+  int num_vts = 5;
+  graph_base_init(g, num_vts);
   g->num_es = 4;
   g->wt_size = sizeof(double);
   g->u = malloc(g->num_es * sizeof(int));
@@ -191,16 +181,16 @@ void print_all_double_elts(stack_t *s){
 }
 
 /**
-   Runs a test of adj_lst_init, adj_lst_dir_build, adj_lst_undir_build, and 
-   adj_lst_free on a graph with double weights. The test relies on the 
-   construction order in adj_lst_dir_build and adj_lst_undir_build.
+   Runs a test of adj_lst_{init, dir_build, undir_build, free} on a graph 
+   with edges and double weights. The test relies on the construction order 
+   in adj_lst_{dir_build, undir_build}.
 */
-static void double_graph_test_helper(adj_lst_t *a,
-				     int split[],
-				     int vts[],
-				     double wts[]);
+static void double_wts_graph_test_helper(adj_lst_t *a,
+				         int split[],
+				         int vts[],
+				         double wts[]);
 
-void run_double_graph_test(){
+void run_double_wts_graph_test(){
   graph_t g;
   adj_lst_t a;
   int split_dir[] = {3, 1, 0, 0, 0};
@@ -209,28 +199,28 @@ void run_double_graph_test(){
   int split_undir[] = {3, 2, 1, 2, 0};
   int vts_undir[] = {1, 2, 3, 0, 3, 0, 0, 1};
   double wts_undir[] = {4.0, 3.0, 2.0, 4.0, 1.0, 3.0, 2.0, 1.0};
-  double_graph_init(&g);
-  printf("Test the adjacency list of a directed graph with double "
-	 "weights --> ");
+  double_wts_graph_init(&g);
+  printf("Test adj_lst_{init, dir_build, free} on a directed graph "
+	 "with edges and double weights --> ");
   adj_lst_init(&g, &a);
   adj_lst_dir_build(&g, &a);
-  double_graph_test_helper(&a, split_dir, vts_dir, wts_dir);
+  double_wts_graph_test_helper(&a, split_dir, vts_dir, wts_dir);
   print_double_adj_lst(&a);
   adj_lst_free(&a);
-  printf("Test the adjacency list of an undirected graph with double "
-	 "weights --> ");
+  printf("Test adj_lst_{init, undir_build, free} on an undirected graph "
+	 "with edges and double weights --> ");
   adj_lst_init(&g, &a);
   adj_lst_undir_build(&g, &a);
-  double_graph_test_helper(&a, split_undir, vts_undir, wts_undir); 
+  double_wts_graph_test_helper(&a, split_undir, vts_undir, wts_undir); 
   print_double_adj_lst(&a);
   adj_lst_free(&a);
   graph_free(&g);
 }
 
-static void double_graph_test_helper(adj_lst_t *a,
-				     int split[],
-				     int vts[],
-				     double wts[]){
+static void double_wts_graph_test_helper(adj_lst_t *a,
+				         int split[],
+				         int vts[],
+				         double wts[]){
   int result = 1;
   int ix = 0;
   for (int i = 0; i < a->num_vts; i++){
@@ -246,68 +236,59 @@ static void double_graph_test_helper(adj_lst_t *a,
 }
 
 /** 
-   Test adj_lst_init, adj_lst_dir_build, adj_lst_undir_build, and 
-   adj_lst_free on a graph with no edges.
+   Test adj_lst_{init, dir_build, undir_build, free} on graphs with 
+   no edges and 0 or more vertices.
 */
 
 /**
-   Initializes a graph with no edges.
+   Runs a adj_lst_{init, dir_build, undir_build, free} test on graphs with 
+   no edges and 0 or more vertices.
 */
-void no_edges_graph_init(graph_t *g, int n){
-  g->num_vts = n;
-  g->num_es = 0;
-  g->wt_size = 0;
-  g->wts = NULL;
-  g->u = NULL;
-  g->v = NULL;
-}
-
-/**
-   Prints the adjacency list of a graph with no weights, used to print the
-   adjacency list of a graph with no edges.
-*/
-void print_no_weights_adj_lst(adj_lst_t *a){
-  printf("\tvertices: \n");
-  for (int i = 0; i < a->num_vts; i++){
-    printf("\t%d : ", i);
-    print_all_int_elts(a->vts[i]);
-  }
-  printf("\n");
-}
-
-/**
-   Runs a test of adj_lst_init, adj_lst_dir_build, adj_lst_undir_build, and 
-   adj_lst_free on a graph with no edges.
-*/
-static void no_edges_graph_test_helper(adj_lst_t *a, int split[]);
-
-void run_no_edges_graph_test(){
+static void corner_cases_graph_test_helper(adj_lst_t *a,
+					   int vt_ix,
+					   int *result);
+  
+void run_corner_cases_graph_test(){
   graph_t g;
   adj_lst_t a;
-  int split[] = {0, 0, 0, 0, 0};
-  int num_vts = 5;
-  no_edges_graph_init(&g, num_vts);
-  printf("Test the adjacency list of a directed graph with no edges --> ");
-  adj_lst_init(&g, &a);
-  adj_lst_dir_build(&g, &a);
-  no_edges_graph_test_helper(&a, split);
-  print_no_weights_adj_lst(&a);
-  adj_lst_free(&a);
-  printf("Test the adjacency list of an undirected graph with no edges --> ");
-  adj_lst_init(&g, &a);
-  adj_lst_undir_build(&g, &a);
-  no_edges_graph_test_helper(&a, split); 
-  print_no_weights_adj_lst(&a);
-  adj_lst_free(&a);
-  graph_free(&g);
+  int max_num_vts = 100;
+  int result = 1;
+  for (int i = 0; i < max_num_vts; i++){
+    graph_base_init(&g, i);
+    adj_lst_init(&g, &a);
+    adj_lst_dir_build(&g, &a);
+    result *= (a.num_vts == i &&
+	       a.num_es == 0 &&
+	       a.wt_size == 0 &&
+	       a.wts == NULL);
+    corner_cases_graph_test_helper(&a, i, &result);
+    adj_lst_free(&a);
+    adj_lst_init(&g, &a);
+    adj_lst_undir_build(&g, &a);
+    result *= (a.num_vts == i &&
+	       a.num_es == 0 &&
+	       a.wt_size == 0 &&
+	       a.wts == NULL);
+    corner_cases_graph_test_helper(&a, i, &result);
+    adj_lst_free(&a);
+    graph_free(&g);
+  }
+  printf("Test adj_lst_{init, dir_build, undir_build, free} "
+	 "on graphs with no edges and 0 or more vertices --> ");
+  print_test_result(result);
 }
 
-static void no_edges_graph_test_helper(adj_lst_t *a, int split[]){
-  int result = 1;
-  for (int i = 0; i < a->num_vts; i++){
-    result *= (split[i] == a->vts[i]->num_elts);
+static void corner_cases_graph_test_helper(adj_lst_t *a,
+					   int vt_ix,
+					   int *result){
+  if(vt_ix){
+    *result *= (a->vts != NULL);
+    for(int i = 0; i < vt_ix; i++){
+      *result *= (a->vts[i]->num_elts == 0);
+    }
+  }else{
+    *result *= (a->vts == NULL);
   }
-  print_test_result(result);
 }
 
 /** 
@@ -321,14 +302,12 @@ void complete_graph_init(graph_t *g, int n){
   assert(n > 1);
   int num_es = (n * (n - 1)) / 2; //n * (n - 1) is even
   int ix = 0;
-  g->num_vts = n;
+  graph_base_init(g, n);
   g->num_es = num_es;
-  g->wt_size = 0;
   g->u = malloc(g->num_es * sizeof(int));
   assert(g->u != NULL);
   g->v = malloc(g->num_es * sizeof(int));
   assert(g->v != NULL);
-  g->wts = NULL;
   for (int i = 0; i < n - 1; i++){
     for (int j = i + 1; j < n; j++){
       g->u[ix] = i;
@@ -367,8 +346,10 @@ void run_adj_lst_undir_build_test(){
 }
 
 /** 
-   Test adj_lst_add_dir_edge.
+   Test adj_lst_add_dir_edge and adj_lst_add_undir_edge.
 */
+
+int int_sum(int *a, int num_elts);
 
 /**
    Runs a adj_lst_add_dir_edge test on DAGs.
@@ -379,6 +360,8 @@ void run_adj_lst_add_dir_edge_test(){
   int n;
   int pow_two_start = 4;
   int pow_two_end = 15;
+  uint32_t nom = 1;
+  uint32_t denom = 1;
   int result = 1;
   clock_t t;
   printf("Test adj_lst_add_dir_edge on DAGs \n");
@@ -386,7 +369,7 @@ void run_adj_lst_add_dir_edge_test(){
   for (int i = pow_two_start; i < pow_two_end; i++){
     n = (int)pow_two_uint64(i);
     complete_graph_init(&g_blt, n);
-    no_edges_graph_init(&g_bld, n);
+    graph_base_init(&g_bld, n);
     adj_lst_init(&g_blt, &a_blt);
     adj_lst_init(&g_bld, &a_bld);
     adj_lst_dir_build(&g_blt, &a_blt);
@@ -394,7 +377,7 @@ void run_adj_lst_add_dir_edge_test(){
     t = clock();
     for (int i = 0; i < n - 1; i++){
       for (int j = i + 1; j < n; j++){
-	adj_lst_add_dir_edge(&a_bld, i, j, 1, 1);
+	adj_lst_add_dir_edge(&a_bld, i, j, nom, denom);
       }
     }
     t = clock() - t;
@@ -418,41 +401,6 @@ void run_adj_lst_add_dir_edge_test(){
 }
 
 /**
-   Runs a adj_lst_add_dir_edge test on the number of edges in expectation.
-*/
-void run_adj_lst_add_dir_edge_exp_test(){
-  graph_t g;
-  adj_lst_t a;
-  int n;
-  int pow_two_start = 10;
-  int pow_two_end = 15;
-  printf("Test adj_lst_add_dir_edge on the number of edges in expectation\n");
-  printf("\tn vertices, E[number of directed edges] = "
-	 "n(n - 1)/2 * (0.5 * 1)\n");
-  for (int i = pow_two_start; i < pow_two_end; i++){
-    n = (int)pow_two_uint64(i);
-    no_edges_graph_init(&g, n);
-    adj_lst_init(&g, &a);
-    adj_lst_dir_build(&g, &a);
-    for (int i = 0; i < n - 1; i++){
-      for (int j = i + 1; j < n; j++){
-	adj_lst_add_dir_edge(&a, i, j, 1, 2);
-      }
-    }
-    printf("\t\tvertices: %d, expected directed edges: %.1f, "
-	   "directed edges: %d\n",
-	   n, 0.5 * (float)(n * (n - 1)) / 2.0, a.num_es);
-    fflush(stdout);
-    adj_lst_free(&a);
-    graph_free(&g);
-  }
-}
-
-/** 
-   Test adj_lst_add_undir_edge.
-*/
-
-/**
    Runs a adj_lst_add_undir_edge test on complete graphs.
 */
 void run_adj_lst_add_undir_edge_test(){
@@ -461,6 +409,8 @@ void run_adj_lst_add_undir_edge_test(){
   int n;
   int pow_two_start = 4;
   int pow_two_end = 15;
+  uint32_t nom = 1;
+  uint32_t denom = 1;
   int result = 1;
   clock_t t;
   printf("Test adj_lst_add_undir_edge on complete graphs \n");
@@ -469,7 +419,7 @@ void run_adj_lst_add_undir_edge_test(){
   for (int i = pow_two_start; i < pow_two_end; i++){
     n = (int)pow_two_uint64(i);
     complete_graph_init(&g_blt, n);
-    no_edges_graph_init(&g_bld, n);
+    graph_base_init(&g_bld, n);
     adj_lst_init(&g_blt, &a_blt);
     adj_lst_init(&g_bld, &a_bld);
     adj_lst_undir_build(&g_blt, &a_blt);
@@ -477,7 +427,7 @@ void run_adj_lst_add_undir_edge_test(){
     t = clock();
     for (int i = 0; i < n - 1; i++){
       for (int j = i + 1; j < n; j++){
-	adj_lst_add_undir_edge(&a_bld, i, j, 1, 1);
+	adj_lst_add_undir_edge(&a_bld, i, j, nom, denom);
       }
     }
     t = clock() - t;
@@ -500,35 +450,54 @@ void run_adj_lst_add_undir_edge_test(){
   print_test_result(result);
 }
 
-/**
-   Runs a adj_lst_add_undir_edge test on the number of edges in expectation.
+
+/** 
+   Test adj_lst_rand_dir and adj_lst_rand_undir.
 */
-void run_adj_lst_add_undir_edge_exp_test(){
-  graph_t g;
+
+/**
+   Runs a adj_lst_rand_dir test on the number of edges in expectation.
+*/
+void run_adj_lst_rand_dir_test(){
   adj_lst_t a;
   int n;
   int pow_two_start = 10;
   int pow_two_end = 15;
-  printf("Test adj_lst_add_undir_edge on the number of edges in "
-	 "expectation\n");
-  printf("\tn vertices, E[number of directed edges] = "
-	 "n(n - 1)/2 * (0.5 * 2)\n");
+  uint32_t nom = 1;
+  uint32_t denom = 2;
+  printf("Test adj_lst_rand_dir on the number of edges in expectation\n");
+  printf("\tn vertices, E[# of directed edges] = n(n - 1) * (0.5 * 1)\n");
   for (int i = pow_two_start; i < pow_two_end; i++){
     n = (int)pow_two_uint64(i);
-    no_edges_graph_init(&g, n);
-    adj_lst_init(&g, &a);
-    adj_lst_undir_build(&g, &a);
-    for (int i = 0; i < n - 1; i++){
-      for (int j = i + 1; j < n; j++){
-	adj_lst_add_undir_edge(&a, i, j, 1, 2);
-      }
-    }
+    adj_lst_rand_dir(&a, n, nom, denom);
     printf("\t\tvertices: %d, expected directed edges: %.1f, "
 	   "directed edges: %d\n",
 	   n, 0.5 * (float)(n * (n - 1)), a.num_es);
     fflush(stdout);
     adj_lst_free(&a);
-    graph_free(&g);
+  }
+}
+
+/**
+   Runs a adj_lst_rand_undir test on the number of edges in expectation.
+*/
+void run_adj_lst_rand_undir_test(){
+  adj_lst_t a;
+  int n;
+  int pow_two_start = 10;
+  int pow_two_end = 15;
+  uint32_t nom = 1;
+  uint32_t denom = 2;
+  printf("Test adj_lst_rand_undir on the number of edges in expectation\n");
+  printf("\tn vertices, E[# of directed edges] = n(n - 1)/2 * (0.5 * 2)\n");
+  for (int i = pow_two_start; i < pow_two_end; i++){
+    n = (int)pow_two_uint64(i);
+    adj_lst_rand_undir(&a, n, nom, denom);
+    printf("\t\tvertices: %d, expected directed edges: %.1f, "
+	   "directed edges: %d\n",
+	   n, 0.5 * (float)(n * (n - 1)), a.num_es);
+    fflush(stdout);
+    adj_lst_free(&a);
   }
 }
 
@@ -549,13 +518,13 @@ void print_test_result(int result){
 }
 
 int main(){
-  run_int_graph_test();
-  run_double_graph_test();
-  run_no_edges_graph_test();
+  run_int_wts_graph_test();
+  run_double_wts_graph_test();
+  run_corner_cases_graph_test();
   run_adj_lst_undir_build_test();
   run_adj_lst_add_dir_edge_test();
   run_adj_lst_add_undir_edge_test();
-  run_adj_lst_add_dir_edge_exp_test();
-  run_adj_lst_add_undir_edge_exp_test();
+  run_adj_lst_rand_dir_test();
+  run_adj_lst_rand_undir_test();
   return 0;
 }
