@@ -8,7 +8,7 @@ graph : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
 
 graph-main.o : graph.h $(STACK_DIR)stack.h $(UTILS_DIR)utilities-ds.h
-graph.o : graph.h $(STACK_DIR)stack.h 
+graph.o : graph.h $(STACK_DIR)stack.h $(UTILS_DIR)utilities-ds.h
 $(STACK_DIR)stack.o : $(STACK_DIR)stack.h
 $(UTILS_DIR)utilities-ds.o : $(UTILS_DIR)utilities-ds.h
 

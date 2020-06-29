@@ -14,6 +14,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "utilities-ds.h"
 #include "stack.h"
 #include "graph.h"
 
@@ -28,7 +31,7 @@ static void adj_lst_init_helper(stack_t **s, int elt_size);
 
 void adj_lst_init(graph_t *g, adj_lst_t *a){
   a->num_vts = g->num_vts;
-  a->num_es = g->num_es;
+  a->num_es = 0;
   a->wt_size = g->wt_size;
   a->vts = malloc(a->num_vts * sizeof(stack_t *));
   assert(a->vts != NULL);
@@ -59,6 +62,7 @@ void adj_lst_dir_build(graph_t *g, adj_lst_t *a){
   for (int i = 0; i < g->num_es; i++){
     u_ix = *(u_ptr(g, i));
     stack_push(a->vts[u_ix], v_ptr(g, i));
+    a->num_es++;
     if (a->wts != NULL){
       stack_push(a->wts[u_ix], wt_ptr(g, i));
     }
@@ -76,10 +80,44 @@ void adj_lst_undir_build(graph_t *g, adj_lst_t *a){
     v_ix = *(v_ptr(g, i));
     stack_push(a->vts[u_ix], v_ptr(g, i));
     stack_push(a->vts[v_ix], u_ptr(g, i));
+    a->num_es += 2;
     if (a->wts != NULL){
       stack_push(a->wts[u_ix], wt_ptr(g, i));
       stack_push(a->wts[v_ix], wt_ptr(g, i));
     }
+  }
+}
+
+/**
+   Adds a directed unweighted edge (u, v) with probability n/d. If n = d, 
+   adds the edge without the overhead of generating a random number.
+*/
+void adj_lst_add_dir_edge(adj_lst_t *a,
+			  int u,
+			  int v,
+			  uint32_t n,
+			  uint32_t d){
+  assert(n <= d && d > 0);
+  if (bern_uint32(n, 0, d)){
+    stack_push(a->vts[u], &v);
+    a->num_es++;
+  }
+}
+
+/**
+   Adds an undirected unweighted edge (u, v) with probability n/d. If n = d, 
+   adds the edge without the overhead of generating a random number.
+*/
+void adj_lst_add_undir_edge(adj_lst_t *a,
+			    int u,
+			    int v,
+			    uint32_t n,
+			    uint32_t d){
+  assert(n <= d && d > 0);
+  if (bern_uint32(n, 0, d)){
+    stack_push(a->vts[u], &v);
+    stack_push(a->vts[v], &u);
+    a->num_es += 2;
   }
 }
 

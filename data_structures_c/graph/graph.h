@@ -49,6 +49,26 @@ void adj_lst_dir_build(graph_t *g, adj_lst_t *a);
 void adj_lst_undir_build(graph_t *g, adj_lst_t *a);
 
 /**
+   Adds a directed unweighted edge (u, v) with probability n/d. If n = d, 
+   adds the edge without the overhead of generating a random number.
+*/
+void adj_lst_add_dir_edge(adj_lst_t *a,
+			  int u,
+			  int v,
+			  uint32_t n,
+			  uint32_t d);
+
+/**
+   Adds an undirected unweighted edge (u, v) with probability n/d. If n = d, 
+   adds the edge without the overhead of generating a random number.
+*/
+void adj_lst_add_undir_edge(adj_lst_t *a,
+			    int u,
+			    int v,
+			    uint32_t n,
+			    uint32_t d);
+
+/**
    Frees an adjacency list.
 */
 void adj_lst_free(adj_lst_t *a);
