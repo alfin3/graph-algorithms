@@ -15,6 +15,7 @@
 #ifndef GRAPH_H  
 #define GRAPH_H
 
+#include <stdint.h>
 #include "stack.h"
 
 typedef struct{
