@@ -5,7 +5,7 @@ QUEUE_DIR = $(DS_DIR)queue/
 STACK_DIR = $(DS_DIR)stack/
 UTILS_DIR = $(DS_DIR)utilities-ds/
 CFLAGS = -I$(GRAPH_DIR) -I$(QUEUE_DIR) -I$(STACK_DIR) -I$(UTILS_DIR) \
-         -Wall -Wextra
+         -Wall -Wextra -Og
 
 OBJ = bfs-main.o \
       bfs.o \
