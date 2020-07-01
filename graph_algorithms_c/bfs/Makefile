@@ -1,5 +1,5 @@
 CC = gcc
-DS_DIR = ../../c_data_structures/
+DS_DIR = ../../data_structures_c/
 GRAPH_DIR = $(DS_DIR)graph/
 QUEUE_DIR = $(DS_DIR)queue/
 STACK_DIR = $(DS_DIR)stack/
