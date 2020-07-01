@@ -1,16 +1,40 @@
 CC = gcc
-CFLAGS = -I.
-OBJ = bfs_main.o bfs.o graph.o queue.o stack.o
+DS_DIR = ../../c_data_structures/
+GRAPH_DIR = $(DS_DIR)graph/
+QUEUE_DIR = $(DS_DIR)queue/
+STACK_DIR = $(DS_DIR)stack/
+UTILS_DIR = $(DS_DIR)utilities-ds/
+CFLAGS = -I$(GRAPH_DIR) -I$(QUEUE_DIR) -I$(STACK_DIR) -I$(UTILS_DIR) \
+         -Wall -Wextra
+
+OBJ = bfs-main.o \
+      bfs.o \
+      $(GRAPH_DIR)graph.o \
+      $(QUEUE_DIR)queue.o \
+      $(STACK_DIR)stack.o \
+      $(UTILS_DIR)utilities-ds.o
 
 bfs : $(OBJ)
-	$(CC) -o bfs $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ 
 
-bfs_main.o : bfs.h graph.h stack.h
-bfs.o : bfs.h graph.h queue.h stack.h
-graph.o : graph.h stack.h
-queue.o : queue.h
-stack.o : stack.h
+bfs-main.o : bfs.h \
+             $(GRAPH_DIR)graph.h \
+             $(STACK_DIR)stack.h \
+             $(UTILS_DIR)utilities-ds.h
+bfs.o : bfs.h \
+        $(GRAPH_DIR)graph.h \
+        $(QUEUE_DIR)queue.h \
+        $(STACK_DIR)stack.h
+$(GRAPH_DIR)graph.o : $(GRAPH_DIR)graph.h \
+                      $(STACK_DIR)stack.h \
+                      $(UTILS_DIR)utilities-ds.h
+$(QUEUE_DIR)queue.o : $(QUEUE_DIR)queue.h
+$(STACK_DIR)stack.o : $(STACK_DIR)stack.h
+$(UTILS_DIR)utilities-ds.o : $(UTILS_DIR)utilities-ds.h
 
-.PHONY : clean
+.PHONY : clean clean-all
+
 clean :
-	rm bfs $(OBJ)
+	rm $(OBJ)
+clean-all : 
+	rm -f bfs $(OBJ)

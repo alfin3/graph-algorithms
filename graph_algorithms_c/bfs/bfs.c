@@ -9,19 +9,20 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
-#include "stack.h"
-#include "queue.h"
-#include "graph.h"
 #include "bfs.h"
+#include "graph.h"
+#include "queue.h"
+#include "stack.h"
 
 static int *vt_ptr(void *vts, int i);
-static void free_vt_fn(void *a){}
 
 /**
-   Computes and copies the lowest # of edges from s to dist array and 
-   previous vertex to prev array, with -1 in prev for unreached vertices.
+   Computes and copies to dist the lowest # of edges from s to each reached 
+   vertex, and provides the previous vertex in prev, with -1 in prev 
+   for unreached vertices.
 */
 void bfs(adj_lst_t *a, int s, int *dist, int *prev){
+  assert(a->num_vts > 0); //a->num_vts includes s
   queue_t q;
   int q_size = 1;
   int vt_size = sizeof(int);
@@ -33,15 +34,15 @@ void bfs(adj_lst_t *a, int s, int *dist, int *prev){
     dist[i] = 0;
     prev[i] = -1;
   }
-  queue_init(&q, q_size, vt_size, free_vt_fn);
+  queue_init(&q, q_size, vt_size, NULL);
+  prev[s] = s;
   queue_push(&q, &s);
   placed[s] = true;
-  prev[s] = s;
   while (q.num_elts > 0){
     queue_pop(&q, &u);
     for (int i = 0; i < a->vts[u]->num_elts; i++){
       v = *vt_ptr(a->vts[u]->elts, i);
-      //v is reached <=> shortest distance from s
+      //reached for the first time => shortest distance from s
       if (!placed[v]){
 	dist[v] = dist[u] + 1;
 	prev[v] = u;
