@@ -263,10 +263,10 @@ void run_random_dir_graph_test(){
   int n, s;
   int pow_two_start = 10;
   int pow_two_end = 15;
-  int num_noms = 3;
+  int num_noms = 5;
   int ave_iter = 10;
   int *dist, *prev;
-  uint32_t noms[] = {3, 2, 1};
+  uint32_t noms[] = {4, 3, 2, 1, 0};
   uint32_t denom = 4;
   clock_t t;
   printf("Run a bfs test on random directed graphs, from %d random start "
