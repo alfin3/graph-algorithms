@@ -2,6 +2,9 @@
    dfs.h
 
    Declarations of accessible functions for running the DFS algorithm.
+
+   The implementation emulates the recursion in DFS on a dynamically 
+   allocated stack data structure to avoid an overflow of the memory stack.
 */
 
 #ifndef DFS_H  
