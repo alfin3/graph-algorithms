@@ -1,6 +1,6 @@
 # c-cpp-toolbox
 
-In each directory, run:
+In each directory with a Makefile, run:
 
 `make`
 
