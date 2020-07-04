@@ -28,7 +28,7 @@ static bool witness(uint64_t a, uint64_t n);
    Runs a randomized primality test.
 */
 bool miller_rabin_uint64(uint64_t n){
-  int num_iter = 100;
+  int num_iter = 50; //false positive rate = 2^-100
   if (n == 2){
     return true;
   }else if (n == 1 || !(n % 2)){

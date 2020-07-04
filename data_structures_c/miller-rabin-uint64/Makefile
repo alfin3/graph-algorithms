@@ -1,6 +1,6 @@
 CC = gcc
 UTILS_DIR = ../utilities-ds/
-CFLAGS = -I$(UTILS_DIR) -Wall -Wextra
+CFLAGS = -I$(UTILS_DIR) -Wall -Wextra -Wno-maybe-uninitialized -O3
 OBJ = miller-rabin-uint64-main.o miller-rabin-uint64.o $(UTILS_DIR)utilities-ds.o
 
 miller-rabin-uint64 : $(OBJ)
