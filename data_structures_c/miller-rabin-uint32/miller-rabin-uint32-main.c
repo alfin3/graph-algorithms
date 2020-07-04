@@ -56,19 +56,67 @@ void print_test_result(int result){
 void run_random_composite_test(){
   int num_trials = 10000000;
   int result = 0;
-  uint32_t upper_a = (uint32_t)(pow_two_uint64(16) - 3);
-  uint32_t upper_b = (uint32_t)(pow_two_uint64(16) - 3);
+  uint32_t upper = (uint32_t)(pow_two_uint64(16) - 3);
   uint32_t rand_a;
   uint32_t rand_b;
-  printf("Run miller_rabin_uint32 test on random composites \n");
+  printf("Run a miller_rabin_uint32 test on %d random composites \n", 
+         num_trials);
   printf("\tn = a * b, where 2 <= a <= 2^16 - 1, 2 <= b <= 2^16 - 1 --> ");
+  fflush(stdout);
   srandom(time(0));
   for (int i = 0; i < num_trials; i++){
-    rand_a = 2 + random_range_uint32(upper_a);
-    rand_b = 2 + random_range_uint32(upper_b);
+    rand_a = 2 + random_range_uint32(upper);
+    rand_b = 2 + random_range_uint32(upper);
     result += miller_rabin_uint32(rand_a * rand_b);
   }
   print_test_result(result == 0);
+}
+
+/**
+   Tests miller_rabin_uint32 on finding a prime within a range.
+*/
+static void find_prime_test_helper(uint32_t low,
+			           uint32_t high,
+			           int num_trials);
+
+void run_find_prime_test(){
+  int num_trials = 100;
+  int pow_two_start = 10;
+  int pow_two_end = 31;
+  uint32_t low, high;
+  printf("Run a miller_rabin_uint32 test on finding a prime within a range, "
+	 "in %d trials per range \n", num_trials);
+  fflush(stdout);
+  srandom(time(0));
+  for (int i = pow_two_start; i < pow_two_end; i++){
+    low = (uint32_t)pow_two_uint64(i);
+    high = (uint32_t)pow_two_uint64(i + 1);
+    find_prime_test_helper(low, high, num_trials);
+  }
+}
+
+static void find_prime_test_helper(uint32_t low,
+			           uint32_t high,
+			           int num_trials){
+  uint32_t n;
+  int c = 1;
+  clock_t t;
+  t = clock();
+  for (int i = 0; i < num_trials; i++){
+    n = low + random_range_uint32(high - low);
+    while (!miller_rabin_uint32(n)){
+      n--;
+      c++;
+      if (n < low){
+	n = low + random_range_uint32(high - low);
+      }	
+    }
+  }
+  t = clock() - t;
+  printf("\t[%u, %u], # tests/trial:  %.1f, "
+	 "runtime/trial : %.7f seconds \n",
+	 low, high, (float)c / (float)num_trials,
+	 (float)t / ((float)num_trials * CLOCKS_PER_SEC));
 }
 
 int main(){;
@@ -91,14 +139,18 @@ int main(){;
 			     172081, 188461, 252601, 278545, 294409,
 			     314821, 334153, 340561, 399001, 410041};
   srandom(time(0));
-  printf("Run miller_rabin_uint32 test on primes --> ");
+  printf("Run a miller_rabin_uint32 test on primes --> ");
+  fflush(stdout);
   run_true_test(primes, 30);
-  printf("Run miller_rabin_uint32 test on non-primes --> ");
+  printf("Run a miller_rabin_uint32 test on non-primes --> ");
+  fflush(stdout);
   run_false_test(non_primes, 30);
-  printf("Run miller_rabin_uint32 test on Carmichael numbers --> ");
+  printf("Run a miller_rabin_uint32 test on Carmichael numbers --> ");
+  fflush(stdout);
   run_false_test(carmichael_nums, 30);
   srandom(time(0));
   run_random_composite_test();
+  run_find_prime_test();
   return 0;
 }
 
