@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 7/11/2020 6:00pm
+   Update: 7/11/2020 8:30pm
 */
 
 #include <stdio.h>
@@ -278,8 +278,72 @@ uint64_t sum_mod_uint64(uint64_t a, uint64_t b, uint64_t n){
 
 /**
    Computes mod n of a memory block in O(block size) time and O(1) 
-   space overhead, treating each byte of the block in the little-
-   endian order and inductively applying the following relations:
+   space overhead in an overflow-safe manner, treating each byte of the 
+   block in the little-endian order and inductively applying the 
+   following relations:
+   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
+   a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
+   Does not require a little-endian machine.
+*/
+uint64_t mem_mod_uint64(void *s, uint64_t size, uint64_t n){
+  assert(n > 0);
+  if(n == 1){return 0;}
+  uint8_t *ptr;
+  uint64_t byte_val;
+  uint64_t pow_two = 1; //1 mod n
+  uint64_t prod;
+  uint64_t ret = 0; //0 mod n
+  uint64_t pow_two_inc = pow_two_uint64(8) % n;
+  for (uint64_t i = 0; i < size; i++){
+    ptr = (uint8_t *)s + i;
+    byte_val = (uint64_t)(*ptr);
+    prod = mul_mod_uint64(pow_two, (byte_val % n), n);
+    ret = sum_mod_uint64(ret, prod, n);
+    pow_two = mul_mod_uint64(pow_two, pow_two_inc, n);
+  }
+  return ret;
+}
+
+/**
+   Computes mod n of a memory block in O(block size) time and O(1) space 
+   overhead in an overflow-safe manner, treating the block in 8-byte 
+   increments in the little-endian order and inductively applying the 
+   following relations:
+   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
+   a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
+   Given a little-endian machine, the result is equal to the return value 
+   of mem_mod_uint64.
+*/
+uint64_t fast_mem_mod_uint64(void *s, uint64_t size, uint64_t n){
+  assert(n > 0);
+  if(n == 1){return 0;}
+  int step_size = 8;
+  uint64_t *ptr;
+  uint64_t res_size = size % step_size;
+  uint64_t bytes_val;
+  uint64_t pow_two = 1; //1 mod n
+  uint64_t prod;
+  uint64_t ret = 0; //0 mod n
+  uint64_t pow_two_inc = pow_two_uint64(63) % n;
+  pow_two_inc = mul_mod_uint64(pow_two_inc, (2 % n), n);
+  for (uint64_t i = 0; i < size - res_size; i += step_size){
+    ptr = (uint64_t *)((char *)s + i);
+    bytes_val = *ptr;
+    prod = mul_mod_uint64(pow_two, (bytes_val % n), n);
+    ret = sum_mod_uint64(ret, prod, n);
+    pow_two = mul_mod_uint64(pow_two, pow_two_inc, n);
+  }
+  ptr = (uint64_t *)((char *)s + size - res_size);
+  prod = mul_mod_uint64(pow_two, mem_mod_uint64(ptr, res_size, n), n);
+  ret = sum_mod_uint64(ret, prod, n);
+  return ret;
+}
+
+/**
+   Computes mod n of a memory block in O(block size) time and O(1) 
+   space overhead in an overflow-safe manner, treating each byte of the 
+   block in the little-endian order and inductively applying the following 
+   relations:
    if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
    a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
    Does not require a little-endian machine.
@@ -308,8 +372,9 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n){
 
 /**
    Computes mod n of a memory block in O(block size) time and O(1) space 
-   overhead, treating the block in 8-byte increments in the little-endian 
-   order and inductively applying the following relations:
+   overhead in an overflow-safe manner, treating the block in 8-byte 
+   increments in the little-endian order and inductively applying the 
+   following relations:
    if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
    a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
    Given a little-endian machine, the result is equal to the return value 
@@ -319,7 +384,7 @@ uint32_t fast_mem_mod_uint32(void *s, uint64_t size, uint32_t n){
   assert(n > 0);
   if(n == 1){return 0;}
   int step_size = 8;
-  uint64_t *ptr;// = (uint64_t *)s;
+  uint64_t *ptr;
   uint64_t res_size = size % step_size;
   //"no overflow" guarantee
   uint64_t n64 = n;

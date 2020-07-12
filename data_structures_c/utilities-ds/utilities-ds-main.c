@@ -4,7 +4,7 @@
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
 
-   Update: 7/11/2020 6:00pm
+   Update: 7/11/2020 8:30pm
 */
 
 #include <stdio.h>
@@ -463,6 +463,114 @@ void run_sum_mod_uint64_test(){
 }
 
 /**
+   Tests mem_mod_uint64. A little-endian machine is assumed for test purposes.
+*/
+void run_mem_mod_uint64_test(){
+  int num_trials = 10000;
+  int result = 1;
+  uint8_t *mem_block;
+  uint64_t upper = (pow_two_uint64(63) - 1) + pow_two_uint64(63);
+  uint64_t rand_num;
+  uint64_t rand_n;
+  uint64_t mod_n;
+  uint64_t size;
+  clock_t t;
+  size = 8;
+  printf("Run mem_mod_uint64 in a random test, size = %lu bytes  --> ", size);
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_num = random_range_uint64(upper);
+    rand_n = random_range_uint64(upper);
+    result *= (rand_num % rand_n == mem_mod_uint64(&rand_num, size, rand_n));
+  }
+  print_test_result(result);
+  printf("Run mem_mod_uint64 on large memory blocks \n");
+  srandom(time(0));
+  result = 1;
+  rand_n = random_range_uint64(upper);
+  for (int i = 10; i <= 20; i += 10){
+    size = pow_two_uint64(i); //KB, MB
+    printf("\tmemory block size: %lu bytes \n", size);
+    mem_block = calloc(size, 1);
+    assert(mem_block != NULL);
+    mem_block[size - 1] = (uint8_t)pow_two_uint64(7);
+    t = clock();
+    mod_n = mem_mod_uint64(mem_block, size, rand_n);
+    t = clock() - t;
+    printf("\truntime: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
+    result = (mod_n == pow_mod_uint64(2, pow_two_uint64(i) * 8 - 1, rand_n));
+    printf("\tcorrectness: block bits = %lu (mod %lu)  --> ", mod_n, rand_n);
+    print_test_result(result);
+    free(mem_block);
+  } 
+}
+
+/**
+   Tests fast_mem_mod_uint64. A little-endian machine is assumed for 
+   test purposes.
+*/
+void run_fast_mem_mod_uint64_test(){
+  int num_trials = 10000;
+  int result = 1;
+  uint8_t *mem_block;
+  uint64_t upper = (pow_two_uint64(63) - 1) + pow_two_uint64(63);
+  uint64_t upper_byte_val = (uint64_t)(pow_two_uint64(8) - 1);
+  uint64_t rand_num;
+  uint64_t rand_n;
+  uint64_t mod_n;
+  uint64_t size;
+  clock_t t;
+  size = 8;
+  printf("Run fast_mem_mod_uint64 in a random test, size = %lu bytes  --> ",
+	 size);
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_num = random_range_uint64(upper);
+    rand_n = random_range_uint64(upper);
+    result *= (rand_num % rand_n ==
+	       fast_mem_mod_uint64(&rand_num, size, rand_n));
+  }
+  print_test_result(result);
+  printf("Run fast_mem_mod_uint64 on large memory blocks \n");
+  srandom(time(0));
+  result = 1;
+  rand_n = random_range_uint64(upper);
+  for (int i = 10; i <= 20; i += 10){
+    size = pow_two_uint64(i); //KB, MB
+    printf("\tmemory block size: %lu bytes \n", size);
+    mem_block = calloc(size, 1);
+    assert(mem_block != NULL);
+    mem_block[size - 1] = (uint8_t)pow_two_uint64(7);
+    t = clock();
+    mod_n = fast_mem_mod_uint64(mem_block, size, rand_n);
+    t = clock() - t;
+    printf("\truntime: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
+    result = (mod_n == pow_mod_uint64(2, pow_two_uint64(i) * 8 - 1, rand_n));
+    printf("\tcorrectness: block bits = %lu (mod %lu)  --> ", mod_n, rand_n);
+    print_test_result(result);
+    free(mem_block);
+  } 
+  printf("Run fast_mem_mod_uint64 and mem_mod_uint64 comparison "
+	 "on random blocks of random size --> ");
+  fflush(stdout);
+  srandom(time(0));
+  result = 1;
+  for (int i = 0; i < num_trials; i++){
+    size = random_range_uint64(pow_two_uint64(10));
+    mem_block = calloc(size, 1);
+    assert(mem_block != NULL);
+    rand_n = random_range_uint64(upper);
+    for (uint64_t i = 0; i < size; i++){
+      mem_block[i] = (uint8_t)random_range_uint64(upper_byte_val);
+    }  
+    result *= (fast_mem_mod_uint64(mem_block, size, rand_n) ==
+	       mem_mod_uint64(mem_block, size, rand_n));
+    free(mem_block);
+  }
+  print_test_result(result);
+}
+
+/**
    Tests mem_mod_uint32. A little-endian machine is assumed for test purposes.
 */
 void run_mem_mod_uint32_test(){
@@ -497,9 +605,9 @@ void run_mem_mod_uint32_test(){
     t = clock();
     mod_n = mem_mod_uint32(mem_block, size, rand_n);
     t = clock() - t;
-    printf("\t\truntime: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
+    printf("\truntime: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
     result = (mod_n == pow_mod_uint32(2, pow_two_uint64(i) * 8 - 1, rand_n));
-    printf("\t\tcorrectness: block bits = %u (mod %u)  --> ", mod_n, rand_n);
+    printf("\tcorrectness: block bits = %u (mod %u)  --> ", mod_n, rand_n);
     print_test_result(result);
     free(mem_block);
   } 
@@ -544,14 +652,14 @@ void run_fast_mem_mod_uint32_test(){
     t = clock();
     mod_n = fast_mem_mod_uint32(mem_block, size, rand_n);
     t = clock() - t;
-    printf("\t\truntime: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
+    printf("\truntime: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
     result = (mod_n == pow_mod_uint32(2, pow_two_uint64(i) * 8 - 1, rand_n));
-    printf("\t\tcorrectness: block bits = %u (mod %u)  --> ", mod_n, rand_n);
+    printf("\tcorrectness: block bits = %u (mod %u)  --> ", mod_n, rand_n);
     print_test_result(result);
     free(mem_block);
   }
   printf("Run fast_mem_mod_uint32 and mem_mod_uint32 comparison "
-	 "on random blocks of random sizes --> ");
+	 "on random blocks of random size --> ");
   fflush(stdout);
   srandom(time(0));
   result = 1;
@@ -658,6 +766,8 @@ int main(){
   run_pow_mod_uint32_test();
   run_mul_mod_uint64_test();
   run_sum_mod_uint64_test();
+  run_mem_mod_uint64_test();
+  run_fast_mem_mod_uint64_test();
   run_mem_mod_uint32_test();
   run_fast_mem_mod_uint32_test();
   run_represent_uint64_test();
