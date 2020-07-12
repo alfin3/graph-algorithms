@@ -4,7 +4,7 @@
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
 
-   Update: 6/24/2020 10:00am
+   Update: 7/11/2020 6:00pm
 */
 
 #include <stdio.h>
@@ -292,7 +292,7 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n){
   uint64_t n64 = n;
   uint64_t byte_val;
   uint64_t pow_two = 1; //1 mod n
-  uint64_t prod = 1; //1 mod n
+  uint64_t prod;
   uint64_t ret = 0; //0 mod n
   uint64_t pow_two_inc = pow_two_uint64(8) % n64;
   for (uint64_t i = 0; i < size; i++){
@@ -302,6 +302,43 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n){
     ret = (ret + prod) % n64;
     pow_two = (pow_two * pow_two_inc) % n64;
   }
+  assert(ret < pow_two_uint64(32));
+  return (uint32_t)ret;
+}
+
+/**
+   Computes mod n of a memory block in O(block size) time and O(1) space 
+   overhead, treating the block in 8-byte increments in the little-endian 
+   order and inductively applying the following relations:
+   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
+   a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
+   Given a little-endian machine, the result is equal to the return value 
+   of mem_mod_uint32.
+*/
+uint32_t fast_mem_mod_uint32(void *s, uint64_t size, uint32_t n){
+  assert(n > 0);
+  if(n == 1){return 0;}
+  int step_size = 8;
+  uint64_t *ptr;// = (uint64_t *)s;
+  uint64_t res_size = size % step_size;
+  //"no overflow" guarantee
+  uint64_t n64 = n;
+  uint64_t bytes_val;
+  uint64_t pow_two = 1; //1 mod n
+  uint64_t prod;
+  uint64_t ret = 0; //0 mod n
+  uint64_t pow_two_inc = pow_two_uint64(63) % n64;
+  pow_two_inc = (pow_two_inc * (2 % n64)) % n64;
+  for (uint64_t i = 0; i < size - res_size; i += step_size){
+    ptr = (uint64_t *)((char *)s + i);
+    bytes_val = *ptr;
+    prod = (pow_two * (bytes_val % n64)) % n64;
+    ret = (ret + prod) % n64;
+    pow_two = (pow_two * pow_two_inc) % n64;
+  }
+  ptr = (uint64_t *)((char *)s + size - res_size);
+  prod = (pow_two *  mem_mod_uint32(ptr, res_size, n)) % n64;
+  ret = (ret + prod) % n64;
   assert(ret < pow_two_uint64(32));
   return (uint32_t)ret;
 }

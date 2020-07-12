@@ -4,7 +4,7 @@
    Declarations of accessible utility functions across the areas of 
    randomness, modular arithmetic, and binary representation.
 
-   Update: 6/23/2020 11:00am
+   Update: 7/11/2020 6:00pm
 */
 
 #ifndef UTILITIES_DS_H  
@@ -70,6 +70,13 @@ uint64_t sum_mod_uint64(uint64_t a, uint64_t b, uint64_t n);
    little-endian order. Does not require a little-endian machine.
 */
 uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n);
+
+/**
+   Computes mod n of a memory block treating the block in 8-byte increments 
+   in the little-endian order. Given a little-endian machine, the result is 
+   equal to the return value of mem_mod_uint32.
+*/
+uint32_t fast_mem_mod_uint32(void *s, uint64_t size, uint32_t n);
 
 /**
    Represents n as u * 2^k, where u is odd.
