@@ -13,75 +13,281 @@
 
 void print_test_result(int result);
 static void dll_traverse(dll_node_t **head,
-			 int init_val,
+			 int start_val,
 			 int end_val,
 			 int *result,
-			 int (*val_fn)(void *));
+			 int (*val_fn)(dll_node_t *));
+static void search_delete_key(dll_node_t **head,
+			      int start_sd_val,
+			      int num_sd_nodes,
+			      int (*cmp_key_fn)(void *, void *),
+			      void (*free_elt_fn)(void *));
+static void search_delete_elt(dll_node_t **head,
+			      int start_sd_val,
+			      int num_sd_nodes,
+			      int (*cmp_elt_fn)(void *, void *),
+			      void (*cstr_elt_fn)(void *, int),
+			      void (*free_elt_fn)(void *));
 
 /**
-   Run tests of a doubly linked list of integer elements. A pointer to an 
-   integer is passed as elt in dll_insert and the integer element is fully  
-   copied into the block pointed to by elt in a node. NULL as free_int_fn 
-   is sufficient to free the doubly linked list.
+   Run tests of a doubly linked list of integer keys and integer elements. 
+   A pointer to an integer is passed as elt in dll_insert and the integer 
+   element is fully  copied into the block pointed to by elt in a node. 
+   NULL as free_int_fn is sufficient to delete a node.
 */
-static void int_dll_test_helper(dll_node_t **head,
-                                int init_val,
-				int num_elts);
 
-int int_val_fn(void *elt){
-  return *(int *)elt;
+int int_elt_val_fn(dll_node_t *n){
+  return *(int *)n->elt;
 }
 
-void run_int_dll_test(){
+int int_key_val_fn(dll_node_t *n){
+  return *(int *)n->key;
+}
+
+int cmp_int_fn(void *a, void *b){
+  return *(int *)a - *(int *)b;
+}
+
+static void insert_free_int_test_helper(dll_node_t **head,
+					int start_val,
+					int num_elts);
+/**
+   Run a dll_{insert, free} test on integer keys and integer elements.
+*/
+void run_insert_free_int_test(){
   dll_node_t *head;
-  int num_elts = 10000000;
-  int init_val;
+  int num_nodes = 10000000;
+  int start_val;
   dll_init(&head);
-  init_val = 0;
-  printf("Run dll tests on int elements \n");
-  printf("\tinitial value: %d, number of elements: %d\n", init_val, num_elts);
-  int_dll_test_helper(&head, init_val, num_elts);
-  printf("\tinitial value: %d, number of elements: %d (repeat test)\n",
-	 init_val, num_elts);
-  int_dll_test_helper(&head, init_val, num_elts);
-  init_val = num_elts;
-  printf("\tinitial value: %d, number of elements: %d\n", init_val, num_elts);
-  int_dll_test_helper(&head, init_val, num_elts);
+  start_val = 0;
+  printf("Run dll_{insert, free} test on int keys and int elements \n");
+  printf("\tstart key value: %d, start elt value: %d, "
+	 "# nodes: %d\n", start_val, start_val, num_nodes);
+  insert_free_int_test_helper(&head, start_val, num_nodes);
+  printf("\tstart key value: %d, start elt value: %d, "
+	 "# nodes: %d (repeat test)\n", start_val, start_val, num_nodes);
+  insert_free_int_test_helper(&head, start_val, num_nodes);
+  start_val = num_nodes;
+  printf("\tstart key value: %d, start elt value: %d, "
+	 "# nodes: %d\n", start_val, start_val, num_nodes);
+  insert_free_int_test_helper(&head, start_val, num_nodes);
 }
 
-static void int_dll_test_helper(dll_node_t **head,
-                                int init_val,
-				int num_elts){
-  int end_val = init_val + num_elts - 1;
+/** Helper functions for dll_{insert, free} test */
+
+static void insert_int_test_helper(dll_node_t **head,
+				   int start_val,
+				   int num_nodes){
+  for (int i = start_val  + num_nodes - 1; i >= start_val; i--){
+    dll_insert(head, &i, &i, sizeof(int), sizeof(int));
+  }
+}
+
+static void free_int_test_helper(dll_node_t **head){
+  dll_free(head, NULL);
+}
+
+static void insert_free_int_test_helper(dll_node_t **head,
+					int start_val,
+					int num_nodes){
+  int end_val = start_val + num_nodes - 1;
   int result = 1;
   clock_t t;
   t = clock();
-  for (int i = init_val; i < init_val + num_elts; i++){
-    dll_insert(head, &i, sizeof(int));
-  }
+  insert_int_test_helper(head, start_val, num_nodes);
   t = clock() - t;
   printf("\t\tinsert time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
-  dll_traverse(head, init_val, end_val, &result, int_val_fn);
+  dll_traverse(head, start_val, end_val, &result, int_key_val_fn);
+  dll_traverse(head, start_val, end_val, &result, int_elt_val_fn);
   t = clock();
-  dll_free(head, NULL);
+  free_int_test_helper(head);
   t = clock() - t;
   result *= (head != NULL && *head == NULL);
+  printf("\t\tfree time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
   printf("\t\torder correctness --> ");
   print_test_result(result);
-  printf("\t\tfree time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
 }
 
 /**
-   Run tests of a doubly linked list of int_ptr_t elements. A pointer to a 
-   pointer to an int_ptr_t element is passed as elt in dll_insert and the 
-   pointer to the int_ptr_t element is copied into the block pointed to by 
-   elt in a node. A int_ptr_t-specific free_int_fn is necessary to free 
-   the doubly linked list.
+   Run a dll_search_{key, elt} and dll_delete test on integer keys and 
+   integer elements.
+*/
+void run_search_delete_int_test(){
+  dll_node_t *head;
+  int num_nodes = 10000000;
+  int num_sd_nodes = 100;
+  int start_sd_val;
+  int start_val;
+  int end_val;
+  int result = 1;
+  clock_t t;
+  dll_init(&head);
+  printf("Run dll_search_{key, elt} and dll_delete test on int keys and int "
+	 "elements in a list of %d nodes\n", num_nodes);
+  start_val = 0;
+  insert_int_test_helper(&head, start_val, num_nodes);
+  //search the entire list for values that are not in the list
+  printf("\tsearch for %d nodes not in the list: \n", num_sd_nodes);
+  start_sd_val = num_nodes;
+  t = clock();
+  search_delete_key(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_fn,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  t = clock();
+  search_delete_elt(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_fn,
+		    NULL,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  end_val = start_val + num_nodes - 1;
+  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
+  dll_traverse(&head, start_val, end_val, &result, int_elt_val_fn);
+  printf("\t\torder correctness --> ");
+  print_test_result(result);
+  //search and delete the last 200 nodes
+  printf("\tsearch and delete %d nodes at the end of the list: \n",
+	 num_sd_nodes);
+  start_sd_val = num_nodes - num_sd_nodes;
+  t = clock();
+  search_delete_key(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_fn,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  start_sd_val = start_sd_val - num_sd_nodes;
+  end_val = start_sd_val - 1;
+  t = clock();
+  search_delete_elt(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_fn,
+		    NULL,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
+  dll_traverse(&head, start_val, end_val, &result, int_elt_val_fn);
+  printf("\t\torder correctness --> ");
+  print_test_result(result);
+  //search and delete the first 200 nodes
+  printf("\tsearch and delete %d nodes at the beginning of the list: \n",
+	 num_sd_nodes);
+  start_sd_val = 0;
+  t = clock();
+  search_delete_key(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_fn,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  start_sd_val = num_sd_nodes;
+  start_val = 2 * num_sd_nodes;
+  t = clock();
+  search_delete_elt(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_fn,
+		    NULL,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
+  dll_traverse(&head, start_val, end_val, &result, int_elt_val_fn);
+  printf("\t\torder correctness --> ");
+  print_test_result(result);
+  free_int_test_helper(&head);
+}
+
+/**
+   Run a corner cases test.
+*/
+void run_corner_cases_test(){
+  dll_node_t *head_none;
+  dll_node_t *head_one;
+  dll_node_t *head_two;
+  int start_val = 0;
+  int result = 1;
+  int key;
+  int elt;
+  dll_init(&head_none);
+  dll_init(&head_one);
+  dll_init(&head_two);
+  insert_int_test_helper(&head_one, start_val, 1);
+  insert_int_test_helper(&head_two, start_val, 2);
+  //search
+  key = 0;
+  elt = 0;
+  result *= (NULL == dll_search_key(&head_none, &key, cmp_int_fn));
+  result *= (NULL == dll_search_elt(&head_none, &elt, cmp_int_fn));
+  result *= (NULL != dll_search_key(&head_one, &key, cmp_int_fn));
+  result *= (NULL != dll_search_elt(&head_one, &elt, cmp_int_fn));
+  result *= (NULL != dll_search_key(&head_two, &key, cmp_int_fn));
+  result *= (NULL != dll_search_elt(&head_two, &elt, cmp_int_fn));
+  key = 2;
+  elt = 2;
+  result *= (NULL == dll_search_key(&head_none, &key, cmp_int_fn));
+  result *= (NULL == dll_search_elt(&head_none, &elt, cmp_int_fn));
+  result *= (NULL == dll_search_key(&head_one, &key, cmp_int_fn));
+  result *= (NULL == dll_search_elt(&head_one, &elt, cmp_int_fn));
+  result *= (NULL == dll_search_key(&head_two, &key, cmp_int_fn));
+  result *= (NULL == dll_search_elt(&head_two, &elt, cmp_int_fn));
+  dll_traverse(&head_one, 0, 0, &result, int_elt_val_fn);
+  dll_traverse(&head_one, 0, 0, &result, int_key_val_fn);
+  dll_traverse(&head_two, 0, 1, &result, int_elt_val_fn);
+  dll_traverse(&head_two, 0, 1, &result, int_key_val_fn);
+  //delete
+  dll_delete(&head_none, NULL, NULL);		
+  result *= (NULL == head_none);
+  dll_delete(&head_one, NULL, NULL);
+  dll_delete(&head_two, NULL, NULL);
+  dll_traverse(&head_one, 0, 0, &result, int_elt_val_fn);
+  dll_traverse(&head_one, 0, 0, &result, int_key_val_fn);
+  dll_traverse(&head_two, 0, 1, &result, int_elt_val_fn);
+  dll_traverse(&head_two, 0, 1, &result, int_key_val_fn);
+  dll_delete(&head_one, head_one, NULL);
+  result *= (NULL == head_one);
+  dll_delete(&head_two, head_two, NULL);
+  dll_traverse(&head_two, 1, 1, &result, int_elt_val_fn);
+  dll_traverse(&head_two, 1, 1, &result, int_key_val_fn);
+  dll_delete(&head_two, head_two, NULL);
+  result *= (NULL == head_two); 
+  //free
+  dll_free(&head_two, NULL);
+  result *= (NULL == head_two);
+  printf("Run corner cases test --> ");
+  print_test_result(result);
+}
+
+/**
+   Run tests of a doubly linked list of integer keys and int_ptr_t elements. 
+   A pointer to a pointer to an int_ptr_t element is passed as elt in 
+   dll_insert and the pointer to the int_ptr_t element is copied into the 
+   block pointed to by elt in a node. A int_ptr_t-specific free_int_ptr_t_fn
+   is  necessary to delete a node.
 */
 
 typedef struct{
   int *val;
 } int_ptr_t;
+
+void cstr_int_ptr_t_fn(void *elt, int val){
+  int_ptr_t **s = elt;
+  (*s) = malloc(sizeof(int_ptr_t));
+  assert((*s) != NULL);
+  (*s)->val = malloc(sizeof(int));
+  assert((*s)->val != NULL);
+  *((*s)->val) = val;
+}
 
 void free_int_ptr_t_fn(void *elt){
   int_ptr_t **s = elt;
@@ -92,87 +298,261 @@ void free_int_ptr_t_fn(void *elt){
   s = NULL;
 }
 
-int int_ptr_t_val_fn(void *elt){
-  int_ptr_t **s  = elt;
+int cmp_int_ptr_t_fn(void *elt_a, void *elt_b){
+  return *((*(int_ptr_t **)elt_a)->val) - *((*(int_ptr_t **)elt_b)->val);
+}
+
+int int_ptr_t_elt_val_fn(dll_node_t *n){
+  int_ptr_t **s  = n->elt;
   return *((*s)->val);
 }
 
-static void int_ptr_t_dll_test_helper(dll_node_t **head,
-				      int init_val,
-				      int num_elts);
+static void insert_free_int_ptr_t_test_helper(dll_node_t **head,
+					      int start_val,
+					      int num_nodes);
 
-void run_int_ptr_t_dll_test(){
+/**
+   Run a dll_{insert, free} test on integer keys and int_ptr_t elements.
+*/
+void run_insert_free_int_ptr_t_test(){
   dll_node_t *head;
-  int num_elts = 10000000;
-  int init_val;
+  int num_nodes = 10000000;
+  int start_val;
   dll_init(&head);
-  init_val = 0;
-  printf("Run dll tests on int_ptr_t elements (multilayered objects)\n");
-  printf("\tinitial value: %d, number of elements: %d\n", init_val, num_elts);
-  int_ptr_t_dll_test_helper(&head, init_val, num_elts);
-  printf("\tinitial value: %d, number of elements: %d (repeat test)\n",
-	 init_val, num_elts);
-  int_ptr_t_dll_test_helper(&head, init_val, num_elts);
-  init_val = num_elts;
-  printf("\tinitial value: %d, number of elements: %d\n", init_val, num_elts);
-  int_ptr_t_dll_test_helper(&head, init_val, num_elts);
+  start_val = 0;
+  printf("Run dll_{insert, free} test on int keys and multilayered "
+	 "int_ptr_t elements\n");
+  printf("\tstart key value: %d, start elt->val value: %d, "
+	 "# nodes: %d\n", start_val, start_val, num_nodes);
+  insert_free_int_ptr_t_test_helper(&head, start_val, num_nodes);
+  printf("\tstart key value: %d, start elt->val value: %d, "
+	 "# nodes: %d (repeat test)\n", start_val, start_val, num_nodes);
+  insert_free_int_ptr_t_test_helper(&head, start_val, num_nodes);
+  start_val = num_nodes;
+  printf("\tstart key value: %d, start elt->val value: %d, "
+	 "# nodes: %d\n", start_val, start_val, num_nodes);
+  insert_free_int_ptr_t_test_helper(&head, start_val, num_nodes);
 }
 
-static void int_ptr_t_dll_test_helper(dll_node_t **head,
-				      int init_val,
-				      int num_elts){
-  int end_val = init_val + num_elts - 1;
+/** Helper functions for dll_{insert, free} test */
+
+static void insert_int_ptr_t_test_helper(dll_node_t **head,
+					 int start_val,
+					 int num_nodes){
+  int_ptr_t *n;
+  for (int i = start_val  + num_nodes - 1; i >= start_val; i--){
+    n = malloc(sizeof(int_ptr_t));
+    assert(n != NULL);
+    n->val = malloc(sizeof(int));
+    assert(n->val != NULL);
+    *(n->val) = i;
+    //a pointer to a pointer to an element in dll_insert
+    dll_insert(head, &i, &n, sizeof(int), sizeof(int_ptr_t *));
+    n = NULL;
+  }
+}
+
+static void free_int_ptr_t_test_helper(dll_node_t **head){
+  dll_free(head, free_int_ptr_t_fn);
+}
+
+static void insert_free_int_ptr_t_test_helper(dll_node_t **head,
+					      int start_val,
+					      int num_nodes){
+  int end_val = start_val + num_nodes - 1;
   int result = 1;
-  int_ptr_t *ins;
   clock_t t;
   t = clock();
-  for (int i = init_val; i < init_val + num_elts; i++){
-    ins = malloc(sizeof(int_ptr_t));
-    assert(ins != NULL);
-    ins->val = malloc(sizeof(int));
-    assert(ins->val != NULL);
-    *(ins->val) = i;
-    dll_insert(head, &ins, sizeof(int_ptr_t *));
-    ins = NULL;
-  }
+  insert_int_ptr_t_test_helper(head, start_val, num_nodes);
   t = clock() - t;
   printf("\t\tinsert time: %.4f seconds (incl. element allocation)\n",
 	 (float)t / CLOCKS_PER_SEC);
-  dll_traverse(head, init_val, end_val, &result, int_ptr_t_val_fn);
+  dll_traverse(head, start_val, end_val, &result, int_key_val_fn);
+  dll_traverse(head, start_val, end_val, &result, int_ptr_t_elt_val_fn);
   t = clock();
-  dll_free(head, free_int_ptr_t_fn);
+  free_int_ptr_t_test_helper(head);
   t = clock() - t;
   result *= (head != NULL && *head == NULL);
+  printf("\t\tfree time: %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
   printf("\t\torder correctness --> ");
   print_test_result(result);
-  printf("\t\tfree time: %.4f seconds\n", 
-         (float)t / CLOCKS_PER_SEC);
 }
 
 /**
-   Traverses a doubly linked list and tests the order of integer values.
+   Run a dll_search_{key, elt} and dll_delete test on integer keys and 
+   int_ptr_t elements.
+*/
+void run_search_delete_int_ptr_t_test(){
+  dll_node_t *head;
+  int num_nodes = 10000000;
+  int num_sd_nodes = 100;
+  int start_sd_val;
+  int start_val;
+  int end_val;
+  int result = 1;
+  clock_t t;
+  dll_init(&head);
+  printf("Run dll_search_{key, elt} and dll_delete test on int keys and "
+	 "int_ptr_t elements in a list of %d nodes\n", num_nodes);
+  start_val = 0;
+  insert_int_ptr_t_test_helper(&head, start_val, num_nodes);
+  //search the entire list for values that are not in the list
+  printf("\tsearch for %d nodes not in the list: \n", num_sd_nodes);
+  start_sd_val = num_nodes;
+  t = clock();
+  search_delete_key(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_fn,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  t = clock();
+  search_delete_elt(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_ptr_t_fn,
+		    cstr_int_ptr_t_fn,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  end_val = start_val + num_nodes - 1;
+  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
+  dll_traverse(&head, start_val, end_val, &result, int_ptr_t_elt_val_fn);
+  printf("\t\torder correctness --> ");
+  print_test_result(result);
+  //search and delete the last 200 nodes
+  printf("\tsearch and delete %d nodes at the end of the list: \n",
+	 num_sd_nodes);
+  start_sd_val = num_nodes - num_sd_nodes;
+  t = clock();
+  search_delete_key(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_fn,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  start_sd_val = start_sd_val - num_sd_nodes;
+  end_val = start_sd_val - 1;
+  t = clock();
+  search_delete_elt(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_ptr_t_fn,
+		    cstr_int_ptr_t_fn,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
+  dll_traverse(&head, start_val, end_val, &result, int_ptr_t_elt_val_fn);
+  printf("\t\torder correctness --> ");
+  print_test_result(result);
+  //search and delete the first 200 nodes
+  printf("\tsearch and delete %d nodes at the beginning of the list: \n",
+	 num_sd_nodes);
+  start_sd_val = 0;
+  t = clock();
+  search_delete_key(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_fn,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  start_sd_val = num_sd_nodes;
+  start_val = 2 * num_sd_nodes;
+  t = clock();
+  search_delete_elt(&head,
+		    start_sd_val,
+		    num_sd_nodes,
+		    cmp_int_ptr_t_fn,
+		    cstr_int_ptr_t_fn,
+		    NULL);
+  t = clock() - t;
+  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
+  dll_traverse(&head, start_val, end_val, &result, int_ptr_t_elt_val_fn);
+  printf("\t\torder correctness --> ");
+  print_test_result(result);
+  free_int_ptr_t_test_helper(&head);
+}
+
+/** General helper functions */
+
+/**
+   Searches and deletes num_sd_nodes nodes with key values starting from 
+   start_sd_val.
+*/
+static void search_delete_key(dll_node_t **head,
+			      int start_sd_val,
+			      int num_sd_nodes,
+			      int (*cmp_key_fn)(void *, void *),
+			      void (*free_elt_fn)(void *)){
+  dll_node_t *n_ptr;
+  for (int i = start_sd_val; i < start_sd_val + num_sd_nodes; i++){
+    n_ptr = dll_search_key(head, &i, cmp_key_fn);
+    dll_delete(head, n_ptr, free_elt_fn);
+  }
+}
+
+/**
+   Searches and deletes num_sd_nodes nodes with element values starting from 
+   start_sd_val.
+*/
+static void search_delete_elt(dll_node_t **head,
+			      int start_sd_val,
+			      int num_sd_nodes,
+			      int (*cmp_elt_fn)(void *, void *),
+			      void (*cstr_elt_fn)(void *, int),
+			      void (*free_elt_fn)(void *)){
+  dll_node_t *n_ptr;
+  void *elt;
+  for (int i = start_sd_val; i < start_sd_val + num_sd_nodes; i++){
+    if (cstr_elt_fn != NULL){
+      cstr_elt_fn(&elt, i);
+      n_ptr = dll_search_elt(head, &elt, cmp_elt_fn);
+    }else{
+      n_ptr = dll_search_elt(head, &i, cmp_elt_fn);
+    }
+    dll_delete(head, n_ptr, free_elt_fn);
+  }
+}
+
+/**
+   Traverses a doubly linked list with keys or elements containing integers
+   in increasing order and tests the order of integer values.
 */
 static void dll_traverse(dll_node_t **head,
-			 int init_val,
+			 int start_val,
 			 int end_val,
 			 int *result,
-			 int (*val_fn)(void *)){
-  if (*head == NULL){return;}
-  int cur_val = end_val;
+			 int (*val_fn)(dll_node_t *)){
+  int cur_val = start_val;
   dll_node_t *cur_node = *head;
-  while(cur_node->next != NULL){
-    *result *= (cur_val == val_fn(cur_node->elt));
-    cur_node = cur_node->next;
-    cur_val--;
+  if (*head == NULL){
+    return;
+  }else if (cur_node->next == NULL && cur_node->prev == NULL){
+    *result *= (cur_val == val_fn(cur_node) &&
+		cur_val == end_val);
+  }else{
+    //printf("list begin value: %d\n", val_fn(cur_node));
+    while(cur_node->next != NULL){
+      *result *= (cur_val == val_fn(cur_node));
+      cur_node = cur_node->next;
+      cur_val++;
+    }
+    *result *= (cur_val == end_val);
+    //printf("list end value: %d\n", val_fn(cur_node));
+    while(cur_node->prev != NULL){
+      *result *= (cur_val == val_fn(cur_node));
+      cur_node = cur_node->prev;
+      cur_val--;
+    }
+    //printf("list begin value: %d\n", val_fn(cur_node));
+    *result *= (cur_val == val_fn(cur_node));
+    *result *= (cur_val == start_val);
   }
-  *result *= (cur_val == init_val);
-  while(cur_node->prev != NULL){
-    *result *= (cur_val == val_fn(cur_node->elt));
-    cur_node = cur_node->prev;
-    cur_val++;
-  }
-  *result *= (cur_val == val_fn(cur_node->elt));
-  *result *= (cur_val == end_val);
 }
 
 /**
@@ -187,7 +567,10 @@ void print_test_result(int result){
 }
 
 int main(){
-  run_int_dll_test();
-  run_int_ptr_t_dll_test();
+  run_insert_free_int_test();
+  run_search_delete_int_test();
+  run_corner_cases_test();
+  run_insert_free_int_ptr_t_test();
+  run_search_delete_int_ptr_t_test();
   return 0;
 }

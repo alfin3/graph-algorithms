@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -I. -Wall -Wextra -g
+CFLAGS = -I. -Wall -Wextra -O3
 OBJ = dll-main.o dll.o
 
 dll : $(OBJ)
