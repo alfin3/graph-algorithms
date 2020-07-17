@@ -17,17 +17,17 @@ static void dll_traverse(dll_node_t **head,
 			 int end_val,
 			 int *result,
 			 int (*val_fn)(dll_node_t *));
-static void search_delete_key(dll_node_t **head,
-			      int start_sd_val,
-			      int num_sd_nodes,
-			      int (*cmp_key_fn)(void *, void *),
-			      void (*free_elt_fn)(void *));
-static void search_delete_elt(dll_node_t **head,
-			      int start_sd_val,
-			      int num_sd_nodes,
-			      int (*cmp_elt_fn)(void *, void *),
-			      void (*cstr_elt_fn)(void *, int),
-			      void (*free_elt_fn)(void *));
+static void search_delete_key_elt(dll_node_t **head,
+				  int start_val,
+				  int end_val,
+				  int start_sd_val,
+				  int num_sd_nodes,
+				  int (*cmp_key_fn)(void *, void *),
+				  int (*cmp_elt_fn)(void *, void *),
+				  void (*cstr_elt_fn)(void *, int),
+				  void (*free_elt_fn)(void *),
+				  int (*key_val_fn)(dll_node_t *),
+				  int (*elt_val_fn)(dll_node_t *));
 
 /**
    Run tests of a doubly linked list of integer keys and integer elements. 
@@ -115,96 +115,62 @@ static void insert_free_int_test_helper(dll_node_t **head,
 void run_search_delete_int_test(){
   dll_node_t *head;
   int num_nodes = 10000000;
-  int num_sd_nodes = 100;
+  int num_sd_nodes = 200;
   int start_sd_val;
   int start_val;
   int end_val;
-  int result = 1;
-  clock_t t;
   dll_init(&head);
   printf("Run dll_search_{key, elt} and dll_delete test on int keys and int "
 	 "elements in a list of %d nodes\n", num_nodes);
   start_val = 0;
   insert_int_test_helper(&head, start_val, num_nodes);
   //search the entire list for values that are not in the list
-  printf("\tsearch for %d nodes not in the list: \n", num_sd_nodes);
+  printf("\tsearch for %d nodes not in the list: \n", num_sd_nodes / 2);
   start_sd_val = num_nodes;
-  t = clock();
-  search_delete_key(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_fn,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  t = clock();
-  search_delete_elt(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_fn,
-		    NULL,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  end_val = start_val + num_nodes - 1;
-  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
-  dll_traverse(&head, start_val, end_val, &result, int_elt_val_fn);
-  printf("\t\torder correctness --> ");
-  print_test_result(result);
-  //search and delete the last 200 nodes
+  end_val = num_nodes - 1;
+  search_delete_key_elt(&head,
+			start_val,
+			end_val,
+			start_sd_val,
+			num_sd_nodes,
+			cmp_int_fn,
+			cmp_int_fn,
+			NULL,
+			NULL,
+			int_key_val_fn,
+			int_elt_val_fn);
+  //search and delete the last 200 nodes in total
   printf("\tsearch and delete %d nodes at the end of the list: \n",
-	 num_sd_nodes);
+	 num_sd_nodes / 2);
   start_sd_val = num_nodes - num_sd_nodes;
-  t = clock();
-  search_delete_key(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_fn,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  start_sd_val = start_sd_val - num_sd_nodes;
   end_val = start_sd_val - 1;
-  t = clock();
-  search_delete_elt(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_fn,
-		    NULL,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
-  dll_traverse(&head, start_val, end_val, &result, int_elt_val_fn);
-  printf("\t\torder correctness --> ");
-  print_test_result(result);
-  //search and delete the first 200 nodes
+  search_delete_key_elt(&head,
+			start_val,
+			end_val,
+			start_sd_val,
+			num_sd_nodes,
+			cmp_int_fn,
+			cmp_int_fn,
+			NULL,
+			NULL,
+			int_key_val_fn,
+			int_elt_val_fn);
+  //search and delete the first 200 nodes in total
   printf("\tsearch and delete %d nodes at the beginning of the list: \n",
-	 num_sd_nodes);
+	 num_sd_nodes / 2);
   start_sd_val = 0;
-  t = clock();
-  search_delete_key(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_fn,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  start_sd_val = num_sd_nodes;
-  start_val = 2 * num_sd_nodes;
-  t = clock();
-  search_delete_elt(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_fn,
-		    NULL,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
-  dll_traverse(&head, start_val, end_val, &result, int_elt_val_fn);
-  printf("\t\torder correctness --> ");
-  print_test_result(result);
+  start_val = num_sd_nodes;
+  search_delete_key_elt(&head,
+			start_val,
+			end_val,
+			start_sd_val,
+			num_sd_nodes,
+			cmp_int_fn,
+			cmp_int_fn,
+			NULL,
+			NULL,
+			int_key_val_fn,
+			int_elt_val_fn);
   free_int_test_helper(&head);
 }
 
@@ -385,96 +351,62 @@ static void insert_free_int_ptr_t_test_helper(dll_node_t **head,
 void run_search_delete_int_ptr_t_test(){
   dll_node_t *head;
   int num_nodes = 10000000;
-  int num_sd_nodes = 100;
+  int num_sd_nodes = 200;
   int start_sd_val;
   int start_val;
   int end_val;
-  int result = 1;
-  clock_t t;
   dll_init(&head);
   printf("Run dll_search_{key, elt} and dll_delete test on int keys and "
 	 "int_ptr_t elements in a list of %d nodes\n", num_nodes);
   start_val = 0;
   insert_int_ptr_t_test_helper(&head, start_val, num_nodes);
   //search the entire list for values that are not in the list
-  printf("\tsearch for %d nodes not in the list: \n", num_sd_nodes);
+  printf("\tsearch for %d nodes not in the list: \n", num_sd_nodes / 2);
   start_sd_val = num_nodes;
-  t = clock();
-  search_delete_key(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_fn,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  t = clock();
-  search_delete_elt(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_ptr_t_fn,
-		    cstr_int_ptr_t_fn,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  end_val = start_val + num_nodes - 1;
-  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
-  dll_traverse(&head, start_val, end_val, &result, int_ptr_t_elt_val_fn);
-  printf("\t\torder correctness --> ");
-  print_test_result(result);
-  //search and delete the last 200 nodes
+  end_val = num_nodes - 1;
+  search_delete_key_elt(&head,
+			start_val,
+			end_val,
+			start_sd_val,
+			num_sd_nodes,
+			cmp_int_fn,
+			cmp_int_ptr_t_fn,
+			cstr_int_ptr_t_fn,
+			free_int_ptr_t_fn,
+			int_key_val_fn,
+			int_ptr_t_elt_val_fn);
+  //search and delete the last 200 nodes in total
   printf("\tsearch and delete %d nodes at the end of the list: \n",
-	 num_sd_nodes);
+	 num_sd_nodes / 2);
   start_sd_val = num_nodes - num_sd_nodes;
-  t = clock();
-  search_delete_key(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_fn,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  start_sd_val = start_sd_val - num_sd_nodes;
   end_val = start_sd_val - 1;
-  t = clock();
-  search_delete_elt(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_ptr_t_fn,
-		    cstr_int_ptr_t_fn,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
-  dll_traverse(&head, start_val, end_val, &result, int_ptr_t_elt_val_fn);
-  printf("\t\torder correctness --> ");
-  print_test_result(result);
-  //search and delete the first 200 nodes
+  search_delete_key_elt(&head,
+			start_val,
+			end_val,
+			start_sd_val,
+			num_sd_nodes,
+			cmp_int_fn,
+			cmp_int_ptr_t_fn,
+			cstr_int_ptr_t_fn,
+			free_int_ptr_t_fn,
+			int_key_val_fn,
+			int_ptr_t_elt_val_fn);
+  //search and delete the first 200 nodes in total
   printf("\tsearch and delete %d nodes at the beginning of the list: \n",
-	 num_sd_nodes);
+	 num_sd_nodes / 2);
   start_sd_val = 0;
-  t = clock();
-  search_delete_key(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_fn,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  start_sd_val = num_sd_nodes;
-  start_val = 2 * num_sd_nodes;
-  t = clock();
-  search_delete_elt(&head,
-		    start_sd_val,
-		    num_sd_nodes,
-		    cmp_int_ptr_t_fn,
-		    cstr_int_ptr_t_fn,
-		    NULL);
-  t = clock() - t;
-  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
-  dll_traverse(&head, start_val, end_val, &result, int_key_val_fn);
-  dll_traverse(&head, start_val, end_val, &result, int_ptr_t_elt_val_fn);
-  printf("\t\torder correctness --> ");
-  print_test_result(result);
+  start_val = num_sd_nodes;
+  search_delete_key_elt(&head,
+			start_val,
+			end_val,
+			start_sd_val,
+			num_sd_nodes,
+			cmp_int_fn,
+			cmp_int_ptr_t_fn,
+			cstr_int_ptr_t_fn,
+			free_int_ptr_t_fn,
+			int_key_val_fn,
+			int_ptr_t_elt_val_fn);
   free_int_ptr_t_test_helper(&head);
 }
 
@@ -517,6 +449,47 @@ static void search_delete_elt(dll_node_t **head,
     }
     dll_delete(head, n_ptr, free_elt_fn);
   }
+}
+/**
+   Performs search and delete tests with respect to key and element values.
+*/
+static void search_delete_key_elt(dll_node_t **head,
+				  int start_val,
+				  int end_val,
+				  int start_sd_val,
+				  int num_sd_nodes,
+				  int (*cmp_key_fn)(void *, void *),
+				  int (*cmp_elt_fn)(void *, void *),
+				  void (*cstr_elt_fn)(void *, int),
+				  void (*free_elt_fn)(void *),
+				  int (*key_val_fn)(dll_node_t *),
+				  int (*elt_val_fn)(dll_node_t *)){
+  int result = 1;
+  clock_t t;
+  assert(!(num_sd_nodes % 2));
+  int num_sd_nodes_half = num_sd_nodes / 2;
+  t = clock();
+  search_delete_key(head,
+		    start_sd_val,
+		    num_sd_nodes_half,
+		    cmp_key_fn,
+		    free_elt_fn);
+  t = clock() - t;
+  printf("\t\tby key time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  start_sd_val = start_sd_val + num_sd_nodes_half;
+  t = clock();
+  search_delete_elt(head,
+		    start_sd_val,
+		    num_sd_nodes_half,
+		    cmp_elt_fn,
+		    cstr_elt_fn,
+		    free_elt_fn);
+  t = clock() - t;
+  printf("\t\tby elt time: %.8f seconds\n", (float)t / CLOCKS_PER_SEC);
+  dll_traverse(head, start_val, end_val, &result, key_val_fn);
+  dll_traverse(head, start_val, end_val, &result, elt_val_fn);
+  printf("\t\torder correctness --> ");
+  print_test_result(result);
 }
 
 /**
