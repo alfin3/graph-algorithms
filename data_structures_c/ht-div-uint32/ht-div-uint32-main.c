@@ -1,7 +1,7 @@
 /**
    ht-div-uint32-main.c
 
-   Examples of of a hash table with generic hash keys and generic elements.
+   Examples of a hash table with generic hash keys and generic elements.
    The implementation is based on a division method for hashing into 2^32-1 
    slots and a chaining method for resolving collisions.
 */
@@ -17,15 +17,22 @@
 #include "utilities-ds.h"
 
 void print_test_result(int result);
+static void insert_search_free_helper(uint32_t num_inserts,
+				      float alphas[],
+				      int num_alphas,
+				      int key_size,
+				      int elt_size,
+				      int (*cmp_key_fn)(void *, void *),
+				      void (*cstr_elt_fn)(void *, uint32_t),
+				      uint32_t (*elt_val_fn)(void *),
+				      void (*free_elt_fn)(void *));
 
 /**
-   Run tests of a hash table with keys and elements, each within a 
-   continuous memory block. A pointer to an element is passed as elt in 
-   ht_div_uint32_insert and the element is fully copied into a block
+   Run tests of a hash table on distinct keys and uint32_t elements across 
+   key sizes and load factor upper bounds. A pointer to an element is passed 
+   as elt in ht_div_uint32_insert and the element is fully copied into a block
    pointed from a node of the dll at the slot index computed by a hash 
-   function, and a NULL as free_elt_fn is sufficient to delete the element.
-
-   Search and insertion are tested across load factor upper bounds.
+   function. A NULL as free_elt_fn is sufficient to delete the element.
 */
 
 int cmp_uint32_fn(void *a, void *b){
@@ -40,133 +47,277 @@ int cmp_256_fn(void *a, void *b){
   return memcmp(a, b, 256);
 }
 
-static void insert_free_test_helper(uint32_t num_inserts,
-				    float alphas[],
-				    int num_alphas,
-				    int key_size,
-				    int (*cmp_key_fn)(void *, void *));
-static void insert_free_alpha_test_helper(uint32_t num_inserts,
-					  float alpha,
-					  int key_size,
-					  int (*cmp_key_fn)(void *, void *));
+void cstr_uint32_fn(void *elt, uint32_t val){
+  uint32_t **s = elt;
+  *s = malloc(sizeof(uint32_t));
+  assert(*s != NULL);
+  **s = val;
+}
+
+uint32_t val_uint32_fn(void *elt){
+  return *(uint32_t *)elt;
+}
 
 /**
-   Runs a ht_div_uint32_{insert, free} test on distinct keys and 
-   uint32_t elements.
+   Runs a ht_div_uint32_{insert, search, free} test on distinct keys and 
+   uint32_t elements across key sizes and load factor upper bounds.
 */
-void run_insert_free_test(){
-  uint32_t num_inserts = 1000000; //< 2^31
+void run_insert_search_free_uint32_elt_test(){
+  uint32_t num_inserts = 1000000; //< 2^31 for this test
   float alphas[5] = {0.1, 1.0, 10.0, 100.0, 1000.0};
   int num_alphas = 5;
   int key_sizes[2] = {32, 256}; //>= sizeof(uint32_t) for this test
   int num_key_sizes = 2;
   int (*cmp_fn_arr[2])(void *, void *) = {cmp_32_fn, cmp_256_fn};
-  printf("Run a ht_div_uint32_{insert, free} test on distinct %lu-byte "
-	 "keys and uint32_t elements\n", sizeof(uint32_t));
-  insert_free_test_helper(num_inserts,
-			  alphas,
-			  num_alphas,
-			  sizeof(uint32_t),
-			  cmp_uint32_fn);
-  for (int i = 0; i < num_key_sizes; i++){
-    printf("Run a ht_div_uint32_{insert, free} test on distinct %d-byte "
-	   "keys and uint32_t elements\n", key_sizes[i]);
-    insert_free_test_helper(num_inserts,
+  printf("Run a ht_div_uint32_{insert, search, free} test on distinct "
+	 "%lu-byte keys and uint32_t elements\n", sizeof(uint32_t));
+  insert_search_free_helper(num_inserts,
 			    alphas,
 			    num_alphas,
-			    key_sizes[i],
-			    cmp_fn_arr[i]);
+			    sizeof(uint32_t),
+			    sizeof(uint32_t),
+			    cmp_uint32_fn,
+			    cstr_uint32_fn,
+			    val_uint32_fn,
+			    NULL);
+  for (int i = 0; i < num_key_sizes; i++){
+    printf("Run a ht_div_uint32_{insert, search, free} test on distinct "
+	   "%d-byte keys and uint32_t elements\n", key_sizes[i]);
+    insert_search_free_helper(num_inserts,
+			      alphas,
+			      num_alphas,
+			      key_sizes[i],
+			      sizeof(uint32_t),
+			      cmp_fn_arr[i],
+			      cstr_uint32_fn,
+			      val_uint32_fn,
+			      NULL);
   }
 }
 
-/** Helper functions for the ht_div_uint32_{insert, free} test */
+/**
+   Run tests of a hash table on distinct keys and multilayered uint32_ptr_t 
+   elements across key sizes and load factor upper bounds. A pointer to a 
+   pointer to the element is passed as elt in ht_div_uint32_insert, and
+   the pointer to the element is copied into a block pointed from a node of 
+   the dll at the slot index computed by a hash function. An element-specific
+   free_elt_fn is necessary to delete the element.
+*/
 
-static void insert_free_test_helper(uint32_t num_inserts,
-				    float alphas[],
-				    int num_alphas,
-				    int key_size,
-				    int (*cmp_key_fn)(void *, void *)){
-  float alpha;
-  for (int i = 0; i < num_alphas; i++){
-    alpha = alphas[i];
-    printf("\tnumber of inserts: %u, load factor upper bound: %.1f\n",
-	   num_inserts, alpha);
-    insert_free_alpha_test_helper(num_inserts, alpha, key_size, cmp_key_fn);
+typedef struct{
+  uint32_t *val;
+} uint32_ptr_t;
+
+void cstr_uint32_ptr_fn(void *elt, uint32_t val){
+  uint32_ptr_t ***s_top = elt;
+  uint32_ptr_t **s = malloc(sizeof(uint32_ptr_t *));
+  assert(s != NULL);
+  *s = malloc(sizeof(uint32_ptr_t));
+  assert(*s != NULL);
+  (*s)->val = malloc(sizeof(uint32_t));
+  assert((*s)->val != NULL);
+  *((*s)->val) = val;
+  *s_top = s;
+}
+
+uint32_t val_uint32_ptr_fn(void *elt){
+  uint32_ptr_t **s  = elt;
+  return *((*s)->val);
+}
+
+void free_uint32_ptr_fn(void *elt){
+  uint32_ptr_t **s = elt;
+  free((*s)->val);
+  (*s)->val = NULL;
+  free(*s);
+  *s = NULL;
+  s = NULL;
+}
+
+/**
+   Run a ht_div_uint32_{insert, search, free} test on distinct keys and 
+   multilayered uint32_ptr_t elements across key sizes and load factor 
+   upper bounds.
+*/
+void run_insert_search_free_uint32_ptr_elt_test(){
+  uint32_t num_inserts = 1000000; //< 2^31 for this test
+  float alphas[5] = {0.1, 1.0, 10.0, 100.0, 1000.0};
+  int num_alphas = 5;
+  int key_sizes[2] = {32, 256}; //>= sizeof(uint32_t) for this test
+  int num_key_sizes = 2;
+  int (*cmp_fn_arr[2])(void *, void *) = {cmp_32_fn, cmp_256_fn};
+  printf("Run a ht_div_uint32_{insert, search, free} test on distinct "
+	 "%lu-byte keys and multilayered uint32_ptr_t elements\n",
+	 sizeof(uint32_t));
+  insert_search_free_helper(num_inserts,
+			    alphas,
+			    num_alphas,
+			    sizeof(uint32_t),
+			    sizeof(uint32_ptr_t *),
+			    cmp_uint32_fn,
+			    cstr_uint32_ptr_fn,
+			    val_uint32_ptr_fn,
+			    free_uint32_ptr_fn);
+  for (int i = 0; i < num_key_sizes; i++){
+    printf("Run a ht_div_uint32_{insert, search, free} test on distinct "
+	   "%d-byte keys and multilayered uint32_ptr_t elements\n",
+	   key_sizes[i]);
+    insert_search_free_helper(num_inserts,
+			      alphas,
+			      num_alphas,
+			      key_sizes[i],
+			      sizeof(uint32_ptr_t *),
+			      cmp_fn_arr[i],
+			      cstr_uint32_ptr_fn,
+			      val_uint32_ptr_fn,
+			      free_uint32_ptr_fn);
   }
 }
 
-static void insert_free_alpha_test_helper(uint32_t num_inserts,
-					float alpha,
-					int key_size,
-					int (*cmp_key_fn)(void *, void *)){
+/** 
+   Helper functions for the ht_div_uint32_{insert, search, free} tests
+   across key sizes and load factor upper bounds, on uint32_t and 
+   uint32_ptr_t elements.
+*/
+
+static void insert_keys_elts(ht_div_uint32_t *ht,
+			     void **key_arr,
+			     void **elt_arr,
+			     uint32_t arr_size,
+			     int *result){
+  uint32_t n = ht->num_elts;
+  clock_t t;
+  t = clock();
+  for (uint32_t i = 0; i < arr_size; i++){
+    //dereference pointers to void *
+    ht_div_uint32_insert(ht, key_arr[i], elt_arr[i]);
+  }
+  t = clock() - t;
+  printf("\t\tinsert time:           "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  *result *= (ht->num_elts == n + arr_size);
+}
+
+static void search_in_ht(ht_div_uint32_t *ht,
+			 void **key_arr,
+			 void **elt_arr,
+			 uint32_t arr_size,
+			 int *result,
+			 uint32_t (*elt_val_fn)(void *)){
+  uint32_t n = ht->num_elts;
+  void *elt;
+  clock_t t;
+  t = clock();
+  for (uint32_t i = 0; i < arr_size; i++){
+    elt = ht_div_uint32_search(ht, key_arr[i]);
+    *result *= (elt_val_fn(elt_arr[i]) == elt_val_fn(elt));
+  }
+  t = clock() - t;
+  printf("\t\tin ht search time:     "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  *result *= (ht->num_elts == n);
+}
+
+static void search_not_in_ht(ht_div_uint32_t *ht,
+			     void **key_arr,
+			     uint32_t arr_size,
+			     int *result){
+  uint32_t n = ht->num_elts;
+  void *elt;
+  clock_t t;
+  t = clock();
+  for (uint32_t i = 0; i < arr_size; i++){
+    elt = ht_div_uint32_search(ht, key_arr[i]);
+    *result *= (elt == NULL);
+  }
+  t = clock() - t;
+  printf("\t\tnot in ht search time: "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  *result *= (ht->num_elts == n);
+}
+
+static void free_ht(ht_div_uint32_t *ht){
+  clock_t t;
+  t = clock();
+  ht_div_uint32_free(ht);
+  t = clock() - t;
+  printf("\t\tfree time:             "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+}
+
+static void insert_search_free_alphas(uint32_t num_inserts,
+				      float alpha,
+				      int key_size,
+				      int elt_size,
+				      int (*cmp_key_fn)(void *, void *),
+				      void (*cstr_elt_fn)(void *, uint32_t),
+				      uint32_t (*elt_val_fn)(void *),
+				      void (*free_elt_fn)(void *)){
   assert(key_size >= (int)sizeof(uint32_t));
   ht_div_uint32_t ht;
-  void **key_arr, *key, *ptr;
-  uint32_t *elt_arr, *elt;
+  void **key_arr, **elt_arr, *ptr;
   int result = 1;
-  clock_t t;
+  //construct keys and elements
   key_arr = malloc(num_inserts * sizeof(void *));
   assert(key_arr != NULL);
-  elt_arr = malloc(num_inserts * sizeof(uint32_t));
+  elt_arr = malloc(num_inserts * sizeof(void *));
   assert(elt_arr != NULL);
   for (uint32_t i = 0; i < num_inserts; i++){
     key_arr[i] = malloc(key_size);
     assert(key_arr[i] != NULL);
     ptr = (char *)(key_arr[i] + key_size - sizeof(uint32_t));
     *(uint32_t *)ptr = i;
-    elt_arr[i] = i;
+    cstr_elt_fn(&(elt_arr[i]), i);
   }
-  t = clock();
   ht_div_uint32_init(&ht,
                      key_size,
-	             sizeof(uint32_t),
+	             elt_size,
 		     alpha,
                      cmp_key_fn,
-		     NULL);
-  for (uint32_t i = 0; i < num_inserts; i++){
-    key = key_arr[i]; //dereference a pointer to void *
-    elt = &(elt_arr[i]);
-    ht_div_uint32_insert(&ht, key, elt);
-  }
-  t = clock() - t;
-  printf("\t\tinsert time:           "
-	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
-  result *= (ht.num_elts == num_inserts);
-  t = clock();
-  for (uint32_t i = 0; i < num_inserts; i++){
-    key = key_arr[i];
-    elt = ht_div_uint32_search(&ht, key);
-    result *= (elt_arr[i] == *elt);
-  }
-  t = clock() - t;
-  printf("\t\tin ht search time:     "
-	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
-  result *= (ht.num_elts == num_inserts);
-  t = clock();
+		     free_elt_fn);
+  insert_keys_elts(&ht, key_arr, elt_arr, num_inserts, &result);
+  search_in_ht(&ht, key_arr, elt_arr, num_inserts, &result, elt_val_fn);
   assert(num_inserts < (uint32_t)pow_two_uint64(31));
   for (uint32_t i = 0; i < num_inserts; i++){
     ptr = (char *)(key_arr[i] + key_size - sizeof(uint32_t));
     *(uint32_t *)ptr = i + num_inserts;
-    key = key_arr[i];
-    elt = ht_div_uint32_search(&ht, key);
-    result *= (elt == NULL);
   }
-  t = clock() - t;
-  printf("\t\tnot in ht search time: "
-	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
-  result *= (ht.num_elts == num_inserts);
-  t = clock();
-  ht_div_uint32_free(&ht);
-  t = clock() - t;
-  printf("\t\tfree time:             "
-	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  search_not_in_ht(&ht, key_arr, num_inserts, &result);
+  free_ht(&ht);
   printf("\t\tsearch correctness --> ");
   print_test_result(result);
+  //free key_arr and elt_arr
   for (uint32_t i = 0; i < num_inserts; i++){
     free(key_arr[i]);
+    free(elt_arr[i]);
   }
   free(key_arr);
   free(elt_arr);
+}
+
+static void insert_search_free_helper(uint32_t num_inserts,
+				      float alphas[],
+				      int num_alphas,
+				      int key_size,
+				      int elt_size,
+				      int (*cmp_key_fn)(void *, void *),
+				      void (*cstr_elt_fn)(void *, uint32_t),
+				      uint32_t (*elt_val_fn)(void *),
+				      void (*free_elt_fn)(void *)){
+  float alpha;
+  for (int i = 0; i < num_alphas; i++){
+    alpha = alphas[i];
+    printf("\tnumber of inserts: %u, load factor upper bound: %.1f\n",
+	   num_inserts, alpha);
+    insert_search_free_alphas(num_inserts,
+			      alpha,
+			      key_size,
+			      elt_size,
+			      cmp_key_fn,
+			      cstr_elt_fn,
+			      elt_val_fn,
+			      free_elt_fn);
+  }
 }
 
 /**
@@ -219,7 +370,8 @@ void print_test_result(int result){
 }
 
 int main(){
-  run_insert_free_test();
+  run_insert_search_free_uint32_elt_test();
+  run_insert_search_free_uint32_ptr_elt_test();
   run_corner_cases_test();
   return 0;
 }

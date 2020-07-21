@@ -191,7 +191,8 @@ static void ht_grow(ht_div_uint32_t *ht){
       //assert that ht_size increased so that there is no mutual recursion
       assert(!((float)(ht->num_elts) / ht->ht_size > ht->alpha));
       ht_div_uint32_insert(ht, (*head)->key, (*head)->elt);
-      dll_delete(head, *head, ht->free_elt_fn);
+      //if an element is multilayered, NULL deletes the previous pointer to it
+      dll_delete(head, *head, NULL);
     }
   }
   free(prev_key_elts);

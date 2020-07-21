@@ -1,7 +1,7 @@
 CC = gcc
 DLL_DIR = ../dll/
 UTILS_DIR = ../utilities-ds/
-CFLAGS = -I$(DLL_DIR) -I$(UTILS_DIR) -Wall -Wextra -O3
+CFLAGS = -I$(DLL_DIR) -I$(UTILS_DIR) -Wall -Wextra -g
 OBJ = ht-div-uint32-main.o ht-div-uint32.o $(DLL_DIR)dll.o $(UTILS_DIR)utilities-ds.o
 
 ht-div-uint32 : $(OBJ)
