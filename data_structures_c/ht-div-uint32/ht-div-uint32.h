@@ -12,10 +12,10 @@
    after the maximum size of a hash table is reached.
 
    A hash key is an object within a continuous block of memory (e.g. a basic 
-   type, an array or struct). 
+   type, array, struct). 
 
-   An element is a object within a continuous block of memory (e.g. a basic 
-   type, array or a struct), or a multilayered object in memory.
+   An element is an object within a continuous block of memory (e.g. a basic 
+   type, array, struct), or a multilayered object in memory.
 */
 
 #ifndef HT_DIV_UINT32_H  
@@ -63,21 +63,28 @@ void ht_div_uint32_init(ht_div_uint32_t *ht,
 
 /**
    Inserts a key and an associated element into a hash table. If the key is
-   in the hash table, reassigns the key to the new element. The key and elt 
+   in the hash table, associates the key to the new element. The key and elt 
    parameters are not NULL.
 */
 void ht_div_uint32_insert(ht_div_uint32_t *ht, void *key, void *elt);
 
 /**
-   If a key is present in a hash table, returns a pointer to its 
-   associated element, otherwise returns NULL. The key parameter is 
-   not NULL.
+   If a key is present in a hash table, returns a pointer to its associated 
+   element, otherwise returns NULL. The key parameter is not NULL.
 */
 void *ht_div_uint32_search(ht_div_uint32_t *ht, void *key);
 
 /**
-   Deletes a key and its associated element from a hash table.
-   The key parameter is not NULL.
+   Removes a key and the associated element from a hash table by copying 
+   the element into a block of size elt_size pointed to by elt. If the key is
+   not in the hash table, leaves the block pointed to by elt unchanged.
+   The key and elt parameters are not NULL.
+*/
+void ht_div_uint32_remove(ht_div_uint32_t *ht, void *key, void *elt);
+
+/**
+   Deletes a key and its associated element in a hash table according to 
+   free_elt_fn. The key parameter is not NULL.
 */
 void ht_div_uint32_delete(ht_div_uint32_t *ht, void *key);
 

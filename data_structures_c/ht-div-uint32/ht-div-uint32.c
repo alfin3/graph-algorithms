@@ -11,10 +11,10 @@
    after the maximum size of a hash table is reached.
 
    A hash key is an object within a continuous block of memory (e.g. a basic 
-   type, an array or struct). 
+   type, array, struct). 
 
-   An element is a object within a continuous block of memory (e.g. a basic 
-   type, array or a struct), or a multilayered object in memory.
+   An element is an object within a continuous block of memory (e.g. a basic 
+   type, array, struct), or a multilayered object in memory.
 */
 
 #include <stdio.h>
@@ -31,7 +31,7 @@ static void ht_grow(ht_div_uint32_t *ht);
 
 /**
    An array of primes in the increasing order, approximately doubling in 
-   magnitude, and not too close to the powers of 2 and 10 to avoid 
+   magnitude, that are not too close to the powers of 2 and 10 to avoid 
    hashing regularities due to the structure of data.
  */
 static const uint32_t primes[22] = {1543, 3119, 6211,
@@ -85,7 +85,7 @@ void ht_div_uint32_init(ht_div_uint32_t *ht,
 
 /**
    Inserts a key and an associated element into a hash table. If the key is
-   in the hash table, reassigns the key to the new element. The key and elt 
+   in the hash table, associates the key to the new element. The key and elt 
    parameters are not NULL.
 */
 void ht_div_uint32_insert(ht_div_uint32_t *ht, void *key, void *elt){
@@ -109,9 +109,8 @@ void ht_div_uint32_insert(ht_div_uint32_t *ht, void *key, void *elt){
 }
 
 /**
-   If a key is present in a hash table, returns a pointer to its 
-   associated element, otherwise returns NULL. The key parameter is 
-   not NULL.
+   If a key is present in a hash table, returns a pointer to its associated 
+   element, otherwise returns NULL. The key parameter is not NULL.
 */
 void *ht_div_uint32_search(ht_div_uint32_t *ht, void *key){
   uint32_t ix = hash(ht, key);
@@ -129,8 +128,28 @@ void *ht_div_uint32_search(ht_div_uint32_t *ht, void *key){
 }
 
 /**
-   Deletes a key and its associated element from a hash table.
-   The key parameter is not NULL.
+   Removes a key and the associated element from a hash table by copying 
+   the element into a block of size elt_size pointed to by elt. If the key is
+   not in the hash table, leaves the block pointed to by elt unchanged.
+   The key and elt parameters are not NULL.
+*/
+void ht_div_uint32_remove(ht_div_uint32_t *ht, void *key, void *elt){
+  uint32_t ix = hash(ht, key);
+  dll_node_t **head = &(ht->key_elts[ix]);
+  if (*head != NULL){
+    dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
+    if (node != NULL){
+      memcpy(elt, node->elt, ht->elt_size);
+      //if an element is multilayered, the pointer to it is deleted
+      dll_delete(head, node, NULL);
+      ht->num_elts--;
+    }
+  }
+}
+
+/**
+   Deletes a key and its associated element in a hash table according to 
+   free_elt_fn. The key parameter is not NULL.
 */
 void ht_div_uint32_delete(ht_div_uint32_t *ht, void *key){
   uint32_t ix = hash(ht, key);
@@ -168,7 +187,8 @@ static uint32_t hash(ht_div_uint32_t *ht, void *key){
 
 /**
    Increases the size of a hash table by the difference between the ith and 
-   (i+1)th prime numbers in the primes array.
+   (i+1)th prime numbers in the primes array. Makes no changes if the last
+   prime number in the primes array was reached.
 */
 static void ht_grow(ht_div_uint32_t *ht){
   //if the largest size is reached, alpha is not a bound for expectation
@@ -191,7 +211,7 @@ static void ht_grow(ht_div_uint32_t *ht){
       //assert that ht_size increased so that there is no mutual recursion
       assert(!((float)(ht->num_elts) / ht->ht_size > ht->alpha));
       ht_div_uint32_insert(ht, (*head)->key, (*head)->elt);
-      //if an element is multilayered, NULL deletes the previous pointer to it
+      //if an element is multilayered, the previous pointer to it is deleted
       dll_delete(head, *head, NULL);
     }
   }
