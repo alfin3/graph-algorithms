@@ -148,11 +148,9 @@ static void dll_free_key_elt(dll_node_t *node, void (*free_elt_fn)(void *)){
   node->key = NULL;
   if (free_elt_fn != NULL){
     free_elt_fn(node->elt);
-    node->elt = NULL;
-  }else{
-    free(node->elt);
-    node->elt = NULL;
   }
+  free(node->elt);
+  node->elt = NULL;
 }
 
 /**

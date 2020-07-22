@@ -246,6 +246,10 @@ typedef struct{
   int *val;
 } int_ptr_t;
 
+/**
+   Constructs an int_ptr_t element, given a pointer elt pointing to a 
+   preallocated block of size elt_size.
+*/
 void cstr_int_ptr_t_fn(void *elt, int val){
   int_ptr_t **s = elt;
   (*s) = malloc(sizeof(int_ptr_t));
@@ -253,8 +257,13 @@ void cstr_int_ptr_t_fn(void *elt, int val){
   (*s)->val = malloc(sizeof(int));
   assert((*s)->val != NULL);
   *((*s)->val) = val;
+  s = NULL;
 }
 
+/**
+   Frees an int_ptr_t element and leaves a block of size elt_size pointed 
+   to by the elt parameter.
+*/
 void free_int_ptr_t_fn(void *elt){
   int_ptr_t **s = elt;
   free((*s)->val);
