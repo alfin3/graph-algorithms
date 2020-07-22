@@ -176,13 +176,16 @@ uint32_t val_uint32_ptr_fn(void *elt){
   return *((*s)->val);
 }
 
+/**
+   Frees an uint32_ptr_t element and leaves a block of size elt_size pointed 
+   to by the elt parameter.
+*/
 void free_uint32_ptr_fn(void *elt){
   uint32_ptr_t **s = elt;
   free((*s)->val);
   (*s)->val = NULL;
   free(*s);
   *s = NULL;
-  free(s);
   s = NULL;
 }
 

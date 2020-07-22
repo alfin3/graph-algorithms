@@ -93,18 +93,13 @@ void ht_div_uint32_insert(ht_div_uint32_t *ht, void *key, void *elt){
   if ((float)(ht->num_elts) / ht->ht_size > ht->alpha){ht_grow(ht);}
   uint32_t ix = hash(ht, key);
   dll_node_t **head = &(ht->key_elts[ix]);
-  if (*head == NULL){
+  dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
+  if (node == NULL){
     dll_insert(head, key, elt, ht->key_size, ht->elt_size);
     ht->num_elts++;
   }else{
-    dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
-    if (node == NULL){
-      dll_insert(head, key, elt, ht->key_size, ht->elt_size);
-      ht->num_elts++;
-    }else{
-      dll_delete(head, node, ht->free_elt_fn);
-      dll_insert(head, key, elt, ht->key_size, ht->elt_size);
-    }
+    dll_delete(head, node, ht->free_elt_fn);
+    dll_insert(head, key, elt, ht->key_size, ht->elt_size);
   }   
 }
 
@@ -115,15 +110,11 @@ void ht_div_uint32_insert(ht_div_uint32_t *ht, void *key, void *elt){
 void *ht_div_uint32_search(ht_div_uint32_t *ht, void *key){
   uint32_t ix = hash(ht, key);
   dll_node_t **head = &(ht->key_elts[ix]);
-  if (*head == NULL){
+  dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
+  if (node == NULL){
     return NULL;
   }else{
-    dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
-    if (node == NULL){
-      return NULL;
-    }else{
-      return node->elt;
-    }
+    return node->elt;
   }
 }
 
@@ -136,14 +127,12 @@ void *ht_div_uint32_search(ht_div_uint32_t *ht, void *key){
 void ht_div_uint32_remove(ht_div_uint32_t *ht, void *key, void *elt){
   uint32_t ix = hash(ht, key);
   dll_node_t **head = &(ht->key_elts[ix]);
-  if (*head != NULL){
-    dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
-    if (node != NULL){
-      memcpy(elt, node->elt, ht->elt_size);
-      //if an element is multilayered, the pointer to it is deleted
-      dll_delete(head, node, NULL);
-      ht->num_elts--;
-    }
+  dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
+  if (node != NULL){
+    memcpy(elt, node->elt, ht->elt_size);
+    //NULL: if an element is multilayered, the pointer to it is deleted
+    dll_delete(head, node, NULL);
+    ht->num_elts--;
   }
 }
 
@@ -154,12 +143,10 @@ void ht_div_uint32_remove(ht_div_uint32_t *ht, void *key, void *elt){
 void ht_div_uint32_delete(ht_div_uint32_t *ht, void *key){
   uint32_t ix = hash(ht, key);
   dll_node_t **head = &(ht->key_elts[ix]);
-  if (*head != NULL){
-    dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
-    if (node != NULL){
-      dll_delete(head, node, ht->free_elt_fn);
-      ht->num_elts--;
-    }
+  dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
+  if (node != NULL){
+    dll_delete(head, node, ht->free_elt_fn);
+    ht->num_elts--;
   }
 }
 
@@ -211,7 +198,7 @@ static void ht_grow(ht_div_uint32_t *ht){
       //assert that ht_size increased so that there is no mutual recursion
       assert(!((float)(ht->num_elts) / ht->ht_size > ht->alpha));
       ht_div_uint32_insert(ht, (*head)->key, (*head)->elt);
-      //if an element is multilayered, the previous pointer to it is deleted
+      //NULL: if an element is multilayered, the pointer to it is deleted
       dll_delete(head, *head, NULL);
     }
   }
