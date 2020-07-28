@@ -106,12 +106,17 @@ void heap_push(heap_t *h, void *pty, void *elt){
 }
 
 /** 
-   Provides a membership test in O(1 + alpha) time in expectation under the 
-   simple uniform hashing assumption.
+   Returns a pointer to the priority of an element in a heap or NULL if
+   the element is not in the heap in O(1 + alpha) time in expectation under 
+   the simple uniform hashing assumption.
 */
-bool heap_member(heap_t *h, void *elt){
-  if (ht_div_uint32_search(h->ht, elt) != NULL){return true;}
-  return false;
+void *heap_search(heap_t *h, void *elt){
+  uint32_t *ix_ptr = ht_div_uint32_search(h->ht, elt);
+  if (ix_ptr != NULL){
+    return pty_ptr(h, *ix_ptr);
+  }else{
+    return NULL;
+  }
 }
 
 /**
@@ -140,7 +145,7 @@ void heap_pop(heap_t *h, void *pty, void *elt){
   swap(h, ix, h->num_elts - 1);
   ht_div_uint32_remove(h->ht, elt, &buf);
   h->num_elts--;
-  heapify_down(h, ix);
+  if (h->num_elts > 0){heapify_down(h, ix);}
 }
 
 /**
@@ -237,32 +242,25 @@ static void heapify_down(heap_t *h, uint32_t i){
   uint32_t jl;
   uint32_t jr;
   //uint32_t safe: 0 <= i <= num_elts - 1 <= 2^32 - 3
-  if (h->num_elts == 0 || i + 1 > h->num_elts - 1 - i){
-    return; 
-  }else if (i + 2 > h->num_elts - 1 - i){
+  assert(h->num_elts > 0 && i < h->num_elts);
+  while (i + 2 <= h->num_elts - 1 - i){
+    //both next left and next right indices have elements
+    jl = 2 * i + 1;
+    jr = 2 * i + 2;
+    if (h->cmp_pty_fn(pty_ptr(h, i), pty_ptr(h, jl)) > 0 &&
+	h->cmp_pty_fn(pty_ptr(h, jl), pty_ptr(h, jr)) <= 0){
+      swap(h, i, jl);
+      i = jl;
+    }else if (h->cmp_pty_fn(pty_ptr(h, i), pty_ptr(h, jr)) > 0){
+      //jr has min priority relative to jl and the ith priority is greater
+      swap(h, i, jr);
+      i = jr;
+    }
+  }
+  if (i + 1 == h->num_elts - 1 - i){
     jl = 2 * i + 1;
     if (h->cmp_pty_fn(pty_ptr(h, i), pty_ptr(h, jl)) > 0){
       swap(h, i, jl);
-    }
-  }else{
-    while (i + 2 <= h->num_elts - 1 - i){
-      //both next left and next right indices have elements
-      jl = 2 * i + 1;
-      jr = 2 * i + 2;
-      if (h->cmp_pty_fn(pty_ptr(h, i), pty_ptr(h, jl)) > 0 &&
-	  h->cmp_pty_fn(pty_ptr(h, jl), pty_ptr(h, jr)) <= 0){
-	swap(h, i, jl);
-	i = jl;
-      }else if (h->cmp_pty_fn(pty_ptr(h, i), pty_ptr(h, jr)) > 0){
-	swap(h, i, jr);
-	i = jr;
-      }
-    }
-    if (i + 1 == h->num_elts - 1 - i){
-      jl = 2 * i + 1;
-      if (h->cmp_pty_fn(pty_ptr(h, i), pty_ptr(h, jl)) > 0){
-	swap(h, i, jl);
-      }
     }
   }
 }

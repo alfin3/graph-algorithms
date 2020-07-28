@@ -77,10 +77,11 @@ void heap_init(heap_t *h,
 void heap_push(heap_t *h, void *pty, void *elt);
 
 /** 
-   Provides a membership test in O(1 + alpha) time in expectation under the 
-   simple uniform hashing assumption.
+   Returns a pointer to the priority of an element in a heap or NULL if
+   the element is not in the heap in O(1 + alpha) time in expectation under 
+   the simple uniform hashing assumption.
 */
-bool heap_member(heap_t *h, void *elt);
+void *heap_search(heap_t *h, void *elt);
 
 /**
    Updates the priority of an element that is already in a heap.
