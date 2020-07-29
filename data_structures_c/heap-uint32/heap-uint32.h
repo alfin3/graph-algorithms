@@ -11,18 +11,17 @@
 
    The implementation assumes that for every element in a heap, the 
    corresponding block of size elt_size, pointed to by the elt parameter in
-   heap_push is unique. Because any object in memory can be pushed with its 
-   unique pointer, this invariant only prevents associating a given object in 
-   memory with more than one priority value in the heap.
+   heap_uint32_push is unique. Because any object in memory can be pushed with
+   its unique pointer, this invariant only prevents associating a given object
+   in memory with more than one priority in a heap.
 
-   The overflow-safe design of uint32_t index tests in heapify functions 
+   The overflow-safe design of uint32_t index tests in the heapify functions 
    enables a potentially simple upgrade to uint64_t number of elements.
 */
 
 #ifndef HEAP_UINT32_H  
 #define HEAP_UINT32_H
 
-#include <stdbool.h>
 #include "ht-div-uint32.h"
 
 typedef struct{
@@ -38,7 +37,7 @@ typedef struct{
   int (*cmp_pty_fn)(void *, void *);
   int (*cmp_elt_fn)(void *, void *); //compares two blocks of size elt_size
   void (*free_elt_fn)(void *);
-} heap_t;
+} heap_uint32_t;
 
 /**
    Initializes a heap. 
@@ -50,21 +49,23 @@ typedef struct{
                non-zero otherwise.
    free_elt_fn: - if an element is of a basic type or is an array or struct 
                 within a continuous memory block, as reflected by elt_size, 
-                and a pointer to the element is passed as elt in heap_push, 
-                then the element is fully copied into the elts array of a 
-                heap, and NULL as free_elt_fn is sufficient to free the heap;
+                and a pointer to the element is passed as elt in 
+                heap_uint32_push, then the element is fully copied into the 
+                elts array of a heap, and NULL as free_elt_fn is sufficient 
+                to free the heap;
                 - if an element is multilayered, and a pointer to a pointer
-                to the element is passed as elt in heap_push, then the pointer
-                to the element is copied into the elts array of a heap, and an
-                element-specific free_elt_fn is necessary to free the heap.
+                to the element is passed as elt in heap_uint32_push, then the
+                pointer to the element is copied into the elts array of a 
+                heap, and an element-specific free_elt_fn is necessary to 
+                free the heap.
 */
-void heap_init(heap_t *h,
-	       uint32_t init_heap_size,
-	       int pty_size,
-	       int elt_size,
-	       int (*cmp_pty_fn)(void *, void *),
-	       int (*cmp_elt_fn)(void *, void *),
-	       void (*free_elt_fn)(void *));
+void heap_uint32_init(heap_uint32_t *h,
+		      uint32_t init_heap_size,
+		      int pty_size,
+		      int elt_size,
+		      int (*cmp_pty_fn)(void *, void *),
+		      int (*cmp_elt_fn)(void *, void *),
+		      void (*free_elt_fn)(void *));
 
 /**
    Pushes an element not yet in a heap and an associated priority value. 
@@ -74,30 +75,31 @@ void heap_init(heap_t *h,
    pty: a pointer to a block of size pty_size that is an object of basic 
         type (e.g. char, int, long, double), as reflected by pty_size.
 */
-void heap_push(heap_t *h, void *pty, void *elt);
+void heap_uint32_push(heap_uint32_t *h, void *pty, void *elt);
 
 /** 
    Returns a pointer to the priority of an element in a heap or NULL if
    the element is not in the heap in O(1 + alpha) time in expectation under 
-   the simple uniform hashing assumption.
+   the simple uniform hashing assumption. The returned pointer is guaranteed
+   to point to the current priority until another heap operation is performed.
 */
-void *heap_search(heap_t *h, void *elt);
+void *heap_uint32_search(heap_uint32_t *h, void *elt);
 
 /**
    Updates the priority of an element that is already in a heap.
 */
-void heap_update(heap_t *h, void *pty, void *elt);
+void heap_uint32_update(heap_uint32_t *h, void *pty, void *elt);
 
 /**
    Pops an element associated with a minimal priority according to cmp_pty_fn.
    If a heap is empty, the memory blocks pointed to by elt and pty remain 
    unchanged.
 */
-void heap_pop(heap_t *h, void *pty, void *elt);
+void heap_uint32_pop(heap_uint32_t *h, void *pty, void *elt);
 
 /**
    Frees the dynamically allocated components of a heap.
 */
-void heap_free(heap_t *h);
+void heap_uint32_free(heap_uint32_t *h);
 
 #endif

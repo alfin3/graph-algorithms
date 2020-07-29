@@ -11,29 +11,28 @@
 
    The implementation assumes that for every element in a heap, the 
    corresponding block of size elt_size, pointed to by the elt parameter in
-   heap_push is unique. Because any object in memory can be pushed with its 
-   unique pointer, this invariant only prevents associating a given object in 
-   memory with more than one priority value in the heap.
+   heap_uint32_push is unique. Because any object in memory can be pushed with
+   its unique pointer, this invariant only prevents associating a given object
+   in memory with more than one priority in a heap.
 
-   The overflow-safe design of uint32_t index tests in heapify functions 
+   The overflow-safe design of uint32_t index tests in the heapify functions 
    enables a potentially simple upgrade to uint64_t number of elements.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <assert.h>
 #include <string.h>
 #include "heap-uint32.h"
 #include "ht-div-uint32.h"
 #include "utilities-ds.h"
 
-static void *pty_ptr(heap_t *h, uint32_t i);
-static void *elt_ptr(heap_t *h, uint32_t i);
-static void swap(heap_t *h, uint32_t i, uint32_t j);
-static void heap_grow(heap_t *h);
-static void heapify_up(heap_t *h, uint32_t i);
-static void heapify_down(heap_t *h, uint32_t i);
+static void *pty_ptr(heap_uint32_t *h, uint32_t i);
+static void *elt_ptr(heap_uint32_t *h, uint32_t i);
+static void swap(heap_uint32_t *h, uint32_t i, uint32_t j);
+static void heap_grow(heap_uint32_t *h);
+static void heapify_up(heap_uint32_t *h, uint32_t i);
+static void heapify_down(heap_uint32_t *h, uint32_t i);
 
 /**
    Initializes a heap. 
@@ -45,23 +44,24 @@ static void heapify_down(heap_t *h, uint32_t i);
                non-zero otherwise.
    free_elt_fn: - if an element is of a basic type or is an array or struct 
                 within a continuous memory block, as reflected by elt_size, 
-                and a pointer to the element is passed as elt in heap_push, 
-                then the element is fully copied into the elts array of a 
-                heap, and NULL as free_elt_fn is sufficient to free the heap;
+                and a pointer to the element is passed as elt in 
+                heap_uint32_push, then the element is fully copied into the 
+                elts array of a heap, and NULL as free_elt_fn is sufficient 
+                to free the heap;
                 - if an element is multilayered, and a pointer to a pointer
-                to the element is passed as elt in heap_push, then the pointer
-                to the element is copied into the elts array of a heap, and an
-                element-specific free_elt_fn is necessary to free the heap.
+                to the element is passed as elt in heap_uint32_push, then the
+                pointer to the element is copied into the elts array of a 
+                heap, and an element-specific free_elt_fn is necessary to 
+                free the heap.
 */
-void heap_init(heap_t *h,
-	       uint32_t init_heap_size,
-	       int pty_size,
-	       int elt_size,
-	       int (*cmp_pty_fn)(void *, void *),
-	       int (*cmp_elt_fn)(void *, void *),
-	       void (*free_elt_fn)(void *)){
+void heap_uint32_init(heap_uint32_t *h,
+		      uint32_t init_heap_size,
+		      int pty_size,
+		      int elt_size,
+		      int (*cmp_pty_fn)(void *, void *),
+		      int (*cmp_elt_fn)(void *, void *),
+		      void (*free_elt_fn)(void *)){
   h->heap_size = init_heap_size;
-  assert(h->heap_size > 0);
   //2^32 - 2 due to uint32_t index tests in heapify_down involving i + 2
   h->heap_max_size = (uint32_t)(pow_two_uint64(32) - 2);
   assert(h->heap_size <= h->heap_max_size);
@@ -95,7 +95,8 @@ void heap_init(heap_t *h,
    pty: a pointer to a block of size pty_size that is an object of basic 
         type (e.g. char, int, long, double), as reflected by pty_size.
 */
-void heap_push(heap_t *h, void *pty, void *elt){
+void heap_uint32_push(heap_uint32_t *h, void *pty, void *elt){
+  assert(h->num_elts < h->heap_max_size);
   if (h->heap_size == h->num_elts){heap_grow(h);}
   uint32_t ix = h->num_elts;
   memcpy(elt_ptr(h, ix), elt, h->elt_size);
@@ -108,9 +109,10 @@ void heap_push(heap_t *h, void *pty, void *elt){
 /** 
    Returns a pointer to the priority of an element in a heap or NULL if
    the element is not in the heap in O(1 + alpha) time in expectation under 
-   the simple uniform hashing assumption.
+   the simple uniform hashing assumption. The returned pointer is guaranteed
+   to point to the current priority until another heap operation is performed.
 */
-void *heap_search(heap_t *h, void *elt){
+void *heap_uint32_search(heap_uint32_t *h, void *elt){
   uint32_t *ix_ptr = ht_div_uint32_search(h->ht, elt);
   if (ix_ptr != NULL){
     return pty_ptr(h, *ix_ptr);
@@ -122,7 +124,7 @@ void *heap_search(heap_t *h, void *elt){
 /**
    Updates the priority of an element that is already in a heap.
 */
-void heap_update(heap_t *h, void *pty, void *elt){
+void heap_uint32_update(heap_uint32_t *h, void *pty, void *elt){
   uint32_t *ix_ptr = ht_div_uint32_search(h->ht, elt);
   assert(ix_ptr != NULL);
   uint32_t ix = *ix_ptr;
@@ -136,7 +138,7 @@ void heap_update(heap_t *h, void *pty, void *elt){
    If a heap is empty, the memory blocks pointed to by elt and pty remain 
    unchanged.
 */
-void heap_pop(heap_t *h, void *pty, void *elt){
+void heap_uint32_pop(heap_uint32_t *h, void *pty, void *elt){
   if (h->num_elts == 0){return;}
   uint32_t ix = 0;
   uint32_t buf;
@@ -151,7 +153,7 @@ void heap_pop(heap_t *h, void *pty, void *elt){
 /**
    Frees the dynamically allocated components of a heap.
 */
-void heap_free(heap_t *h){
+void heap_uint32_free(heap_uint32_t *h){
   if (h->free_elt_fn != NULL){
     for (uint32_t i = 0; i < h->num_elts; i++){
       h->free_elt_fn(elt_ptr(h, i));
@@ -170,21 +172,21 @@ void heap_free(heap_t *h){
 /**
    Computes a pointer to an element in the element array of a heap.
 */
-static void *elt_ptr(heap_t *h, uint32_t i){
+static void *elt_ptr(heap_uint32_t *h, uint32_t i){
   return (void *)((char *)h->elts + i * h->elt_size);
 }
 
 /**
    Computes a pointer to a priority in the priority array of a heap.
 */
-static void *pty_ptr(heap_t *h, uint32_t i){
+static void *pty_ptr(heap_uint32_t *h, uint32_t i){
   return (void *)((char *)h->ptys + i * h->pty_size);
 }
 
 /**
    Swaps elements and priorities at indices i and j.
 */
-static void swap(heap_t *h, uint32_t i, uint32_t j){
+static void swap(heap_uint32_t *h, uint32_t i, uint32_t j){
   if (i == j){return;}
   //swap elements
   char buffer_elt[h->elt_size]; //char used for exact # of bytes
@@ -206,8 +208,7 @@ static void swap(heap_t *h, uint32_t i, uint32_t j){
    overhead per push operation, without considering realloc's search of the 
    memory heap.
 */
-static void heap_grow(heap_t *h){
-  assert(h->heap_size < h->heap_max_size);
+static void heap_grow(heap_uint32_t *h){
   if (h->heap_max_size - h->heap_size < h->heap_size){
     h->heap_size = h->heap_max_size;
   }else{
@@ -223,14 +224,16 @@ static void heap_grow(heap_t *h){
    Heapifies the heap structure from the ith element upwards. Only uses
    uint32_t indices and is overflow-safe.
 */
-static void heapify_up(heap_t *h, uint32_t i){
-  if (i == 0){return;}
-  uint32_t ju = (i - 1) / 2; //if i is even, equivalent to (i - 2) / 2
-  while(h->cmp_pty_fn(pty_ptr(h, ju), pty_ptr(h, i)) > 0){
-    swap(h, i, ju);
-    i = ju;
-    if (i == 0){break;}
+static void heapify_up(heap_uint32_t *h, uint32_t i){
+  uint32_t ju;
+  while(i > 0){
     ju = (i - 1) / 2;
+    if (h->cmp_pty_fn(pty_ptr(h, ju), pty_ptr(h, i)) > 0){
+      swap(h, i, ju);
+      i = ju;
+    }else{
+      break;
+    }
   }
 }
 
@@ -238,7 +241,7 @@ static void heapify_up(heap_t *h, uint32_t i){
    Heapifies the heap structure from the ith element downwards. Only uses
    uint32_t indices and is overflow-safe.
 */
-static void heapify_down(heap_t *h, uint32_t i){
+static void heapify_down(heap_uint32_t *h, uint32_t i){
   uint32_t jl;
   uint32_t jr;
   //uint32_t safe: 0 <= i <= num_elts - 1 <= 2^32 - 3
@@ -255,6 +258,8 @@ static void heapify_down(heap_t *h, uint32_t i){
       //jr has min priority relative to jl and the ith priority is greater
       swap(h, i, jr);
       i = jr;
+    }else{
+      break;
     }
   }
   if (i + 1 == h->num_elts - 1 - i){

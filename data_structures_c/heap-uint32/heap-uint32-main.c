@@ -7,144 +7,406 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 #include <assert.h>
+#include <time.h>
 #include "heap-uint32.h"
+#include "utilities-ds.h"
+
+void print_test_result(int result);
+static void push_pop_free_pty_type(uint32_t n,
+				   int pty_size,
+				   int elt_size,
+				   int (*cmp_pty_fn)(void *, void *),
+				   int (*cmp_elt_fn)(void *, void *),
+				   void (*cstr_pty_fn)(void *, uint32_t),
+				   void (*cstr_elt_fn)(void *, uint32_t),
+				   void (*free_elt_fn)(void *));
+
+/**
+   Run heap_uint32_{push, pop, free} tests on uint32_t elements across 
+   priority types. A pointer to an element is passed as elt in 
+   heap_uint32_push and the element is fully copied into the elts array of 
+   the heap. NULL as free_elt_fn is sufficient to free the heap.
+*/
+
+int cmp_uint32_fn(void *a, void *b){
+  return *(uint32_t *)a - *(uint32_t *)b;
+}
+
+int cmp_uint64_fn(void *a, void *b){
+  return *(uint64_t *)a - *(uint64_t *)b;
+}
+
+int cmp_double_fn(void *a, void *b){
+  return *(double *)a - *(double *)b;
+}
+
+int cmp_long_double_fn(void *a, void *b){
+  return *(long double *)a - *(long double *)b;
+}
+
+/**
+   Construct element or priority objects from an uint32_t value. The ptr 
+   parameter is a pointer to a preallocated block of size elt_size or 
+   pty_size.
+*/
+void cstr_uint32_fn(void *ptr, uint32_t val){
+  uint32_t *s = ptr;
+  *s = val;
+  s = NULL;
+}
+
+void cstr_uint64_fn(void *ptr, uint32_t val){
+  uint64_t *s = ptr;
+  *s = val;
+  s = NULL;
+}
+
+void cstr_double_fn(void *ptr, uint32_t val){
+  double *s = ptr;
+  *s = val;
+  s = NULL;
+}
+
+void cstr_long_double_fn(void *ptr, uint32_t val){
+  long double *s = ptr;
+  *s = val;
+  s = NULL;
+}
+
+/**
+   Runs a heap_uint32_{push, pop, free} test on uint32_t elements across 
+   priority types.
+*/
+void run_push_pop_free_uint32_elt_test(){
+  uint32_t n = 1000000;
+  int num_pty_types = 4;
+  const char *pty_types[4] = {"uint32_t",
+			      "uint64_t",
+			      "double",
+			      "long double"};
+  int pty_sizes[4] = {sizeof(uint32_t),
+		      sizeof(uint64_t),
+		      sizeof(double),
+		      sizeof(long double)};
+  int (*cmp_pty_fn_arr[4])(void *, void *) = {cmp_uint32_fn,
+					      cmp_uint64_fn,
+					      cmp_double_fn,
+					      cmp_long_double_fn};
+  void (*cstr_pty_fn_arr[4])(void *, uint32_t) = {cstr_uint32_fn,
+						  cstr_uint64_fn,
+						  cstr_double_fn,
+						  cstr_long_double_fn};
+  printf("Run a heap_uint32_{push, pop, free} test on uint32_t elements "
+	 "across priority types\n");
+  for (int i = 0; i < num_pty_types; i++){
+    printf("\tnumber of elements: %u, priority type: %s\n", n, pty_types[i]);
+    push_pop_free_pty_type(n,
+			   pty_sizes[i],
+			   sizeof(uint32_t),
+			   cmp_pty_fn_arr[i],
+			   cmp_uint32_fn,
+			   cstr_pty_fn_arr[i],
+			   cstr_uint32_fn,
+			   NULL);
+  }
+}
+
+/**
+   Run heap_uint32_{push, pop, free} tests on multilayered uint32_ptr_t 
+   elements across priority types. A pointer to a pointer to an element is 
+   passed as elt in heap_uint32_push, and the pointer to the element is copied
+   into the elts array of a heap. An element-specific free_elt_fn is necessary
+   to free the heap.
+*/
+
+typedef struct{
+  uint32_t *val;
+} uint32_ptr_t;
+
+int cmp_uint32_ptr_fn(void *a, void *b){
+  uint32_ptr_t **s_a  = a;
+  uint32_ptr_t **s_b  = b;
+  return *((*s_a)->val) - *((*s_b)->val);
+}
+
+/**
+   Constructs an uint32_ptr_t element. The elt parameter is a pointer to a 
+   preallocated block of size elt_size.
+*/
+void cstr_uint32_ptr_fn(void *elt, uint32_t val){
+  uint32_ptr_t **s = elt;
+  *s = malloc(sizeof(uint32_ptr_t));
+  assert(*s != NULL);
+  (*s)->val = malloc(sizeof(uint32_t));
+  assert((*s)->val != NULL);
+  *((*s)->val) = val;
+  s = NULL;
+}
+
+/**
+   Frees an uint32_ptr_t element and leaves a block of size elt_size pointed 
+   to by the elt parameter.
+*/
+void free_uint32_ptr_fn(void *elt){
+  uint32_ptr_t **s = elt;
+  free((*s)->val);
+  (*s)->val = NULL;
+  free(*s);
+  *s = NULL;
+  s = NULL;
+}
+
+/**
+   Runs a heap_uint32_{push, pop, free} test on uint32_ptr_t elements across 
+   priority types.
+*/
+void run_push_pop_free_uint32_ptr_t_elt_test(){
+  uint32_t n = 1000000;
+  int num_pty_types = 4;
+  const char *pty_types[4] = {"uint32_t",
+			      "uint64_t",
+			      "double",
+			      "long double"};
+  int pty_sizes[4] = {sizeof(uint32_t),
+		      sizeof(uint64_t),
+		      sizeof(double),
+		      sizeof(long double)};
+  int (*cmp_pty_fn_arr[4])(void *, void *) = {cmp_uint32_fn,
+					      cmp_uint64_fn,
+					      cmp_double_fn,
+					      cmp_long_double_fn};
+  void (*cstr_pty_fn_arr[4])(void *, uint32_t) = {cstr_uint32_fn,
+						  cstr_uint64_fn,
+						  cstr_double_fn,
+						  cstr_long_double_fn};
+  printf("Run a heap_uint32_{push, pop, free} test on multilayered "
+	 "uint32_ptr_t elements across priority types\n");
+  for (int i = 0; i < num_pty_types; i++){
+    printf("\tnumber of elements: %u, priority type: %s\n", n, pty_types[i]);
+    push_pop_free_pty_type(n,
+			   pty_sizes[i],
+			   sizeof(uint32_ptr_t *),
+			   cmp_pty_fn_arr[i],
+			   cmp_uint32_ptr_fn,
+			   cstr_pty_fn_arr[i],
+			   cstr_uint32_ptr_fn,
+			   free_uint32_ptr_fn);
+  }
+}
 
 /** 
-    A dynamically allocated heap of integer elements and integer priorities.
-    In this example, a pointer to an element is passed as elt in heap_push 
-    that fully copies the element into the elts array of the heap.
+   Helper functions for heap_uint32_{push, pop, free} tests.
 */
 
-int cmp_int_elt(void *a, void *b){
-  return *(int *)a - *(int *)b;
-}
-
-int cmp_int_pty(void *a, void *b){
-  return *(int *)a - *(int *)b;
-}
-
-/**
-   Prints a specified number of integer elements in an element array.
-*/
-void print_int_elts(void *elts, int n){
-  for (int i = 0; i < n; i++){
-    printf("%d ", *((int *)elts + i));
+static void push_incr_ptys_elts(heap_uint32_t *h,
+				int *result,
+				int pty_size,
+				void **elt_arr,
+				uint32_t arr_size,
+				void (*cstr_pty_fn)(void *, uint32_t)){
+  uint32_t first_half_arr_size = arr_size / 2;
+  uint32_t n = h->num_elts;
+  void *pty = malloc(pty_size);
+  assert(pty != NULL);
+  clock_t t;
+  t = clock();
+  for (uint32_t i = 0; i < first_half_arr_size; i++){
+    cstr_pty_fn(pty, i);
+    //dereference pointers to void *
+    heap_uint32_push(h, pty, elt_arr[i]);
   }
-  printf("\n");
-}
-
-/**
-   Prints a specified number of integer priorities in a priority array.
-*/
-void print_int_ptys(void *ptys, int n){
-  for (int i = 0; i < n; i++){
-    printf("%d ", *((int *)ptys + i));
+  t = clock() - t;
+  printf("\t\tpush 1/2 elements, incr. priorities:          "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  *result *= (h->num_elts == n + first_half_arr_size);
+  t = clock();
+  for (uint32_t i = first_half_arr_size; i < arr_size; i++){
+    cstr_pty_fn(pty, i);
+    //dereference pointers to void *
+    heap_uint32_push(h, pty, elt_arr[i]);
   }
-  printf("\n");
+  t = clock() - t;
+  printf("\t\tpush residual elements, incr. priorities:     "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  *result *= (h->num_elts == n + arr_size);
+  free(pty);
+  pty = NULL;
 }
 
-/**
-   Prints integer elements and integer priorities.
-*/
-void print_int_elts_ptys(heap_t *h){
-  printf("Element array: ");
-  print_int_elts(h->elts, h->num_elts);
-  printf("Priority array: ");
-  print_int_ptys(h->ptys, h->num_elts);
-}
-
-/**
-   Pushes n integer elements and priorities.
-*/
-void push_int_elts(heap_t *h, int n){
-  print_int_elts_ptys(h);
-  for (int i = 0; i < n; i++){
-    int pty = n - i;
-    heap_push(h, &pty, &i);
-    print_int_elts_ptys(h);
+static void push_decr_ptys_elts(heap_uint32_t *h,
+				int *result,
+				int pty_size,
+				void **elt_arr,
+				uint32_t arr_size,
+				void (*cstr_pty_fn)(void *, uint32_t)){
+  uint32_t first_half_arr_size = arr_size / 2;
+  uint32_t n = h->num_elts;
+  void *pty = malloc(pty_size);
+  assert(pty != NULL);
+  clock_t t;
+  t = clock();
+  for (uint32_t i = 0; i < first_half_arr_size; i++){
+    cstr_pty_fn(pty, arr_size - i - 1);
+    //dereference pointers to void *
+    heap_uint32_push(h, pty, elt_arr[arr_size - i - 1]);
   }
-  printf("\n");
+  t = clock() - t;
+  printf("\t\tpush 1/2 elements, decr. priorities:          "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  *result *= (h->num_elts == n + first_half_arr_size);
+  t = clock();
+  for (uint32_t i = first_half_arr_size; i < arr_size; i++){
+    cstr_pty_fn(pty, arr_size - i - 1);
+    //dereference pointers to void *
+    heap_uint32_push(h, pty, elt_arr[arr_size - i - 1]);
+  }
+  t = clock() - t;
+  printf("\t\tpush residual elements, decr. priorities:     "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  *result *= (h->num_elts == n + arr_size);
+  free(pty);
+  pty = NULL;
+}
+
+static void pop_ptys_elts(heap_uint32_t *h,
+			  int *result,
+			  int pty_size,
+			  int elt_size,
+			  void **elt_arr,
+			  uint32_t arr_size,
+			  int (*cmp_pty_fn)(void *, void *),
+			  int (*cmp_elt_fn)(void *, void *)){
+  uint32_t first_half_arr_size = arr_size / 2;
+  uint32_t n = h->num_elts;
+  void *pty_prev, *pty_cur, *elt;
+  pty_prev = malloc(pty_size);
+  assert(pty_prev != NULL);
+  pty_cur = malloc(pty_size);
+  assert(pty_cur != NULL);
+  elt = malloc(elt_size);
+  assert(elt != NULL);
+  clock_t t;
+  t = clock();
+  for (uint32_t i = 0; i < first_half_arr_size; i++){
+    if (i == 0){
+      heap_uint32_pop(h, pty_cur, elt);
+      *result *= (cmp_elt_fn(elt, elt_arr[i]) == 0);
+    }else{
+      heap_uint32_pop(h, pty_cur, elt);
+      *result *= (cmp_pty_fn(pty_prev, pty_cur) <= 0);
+      *result *= (cmp_elt_fn(elt, elt_arr[i]) == 0);
+    }
+    memcpy(pty_prev, pty_cur, pty_size); 
+  }
+  t = clock() - t;
+  printf("\t\tpop 1/2 elements:                             "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  *result *= (h->num_elts == n - first_half_arr_size);
+  t = clock();
+  for (uint32_t i = first_half_arr_size; i < arr_size; i++){
+    if (i == 0){
+      heap_uint32_pop(h, pty_cur, elt);
+      *result *= (cmp_elt_fn(elt, elt_arr[i]) == 0);
+    }else{
+      heap_uint32_pop(h, pty_cur, elt);
+      *result *= (cmp_pty_fn(pty_prev, pty_cur) <= 0);
+      *result *= (cmp_elt_fn(elt, elt_arr[i]) == 0);
+    }
+    memcpy(pty_prev, pty_cur, pty_size); 
+  }
+  t = clock() - t;
+  printf("\t\tpop residual elements:                        "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  *result *= (h->num_elts == n - arr_size);
+  free(pty_prev);
+  free(pty_cur);
+  free(elt);
+  pty_prev = NULL;
+  pty_cur = NULL;
+  elt = NULL;
+}
+
+static void free_heap(heap_uint32_t *h){
+  clock_t t;
+  t = clock();
+  heap_uint32_free(h);
+  t = clock() - t;
+  printf("\t\tfree time:                                    "
+	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+}
+
+static void push_pop_free_pty_type(uint32_t n,
+				   int pty_size,
+				   int elt_size,
+				   int (*cmp_pty_fn)(void *, void *),
+				   int (*cmp_elt_fn)(void *, void *),
+				   void (*cstr_pty_fn)(void *, uint32_t),
+				   void (*cstr_elt_fn)(void *, uint32_t),
+				   void (*free_elt_fn)(void *)){
+  heap_uint32_t h;
+  uint32_t init_size = 1;
+  void **elt_arr;
+  int result = 1;
+  //preallocate to avoid the allocation of complex elements during timing exps
+  elt_arr = malloc(n * sizeof(void *));
+  assert(elt_arr != NULL);
+  for (uint32_t i = 0; i < n; i++){
+    elt_arr[i] = malloc(elt_size);
+    assert(elt_arr[i] != NULL);
+    cstr_elt_fn(elt_arr[i], i);
+  }
+  heap_uint32_init(&h,
+		   init_size,
+		   pty_size,
+		   elt_size,
+		   cmp_pty_fn,
+		   cmp_elt_fn,
+		   free_elt_fn);
+  push_incr_ptys_elts(&h, &result, pty_size, elt_arr, n, cstr_pty_fn);
+  pop_ptys_elts(&h,
+		&result,
+		pty_size,
+		elt_size,
+		elt_arr,
+		n,
+		cmp_pty_fn,
+		cmp_elt_fn);
+  push_decr_ptys_elts(&h, &result, pty_size, elt_arr, n, cstr_pty_fn);
+  pop_ptys_elts(&h,
+		&result,
+		pty_size,
+		elt_size,
+		elt_arr,
+		n,
+		cmp_pty_fn,
+		cmp_elt_fn);
+  push_incr_ptys_elts(&h, &result, pty_size, elt_arr, n, cstr_pty_fn);
+  free_heap(&h);
+  printf("\t\torder correctness:                            ");
+  print_test_result(result);
+  //free elt_arr
+  for (uint32_t i = 0; i < n; i++){
+    free(elt_arr[i]);
+  }
+  free(elt_arr);
 }
 
 /**
-   Pops n elements and priorities.
+   Print test result.
 */
-void pop_int_elts(heap_t *h, int n){
-  int min_elt;
-  int min_pty;
-  for (int i = 0; i < n; i++){
-    heap_pop(h, &min_pty, &min_elt);
-    printf("E: %d, P: %d\n", min_elt, min_pty);
-    print_int_elts_ptys(h);
+void print_test_result(int result){
+  if (result){
+    printf("SUCCESS\n");
+  }else{
+    printf("FAILURE\n");
   }
-  printf("\n"); 
-}
-
-/**
-   Pops all elements and priorities.
-*/
-void pop_all_int_elts(heap_t *h){
-  int min_elt;
-  int min_pty;
-  while (h->num_elts > 0){
-    heap_pop(h, &min_pty, &min_elt);
-    printf("E: %d, P: %d\n", min_elt, min_pty);
-    print_int_elts_ptys(h);
-  }
-  printf("\n"); 
-}
-
-/**
-   Updates priorities of elements that are present in a heap.
-*/
-void update_int_elts(heap_t *h, int n, int elts_upd[], int new_ptys[]){
-  printf("The following element priority pairs are used for updates: \n\n");
-  for (int i = 0; i < n; i++){
-    printf("E: %d P: %d\n",  elts_upd[i], new_ptys[i]);
-  }
-  printf("\n");
-  for (int i = 0; i < n; i++){
-    heap_update(h, &(new_ptys[i]), &(elts_upd[i]));
-    print_int_elts_ptys(h);
-  }
-  printf("\n");
-}
-
-/**
-   Runs an example of a heap with integer elements and integer priorities.
-*/
-void run_int_heap_test(){
-  printf("Running int int heap test... \n\n");
-  heap_t h;
-  uint32_t heap_init_size = 1;
-  heap_init(&h,
-	    heap_init_size,
-	    sizeof(int),
-	    sizeof(int),
-	    cmp_int_elt,
-	    cmp_int_pty,
-	    NULL);
-  int num_push = 10;
-  printf("Pushing %d elements... \n\n", num_push);
-  push_int_elts(&h, num_push);
-  int num_pop = 2;
-  printf("Popping %d elements... \n\n", num_pop);
-  pop_int_elts(&h, num_pop);
-  printf("Updating... \n\n");
-  int num_upd = 2;
-  int elts_upd[] = {5, 5};
-  int new_ptys[] = {10, 0};
-  update_int_elts(&h, num_upd, elts_upd, new_ptys);
-  printf("Popping all residual elements... \n\n");
-  pop_all_int_elts(&h);
-  printf("Pushing %d elements again... \n\n", num_push);
-  push_int_elts(&h, num_push);
-  printf("Freeing heap... \n\n");
-  heap_free(&h);
 }
 
 int main(){
-  run_int_heap_test();
+  run_push_pop_free_uint32_elt_test();
+  run_push_pop_free_uint32_ptr_t_elt_test();
   return 0;
 }
