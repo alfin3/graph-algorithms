@@ -24,7 +24,7 @@ The implementation is based on a division method for hashing into 2^32-1 slots a
 
 `./data_structures_c/utilities-ds/`
 
-The provided implementation of random_range_uint64 and random_range_uint32 demonstrates the construction of uniformly random numbers exceeding the range of a random number generator by conditioning the construction process with a Bernoulli random variable on the lowest set bit in the high bits outside the range of the generator.
+The provided implementation of random_range_uint64 and random_range_uint32 demonstrates the construction of uniformly random numbers exceeding the range of a random number generator by conditioning the construction process with a Bernoulli random variable on the lowest bit in the high bits outside the range of the generator.
 
 `./graph_algorithms_c/dfs/`
 
