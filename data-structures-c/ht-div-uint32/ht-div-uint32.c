@@ -44,10 +44,12 @@ static const uint32_t primes[22] = {1543, 3119, 6211,
 				    3221225479};
 static const int num_primes = 22;
 
+
 /**
    Initializes a hash table. 
    ht: a pointer to a previously created ht_div_uint32_t instance.
    alpha: > 0.0, a load factor upper bound.
+   cmp_key_fn: 0 if two keys are equal.
    free_elt_fn: - if an element is of a basic type or is an array or struct 
                 within a continuous memory block, as reflected by elt_size, 
                 and a pointer to the element is passed as elt in 
