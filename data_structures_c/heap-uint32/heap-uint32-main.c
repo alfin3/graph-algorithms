@@ -43,11 +43,23 @@ static void update_search_pty_type(uint32_t n,
 */
 
 int cmp_uint32_fn(void *a, void *b){
-  return *(uint32_t *)a - *(uint32_t *)b;
+  if (*(uint32_t *)a >  *(uint32_t *)b){
+    return 1;
+  }else if(*(uint32_t *)a < *(uint32_t *)b){
+    return -1;
+  }else{
+    return 0;
+  }
 }
 
 int cmp_uint64_fn(void *a, void *b){
-  return *(uint64_t *)a - *(uint64_t *)b;
+  if (*(uint64_t *)a >  *(uint64_t *)b){
+    return 1;
+  }else if(*(uint64_t *)a < *(uint64_t *)b){
+    return -1;
+  }else{
+    return 0;
+  }
 }
 
 int cmp_double_fn(void *a, void *b){
@@ -183,7 +195,13 @@ typedef struct{
 int cmp_uint32_ptr_val_fn(void *a, void *b){
   uint32_ptr_t **s_a  = a;
   uint32_ptr_t **s_b  = b;
-  return *((*s_a)->val) - *((*s_b)->val);
+  if (*((*s_a)->val) > *((*s_b)->val)){
+    return 1;
+  }else if(*((*s_a)->val) < *((*s_b)->val)){
+    return -1;
+  }else{
+    return 0;
+  }
 }
 
 /**
