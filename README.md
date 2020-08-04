@@ -26,7 +26,7 @@ The implementation is based on a division method for hashing into upto {2^32 - 1
 
 random_range_{uint32, uint64} demonstrate the construction of uniformly random numbers exceeding the range of a random number generator by conditioning the construction process with a Bernoulli random variable on the lowest bit in the high bits outside the range of the generator.
 
-mem_mod_{uint32, uint64} compute the modulo operation on a memory block by treating each byte of the block in the little-endian order and inductively applying the pertinent modular arithmetic relations, without requiring a little-endian machine. fast_mem_mod_{uint32, uint64} treat a memory block in {4, 8}-byte increments in the little-endian order. Given a little-endian machine, the result is equal to the return value of mem_mod_{uint32, uint64}.
+mem_mod_{uint32, uint64} compute the modulo operation on a memory block by treating each byte of the block in the little-endian order and inductively applying the pertinent modular arithmetic relations, without requiring a little-endian machine. fast_mem_mod_{uint32, uint64} treat a memory block in 8-byte increments in the little-endian order. Given a little-endian machine, the result is equal to the return value of mem_mod_{uint32, uint64}.
 
 `./graph-algorithms-c/dfs/`
 
