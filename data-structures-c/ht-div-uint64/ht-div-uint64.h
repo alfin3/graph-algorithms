@@ -3,8 +3,9 @@
 
    Struct declarations and declarations of accessible functions of a hash 
    table with generic hash keys and generic elements. The implementation is 
-   based on a division method for hashing into 2^64 - 1 slots and a chaining
-   method for resolving collisions.
+   based on a division method for hashing into upto 2^64 - 1 slots (the
+   upper range requiring > 2^64 - 1 addresses) and a chaining method 
+   for resolving collisions.
    
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by the 
