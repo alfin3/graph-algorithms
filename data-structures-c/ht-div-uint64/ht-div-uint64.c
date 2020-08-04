@@ -16,11 +16,6 @@
 
    An element is an object within a continuous block of memory (e.g. a basic 
    type, array, struct), or a multilayered object in memory.
-
-   Although the division method is computation-intensive, it may be amenable 
-   to parallelization in future versions, both across sub-blocks of a (large) 
-   hash key within a modulo operation, and across modulo operations prior 
-   to faster hash table modifying steps requiring a lock.
 */
 
 #include <stdio.h>
