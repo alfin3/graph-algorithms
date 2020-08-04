@@ -3,7 +3,7 @@
 
    A hash table with generic hash keys and generic elements. The 
    implementation is based on a division method for hashing into upto  
-   2^64 - 1 slots (the upper range requiring > 2^64 - 1 addresses) and a 
+   2^64 - 1 slots (the upper range requiring > 2^64 addresses) and a 
    chaining method for resolving collisions.
    
    The load factor of a hash table is the expected number of keys in a slot 
@@ -16,6 +16,11 @@
 
    An element is an object within a continuous block of memory (e.g. a basic 
    type, array, struct), or a multilayered object in memory.
+
+   Although the division method is computation-intensive, it may be amenable 
+   to parallelization in future versions, both across sub-blocks of a (large) 
+   hash key within a modulo operation, and across modulo operations prior 
+   to faster hash table modifying steps requiring a lock.
 */
 
 #include <stdio.h>
