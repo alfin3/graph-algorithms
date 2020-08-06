@@ -92,6 +92,12 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n);
 uint32_t fast_mem_mod_uint32(void *s, uint64_t size, uint32_t n);
 
 /**
+   Computes mod 2^64 of a product of two uint64_t numbers in an overflow-safe
+   manner.
+*/
+uint64_t mul_mod_pow_two_64(uint64_t a, uint64_t b);
+
+/**
    Multiply two uint64_t numbers in an overflow-safe manner and copy the 
    high and low 64 bits of a 128-bit product into preallocated uint64_t 
    blocks pointed to by h and l.

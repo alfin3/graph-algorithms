@@ -406,6 +406,24 @@ uint32_t fast_mem_mod_uint32(void *s, uint64_t size, uint32_t n){
   return (uint32_t)ret;
 }
 
+/**
+   Computes mod 2^64 of a product of two uint64_t numbers in an overflow-safe
+   manner.
+*/
+uint64_t mul_mod_pow_two_64(uint64_t a, uint64_t b){
+  uint64_t ah = a >> 32;
+  uint64_t al = (a << 32) >> 32;
+  uint64_t bh = b >> 32;
+  uint64_t bl = (b << 32) >> 32;
+  //a{h,l}, b{h,l} <= 2^32 - 1
+  uint64_t ah_bl = ah * bl;
+  uint64_t al_bh = al * bh;
+  uint64_t al_bl = al * bl;
+  uint64_t overlap;
+  overlap = ((ah_bl << 32) >> 32) + ((al_bh << 32) >> 32) + (al_bl >> 32);
+  return (overlap << 32) + ((al_bl << 32) >> 32);
+}
+
 /** Binary representation */
 
 /**
