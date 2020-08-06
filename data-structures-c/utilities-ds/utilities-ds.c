@@ -3,8 +3,6 @@
 
    Utility functions across the areas of randomness, modular arithmetic, 
    and binary representation.
-
-   Update: 7/11/2020 8:30pm
 */
 
 #include <stdio.h>
@@ -409,6 +407,27 @@ uint32_t fast_mem_mod_uint32(void *s, uint64_t size, uint32_t n){
 }
 
 /** Binary representation */
+
+/**
+   Multiply two uint64_t numbers in an overflow-safe manner and copy the 
+   high and low 64 bits of a 128-bit product into preallocated uint64_t 
+   blocks pointed to by h and l.
+*/
+void mul_uint64(uint64_t a, uint64_t b, uint64_t *h, uint64_t *l){
+  uint64_t ah = a >> 32;
+  uint64_t al = (a << 32) >> 32;
+  uint64_t bh = b >> 32;
+  uint64_t bl = (b << 32) >> 32;
+  //a{h,l}, b{h,l} <= 2^32 - 1
+  uint64_t ah_bh = ah * bh;
+  uint64_t ah_bl = ah * bl;
+  uint64_t al_bh = al * bh;
+  uint64_t al_bl = al * bl;
+  uint64_t overlap;
+  overlap = ((ah_bl << 32) >> 32) + ((al_bh << 32) >> 32) + (al_bl >> 32);
+  *h = (overlap >> 32) + ah_bh + (ah_bl >> 32) + (al_bh >> 32);
+  *l = (overlap << 32) + ((al_bl << 32) >> 32);
+}
 
 /**
    Represents n as u * 2^k, where u is odd.

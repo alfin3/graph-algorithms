@@ -3,8 +3,6 @@
 
    Declarations of accessible utility functions across the areas of 
    randomness, modular arithmetic, and binary representation.
-
-   Update: 7/11/2020 8:30pm
 */
 
 #ifndef UTILITIES_DS_H  
@@ -92,6 +90,13 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n);
    endian machine, the result is equal to the return value of mem_mod_uint32.
 */
 uint32_t fast_mem_mod_uint32(void *s, uint64_t size, uint32_t n);
+
+/**
+   Multiply two uint64_t numbers in an overflow-safe manner and copy the 
+   high and low 64 bits of a 128-bit product into preallocated uint64_t 
+   blocks pointed to by h and l.
+*/
+void mul_uint64(uint64_t a, uint64_t b, uint64_t *h, uint64_t *l);
 
 /**
    Represents n as u * 2^k, where u is odd.

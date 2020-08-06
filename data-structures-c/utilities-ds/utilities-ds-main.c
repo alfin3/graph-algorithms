@@ -3,8 +3,6 @@
 
    Examples of utility functions across the areas of randomness,
    modular arithmetic, and binary representation.
-
-   Update: 7/11/2020 8:30pm
 */
 
 #include <stdio.h>
@@ -681,6 +679,62 @@ void run_fast_mem_mod_uint32_test(){
 /** Binary representation */
 
 /**
+   Tests mul_mod_uint64.
+*/
+void run_mul_uint64_test(){
+  int num_trials = 1000000;
+  int result = 1;
+  uint64_t low_upper = pow_two_uint64(32) - 1;
+  uint64_t upper = (pow_two_uint64(63) - 1) + pow_two_uint64(63);
+  uint64_t rand_a, rand_b, rand_n, h, l;
+  uint64_t *hl = malloc(2 * sizeof(uint64_t));
+  assert(hl != NULL);
+  printf("Run mul_uint64 random test\n");
+  printf("\ta, b <= 2^32 - 1  --> ");
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_a = random_range_uint64(low_upper);
+    rand_b = random_range_uint64(low_upper);
+    mul_uint64(rand_a, rand_b, &h, &l);
+    result *= (h == 0);
+    result *= (l == rand_a * rand_b);
+  }
+  print_test_result(result);
+  printf("\ta, b <= 2^64 - 1 --> ");
+  result = 1;
+  srandom(time(0));
+  for (int i = 0; i < num_trials; i++){
+    rand_a = random_range_uint64(upper);
+    rand_b = random_range_uint64(upper);
+    rand_n = random_range_uint64(upper);
+    mul_uint64(rand_a, rand_b, &h, &l);
+    hl[0] = l;
+    hl[1] = h;
+    result *= (fast_mem_mod_uint64(hl, 2 * sizeof(uint64_t), rand_n) ==
+	       mul_mod_uint64(rand_a, rand_b, rand_n));
+  }
+  print_test_result(result);
+  printf("\tcorner cases --> ");
+  result = 1;
+  mul_uint64(0, 0, &h, &l);
+  result *= (h == 0 && l == 0);
+  mul_uint64(1, 0, &h, &l);
+  result *= (h == 0 && l == 0);
+  mul_uint64(0, 1, &h, &l);
+  result *= (h == 0 && l == 0);
+  mul_uint64(1, 1, &h, &l);
+  result *= (h == 0 && l == 1);
+  mul_uint64(pow_two_uint64(32), pow_two_uint64(32), &h, &l);
+  result *= (h == 1 && l == 0);
+  mul_uint64(pow_two_uint64(63), pow_two_uint64(63), &h, &l);
+  result *= (h == pow_two_uint64(62) && l == 0);
+  mul_uint64(pow_two_uint64(63) + (pow_two_uint64(63) - 1),
+	     pow_two_uint64(63) + (pow_two_uint64(63) - 1), &h, &l);
+  result *= (h == pow_two_uint64(63) + (pow_two_uint64(63) - 2) && l == 1);
+  print_test_result(result);
+}
+
+/**
    Tests represent_uint64.
 */
 void run_represent_uint64_test(){
@@ -770,6 +824,7 @@ int main(){
   run_fast_mem_mod_uint64_test();
   run_mem_mod_uint32_test();
   run_fast_mem_mod_uint32_test();
+  run_mul_uint64_test();
   run_represent_uint64_test();
   run_pow_two_uint64_test();
   return 0;
