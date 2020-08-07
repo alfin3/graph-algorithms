@@ -227,11 +227,16 @@ uint32_t pow_mod_uint32(uint32_t a, uint64_t k, uint32_t n){
 */
 uint64_t mul_mod_uint64(uint64_t a, uint64_t b, uint64_t n){
   assert(n > 0);
-  if(n == 1){return 0;}
+  if (n == 1){return 0;}
+  if (a == 0 || b == 0){return 0;}
+  if (a == 1 && b == 1){return 1;}
+  if (a == 1){return b % n;}
+  if (b == 1){return a % n;}
+  if (a < pow_two_uint64(32) && b < pow_two_uint64(32)){return (a * b) % n;}
   uint64_t ah = a >> 32;
-  uint64_t al = a - ah * pow_two_uint64(32);
+  uint64_t al = (a << 32) >> 32;
   uint64_t bh = b >> 32;
-  uint64_t bl = b - bh * pow_two_uint64(32);
+  uint64_t bl = (b << 32) >> 32;
   //a{h,l}, b{h,l} <= 2^32 - 1
   uint64_t ah_bh = (ah * bh) % n;
   uint64_t ah_bl = (ah * bl) % n;
@@ -259,19 +264,19 @@ uint64_t mul_mod_uint64(uint64_t a, uint64_t b, uint64_t n){
 */
 uint64_t sum_mod_uint64(uint64_t a, uint64_t b, uint64_t n){
   assert(n > 0);
-  if(n == 1){return 0;}
-  uint64_t ret;
+  if (n == 1){return 0;}
+  if (a == 0){return b % n;}
+  if (b == 0){return a % n;}
   uint64_t rem;
-  a = a % n;
-  b = b % n;
+  if (a >= n){a = a % n;}
+  if (b >= n){b = b % n;}
   //a, b < n, can subtract at most one n from a + b
   rem = n - a; //>= 1
   if (rem <= b){
-    ret = b - rem;
+    return b - rem;
   }else{
-    ret = a + b;
+    return a + b;
   }
-  return ret;
 }
 
 /**
@@ -287,15 +292,20 @@ uint64_t mem_mod_uint64(void *s, uint64_t size, uint64_t n){
   assert(n > 0);
   if(n == 1){return 0;}
   uint8_t *ptr;
-  uint64_t byte_val;
+  uint64_t byte_val, prod;
   uint64_t pow_two = 1; //1 mod n
-  uint64_t prod;
+  uint64_t pow_two_inc = 1;
   uint64_t ret = 0; //0 mod n
-  uint64_t pow_two_inc = pow_two_uint64(8) % n;
+  //comparison to speed up a set of calls on short blocks
+  if (size > 1){
+    pow_two_inc = pow_two_uint64(8) % n;
+  }
   for (uint64_t i = 0; i < size; i++){
     ptr = (uint8_t *)s + i;
     byte_val = (uint64_t)(*ptr);
-    prod = mul_mod_uint64(pow_two, (byte_val % n), n);
+    //comparison to speed up a long iteration within a call
+    if (byte_val >= n){byte_val = byte_val % n;}
+    prod = mul_mod_uint64(pow_two, byte_val, n);
     ret = sum_mod_uint64(ret, prod, n);
     pow_two = mul_mod_uint64(pow_two, pow_two_inc, n);
   }
@@ -315,19 +325,27 @@ uint64_t mem_mod_uint64(void *s, uint64_t size, uint64_t n){
 uint64_t fast_mem_mod_uint64(void *s, uint64_t size, uint64_t n){
   assert(n > 0);
   if(n == 1){return 0;}
-  int step_size = 8;
+  uint64_t step_size = sizeof(uint64_t);
   uint64_t *ptr;
-  uint64_t res_size = size % step_size;
-  uint64_t bytes_val;
+  uint64_t bytes_val, prod;
+  uint64_t res_size = 0;
   uint64_t pow_two = 1; //1 mod n
-  uint64_t prod;
+  uint64_t pow_two_inc = 1;
   uint64_t ret = 0; //0 mod n
-  uint64_t pow_two_inc = pow_two_uint64(63) % n;
-  pow_two_inc = mul_mod_uint64(pow_two_inc, (2 % n), n);
+  //comparisons to speed up a set of calls on short blocks
+  if (size != step_size){
+    res_size = size % step_size;
+  } 
+  if (size > step_size){
+    pow_two_inc = pow_two_uint64(63) % n;
+    pow_two_inc = mul_mod_uint64(pow_two_inc, (2 % n), n);
+  } 
   for (uint64_t i = 0; i < size - res_size; i += step_size){
     ptr = (uint64_t *)((char *)s + i);
     bytes_val = *ptr;
-    prod = mul_mod_uint64(pow_two, (bytes_val % n), n);
+    //comparison to speed up a long iteration within a call
+    if (bytes_val >= n){bytes_val = bytes_val % n;}
+    prod = mul_mod_uint64(pow_two, bytes_val, n);
     ret = sum_mod_uint64(ret, prod, n);
     pow_two = mul_mod_uint64(pow_two, pow_two_inc, n);
   }
@@ -350,19 +368,23 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n){
   assert(n > 0);
   if(n == 1){return 0;}
   uint8_t *ptr;
-  //"no overflow" guarantee
   uint64_t n64 = n;
-  uint64_t byte_val;
+  uint64_t byte_val, prod;
   uint64_t pow_two = 1; //1 mod n
-  uint64_t prod;
+  uint64_t pow_two_inc = 1;
   uint64_t ret = 0; //0 mod n
-  uint64_t pow_two_inc = pow_two_uint64(8) % n64;
+  //comparison to speed up a set of calls on short blocks
+  if (size > 1){
+    pow_two_inc = pow_two_uint64(8) % n;
+  }
   for (uint64_t i = 0; i < size; i++){
     ptr = (uint8_t *)s + i;
     byte_val = (uint64_t)(*ptr);
-    prod = (pow_two * (byte_val % n64)) % n64;
-    ret = (ret + prod) % n64;
-    pow_two = (pow_two * pow_two_inc) % n64;
+    //comparison to speed up a long iteration within a call
+    if (byte_val >= n64){byte_val = byte_val % n64;}
+    prod = mul_mod_uint64(pow_two, byte_val, n64);
+    ret = sum_mod_uint64(ret, prod, n64);
+    pow_two = mul_mod_uint64(pow_two, pow_two_inc, n64);
   }
   assert(ret < pow_two_uint64(32));
   return (uint32_t)ret;
@@ -381,27 +403,34 @@ uint32_t mem_mod_uint32(void *s, uint64_t size, uint32_t n){
 uint32_t fast_mem_mod_uint32(void *s, uint64_t size, uint32_t n){
   assert(n > 0);
   if(n == 1){return 0;}
-  int step_size = 8;
+  uint64_t step_size = sizeof(uint64_t);
   uint64_t *ptr;
-  uint64_t res_size = size % step_size;
-  //"no overflow" guarantee
   uint64_t n64 = n;
-  uint64_t bytes_val;
+  uint64_t bytes_val, prod;
+  uint64_t res_size = 0;
   uint64_t pow_two = 1; //1 mod n
-  uint64_t prod;
+  uint64_t pow_two_inc = 1;
   uint64_t ret = 0; //0 mod n
-  uint64_t pow_two_inc = pow_two_uint64(63) % n64;
-  pow_two_inc = (pow_two_inc * (2 % n64)) % n64;
+  //comparisons to speed up a set of calls on short blocks
+  if (size != step_size){
+    res_size = size % step_size;
+  } 
+  if (size > step_size){
+    pow_two_inc = pow_two_uint64(63) % n64;
+    pow_two_inc = mul_mod_uint64(pow_two_inc, (2 % n64), n64);
+  } 
   for (uint64_t i = 0; i < size - res_size; i += step_size){
     ptr = (uint64_t *)((char *)s + i);
     bytes_val = *ptr;
-    prod = (pow_two * (bytes_val % n64)) % n64;
-    ret = (ret + prod) % n64;
-    pow_two = (pow_two * pow_two_inc) % n64;
+    //comparison to speed up a long iteration within a call
+    if (bytes_val >= n){bytes_val = bytes_val % n;}
+    prod = mul_mod_uint64(pow_two, bytes_val, n64);
+    ret = sum_mod_uint64(ret, prod, n64);
+    pow_two = mul_mod_uint64(pow_two, pow_two_inc, n64);
   }
   ptr = (uint64_t *)((char *)s + size - res_size);
-  prod = (pow_two *  mem_mod_uint32(ptr, res_size, n)) % n64;
-  ret = (ret + prod) % n64;
+  prod = mul_mod_uint64(pow_two, mem_mod_uint32(ptr, res_size, n), n64);
+  ret = sum_mod_uint64(ret, prod, n64);
   assert(ret < pow_two_uint64(32));
   return (uint32_t)ret;
 }

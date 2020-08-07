@@ -533,8 +533,8 @@ void run_fast_mem_mod_uint64_test(){
   srandom(time(0));
   result = 1;
   rand_n = random_range_uint64(upper);
-  for (int i = 10; i <= 20; i += 10){
-    size = pow_two_uint64(i); //KB, MB
+  for (int i = 10; i <= 30; i += 10){
+    size = pow_two_uint64(i); //KB, MB, GB
     printf("\tmemory block size: %lu bytes \n", size);
     mem_block = calloc(size, 1);
     assert(mem_block != NULL);
