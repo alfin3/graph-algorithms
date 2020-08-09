@@ -13,8 +13,9 @@
    upper-bounded by 1/(1 - alpha), under the uniform hashing assumption. 
 
    The alpha parameter does not provide an upper bound after the maximum size 
-   of a hash table is reached. Due to open addressing, the load factor 
-   is < 1.0 even when the alpha parameter is exceeded.
+   of a hash table is reached. After exceeding the alpha parameter, the load
+   factor is < 1.0 due to open addressing, and the expected number of probes 
+   is upper-bounded by 1/(1 - load factor).
 
    A hash key is an object within a continuous block of memory (e.g. a basic 
    type, array, struct). If the key size is <= 8 bytes, then the key size 
