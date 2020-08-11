@@ -596,6 +596,60 @@ static void remove_delete_alphas(uint64_t num_inserts,
 }
 
 /**
+   Run a corner cases test.
+*/
+int cmp_uint8_fn(void *a, void *b){
+  return memcmp(a, b, sizeof(uint8_t));
+}
+
+void run_corner_cases_test(){
+  ht_mul_uint64_t ht;
+  uint8_t key_a, key_b;
+  uint64_t elt;
+  float alpha = 0.001;
+  uint64_t num_inserts = 100;
+  uint64_t ht_size = pow_two_uint64(10);
+  int result = 1;
+  ht_mul_uint64_init(&ht,
+                     sizeof(uint8_t),
+	             sizeof(uint64_t),
+		     alpha,
+                     cmp_uint8_fn,
+		     NULL,
+		     NULL);
+  key_a = random_range_uint64(pow_two_uint64(8) - 1);
+  key_b = random_range_uint64(pow_two_uint64(8) - 1);
+  while (key_b == key_a){
+    key_b = random_range_uint64(pow_two_uint64(8) - 1);
+  }
+  for (uint64_t i = 0; i < num_inserts; i++){
+    elt = i;
+    ht_mul_uint64_insert(&ht, &key_a, &elt);
+  }
+  result *= (ht.ht_size == ht_size);
+  result *= (ht.num_elts == 1);
+  result *= (*(uint64_t *)ht_mul_uint64_search(&ht, &key_a) == elt);
+  result *= (ht_mul_uint64_search(&ht, &key_b) == NULL);
+  ht_mul_uint64_insert(&ht, &key_b, &elt);
+  result *= (ht.ht_size == ht_size);
+  result *= (ht.num_elts == 2);
+  result *= (*(uint64_t *)ht_mul_uint64_search(&ht, &key_a) == elt);
+  result *= (*(uint64_t *)ht_mul_uint64_search(&ht, &key_b) == elt);
+  ht_mul_uint64_delete(&ht, &key_a);
+  result *= (ht.ht_size == ht_size);
+  result *= (ht.num_elts == 1);
+  result *= (ht_mul_uint64_search(&ht, &key_a) == NULL);
+  result *= (*(uint64_t *)ht_mul_uint64_search(&ht, &key_b) == elt);
+  ht_mul_uint64_delete(&ht, &key_b);
+  result *= (ht.ht_size == ht_size);
+  result *= (ht.num_elts == 0);
+  result *= (ht_mul_uint64_search(&ht, &key_a) == NULL);
+  result *= (ht_mul_uint64_search(&ht, &key_b) == NULL);
+  printf("Run corner cases test --> ");
+  print_test_result(result);
+}
+
+/**
    Print test result.
 */
 void print_test_result(int result){
@@ -611,5 +665,6 @@ int main(){
   run_remove_delete_uint64_elt_test();
   run_insert_search_free_uint64_ptr_elt_test();
   run_remove_delete_uint64_ptr_elt_test();
+  run_corner_cases_test();
   return 0;
 }
