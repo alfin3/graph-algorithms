@@ -24,6 +24,7 @@ static void insert_search_free_alphas(uint64_t num_inserts,
 				      int key_size,
 				      int elt_size,
 				      int (*cmp_key_fn)(void *, void *),
+				      void (*rdc_key_fn)(void *, void *),
 				      void (*cstr_elt_fn)(void *, uint64_t),
 				      uint64_t (*elt_val_fn)(void *),
 				      void (*free_elt_fn)(void *));
@@ -33,6 +34,7 @@ static void remove_delete_alphas(uint64_t num_inserts,
 				 int key_size,
 				 int elt_size,
 				 int (*cmp_key_fn)(void *, void *),
+				 void (*rdc_key_fn)(void *, void *),
 				 void (*cstr_elt_fn)(void *, uint64_t),
 				 uint64_t (*elt_val_fn)(void *),
 				 void (*free_elt_fn)(void *));
@@ -48,7 +50,7 @@ static void remove_delete_alphas(uint64_t num_inserts,
 int cmp_uint64_fn(void *a, void *b){
   return memcmp(a, b, sizeof(uint64_t));
 }
-/*
+
 int cmp_32_fn(void *a, void *b){
   return memcmp(a, b, 32);
 }
@@ -56,7 +58,25 @@ int cmp_32_fn(void *a, void *b){
 int cmp_256_fn(void *a, void *b){
   return memcmp(a, b, 256);
 }
-*/
+
+void rdc_32_fn(void *t, void *s){
+  uint64_t r = 0;
+  uint64_t n = 17858760364399553281U;
+  for (int i = 0; i < 32; i += 8){
+    r = sum_mod_uint64(r, *(uint64_t *)((char *)s + i), n);
+  }
+  *(uint64_t *)t = r;
+}
+
+void rdc_256_fn(void *t, void *s){
+  uint64_t r = 0;
+  uint64_t n = 17069408534778722687U;
+  for (int i = 0; i < 256; i += 8){
+    r = sum_mod_uint64(r, *(uint64_t *)((char *)s + i), n);
+  }
+  *(uint64_t *)t = r;
+}
+
 /**
    Constructs an uint64_t element. The elt parameter is a pointer that
    points to a preallocated block of size elt_size, i.e. sizeof(uint64_t).
@@ -80,9 +100,14 @@ void run_insert_search_free_uint64_elt_test(){
   float alphas[4] = {0.1, 0.2, 0.4, 0.8};
   int num_alphas = 4;
   //key_size >= sizeof(uint64_t) for this test
-  int key_sizes[1] = {sizeof(uint64_t)}; 
-  int num_key_sizes = 1;
-  int (*cmp_fn_arr[1])(void *, void *) = {cmp_uint64_fn};
+  int key_sizes[3] = {sizeof(uint64_t), 32, 256}; 
+  int num_key_sizes = 3;
+  int (*cmp_fn_arr[3])(void *, void *) = {cmp_uint64_fn,
+					  cmp_32_fn,
+					  cmp_256_fn};
+  void (*rdc_fn_arr[3])(void *, void *) = {NULL,
+					   rdc_32_fn,
+					   rdc_256_fn};
   for (int i = 0; i < num_key_sizes; i++){
     printf("Run a ht_mul_uint64_{insert, search, free} test on distinct "
 	   "%d-byte keys and uint64_t elements\n", key_sizes[i]);
@@ -92,6 +117,7 @@ void run_insert_search_free_uint64_elt_test(){
 			      key_sizes[i],
 			      sizeof(uint64_t),
 			      cmp_fn_arr[i],
+			      rdc_fn_arr[i],
 			      cstr_uint64_fn,
 			      val_uint64_fn,
 			      NULL);
@@ -107,9 +133,14 @@ void run_remove_delete_uint64_elt_test(){
   float alphas[4] = {0.1, 0.2, 0.4, 0.8};
   int num_alphas = 4;
   //key_size >= sizeof(uint64_t) for this test
-  int key_sizes[1] = {sizeof(uint64_t)}; 
-  int num_key_sizes = 1;
-  int (*cmp_fn_arr[1])(void *, void *) = {cmp_uint64_fn};
+  int key_sizes[3] = {sizeof(uint64_t), 32, 256}; 
+  int num_key_sizes = 3;
+  int (*cmp_fn_arr[3])(void *, void *) = {cmp_uint64_fn,
+					  cmp_32_fn,
+					  cmp_256_fn};
+  void (*rdc_fn_arr[3])(void *, void *) = {NULL,
+					   rdc_32_fn,
+					   rdc_256_fn};
   for (int i = 0; i < num_key_sizes; i++){
     printf("Run a ht_mul_uint64_{remove, delete} test on distinct "
 	   "%d-byte keys and uint64_t elements\n", key_sizes[i]);
@@ -119,6 +150,7 @@ void run_remove_delete_uint64_elt_test(){
 			 key_sizes[i],
 			 sizeof(uint64_t),
 			 cmp_fn_arr[i],
+			 rdc_fn_arr[i],
 			 cstr_uint64_fn,
 			 val_uint64_fn,
 			 NULL);
@@ -181,9 +213,14 @@ void run_insert_search_free_uint64_ptr_elt_test(){
   float alphas[4] = {0.1, 0.2, 0.4, 0.8};
   int num_alphas = 4;
   //key_size >= sizeof(uint64_t) for this test
-  int key_sizes[1] = {sizeof(uint64_t)}; 
-  int num_key_sizes = 1;
-  int (*cmp_fn_arr[1])(void *, void *) = {cmp_uint64_fn};
+  int key_sizes[3] = {sizeof(uint64_t), 32, 256}; 
+  int num_key_sizes = 3;
+  int (*cmp_fn_arr[3])(void *, void *) = {cmp_uint64_fn,
+					  cmp_32_fn,
+					  cmp_256_fn};
+  void (*rdc_fn_arr[3])(void *, void *) = {NULL,
+					   rdc_32_fn,
+					   rdc_256_fn};
   for (int i = 0; i < num_key_sizes; i++){
     printf("Run a ht_mul_uint64_{insert, search, free} test on distinct "
 	   "%d-byte keys and multilayered uint64_ptr_t elements\n",
@@ -194,6 +231,7 @@ void run_insert_search_free_uint64_ptr_elt_test(){
 			      key_sizes[i],
 			      sizeof(uint64_ptr_t *),
 			      cmp_fn_arr[i],
+			      rdc_fn_arr[i],
 			      cstr_uint64_ptr_fn,
 			      val_uint64_ptr_fn,
 			      free_uint64_ptr_fn);
@@ -210,9 +248,14 @@ void run_remove_delete_uint64_ptr_elt_test(){
   float alphas[4] = {0.1, 0.2, 0.4, 0.8};
   int num_alphas = 4;
   //key_size >= sizeof(uint64_t) for this test
-  int key_sizes[1] = {sizeof(uint64_t)}; 
-  int num_key_sizes = 1;
-  int (*cmp_fn_arr[1])(void *, void *) = {cmp_uint64_fn};
+  int key_sizes[3] = {sizeof(uint64_t), 32, 256}; 
+  int num_key_sizes = 3;
+  int (*cmp_fn_arr[3])(void *, void *) = {cmp_uint64_fn,
+					  cmp_32_fn,
+					  cmp_256_fn};
+  void (*rdc_fn_arr[3])(void *, void *) = {NULL,
+					   rdc_32_fn,
+					   rdc_256_fn};
   for (int i = 0; i < num_key_sizes; i++){
     printf("Run a ht_mul_uint64_{remove, delete} test on distinct "
 	   "%d-byte keys and multilayered uint64_ptr_t elements\n",
@@ -223,6 +266,7 @@ void run_remove_delete_uint64_ptr_elt_test(){
 			 key_sizes[i],
 			 sizeof(uint64_ptr_t *),
 			 cmp_fn_arr[i],
+			 rdc_fn_arr[i],
 			 cstr_uint64_ptr_fn,
 			 val_uint64_ptr_fn,
 			 free_uint64_ptr_fn);
@@ -304,6 +348,7 @@ static void insert_search_free(uint64_t num_inserts,
 			       int key_size,
 			       int elt_size,
 			       int (*cmp_key_fn)(void *, void *),
+			       void (*rdc_key_fn)(void *, void *),
 			       void (*cstr_elt_fn)(void *, uint64_t),
 			       uint64_t (*elt_val_fn)(void *),
 			       void (*free_elt_fn)(void *)){
@@ -330,7 +375,7 @@ static void insert_search_free(uint64_t num_inserts,
 	             elt_size,
 		     alpha,
                      cmp_key_fn,
-		     NULL,
+		     rdc_key_fn,
 		     free_elt_fn);
   insert_keys_elts(&ht, key_arr, elt_arr, num_inserts, &result);
   search_in_ht(&ht, key_arr, elt_arr, num_inserts, &result, elt_val_fn);
@@ -358,6 +403,7 @@ static void insert_search_free_alphas(uint64_t num_inserts,
 				      int key_size,
 				      int elt_size,
 				      int (*cmp_key_fn)(void *, void *),
+				      void (*rdc_key_fn)(void *, void *),
 				      void (*cstr_elt_fn)(void *, uint64_t),
 				      uint64_t (*elt_val_fn)(void *),
 				      void (*free_elt_fn)(void *)){
@@ -371,6 +417,7 @@ static void insert_search_free_alphas(uint64_t num_inserts,
 		       key_size,
 		       elt_size,
 		       cmp_key_fn,
+		       rdc_key_fn,
 		       cstr_elt_fn,
 		       elt_val_fn,
 		       free_elt_fn);
@@ -476,6 +523,7 @@ static void remove_delete(uint64_t num_inserts,
 			  int key_size,
 			  int elt_size,
 			  int (*cmp_key_fn)(void *, void *),
+			  void (*rdc_key_fn)(void *, void *),
 			  void (*cstr_elt_fn)(void *, uint64_t),
 			  uint64_t (*elt_val_fn)(void *),
 			  void (*free_elt_fn)(void *)){
@@ -502,7 +550,7 @@ static void remove_delete(uint64_t num_inserts,
 	             elt_size,
 		     alpha,
                      cmp_key_fn,
-		     NULL,
+		     rdc_key_fn,
 		     free_elt_fn);
   insert_keys_elts(&ht, key_arr, elt_arr, num_inserts, &result);
   remove_key_elts(&ht, key_arr, elt_arr, num_inserts, &result, elt_val_fn);
@@ -526,6 +574,7 @@ static void remove_delete_alphas(uint64_t num_inserts,
 				 int key_size,
 				 int elt_size,
 				 int (*cmp_key_fn)(void *, void *),
+				 void (*rdc_key_fn)(void *, void *),
 				 void (*cstr_elt_fn)(void *, uint64_t),
 				 uint64_t (*elt_val_fn)(void *),
 				 void (*free_elt_fn)(void *)){
@@ -539,6 +588,7 @@ static void remove_delete_alphas(uint64_t num_inserts,
 		  key_size,
 		  elt_size,
 		  cmp_key_fn,
+		  rdc_key_fn,
 		  cstr_elt_fn,
 		  elt_val_fn,
 		  free_elt_fn);
