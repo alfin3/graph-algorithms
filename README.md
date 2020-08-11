@@ -20,7 +20,7 @@ A hash table enables heap search in O(1 + alpha) time in expectation under the s
 
 A hash table with generic hash keys and generic elements, where a hash key is an object within a continuous memory block (e.g. a basic type, array, struct), and an element is any object in memory.
 
-The implementation is based on a multiplication method for hashing into upto 2^63 slots and an open addressing method for resolving collisions. The expected number of probes in a search is upper-bounded by 1/(1 - alpha) under the uniform hashing assumption, where alpha is a load factor upper bound. For every delete or remove operation at most one rehashing operation is performed, resulting in a constant overhead of at most one rehashing per delete or remove operation. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to element objects within continuous memory blocks as well as multi-layered element objects in memory.
+The implementation is based on a multiplication method for hashing into upto 2^63 slots and an open addressing method for resolving collisions. The expected number of probes in a search is upper-bounded by 1/(1 - alpha) under the uniform hashing assumption, where alpha is a load factor upper bound. For every delete or remove operation at most one rehashing operation is performed, resulting in a constant overhead per delete or remove operation bounded by 1/(1 - alpha) in expectation. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to element objects within continuous memory blocks as well as multi-layered element objects in memory.
 
 `./data-structures-c/ht-div-{uint32, uint64}/`
 
