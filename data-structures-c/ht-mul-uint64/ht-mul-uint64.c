@@ -38,15 +38,19 @@
 #include "utilities-ds.h"
 
 static const uint64_t prime = 15769474759331449193U; //2^63 < prime < 2^64
+//placeholder object handling
 static void placeholder_init(dll_node_t *node, int elt_size);
 static bool is_placeholder(dll_node_t *node);
 static void placeholder_free(dll_node_t *node);
+//hash table operations
 static uint64_t convert_std_key(ht_mul_uint64_t *ht, void *key);
-static uint64_t hash(ht_mul_uint64_t *ht, uint64_t key);
+static uint64_t hash(uint64_t std_key);
 static uint64_t probe_linear(ht_mul_uint64_t *ht, uint64_t ix);
 static dll_node_t **search(ht_mul_uint64_t *ht, void *key);
+//hash table maintenance
 static void ht_grow(ht_mul_uint64_t *ht);
 static void ht_clean(ht_mul_uint64_t *ht);
+static void reinsert(ht_mul_uint64_t *ht, dll_node_t *node);
 
 /**
    Initializes a hash table. 
@@ -86,6 +90,7 @@ void ht_mul_uint64_init(ht_mul_uint64_t *ht,
   ht->num_placeholders = 0;
   ht->alpha = alpha;
   ht->placeholder = malloc(sizeof(dll_node_t));
+  assert(ht->placeholder != NULL);
   placeholder_init(ht->placeholder, elt_size);
   ht->key_elts = malloc(ht->ht_size * sizeof(dll_node_t *));
   assert(ht->key_elts != NULL);
@@ -113,16 +118,23 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht, void *key, void *elt){
     }
   }
   dll_node_t **head;
-  uint64_t std_key = convert_std_key(ht, key);
   uint64_t num_probes = 1;
-  uint64_t ix = hash(ht, std_key);
+  uint64_t std_key = convert_std_key(ht, key);
+  uint64_t val = hash(std_key); //hash value before bit shift
+  uint64_t ix = val >> (64 - ht->log_ht_size);
+  //prepare hash key - hash value pair for storage
+  int key_val_size = ht->key_size + sizeof(uint64_t);
+  void *key_val = malloc(key_val_size);
+  assert(key_val != NULL);
+  memcpy(key_val, key, ht->key_size);
+  *(uint64_t *)((char *)key_val + ht->key_size) = val;
   head = &(ht->key_elts[ix]);
   while (*head != NULL){
     //dll_search_key is called if is_placeholder returns false
     if (!is_placeholder(*head) &&
 	dll_search_key(head, key, ht->cmp_key_fn) != NULL){
       dll_delete(head, *head, ht->free_elt_fn);
-      dll_insert(head, key, elt, ht->key_size, ht->elt_size);
+      dll_insert(head, key_val, elt, key_val_size, ht->elt_size);
       return;
     }
     ix = probe_linear(ht, ix);
@@ -132,8 +144,9 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht, void *key, void *elt){
       ht->max_num_probes = num_probes;
     }
   }
-  dll_insert(head, key, elt, ht->key_size, ht->elt_size);
+  dll_insert(head, key_val, elt, key_val_size, ht->elt_size);
   ht->num_elts++;
+  free(key_val);
 }
 
 /**
@@ -147,7 +160,7 @@ void *ht_mul_uint64_search(ht_mul_uint64_t *ht, void *key){
 }
 
 /**
-   Removes a key and the associated element from a hash table by copying 
+   Removes a key and its associated element from a hash table by copying 
    the element into a block of size elt_size pointed to by elt. If the key is
    not in the hash table, leaves the block pointed to by elt unchanged.
    The key and elt parameters are not NULL.
@@ -201,12 +214,11 @@ void ht_mul_uint64_free(ht_mul_uint64_t *ht){
 
 /**
    Initializes a placeholder node. The node parameter points to a 
-   preallocated block of size sizeof(dll_node_t). Placeholder handling is
-   internal and is separate from user-defined cmp_key_fn.
+   preallocated block of size sizeof(dll_node_t).
 */
 static void placeholder_init(dll_node_t *node, int elt_size){
   node->key = NULL; //no current element in a hash table can have key == NULL
-  node->elt = calloc(1, elt_size);
+  node->elt = calloc(1, elt_size); //element for node consistency purposes
   assert(node->elt != NULL);
 }
 
@@ -231,7 +243,7 @@ static void placeholder_free(dll_node_t *node){
    Converts a key to a key of the standard size of 8 bytes.
 */
 static uint64_t convert_std_key(ht_mul_uint64_t *ht, void *key){
-  uint64_t std_key = 0; //initialize in case key_size < sizeof(uint64_t)
+  uint64_t std_key = 0; //initialize all bits if key_size < sizeof(uint64_t)
   if (ht->key_size > (int)sizeof(uint64_t)){
     assert(ht->rdc_key_fn != NULL);
     ht->rdc_key_fn(&std_key, key);
@@ -242,11 +254,11 @@ static uint64_t convert_std_key(ht_mul_uint64_t *ht, void *key){
 }
 
 /**
-   Maps a hash key to a slot index in a hash table with a multiplication 
-   method. 
+   Maps a hash key to a hash value without subsequent bit shifting. The 
+   latter necessary to determine the index of a slot in a hash table.
 */
-static uint64_t hash(ht_mul_uint64_t *ht, uint64_t key){
-  return mul_mod_pow_two_64(prime, key) >> (64 - ht->log_ht_size);
+static uint64_t hash(uint64_t std_key){
+  return mul_mod_pow_two_64(prime, std_key);
 }
 
 /**
@@ -263,8 +275,9 @@ static uint64_t probe_linear(ht_mul_uint64_t *ht, uint64_t ix){
 static dll_node_t **search(ht_mul_uint64_t *ht, void *key){
   dll_node_t **head;
   uint64_t std_key = convert_std_key(ht, key);
+  uint64_t val = hash(std_key);
+  uint64_t ix = val >> (64 - ht->log_ht_size);
   uint64_t num_probes = 1;
-  uint64_t ix = hash(ht, std_key);
   head = &(ht->key_elts[ix]);
   while (*head != NULL){
     //dll_search_key is called if is_placeholder returns false
@@ -306,12 +319,7 @@ static void ht_grow(ht_mul_uint64_t *ht){
   for (uint64_t i = 0; i < prev_ht_size; i++){
     head = &(prev_key_elts[i]);
     if (*head != NULL && !is_placeholder(*head)){
-      //assert that ht_size increased so that there is no mutual recursion
-      assert(!((float)(ht->num_elts + ht->num_placeholders) / ht->ht_size >
-	       ht->alpha));
-      ht_mul_uint64_insert(ht, (*head)->key, (*head)->elt);
-      //NULL: if an element is multilayered, the pointer to it is deleted
-      dll_delete(head, *head, NULL);
+      reinsert(ht, *head);
     }
   }
   free(prev_key_elts);
@@ -340,12 +348,34 @@ static void ht_clean(ht_mul_uint64_t *ht){
   for (uint64_t i = 0; i < ht->ht_size; i++){
     head = &(prev_key_elts[i]);
     if (*head != NULL && !is_placeholder(*head)){
-      ht_mul_uint64_insert(ht, (*head)->key, (*head)->elt);
-      //NULL: if an element is multilayered, the pointer to it is deleted
-      dll_delete(head, *head, NULL);
+      reinsert(ht, *head);
     }
   }
   free(prev_key_elts);
   prev_key_elts = NULL;
   head = NULL;
+}
+
+/**
+   Reinserts a key and an associated element into a new hash table during 
+   ht_grow and ht_clean operations by recomputing the hash value with a 
+   bit shift and without multiplication.
+*/
+static void reinsert(ht_mul_uint64_t *ht, dll_node_t *node){
+  dll_node_t **head;
+  char *key_val = node->key;
+  uint64_t val= *(uint64_t *)(key_val + ht->key_size);
+  uint64_t ix = val >> (64 - ht->log_ht_size);
+  uint64_t num_probes = 1;
+  head = &(ht->key_elts[ix]);
+  while (*head != NULL){
+    ix = probe_linear(ht, ix);
+    head = &(ht->key_elts[ix]);
+    num_probes++;
+    if (num_probes > ht->max_num_probes){
+      ht->max_num_probes = num_probes;
+    }
+  }
+  *head = node;
+  ht->num_elts++;
 }

@@ -44,7 +44,7 @@ typedef struct{
   uint64_t num_placeholders;
   float alpha;
   dll_node_t *placeholder; //node with key == NULL
-  dll_node_t **key_elts; //array of pointers to dlls, each with <= one node
+  dll_node_t **key_elts; //array of pointers to dlls, each with <= 1 node
   int (*cmp_key_fn)(void *, void *);
   void (*rdc_key_fn)(void *, void *);
   void (*free_elt_fn)(void *);
@@ -93,7 +93,7 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht, void *key, void *elt);
 void *ht_mul_uint64_search(ht_mul_uint64_t *ht, void *key);
 
 /**
-   Removes a key and the associated element from a hash table by copying 
+   Removes a key and its associated element from a hash table by copying 
    the element into a block of size elt_size pointed to by elt. If the key is
    not in the hash table, leaves the block pointed to by elt unchanged.
    The key and elt parameters are not NULL.
