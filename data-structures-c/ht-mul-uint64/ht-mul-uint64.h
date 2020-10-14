@@ -5,7 +5,7 @@
    table with generic hash keys and generic elements. The implementation is 
    based on a multiplication method for hashing into upto 2^63 slots 
    (the upper range requiring > 2^64 addresses) and an open addressing
-   method (with linear probing at this time) for resolving collisions.
+   method with double hashing for resolving collisions.
    
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by 

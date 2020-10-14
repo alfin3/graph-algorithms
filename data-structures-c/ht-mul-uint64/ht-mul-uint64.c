@@ -4,8 +4,7 @@
    A hash table with generic hash keys and generic elements. The 
    implementation is based on a multiplication method for hashing into upto 
    2^63 slots (the upper range requiring > 2^64 addresses) and an open 
-   addressing method (with linear probing at this time) for resolving 
-   collisions.
+   addressing method with double hashing for resolving collisions.
    
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by 
@@ -37,15 +36,18 @@
 #include "dll.h"
 #include "utilities-ds.h"
 
-static const uint64_t prime = 15769474759331449193U; //2^63 < prime < 2^64
+//primes for double hashing, where 2^63 < p < 2^64
+static const uint64_t first_prime = 15769474759331449193U;
+static const uint64_t second_prime = 18292551137159601919U;
 //placeholder object handling
 static void placeholder_init(dll_node_t *node, int elt_size);
 static bool is_placeholder(dll_node_t *node);
 static void placeholder_free(dll_node_t *node);
 //hash table operations
 static uint64_t convert_std_key(ht_mul_uint64_t *ht, void *key);
-static uint64_t hash(uint64_t std_key);
-static uint64_t probe_linear(ht_mul_uint64_t *ht, uint64_t ix);
+static uint64_t hash(uint64_t prime, uint64_t std_key);
+static uint64_t adj_hash_dist(uint64_t d);
+static uint64_t probe_dbl_hash(ht_mul_uint64_t *ht, uint64_t d, uint64_t ix);
 static dll_node_t **search(ht_mul_uint64_t *ht, void *key);
 //hash table maintenance
 static void ht_grow(ht_mul_uint64_t *ht);
@@ -120,33 +122,37 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht, void *key, void *elt){
   dll_node_t **head;
   uint64_t num_probes = 1;
   uint64_t std_key = convert_std_key(ht, key);
-  uint64_t val = hash(std_key); //hash value before bit shift
-  uint64_t ix = val >> (64 - ht->log_ht_size);
-  //prepare hash key - hash value pair for storage
-  int key_val_size = ht->key_size + sizeof(uint64_t);
-  void *key_val = malloc(key_val_size);
-  assert(key_val != NULL);
-  memcpy(key_val, key, ht->key_size);
-  *(uint64_t *)((char *)key_val + ht->key_size) = val;
+  uint64_t first_val = hash(first_prime, std_key); 
+  uint64_t second_val = hash(second_prime, std_key);
+  uint64_t ix = first_val >> (64 - ht->log_ht_size);
+  uint64_t d = adj_hash_dist(second_val >> (64 - ht->log_ht_size));
+  //prepare hash key and hash values block for storage
+  int key_block_size = ht->key_size + 2 * sizeof(uint64_t);
+  void *key_block = malloc(key_block_size);
+  assert(key_block != NULL);
+  memcpy(key_block, key, ht->key_size);
+  uint64_t *first_val_ptr = (uint64_t *)((char *)key_block + ht->key_size);
+  *first_val_ptr = first_val;
+  *(first_val_ptr + 1) = second_val;
   head = &(ht->key_elts[ix]);
   while (*head != NULL){
     //dll_search_key is called if is_placeholder returns false
     if (!is_placeholder(*head) &&
 	dll_search_key(head, key, ht->cmp_key_fn) != NULL){
       dll_delete(head, *head, ht->free_elt_fn);
-      dll_insert(head, key_val, elt, key_val_size, ht->elt_size);
+      dll_insert(head, key_block, elt, key_block_size, ht->elt_size);
       return;
     }
-    ix = probe_linear(ht, ix);
+    ix = probe_dbl_hash(ht, d, ix);
     head = &(ht->key_elts[ix]);
     num_probes++;
     if (num_probes > ht->max_num_probes){
       ht->max_num_probes = num_probes;
     }
   }
-  dll_insert(head, key_val, elt, key_val_size, ht->elt_size);
+  dll_insert(head, key_block, elt, key_block_size, ht->elt_size);
   ht->num_elts++;
-  free(key_val);
+  free(key_block);
 }
 
 /**
@@ -257,15 +263,29 @@ static uint64_t convert_std_key(ht_mul_uint64_t *ht, void *key){
    Maps a hash key to a hash value without subsequent bit shifting. The 
    latter necessary to determine the index of a slot in a hash table.
 */
-static uint64_t hash(uint64_t std_key){
+static uint64_t hash(uint64_t prime, uint64_t std_key){
   return mul_mod_pow_two_64(prime, std_key);
 }
 
 /**
-   Returns the next index in a hash table, based on linear probing.
+   Adjusts a probe distance to an odd distance, if necessary. 
 */
-static uint64_t probe_linear(ht_mul_uint64_t *ht, uint64_t ix){
-  return sum_mod_uint64(1, ix, ht->ht_size);
+static uint64_t adj_hash_dist(uint64_t d){
+  if (!(d & 1)){
+    if (d == 0){
+      d++;
+    }else{
+      d--;
+    }
+  }
+  return d;
+}
+
+/**
+   Returns the next index in a hash table, based on double hashing.
+*/
+static uint64_t probe_dbl_hash(ht_mul_uint64_t *ht, uint64_t d, uint64_t ix){
+  return sum_mod_uint64(d, ix, ht->ht_size);
 }
 
 /**
@@ -275,8 +295,10 @@ static uint64_t probe_linear(ht_mul_uint64_t *ht, uint64_t ix){
 static dll_node_t **search(ht_mul_uint64_t *ht, void *key){
   dll_node_t **head;
   uint64_t std_key = convert_std_key(ht, key);
-  uint64_t val = hash(std_key);
-  uint64_t ix = val >> (64 - ht->log_ht_size);
+  uint64_t first_val = hash(first_prime, std_key); 
+  uint64_t second_val = hash(second_prime, std_key); 
+  uint64_t ix = first_val >> (64 - ht->log_ht_size);
+  uint64_t d = adj_hash_dist(second_val >> (64 - ht->log_ht_size));
   uint64_t num_probes = 1;
   head = &(ht->key_elts[ix]);
   while (*head != NULL){
@@ -287,7 +309,7 @@ static dll_node_t **search(ht_mul_uint64_t *ht, void *key){
     }else if (num_probes == ht->max_num_probes){
       break;
     }else{
-      ix = probe_linear(ht, ix);
+      ix = probe_dbl_hash(ht, d, ix);
       head = &(ht->key_elts[ix]);
       num_probes++;
     }
@@ -363,13 +385,15 @@ static void ht_clean(ht_mul_uint64_t *ht){
 */
 static void reinsert(ht_mul_uint64_t *ht, dll_node_t *node){
   dll_node_t **head;
-  char *key_val = node->key;
-  uint64_t val= *(uint64_t *)(key_val + ht->key_size);
-  uint64_t ix = val >> (64 - ht->log_ht_size);
+  uint64_t *first_val_ptr = (uint64_t *)((char *)node->key + ht->key_size);
+  uint64_t first_val = *first_val_ptr;
+  uint64_t second_val = *(first_val_ptr + 1);
+  uint64_t ix = first_val >> (64 - ht->log_ht_size);
+  uint64_t d = adj_hash_dist(second_val >> (64 - ht->log_ht_size));
   uint64_t num_probes = 1;
   head = &(ht->key_elts[ix]);
   while (*head != NULL){
-    ix = probe_linear(ht, ix);
+    ix = probe_dbl_hash(ht, d, ix);
     head = &(ht->key_elts[ix]);
     num_probes++;
     if (num_probes > ht->max_num_probes){
