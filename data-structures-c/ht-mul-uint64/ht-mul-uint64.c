@@ -110,12 +110,13 @@ void ht_mul_uint64_init(ht_mul_uint64_t *ht,
    elt parameters are not NULL.
 */
 void ht_mul_uint64_insert(ht_mul_uint64_t *ht, void *key, void *elt){
-  //grow or clean ht if E[# keys in a slot] > alpha
-  if ((float)(ht->num_elts + ht->num_placeholders) / ht->ht_size >
+  //grow or clean if E[# keys in a slot] > alpha
+  while ((float)(ht->num_elts + ht->num_placeholders) / ht->ht_size >
       ht->alpha){
     if (ht->num_elts < ht->num_placeholders){
       ht_clean(ht);
     }else{
+      //> 1 ht_grow calls, if alpha is small relative to initial ht_size
       ht_grow(ht);
     }
   }
@@ -130,8 +131,8 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht, void *key, void *elt){
   int key_block_size = ht->key_size + 2 * sizeof(uint64_t);
   void *key_block = malloc(key_block_size);
   assert(key_block != NULL);
-  memcpy(key_block, key, ht->key_size);
   uint64_t *first_val_ptr = (uint64_t *)((char *)key_block + ht->key_size);
+  memcpy(key_block, key, ht->key_size);
   *first_val_ptr = first_val;
   *(first_val_ptr + 1) = second_val;
   head = &(ht->key_elts[ix]);
@@ -223,9 +224,13 @@ void ht_mul_uint64_free(ht_mul_uint64_t *ht){
    preallocated block of size sizeof(dll_node_t).
 */
 static void placeholder_init(dll_node_t *node, int elt_size){
-  node->key = NULL; //no current element in a hash table can have key == NULL
+  node->key = NULL; //no element in a hash table can have node->key == NULL
+  node->key_size = 0;
   node->elt = calloc(1, elt_size); //element for node consistency purposes
   assert(node->elt != NULL);
+  node->elt_size = elt_size;
+  node->next = NULL;
+  node->prev = NULL;
 }
 
 /**
