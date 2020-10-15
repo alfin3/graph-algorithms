@@ -14,8 +14,9 @@
 
    The alpha parameter does not provide an upper bound after the maximum 
    size of a hash table is reached. After exceeding the alpha parameter, 
-   the load factor is < 1.0 due to open addressing, and the expected number 
-   of probes is upper-bounded by 1/(1 - load factor).
+   the load factor is <= 1.0 due to open addressing, and the expected number 
+   of probes is upper-bounded by 1/(1 - load factor) before the full 
+   occupancy is reached.
 
    A hash key is an object within a continuous block of memory (e.g. a basic 
    type, array, struct). If the key size is <= 8 bytes, then the key size 
@@ -43,7 +44,7 @@ typedef struct{
   uint64_t num_elts;
   uint64_t num_placeholders;
   float alpha;
-  dll_node_t *placeholder; //node with key == NULL
+  dll_node_t *placeholder; //node with node->key == NULL
   dll_node_t **key_elts; //array of pointers to dlls, each with <= 1 node
   int (*cmp_key_fn)(void *, void *);
   void (*rdc_key_fn)(void *, void *);
@@ -54,7 +55,7 @@ typedef struct{
    Initializes a hash table. 
    ht: a pointer to a previously created ht_mul_uint64_t instance.
    alpha: 0.0 < alpha < 1.0, a load factor upper bound.
-   cmp_key_fn: 0 if two keys are equal.
+   cmp_key_fn: 0 iff two keys are equal.
    rdc_key_fn: the first parameter points to an 8-byte block, where the 
                reduced form of the second parameter is copied.
    free_elt_fn: - if an element is of a basic type or is an array or struct 
@@ -62,14 +63,14 @@ typedef struct{
                 and a pointer to the element is passed as elt in 
                 ht_mul_uint64_insert, then the element is fully copied into 
                 a block pointed from the node at the slot index computed by 
-                a hash function, and a NULL as free_elt_fn is sufficient to 
+                hash function(s), and a NULL as free_elt_fn is sufficient to 
                 delete the element;
                 - if an element is multilayered, and a pointer to a pointer
                 to the element is passed as elt in ht_mul_uint64_insert, then
                 the pointer to the element is copied into a block pointed 
-                from the node at the slot index computed by a hash function, 
-                and an element-specific free_elt_fn is necessary to delete 
-                the element.
+                from the node at the slot index computed by hash 
+                function(s), and an element-specific free_elt_fn is necessary
+                to delete the element.
 */
 void ht_mul_uint64_init(ht_mul_uint64_t *ht,
                         int key_size,
@@ -101,13 +102,14 @@ void *ht_mul_uint64_search(ht_mul_uint64_t *ht, void *key);
 void ht_mul_uint64_remove(ht_mul_uint64_t *ht, void *key, void *elt);
 
 /**
-   Deletes a key and its associated element in a hash table according to 
-   free_elt_fn. The key parameter is not NULL.
+   If a key is in a hash table, deletes the key and its associated element 
+   according to free_elt_fn. The key parameter is not NULL.
 */
 void ht_mul_uint64_delete(ht_mul_uint64_t *ht, void *key);
 
 /**
-   Frees a hash table.
+   Frees a hash table and leaves a block of size sizeof(ht_mul_uint64_t)
+   pointed to by the ht parameter.
 */
 void ht_mul_uint64_free(ht_mul_uint64_t *ht);
 
