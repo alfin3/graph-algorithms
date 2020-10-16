@@ -116,9 +116,11 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht, void *key, void *elt){
       ht->alpha){
     if (ht->num_elts < ht->num_placeholders){
       ht_clean(ht);
-    }else{
+    }else if (ht->ht_size < ht->max_ht_size){
       //> 1 ht_grow calls, if alpha is small relative to the initial ht_size
       ht_grow(ht);
+    }else{
+      break;
     }
   }
   dll_node_t **head;
