@@ -3,8 +3,8 @@
 
    Struct declarations and declarations of accessible functions of a hash 
    table with generic hash keys and generic elements. The implementation is 
-   based on a division method for hashing into 2^32-1 slots and a chaining
-   method for resolving collisions.
+   based on a division method for hashing into upto > 2^31 slots (last entry
+   in the primes array) and a chaining method for resolving collisions.
    
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by the 
@@ -40,7 +40,7 @@ typedef struct{
    Initializes a hash table. 
    ht: a pointer to a previously created ht_div_uint32_t instance.
    alpha: > 0.0, a load factor upper bound.
-   cmp_key_fn: 0 if two keys are equal.
+   cmp_key_fn: 0 iff two keys are equal.
    free_elt_fn: - if an element is of a basic type or is an array or struct 
                 within a continuous memory block, as reflected by elt_size, 
                 and a pointer to the element is passed as elt in 
@@ -84,13 +84,14 @@ void *ht_div_uint32_search(ht_div_uint32_t *ht, void *key);
 void ht_div_uint32_remove(ht_div_uint32_t *ht, void *key, void *elt);
 
 /**
-   Deletes a key and its associated element in a hash table according to 
-   free_elt_fn. The key parameter is not NULL.
+   If a key is present in a hash table, deletes the key and its associated 
+   element according free_elt_fn. The key parameter is not NULL.
 */
 void ht_div_uint32_delete(ht_div_uint32_t *ht, void *key);
 
 /**
-   Frees a hash table.
+   Frees a hash table and leaves a block of size sizeof(ht_div_uint32_t)
+   pointed to by the ht parameter.
 */
 void ht_div_uint32_free(ht_div_uint32_t *ht);
 

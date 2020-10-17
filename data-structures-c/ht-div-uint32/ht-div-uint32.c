@@ -2,8 +2,9 @@
    ht-div-uint32.c
 
    A hash table with generic hash keys and generic elements. The 
-   implementation is based on a division method for hashing into 2^32-1 
-   slots and a chaining method for resolving collisions.
+   implementation is based on a division method for hashing into upto
+   > 2^31 slots (last entry in the primes array) and a chaining method for 
+   resolving collisions.
    
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by the 
@@ -28,6 +29,7 @@
 
 static uint32_t hash(ht_div_uint32_t *ht, void *key);
 static void ht_grow(ht_div_uint32_t *ht);
+static void copy_reinsert(ht_div_uint32_t *ht, dll_node_t *node);
 
 /**
    An array of primes in the increasing order, approximately doubling in 
@@ -49,7 +51,7 @@ static const int num_primes = 22;
    Initializes a hash table. 
    ht: a pointer to a previously created ht_div_uint32_t instance.
    alpha: > 0.0, a load factor upper bound.
-   cmp_key_fn: 0 if two keys are equal.
+   cmp_key_fn: 0 iff two keys are equal.
    free_elt_fn: - if an element is of a basic type or is an array or struct 
                 within a continuous memory block, as reflected by elt_size, 
                 and a pointer to the element is passed as elt in 
@@ -73,7 +75,7 @@ void ht_div_uint32_init(ht_div_uint32_t *ht,
   ht->ht_size_ix = 0;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
-  ht->ht_size = primes[0];
+  ht->ht_size = primes[ht->ht_size_ix];
   ht->num_elts = 0;
   ht->alpha = alpha;
   ht->key_elts = malloc(ht->ht_size * sizeof(dll_node_t *));
@@ -92,7 +94,10 @@ void ht_div_uint32_init(ht_div_uint32_t *ht,
 */
 void ht_div_uint32_insert(ht_div_uint32_t *ht, void *key, void *elt){
   //grow ht if E[# keys in a slot] > alpha
-  if ((float)(ht->num_elts) / ht->ht_size > ht->alpha){ht_grow(ht);}
+  while ((float)(ht->num_elts) / ht->ht_size > ht->alpha &&
+	 ht->ht_size_ix < num_primes - 1){
+    ht_grow(ht);
+  }
   uint32_t ix = hash(ht, key);
   dll_node_t **head = &(ht->key_elts[ix]);
   dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
@@ -132,15 +137,15 @@ void ht_div_uint32_remove(ht_div_uint32_t *ht, void *key, void *elt){
   dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
   if (node != NULL){
     memcpy(elt, node->elt, ht->elt_size);
-    //NULL: if an element is multilayered, the pointer to it is deleted
+    //NULL: if an element is multilayered, only the pointer to it is deleted
     dll_delete(head, node, NULL);
     ht->num_elts--;
   }
 }
 
 /**
-   Deletes a key and its associated element in a hash table according to 
-   free_elt_fn. The key parameter is not NULL.
+   If a key is present in a hash table, deletes the key and its associated 
+   element according free_elt_fn. The key parameter is not NULL.
 */
 void ht_div_uint32_delete(ht_div_uint32_t *ht, void *key){
   uint32_t ix = hash(ht, key);
@@ -153,7 +158,8 @@ void ht_div_uint32_delete(ht_div_uint32_t *ht, void *key){
 }
 
 /**
-   Frees a hash table.
+   Frees a hash table and leaves a block of size sizeof(ht_div_uint32_t)
+   pointed to by the ht parameter.
 */
 void ht_div_uint32_free(ht_div_uint32_t *ht){
   for (uint32_t i = 0; i < ht->ht_size; i++){
@@ -197,14 +203,23 @@ static void ht_grow(ht_div_uint32_t *ht){
   for (uint32_t i = 0; i < prev_ht_size; i++){
     head = &(prev_key_elts[i]);
     while (*head != NULL){
-      //assert that ht_size increased so that there is no mutual recursion
-      assert(!((float)(ht->num_elts) / ht->ht_size > ht->alpha));
-      ht_div_uint32_insert(ht, (*head)->key, (*head)->elt);
-      //NULL: if an element is multilayered, the pointer to it is deleted
+      copy_reinsert(ht, *head);
+      //NULL:if an element is multilayered, only the pointer to it is deleted
       dll_delete(head, *head, NULL);
     }
   }
   free(prev_key_elts);
   prev_key_elts = NULL;
   head = NULL;
+}
+
+/**
+   Reinserts a copy of a node into a new hash table during an ht_grow 
+   operation. In contrast to ht_div_uint32_insert, no search is performed.
+*/
+static void copy_reinsert(ht_div_uint32_t *ht, dll_node_t *node){
+  uint32_t ix = hash(ht, node->key);
+  dll_node_t **head = &(ht->key_elts[ix]);
+  dll_insert(head, node->key, node->elt, ht->key_size, ht->elt_size);
+  ht->num_elts++;   
 }
