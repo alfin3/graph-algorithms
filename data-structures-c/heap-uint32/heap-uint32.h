@@ -5,18 +5,16 @@
    dynamicaly allocated (min) heap with upto 2^32 - 2 elements.
 
    Through user-defined comparison and deallocation functions, the 
-   implementation provides a dynamic set in the heap form of any element 
+   implementation provides a dynamic set in the heap form for any element 
    objects associated with priority values of basic type (e.g. char, int, 
    long, double). 
 
    The implementation assumes that for every element in a heap, the 
    corresponding block of size elt_size, pointed to by the elt parameter in
-   heap_uint32_push is unique. Because any object in memory can be pushed with
-   its unique pointer, this invariant only prevents associating a given object
-   in memory with more than one priority in a heap.
-
-   The overflow-safe design of uint32_t index tests in the heapify functions 
-   enables a potentially simple upgrade to uint64_t number of elements.
+   heap_uint32_push is unique (unique bit pattern). Because any object in 
+   memory can be pushed with its unique pointer, this invariant only 
+   prevents associating a given object in memory with more than one priority
+   value in a heap.
 */
 
 #ifndef HEAP_UINT32_H  
@@ -32,10 +30,10 @@ typedef struct{
   int elt_size;
   void *ptys;
   void *elts;
-  float alpha;
+  float alpha; //hash table load factor upper bound
   ht_div_uint32_t *ht;
   int (*cmp_pty_fn)(void *, void *);
-  int (*cmp_elt_fn)(void *, void *); //compares two blocks of size elt_size
+  int (*cmp_elt_fn)(void *, void *);
   void (*free_elt_fn)(void *);
 } heap_uint32_t;
 
@@ -45,8 +43,8 @@ typedef struct{
    cmp_pty_fn: > 0 if the first priority value is greater,
                < 0 if the first priority value is lower,
                0 otherwise.
-   cmp_elt_fn: 0 if the bits in two pointed blocks of size elt_size match, 
-               non-zero otherwise.
+   cmp_elt_fn: 0 if the bit patterns in two pointed blocks of size elt_size 
+               match, non-zero otherwise.
    free_elt_fn: - if an element is of a basic type or is an array or struct 
                 within a continuous memory block, as reflected by elt_size, 
                 and a pointer to the element is passed as elt in 
@@ -69,9 +67,12 @@ void heap_uint32_init(heap_uint32_t *h,
 
 /**
    Pushes an element not yet in a heap and an associated priority value. 
-   elt: a pointer to a block of size elt_size that is either a
-        continuous memory block object (e.g. basic type, array, struct) or a
-        pointer to an object, as reflected by elt_size.
+   Prior to pushing, the membership of an element can be tested, if 
+   necessary, with heap_uint32_search in O(1 + alpha) time in expectation 
+   under the simple uniform hashing assumption.
+   elt: a pointer to a block of size elt_size that is either a continuous 
+        memory block object (e.g. basic type, array, struct) or a pointer to
+        a multilayered object, as reflected by elt_size.
    pty: a pointer to a block of size pty_size that is an object of basic 
         type (e.g. char, int, long, double), as reflected by pty_size.
 */
@@ -81,24 +82,29 @@ void heap_uint32_push(heap_uint32_t *h, void *pty, void *elt);
    Returns a pointer to the priority of an element in a heap or NULL if
    the element is not in the heap in O(1 + alpha) time in expectation under 
    the simple uniform hashing assumption. The returned pointer is guaranteed
-   to point to the current priority until another heap operation is performed.
+   to point to the current priority value until another heap operation is 
+   performed.
 */
 void *heap_uint32_search(heap_uint32_t *h, void *elt);
 
 /**
-   Updates the priority of an element that is already in a heap.
+   Updates the priority value of an element that is already in a heap. Prior
+   to updating, the membership of an element can be tested, if necessary, 
+   with heap_uint32_search in O(1 + alpha) time in expectation under the 
+   simple uniform hashing assumption.
 */
 void heap_uint32_update(heap_uint32_t *h, void *pty, void *elt);
 
 /**
-   Pops an element associated with a minimal priority according to cmp_pty_fn.
-   If a heap is empty, the memory blocks pointed to by elt and pty remain 
-   unchanged.
+   Pops an element associated with a minimal priority value in a heap 
+   according to cmp_pty_fn. If the heap is empty, the memory blocks pointed 
+   to by elt and pty remain unchanged.
 */
 void heap_uint32_pop(heap_uint32_t *h, void *pty, void *elt);
 
 /**
-   Frees the dynamically allocated components of a heap.
+   Frees a heap and leaves a block of size sizeof(heap_uint32_t) pointed
+   to by the h parameter.
 */
 void heap_uint32_free(heap_uint32_t *h);
 

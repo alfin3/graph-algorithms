@@ -7,7 +7,7 @@ OBJ = heap-uint32-main.o                  \
       heap-uint32.o                       \
       $(HT_DIV_UINT32_DIR)ht-div-uint32.o \
       $(DLL_DIR)dll.o                     \
-      $(UTILS_DIR)utilities-ds.o          \
+      $(UTILS_DIR)utilities-ds.o
 
 heap-uint32 : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
