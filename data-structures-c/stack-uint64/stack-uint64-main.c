@@ -1,8 +1,8 @@
 /**
    stack-uint64-main.c
 
-   Examples of a generic dynamically allocated stack with upto 2^64 - 1 
-   elements.
+   Examples of a generic dynamically allocated stack with upto 
+   (2^64 - 1) / elt_size elements.
 
    Through a user-defined deallocation function, the implementation provides 
    a dynamic set of any objects in the stack form.

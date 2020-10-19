@@ -1,8 +1,8 @@
 /**
    stack-uint64.c
 
-   Implementation of a generic dynamically allocated stack with upto 2^64 - 1
-   elements.
+   Implementation of a generic dynamically allocated stack with upto 
+   (2^64 - 1) / elt_size elements.
 
    Through a user-defined deallocation function, the implementation provides 
    a dynamic set of any objects in the stack form. 
@@ -42,7 +42,8 @@ void stack_uint64_init(stack_uint64_t *s,
 		       int elt_size,
 		       void (*free_elt_fn)(void *)){
   s->stack_size = init_stack_size;
-  s->stack_max_size = pow_two_uint64(63) + (pow_two_uint64(63) - 1);
+  s->stack_max_size = (pow_two_uint64(63) +
+                       (pow_two_uint64(63) - 1)) / elt_size;
   s->num_elts = 0;
   s->elt_size = elt_size;
   s->elts = malloc(init_stack_size * elt_size);
