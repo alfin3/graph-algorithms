@@ -228,6 +228,7 @@ void run_large_stack_test(){
   }
   t = clock() - t;
   printf("\t\tpop time:          %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  stack_uint64_free(&s);
 }
 
 void print_test_result(int result){
