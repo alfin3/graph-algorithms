@@ -264,11 +264,13 @@ static void corner_cases_graph_test_helper(adj_lst_uint64_t *a,
 }
 
 /**
-   Test adj_lst_undir_build.
+   Test adj_lst_uint64_undir_build.
 */
 
 /**
-   Initializes a graph that is complete in the undirected form.
+   Initializes an unweighted graph that is a DAG with source 0 and 
+   n(n - 1) / 2 edges in the directed form, and complete in the 
+   undirected form.
 */
 void complete_graph_init(graph_uint64_t *g, uint64_t n){
   assert(n > 1);
@@ -290,7 +292,7 @@ void complete_graph_init(graph_uint64_t *g, uint64_t n){
 }
 
 /**
-   Runs a adj_lst_uint64_undir_build test on complete graphs.
+   Runs a adj_lst_uint64_undir_build test on complete unweighted graphs.
 */
 void run_adj_lst_uint64_undir_build_test(){
   graph_uint64_t g;
@@ -299,8 +301,7 @@ void run_adj_lst_uint64_undir_build_test(){
   int pow_two_start = 4;
   int pow_two_end = 15;
   clock_t t;
-  printf("Test adj_lst_uint64_undir_build on complete graphs without "
-	 "weights \n");
+  printf("Test adj_lst_uint64_undir_build on complete unweighted graphs \n");
   printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) directed "
 	 "edges \n");
   for (int i = pow_two_start; i < pow_two_end; i++){
@@ -312,7 +313,8 @@ void run_adj_lst_uint64_undir_build_test(){
     t = clock() - t;
     printf("\t\tvertices: %lu, directed edges: %lu, "
 	   "build time: %.6f seconds\n",
-	   n, n * (n - 1), (float)t / CLOCKS_PER_SEC);
+	   a.num_vts, a.num_vts * (a.num_vts - 1),
+	   (float)t / CLOCKS_PER_SEC);
     fflush(stdout);
     adj_lst_uint64_free(&a);
     graph_uint64_free(&g);
@@ -323,39 +325,63 @@ void run_adj_lst_uint64_undir_build_test(){
    Test adj_lst_uint64_add_dir_edge and adj_lst_uint64_add_undir_edge.
 */
 
-/**
-   Runs a adj_lst_uint64_add_dir_edge test on DAGs.
-*/
+void add_edge_test_helper(void (*build_fn)(adj_lst_uint64_t *,
+					   graph_uint64_t *),
+			  void (*add_edge_fn)(adj_lst_uint64_t *,
+					      uint64_t,
+					      uint64_t,
+					      uint32_t,
+					      uint32_t));
+
 void run_adj_lst_uint64_add_dir_edge_test(){
+  printf("Test adj_lst_uint64_add_dir_edge on DAGs \n");
+  printf("\tn vertices, 0 as source, n(n - 1)/2 directed edges \n");
+  add_edge_test_helper(adj_lst_uint64_dir_build,
+		       adj_lst_uint64_add_dir_edge);
+}
+
+void run_adj_lst_uint64_add_undir_edge_test(){
+  printf("Test adj_lst_uint64_add_undir_edge on complete graphs \n");
+  printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) directed "
+	 "edges \n");
+  add_edge_test_helper(adj_lst_uint64_undir_build,
+		       adj_lst_uint64_add_undir_edge);
+}
+
+void add_edge_test_helper(void (*build_fn)(adj_lst_uint64_t *,
+					   graph_uint64_t *),
+			  void (*add_edge_fn)(adj_lst_uint64_t *,
+					      uint64_t,
+					      uint64_t,
+					      uint32_t,
+					      uint32_t)){
   graph_uint64_t g_blt, g_bld;
   adj_lst_uint64_t a_blt, a_bld;
   uint64_t n;
-  int pow_two_start = 4;
+  int pow_two_start = 4; //> 0
   int pow_two_end = 15;
   uint32_t num = 1;
   uint32_t denom = 1;
   int result = 1;
   clock_t t;
-  printf("Test adj_lst_uint64_add_dir_edge on DAGs \n");
-  printf("\tn vertices, 0 as source, n(n - 1)/2 directed edges \n");
   for (int i = pow_two_start; i < pow_two_end; i++){
     n = pow_two_uint64(i);
     complete_graph_init(&g_blt, n);
     graph_uint64_base_init(&g_bld, n);
     adj_lst_uint64_init(&a_blt, &g_blt);
     adj_lst_uint64_init(&a_bld, &g_bld);
-    adj_lst_uint64_dir_build(&a_blt, &g_blt);
-    adj_lst_uint64_dir_build(&a_bld, &g_bld);
+    build_fn(&a_blt, &g_blt);
+    build_fn(&a_bld, &g_bld);
     t = clock();
     for (uint64_t i = 0; i < n - 1; i++){
       for (uint64_t j = i + 1; j < n; j++){
-	adj_lst_uint64_add_dir_edge(&a_bld, i, j, num, denom);
+	add_edge_fn(&a_bld, i, j, num, denom);
       }
     }
     t = clock() - t;
     printf("\t\tvertices: %lu, directed edges: %lu, "
 	   "build time: %.6f seconds\n",
-	   n, (n * (n - 1)) / 2, (float)t / CLOCKS_PER_SEC);
+	   a_bld.num_vts, a_bld.num_es, (float)t / CLOCKS_PER_SEC);
     fflush(stdout);
     //uint64_sum test
     for (uint64_t i = 0; i < n; i++){
@@ -365,59 +391,7 @@ void run_adj_lst_uint64_add_dir_edge_test(){
 		 uint64_sum((uint64_t *)a_bld.vts[i]->elts,
 			    a_bld.vts[i]->num_elts));
     }
-    result *= (a_blt.num_es == a_bld.num_es);
-    adj_lst_uint64_free(&a_blt);
-    adj_lst_uint64_free(&a_bld);
-    graph_uint64_free(&g_blt);
-    graph_uint64_free(&g_bld);
-  }
-  printf("\t\tcorrectness across all builds --> ");
-  print_test_result(result);
-}
-
-/**
-   Runs a adj_lst_add_undir_edge test on complete graphs.
-*/
-void run_adj_lst_uint64_add_undir_edge_test(){
-  graph_uint64_t g_blt, g_bld;
-  adj_lst_uint64_t a_blt, a_bld;
-  uint64_t n;
-  int pow_two_start = 4;
-  int pow_two_end = 15;
-  uint32_t nom = 1;
-  uint32_t denom = 1;
-  int result = 1;
-  clock_t t;
-  printf("Test adj_lst_uint64_add_undir_edge on complete graphs \n");
-  printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) directed "
-	 "edges \n");
-  for (int i = pow_two_start; i < pow_two_end; i++){
-    n = pow_two_uint64(i);
-    complete_graph_init(&g_blt, n);
-    graph_uint64_base_init(&g_bld, n);
-    adj_lst_uint64_init(&a_blt, &g_blt);
-    adj_lst_uint64_init(&a_bld, &g_bld);
-    adj_lst_uint64_undir_build(&a_blt, &g_blt);
-    adj_lst_uint64_undir_build(&a_bld, &g_bld);
-    t = clock();
-    for (uint64_t i = 0; i < n - 1; i++){
-      for (uint64_t j = i + 1; j < n; j++){
-	adj_lst_uint64_add_undir_edge(&a_bld, i, j, nom, denom);
-      }
-    }
-    t = clock() - t;
-    printf("\t\tvertices: %lu, directed edges: %lu, "
-	   "build time: %.6f seconds\n",
-	   n, n * (n - 1), (float)t / CLOCKS_PER_SEC);
-    fflush(stdout);
-    //uint64_sum test
-    for (uint64_t i = 0; i < n; i++){
-      result *= (a_blt.vts[i]->num_elts == a_bld.vts[i]->num_elts);
-      result *= (uint64_sum((uint64_t *)a_blt.vts[i]->elts,
-			    a_blt.vts[i]->num_elts) ==
-		 uint64_sum((uint64_t *)a_bld.vts[i]->elts,
-			    a_bld.vts[i]->num_elts));
-    }
+    result *= (a_blt.num_vts == a_bld.num_vts);
     result *= (a_blt.num_es == a_bld.num_es);
     adj_lst_uint64_free(&a_blt);
     adj_lst_uint64_free(&a_bld);
@@ -430,52 +404,45 @@ void run_adj_lst_uint64_add_undir_edge_test(){
 
 
 /** 
-   Test adj_lst_rand_dir and adj_lst_rand_undir.
+   Test adj_lst_uint64_rand_dir and adj_lst_uint64_rand_undir on the number 
+   of edges in expectation.
 */
 
-/**
-   Runs a adj_lst_rand_dir test on the number of edges in expectation.
-*/
+void rand_build_test_helper(void (*rand_build_fn)(adj_lst_uint64_t *,
+						  uint64_t,
+						  uint32_t,
+						  uint32_t));
+
 void run_adj_lst_uint64_rand_dir_test(){
-  adj_lst_uint64_t a;
-  uint64_t n;
-  int pow_two_start = 10;
-  int pow_two_end = 15;
-  uint32_t nom = 1;
-  uint32_t denom = 2;
   printf("Test adj_lst_uint64_rand_dir on the number of edges in "
 	 "expectation\n");
   printf("\tn vertices, E[# of directed edges] = n(n - 1) * (0.5 * 1)\n");
-  for (int i = pow_two_start; i < pow_two_end; i++){
-    n = pow_two_uint64(i);
-    adj_lst_uint64_rand_dir(&a, n, nom, denom);
-    printf("\t\tvertices: %lu, expected directed edges: %.1f, "
-	   "directed edges: %lu\n",
-	   n, 0.5 * (float)(n * (n - 1)), a.num_es);
-    fflush(stdout);
-    adj_lst_uint64_free(&a);
-  }
+  rand_build_test_helper(adj_lst_uint64_rand_dir);
 }
 
-/**
-   Runs a adj_lst_uint64_rand_undir test on the number of edges in 
-   expectation.
-*/
 void run_adj_lst_uint64_rand_undir_test(){
+  printf("Test adj_lst_uint64_rand_undir on the number of edges in "
+	 "expectation\n");
+  printf("\tn vertices, E[# of directed edges] = n(n - 1)/2 * (0.5 * 2)\n");
+  rand_build_test_helper(adj_lst_uint64_rand_undir);
+}
+
+void rand_build_test_helper(void (*rand_build_fn)(adj_lst_uint64_t *,
+						  uint64_t,
+						  uint32_t,
+						  uint32_t)){
   adj_lst_uint64_t a;
   uint64_t n;
   int pow_two_start = 10;
   int pow_two_end = 15;
-  uint32_t nom = 1;
+  uint32_t num = 1;
   uint32_t denom = 2;
-  printf("Test adj_lst_rand_undir on the number of edges in expectation\n");
-  printf("\tn vertices, E[# of directed edges] = n(n - 1)/2 * (0.5 * 2)\n");
   for (int i = pow_two_start; i < pow_two_end; i++){
     n = pow_two_uint64(i);
-    adj_lst_uint64_rand_undir(&a, n, nom, denom);
+    rand_build_fn(&a, n, num, denom);
     printf("\t\tvertices: %lu, expected directed edges: %.1f, "
 	   "directed edges: %lu\n",
-	   n, 0.5 * (float)(n * (n - 1)), a.num_es);
+	   a.num_vts, 0.5 * (float)(a.num_vts * (a.num_vts - 1)), a.num_es);
     fflush(stdout);
     adj_lst_uint64_free(&a);
   }
