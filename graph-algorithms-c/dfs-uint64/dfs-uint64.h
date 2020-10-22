@@ -2,7 +2,7 @@
    dfs-uint64.h
 
    Declarations of accessible functions for running the DFS algorithm on 
-   graphs with the number of vertices bounded by 2 + (2^64 - 1) / 
+   graphs with the number of vertices bounded by 1 + (2^64 - 1) / 
    sizeof(uint64_t) and vertices indexed from 0. The unused upper values are
    reserved for special values. 
 

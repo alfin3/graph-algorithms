@@ -2,7 +2,7 @@
    dfs-uint64.c
 
    Functions for running the DFS algorithm on graphs with the number of 
-   vertices bounded by 2 + (2^64 - 1) / sizeof(uint64_t) and vertices
+   vertices bounded by 1 + (2^64 - 1) / sizeof(uint64_t) and vertices
    indexed from 0. The unused upper values are reserved for special values. 
 
    The implementation emulates the recursion in DFS on a dynamically 
@@ -33,7 +33,7 @@ static void next_p(adj_lst_uint64_t *a, u_vi_t *p, uint64_t *pre);
 static uint64_t *vt_ptr(void *vts, uint64_t i);
 
 static const uint64_t not_reached = 0xffffffffffffffff;
-static const uint64_t l_num_vts = 2 + 0xffffffffffffffff / sizeof(uint64_t);
+static const uint64_t l_num_vts = 1 + 0xffffffffffffffff / sizeof(uint64_t);
 
 /**
    Computes and copies pre and postvisit values to pre and post arrays. 
