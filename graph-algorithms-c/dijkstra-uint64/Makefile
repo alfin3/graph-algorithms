@@ -44,7 +44,8 @@ $(HT_DIR)ht-div-uint32.o   : $(HT_DIR)ht-div-uint32.h   \
                              $(DLL_DIR)dll.h            \
                              $(UTILS_DIR)utilities-ds.h
 $(DLL_DIR)dll.o            : $(DLL_DIR)dll.h
-$(STACK_DIR)stack-uint64.o : $(STACK_DIR)stack-uint64.h
+$(STACK_DIR)stack-uint64.o : $(STACK_DIR)stack-uint64.h \
+                             $(UTILS_DIR)utilities-ds.h
 $(UTILS_DIR)utilities-ds.o : $(UTILS_DIR)utilities-ds.h
 
 .PHONY : clean clean-all

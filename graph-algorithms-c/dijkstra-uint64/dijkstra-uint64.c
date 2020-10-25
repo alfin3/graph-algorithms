@@ -7,6 +7,7 @@
    The number of vertices is bounded by 2^32 - 2, as in heap-uint32. 
    Edge weights are of any basic type (e.g. char, int, double).
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -30,6 +31,7 @@ static const uint64_t l_num_vts = 0xffffffff;
 /**
    Computes and copies the shortest distances from start to dist array and 
    previous vertices to prev array, with nr in prev for unreached vertices.
+   Assumes immutability of an adjacency list during execution.
 */
 void dijkstra_uint64(adj_lst_uint64_t *a,
 		     uint64_t start,
@@ -46,6 +48,7 @@ void dijkstra_uint64(adj_lst_uint64_t *a,
   uint64_t u, v;
   void *wt_buf = malloc(wt_size);
   assert(wt_buf != NULL);
+  void *v_wt_ptr = NULL;
   bool *in_heap = calloc(a->num_vts, sizeof(bool));
   assert(in_heap != NULL);
   for (uint64_t i = 0; i < a->num_vts; i++){
@@ -67,16 +70,17 @@ void dijkstra_uint64(adj_lst_uint64_t *a,
     in_heap[u] = false;
     for (uint64_t i = 0; i < a->vts[u]->num_elts; i++){
       v = *vt_ptr(a->vts[u]->elts, i);
+      v_wt_ptr = wt_ptr(dist, v, wt_size);
       add_wt_fn(wt_buf,
 		wt_ptr(dist, u, wt_size),
 		wt_ptr(a->wts[u]->elts, i, wt_size));
-      if (prev[v] == nr || cmp_wt_fn(wt_ptr(dist, v, wt_size), wt_buf) > 0){
-	memcpy(wt_ptr(dist, v, wt_size), wt_buf, wt_size);
+      if (prev[v] == nr || cmp_wt_fn(v_wt_ptr, wt_buf) > 0){
+	memcpy(v_wt_ptr, wt_buf, wt_size);
 	prev[v] = u;
 	if (in_heap[v]){
-	  heap_uint32_update(&h, wt_ptr(dist, v, wt_size), &v);
+	  heap_uint32_update(&h, v_wt_ptr, &v);
 	}else{
-	  heap_uint32_push(&h, wt_ptr(dist, v, wt_size), &v);
+	  heap_uint32_push(&h, v_wt_ptr, &v);
 	  in_heap[v] = true;
 	}
       }

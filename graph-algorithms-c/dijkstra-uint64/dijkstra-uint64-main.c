@@ -12,6 +12,7 @@
 #include "dijkstra-uint64.h"
 #include "graph-uint64.h"
 #include "stack-uint64.h"
+#include "utilities-ds.h"
 
 static const uint64_t nr = 0xffffffffffffffff; //not reached
 
@@ -99,12 +100,12 @@ void init_uint64_fn(void *wt){
   *(uint64_t *)wt = 0;
 }
 
-void add_uint64_fn(void *sum, void *u_wt, void *u_v_wt){
-  *(uint64_t *)sum = *(uint64_t *)u_wt + *(uint64_t *)u_v_wt;
+void add_uint64_fn(void *sum, void *wt_a, void *wt_b){
+  *(uint64_t *)sum = *(uint64_t *)wt_a + *(uint64_t *)wt_b;
 }
   
-int cmp_uint64_fn(void *v_wt, void *sum){
-  return *(uint64_t *)v_wt - *(uint64_t *)sum;
+int cmp_uint64_fn(void *wt_a, void *wt_b){
+  return *(uint64_t *)wt_a - *(uint64_t *)wt_b;
 }
 
 void run_uint64_dijkstra(adj_lst_uint64_t *a){
@@ -182,16 +183,16 @@ void init_double_fn(void *wt){
   *(double *)wt = 0.0;
 }
 
-void add_double_fn(void *sum, void *u_wt, void *u_v_wt){
-  *(double *)sum = *(double *)u_wt + *(double *)u_v_wt;
+void add_double_fn(void *sum, void *wt_a, void *wt_b){
+  *(double *)sum = *(double *)wt_a + *(double *)wt_b;
 }
   
-int cmp_double_fn(void *v_wt, void *sum){
-  double v_wt_val = *(double *)v_wt;
-  double sum_val = *(double *)sum;
-  if (v_wt_val > sum_val){
+int cmp_double_fn(void *wt_a, void *wt_b){
+  double wt_a_val = *(double *)wt_a;
+  double wt_b_val = *(double *)wt_b;
+  if (wt_a_val > wt_b_val){
     return 1;
-  }else if (v_wt_val < sum_val){
+  }else if (wt_a_val < wt_b_val){
     return -1;
   }else{
     return 0;
