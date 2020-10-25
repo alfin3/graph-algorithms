@@ -19,7 +19,8 @@
 
 /**
    Computes and copies the edge weights of an mst to dist and previous 
-   vertices to prev, with nr in prev for unreached vertices.
+   vertices to prev, with nr in prev for unreached vertices. Assumes 
+   immutability of an adjacency list during execution.
 */
 void prim_uint64(adj_lst_uint64_t *a,
 		 uint64_t start,

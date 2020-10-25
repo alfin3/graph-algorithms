@@ -32,7 +32,8 @@ static const uint64_t l_num_vts = 0xffffffff;
 
 /**
    Computes and copies the edge weights of an mst to dist and previous 
-   vertices to prev, with nr in prev for unreached vertices.
+   vertices to prev, with nr in prev for unreached vertices. Assumes 
+   immutability of an adjacency list during execution.
 */
 void prim_uint64(adj_lst_uint64_t *a,
 		 uint64_t start,
@@ -48,7 +49,8 @@ void prim_uint64(adj_lst_uint64_t *a,
   uint64_t u, v;
   void *wt_buf = malloc(wt_size);
   assert(wt_buf != NULL);
-  void *uv_wt_ptr;
+  void *v_wt_ptr = NULL;
+  void *uv_wt_ptr = NULL;
   bool *in_heap = calloc(a->num_vts, sizeof(bool));
   assert(in_heap != NULL);
   bool *popped = calloc(a->num_vts, sizeof(bool)); 
@@ -73,18 +75,18 @@ void prim_uint64(adj_lst_uint64_t *a,
     popped[u] = true;
     for (uint64_t i = 0; i < a->vts[u]->num_elts; i++){
       v = *vt_ptr(a->vts[u]->elts, i);
+      v_wt_ptr = wt_ptr(dist, v, wt_size);
       uv_wt_ptr = wt_ptr(a->wts[u]->elts, i, wt_size);
       //not popped and not in heap <=> not reached
       if (!popped[v] && !in_heap[v]){
-	memcpy(wt_ptr(dist, v, wt_size), uv_wt_ptr, wt_size);
-	heap_uint32_push(&h, uv_wt_ptr, &v);
+	memcpy(v_wt_ptr, uv_wt_ptr, wt_size);
+	heap_uint32_push(&h, v_wt_ptr, &v);
 	in_heap[v] = true;
 	prev[v] = u;
       //not popped and in heap => reached
-      }else if (!popped[v] &&
-		cmp_wt_fn(wt_ptr(dist, v, wt_size), uv_wt_ptr) > 0){
-	memcpy(wt_ptr(dist, v, wt_size), uv_wt_ptr, wt_size);
-	heap_uint32_update(&h, uv_wt_ptr, &v);
+      }else if (!popped[v] && cmp_wt_fn(v_wt_ptr, uv_wt_ptr) > 0){
+	memcpy(v_wt_ptr, uv_wt_ptr, wt_size);
+	heap_uint32_update(&h, v_wt_ptr, &v);
 	prev[v] = u;
       }
     }
