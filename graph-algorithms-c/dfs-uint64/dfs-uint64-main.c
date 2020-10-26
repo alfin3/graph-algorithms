@@ -28,7 +28,7 @@ void first_vsix_graph_init(graph_uint64_t *g){
   uint64_t u[] = {0, 1, 2, 3, 0, 4, 4};
   uint64_t v[] = {1, 2, 3, 1, 3, 2, 5};
   uint64_t num_vts = 6;
-  graph_uint64_base_init(g, num_vts);
+  graph_uint64_base_init(g, num_vts, 0);
   g->num_es = 7;
   g->u = malloc(g->num_es * sizeof(uint64_t));
   assert(g->u != NULL);
@@ -47,7 +47,7 @@ void second_vsix_graph_init(graph_uint64_t *g){
   uint64_t u[] = {0, 1, 2, 3, 4};
   uint64_t v[] = {1, 2, 3, 4, 5};
   uint64_t num_vts = 6;
-  graph_uint64_base_init(g, num_vts);
+  graph_uint64_base_init(g, num_vts, 0);
   g->num_es = 5;
   g->u = malloc(g->num_es * sizeof(uint64_t));
   assert(g->u != NULL);
@@ -122,11 +122,13 @@ static void graph_test_helper(graph_uint64_t *g,
 					       graph_uint64_t *),
 			      int *result){
   adj_lst_uint64_t a;
-  uint64_t *pre, *post;
+  uint64_t *pre = NULL, *post = NULL;
   adj_lst_uint64_init(&a, g);
   build_fn(&a, g);
   pre = malloc(a.num_vts * sizeof(uint64_t));
+  assert(pre != NULL);
   post = malloc(a.num_vts * sizeof(uint64_t));
+  assert(post != NULL);
   for (uint64_t i = 0; i < a.num_vts; i++){
     dfs_uint64(&a, pre, post);
     *result *= cmp_uint64_arrs(pre, ret_pre, a.num_vts);
@@ -135,6 +137,8 @@ static void graph_test_helper(graph_uint64_t *g,
   adj_lst_uint64_free(&a);
   free(pre);
   free(post);
+  pre = NULL;
+  post = NULL;
 }
 
 /**  
@@ -151,7 +155,7 @@ void run_max_edges_graph_test(){
   int pow_two_end = 15;
   int result = 1;
   uint64_t n;
-  uint64_t *pre, *post;
+  uint64_t *pre = NULL, *post = NULL;
   uint32_t num = 1;
   uint32_t denom = 1;
   printf("Run a dfs_uint64 test on graphs with n vertices, where "
@@ -160,7 +164,9 @@ void run_max_edges_graph_test(){
   for (int i = pow_two_start; i <  pow_two_end; i++){
     n = pow_two_uint64(i); //0 < n
     pre = malloc(n * sizeof(uint64_t));
+    assert(pre != NULL);
     post = malloc(n * sizeof(uint64_t));
+    assert(post != NULL);
     adj_lst_uint64_rand_dir(&a, n, num, denom); //num/denom = 1
     dfs_uint64(&a, pre, post);
     for (uint64_t i = 0; i < n; i++){
@@ -170,6 +176,8 @@ void run_max_edges_graph_test(){
     adj_lst_uint64_free(&a);
     free(pre);
     free(post);
+    pre = NULL;
+    post = NULL;
   }
   print_test_result(result);
 }
@@ -183,7 +191,7 @@ void run_no_edges_graph_test(){
   int pow_two_end = 15;
   int result = 1;
   uint64_t n;
-  uint64_t *pre, *post;
+  uint64_t *pre = NULL, *post = NULL;
   uint32_t num = 0;
   uint32_t denom = 1;
   printf("Run a dfs_uint64 test on graphs with n vertices, where "
@@ -200,7 +208,9 @@ void run_no_edges_graph_test(){
   for (int i = pow_two_start; i <  pow_two_end; i++){
     n = pow_two_uint64(i); //0 < n
     pre = malloc(n * sizeof(uint64_t));
+    assert(pre != NULL);
     post = malloc(n * sizeof(uint64_t));
+    assert(post != NULL);
     adj_lst_uint64_rand_dir(&a, n, num, denom); //num/denom = 0
     dfs_uint64(&a, pre, post);
     for (uint64_t i = 0; i < n; i++){
@@ -209,6 +219,8 @@ void run_no_edges_graph_test(){
     adj_lst_uint64_free(&a);
     free(pre);
     free(post);
+    pre = NULL;
+    post = NULL;
   }
   print_test_result(result);
 }
@@ -226,7 +238,7 @@ void run_random_dir_graph_test(){
   int pow_two_end = 15;
   int num_numers = 5;
   uint64_t n;
-  uint64_t *pre, *post;
+  uint64_t *pre = NULL, *post = NULL;
   uint32_t numers[] = {4, 3, 2, 1, 0};
   uint32_t denom = 4;
   clock_t t;
@@ -235,11 +247,13 @@ void run_random_dir_graph_test(){
   srandom(time(0));
   for (int numer_ix = 0; numer_ix < num_numers; numer_ix++){
     printf("\tP[an edge is in a graph] = %.4f\n",
-	   (float)numers[numer_ix] / (float)denom);
+	   (float)numers[numer_ix] / denom);
     for (int exp = pow_two_start; exp <  pow_two_end; exp++){
       n = pow_two_uint64(exp); // 0 < n
       pre = malloc(n * sizeof(uint64_t));
+      assert(pre != NULL);
       post = malloc(n * sizeof(uint64_t));
+      assert(post != NULL);
       adj_lst_uint64_rand_dir(&a, n, numers[numer_ix], denom);
       t = clock();
       dfs_uint64(&a, pre, post);
@@ -247,13 +261,14 @@ void run_random_dir_graph_test(){
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f, "
 	     "runtime: %.6f seconds\n",
 	     a.num_vts,
-	     ((float)numers[numer_ix] / (float)denom *
-	      (float)(a.num_vts * (a.num_vts - 1))),
+	     (float)numers[numer_ix] / denom * a.num_vts * (a.num_vts - 1),
 	     (float)t / CLOCKS_PER_SEC);
       fflush(stdout);
       adj_lst_uint64_free(&a);
       free(pre);
       free(post);
+      pre = NULL;
+      post = NULL;
     }
   }
 }

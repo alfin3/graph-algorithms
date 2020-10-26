@@ -18,6 +18,7 @@
 
 /**
    Computes and copies pre and postvisit values to pre and post arrays.
+   Assumes immutability of an adjacency list during execution.
 */
 void dfs_uint64(adj_lst_uint64_t *a, uint64_t *pre, uint64_t *post);
 

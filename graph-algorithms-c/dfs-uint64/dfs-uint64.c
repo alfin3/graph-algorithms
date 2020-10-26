@@ -32,11 +32,12 @@ static void search(adj_lst_uint64_t *a,
 static void next_p(adj_lst_uint64_t *a, u_vi_t *p, uint64_t *pre);
 static uint64_t *vt_ptr(void *vts, uint64_t i);
 
-static const uint64_t not_reached = 0xffffffffffffffff;
+static const uint64_t nr = 0xffffffffffffffff; //not reached
 static const uint64_t l_num_vts = 1 + 0xffffffffffffffff / sizeof(uint64_t);
 
 /**
-   Computes and copies pre and postvisit values to pre and post arrays. 
+   Computes and copies pre and postvisit values to pre and post arrays.
+   Assumes immutability of an adjacency list during execution. 
 */
 void dfs_uint64(adj_lst_uint64_t *a, uint64_t *pre, uint64_t *post){
   assert(a->num_vts < l_num_vts);
@@ -46,12 +47,12 @@ void dfs_uint64(adj_lst_uint64_t *a, uint64_t *pre, uint64_t *post){
   uint64_t init_stack_size = 1;
   int elt_size = sizeof(u_vi_t);
   for (uint64_t i = 0; i < a->num_vts; i++){
-    pre[i] = not_reached; 
-    post[i] = not_reached;
+    pre[i] = nr; 
+    post[i] = nr;
   }
   stack_uint64_init(&s, init_stack_size, elt_size, NULL);
   for (uint64_t i = 0; i < a->num_vts; i++){
-    if (pre[i] == not_reached){
+    if (pre[i] == nr){
       pre[i] = c;
       c++;
       p.u = i;
@@ -100,7 +101,7 @@ static void next_p(adj_lst_uint64_t *a, u_vi_t *p, uint64_t *pre){
   uint64_t v;
   for (uint64_t i = p->vi; i < a->vts[p->u]->num_elts; i++){
     v = *vt_ptr(a->vts[p->u]->elts, i);
-    if (pre[v] == not_reached){
+    if (pre[v] == nr){
       p->vi = i;
       return;
     }
