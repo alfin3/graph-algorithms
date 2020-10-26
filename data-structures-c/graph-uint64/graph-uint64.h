@@ -17,12 +17,13 @@
 #include "stack-uint64.h"
 
 typedef struct{
-  uint64_t num_vts;
+  uint64_t num_vts; 
   uint64_t num_es;
-  int wt_size;
+  int wt_size; //0 if no edge weights
   uint64_t *u; //u of edges (u, v), NULL if no edges
   uint64_t *v; //v of edges (u, v), NULL if no edges
-  void *wts; //NULL if no edge weights
+  void *wts; //NULL if no edges or edge weights;
+             //not NULL if there are vertices, edges, and weights
 } graph_uint64_t;
 
 typedef struct{
@@ -30,13 +31,14 @@ typedef struct{
   uint64_t num_es;
   int wt_size;
   stack_uint64_t **vts; //NULL if no vertices
-  stack_uint64_t **wts; //NULL if no edge weights
+  stack_uint64_t **wts; //NULL if no vertices or edge weights
 } adj_lst_uint64_t;
 
 /**
    Initializes a graph with n vertices and no edges.
+   wt_size: 0 if no edge weights, > 0 otherwise
 */
-void graph_uint64_base_init(graph_uint64_t *g, uint64_t n);
+void graph_uint64_base_init(graph_uint64_t *g, uint64_t n, int wt_size);
 
 /**
    Frees  a graph and leaves a block of size sizeof(graph_uint64_t) pointed

@@ -30,9 +30,8 @@ void uint64_wts_graph_init(graph_uint64_t *g){
   uint64_t v[] = {1, 2, 3, 3};
   uint64_t wts[] = {4, 3, 2, 1};
   uint64_t num_vts = 5;
-  graph_uint64_base_init(g, num_vts);
+  graph_uint64_base_init(g, num_vts, sizeof(uint64_t));
   g->num_es = 4;
-  g->wt_size = sizeof(uint64_t);
   g->u = malloc(g->num_es * sizeof(uint64_t));
   assert(g->u != NULL);
   g->v = malloc(g->num_es * sizeof(uint64_t));
@@ -54,9 +53,8 @@ void double_wts_graph_init(graph_uint64_t *g){
   uint64_t v[] = {1, 2, 3, 3};
   double wts[] = {4.0, 3.0, 2.0, 1.0};
   int num_vts = 5;
-  graph_uint64_base_init(g, num_vts);
+  graph_uint64_base_init(g, num_vts, sizeof(double));
   g->num_es = 4;
-  g->wt_size = sizeof(double);
   g->u = malloc(g->num_es * sizeof(uint64_t));
   assert(g->u != NULL);
   g->v = malloc(g->num_es * sizeof(uint64_t));
@@ -94,10 +92,12 @@ void print_adj_lst(adj_lst_uint64_t *a,
     printf("\t%lu : ", i);
     print_uint64_elts(a->vts[i]);
   }
-  printf("\tweights: \n");
-  for (uint64_t i = 0; i < a->num_vts; i++){
-    printf("\t%lu : ", i);
-    print_wts_fn(a->wts[i]);
+  if (print_wts_fn != NULL){
+    printf("\tweights: \n");
+    for (uint64_t i = 0; i < a->num_vts; i++){
+      printf("\t%lu : ", i);
+      print_wts_fn(a->wts[i]);
+    }
   }
   printf("\n");
 }
@@ -213,7 +213,7 @@ static void double_wts_graph_test_helper(adj_lst_uint64_t *a,
 
 /** 
    Test adj_lst_uint64_{init, dir_build, undir_build, free} on corner cases,
-   i.e. graphs with no edges and 0 or more vertices.
+   i.e. graphs with no edge weights and edges, and 0 or more vertices.
 */
 
 static void corner_cases_graph_test_helper(adj_lst_uint64_t *a,
@@ -226,7 +226,7 @@ void run_corner_cases_graph_test(){
   uint64_t max_num_vts = 100;
   int result = 1;
   for (uint64_t i = 0; i < max_num_vts; i++){
-    graph_uint64_base_init(&g, i);
+    graph_uint64_base_init(&g, i, 0);
     adj_lst_uint64_init(&a, &g);
     adj_lst_uint64_dir_build(&a, &g);
     result *= (a.num_vts == i &&
@@ -268,15 +268,15 @@ static void corner_cases_graph_test_helper(adj_lst_uint64_t *a,
 */
 
 /**
-   Initializes an unweighted graph that is a DAG with source 0 and 
-   n(n - 1) / 2 edges in the directed form, and complete in the 
+   Initializes an unweighted graph that is i) a DAG with source 0 and 
+   n(n - 1) / 2 edges in the directed form, and ii) complete in the 
    undirected form.
 */
 void complete_graph_init(graph_uint64_t *g, uint64_t n){
   assert(n > 1);
   uint64_t num_es = (n * (n - 1)) / 2; //n * (n - 1) is even
   uint64_t ix = 0;
-  graph_uint64_base_init(g, n);
+  graph_uint64_base_init(g, n, 0);
   g->num_es = num_es;
   g->u = malloc(g->num_es * sizeof(uint64_t));
   assert(g->u != NULL);
@@ -313,8 +313,7 @@ void run_adj_lst_uint64_undir_build_test(){
     t = clock() - t;
     printf("\t\tvertices: %lu, directed edges: %lu, "
 	   "build time: %.6f seconds\n",
-	   a.num_vts, a.num_vts * (a.num_vts - 1),
-	   (float)t / CLOCKS_PER_SEC);
+	   a.num_vts, a.num_es, (float)t / CLOCKS_PER_SEC);
     fflush(stdout);
     adj_lst_uint64_free(&a);
     graph_uint64_free(&g);
@@ -367,7 +366,7 @@ void add_edge_test_helper(void (*build_fn)(adj_lst_uint64_t *,
   for (int i = pow_two_start; i < pow_two_end; i++){
     n = pow_two_uint64(i);
     complete_graph_init(&g_blt, n);
-    graph_uint64_base_init(&g_bld, n);
+    graph_uint64_base_init(&g_bld, n, 0);
     adj_lst_uint64_init(&a_blt, &g_blt);
     adj_lst_uint64_init(&a_bld, &g_bld);
     build_fn(&a_blt, &g_blt);

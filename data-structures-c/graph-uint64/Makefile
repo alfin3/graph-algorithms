@@ -16,7 +16,8 @@ graph-uint64-main.o        : graph-uint64.h             \
 graph-uint64.o             : graph-uint64.h             \
                              $(STACK_DIR)stack-uint64.h \
                              $(UTILS_DIR)utilities-ds.h
-$(STACK_DIR)stack-uint64.o : $(STACK_DIR)stack-uint64.h
+$(STACK_DIR)stack-uint64.o : $(STACK_DIR)stack-uint64.h \
+                             $(UTILS_DIR)utilities-ds.h
 $(UTILS_DIR)utilities-ds.o : $(UTILS_DIR)utilities-ds.h
 
 .PHONY : clean clean-all

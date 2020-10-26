@@ -25,11 +25,12 @@ static void *wt_ptr(graph_uint64_t *g, uint64_t i);
 
 /**
    Initializes a graph with n vertices and no edges.
+   wt_size: 0 if no edge weights, > 0 otherwise
 */
-void graph_uint64_base_init(graph_uint64_t *g, uint64_t n){
+void graph_uint64_base_init(graph_uint64_t *g, uint64_t n, int wt_size){
   g->num_vts = n;
   g->num_es = 0;
-  g->wt_size = 0;
+  g->wt_size = wt_size;
   g->u = NULL;
   g->v = NULL;
   g->wts = NULL;
@@ -57,15 +58,15 @@ void adj_lst_uint64_init(adj_lst_uint64_t *a, graph_uint64_t *g){
   a->num_vts = g->num_vts;
   a->num_es = 0; 
   a->wt_size = g->wt_size;
-  if (g->num_vts == 0){
+  if (a->num_vts == 0){
     //no vertices
     a->vts = NULL;
   }else{
     a->vts = malloc(a->num_vts * sizeof(stack_uint64_t *));
     assert(a->vts != NULL);
   }
-  if (g->wts == NULL){
-    //no weights
+  if (a->num_vts == 0 || a->wt_size == 0){
+    //no vertices or weights
     a->wts = NULL;
   }else{
     a->wts = malloc(a->num_vts * sizeof(stack_uint64_t *));
@@ -74,7 +75,7 @@ void adj_lst_uint64_init(adj_lst_uint64_t *a, graph_uint64_t *g){
   //initialize stacks pointed from vts and wts arrays
   for (uint64_t i = 0; i < a->num_vts; i++){
     adj_lst_uint64_init_helper(&(a->vts[i]), sizeof(uint64_t));
-    if (a->wts != NULL){
+    if (a->wt_size > 0){
       adj_lst_uint64_init_helper(&(a->wts[i]), a->wt_size);
     }
   }
@@ -96,7 +97,7 @@ void adj_lst_uint64_free(adj_lst_uint64_t *a){
     stack_uint64_free(a->vts[i]);
     free(a->vts[i]);
     a->vts[i] = NULL;
-    if (a->wts != NULL){
+    if (a->wt_size > 0){
       stack_uint64_free(a->wts[i]);
       free(a->wts[i]);
       a->wts[i] = NULL;
@@ -112,14 +113,14 @@ void adj_lst_uint64_free(adj_lst_uint64_t *a){
    Builds the adjacency list of a directed graph.
 */
 void adj_lst_uint64_dir_build(adj_lst_uint64_t *a, graph_uint64_t *g){
-  uint64_t u_ix;
+  uint64_t u;
   for (uint64_t i = 0; i < g->num_es; i++){
     //at least one edge
-    u_ix = *(u_ptr(g, i));
-    stack_uint64_push(a->vts[u_ix], v_ptr(g, i));
+    u = *(u_ptr(g, i));
+    stack_uint64_push(a->vts[u], v_ptr(g, i));
     a->num_es++;
-    if (a->wts != NULL){
-      stack_uint64_push(a->wts[u_ix], wt_ptr(g, i));
+    if (a->wt_size > 0){
+      stack_uint64_push(a->wts[u], wt_ptr(g, i));
     }
   }
 }
@@ -128,18 +129,17 @@ void adj_lst_uint64_dir_build(adj_lst_uint64_t *a, graph_uint64_t *g){
    Builds the adjacency list of an undirected graph.
 */
 void adj_lst_uint64_undir_build(adj_lst_uint64_t *a, graph_uint64_t *g){
-  uint64_t u_ix;
-  uint64_t v_ix;
+  uint64_t u, v;
   for (uint64_t i = 0; i < g->num_es; i++){
     //at least one edge
-    u_ix = *(u_ptr(g, i));
-    v_ix = *(v_ptr(g, i));
-    stack_uint64_push(a->vts[u_ix], v_ptr(g, i));
-    stack_uint64_push(a->vts[v_ix], u_ptr(g, i));
+    u = *(u_ptr(g, i));
+    v = *(v_ptr(g, i));
+    stack_uint64_push(a->vts[u], v_ptr(g, i));
+    stack_uint64_push(a->vts[v], u_ptr(g, i));
     a->num_es += 2;
-    if (a->wts != NULL){
-      stack_uint64_push(a->wts[u_ix], wt_ptr(g, i));
-      stack_uint64_push(a->wts[v_ix], wt_ptr(g, i));
+    if (a->wt_size > 0){
+      stack_uint64_push(a->wts[u], wt_ptr(g, i));
+      stack_uint64_push(a->wts[v], wt_ptr(g, i));
     }
   }
 }
@@ -187,7 +187,7 @@ void adj_lst_uint64_rand_dir(adj_lst_uint64_t *a,
 			     uint32_t num,
 			     uint32_t denom){
   graph_uint64_t g;
-  graph_uint64_base_init(&g, n);
+  graph_uint64_base_init(&g, n, 0);
   adj_lst_uint64_init(a, &g);
   if (n < 1){return;}
   for (uint64_t i = 0; i < n - 1; i++){
@@ -209,7 +209,7 @@ void adj_lst_uint64_rand_undir(adj_lst_uint64_t *a,
 			       uint32_t num,
 			       uint32_t denom){
   graph_uint64_t g;
-  graph_uint64_base_init(&g, n);
+  graph_uint64_base_init(&g, n, 0);
   adj_lst_uint64_init(a, &g);
   if (n < 1){return;}
   for (uint64_t i = 0; i < n - 1; i++){
