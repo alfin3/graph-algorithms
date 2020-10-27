@@ -30,7 +30,7 @@ void first_vfive_graph_init(graph_uint64_t *g){
   uint64_t u[] = {0, 0, 0, 1};
   uint64_t v[] = {1, 2, 3, 3};
   uint64_t num_vts = 5;
-  graph_uint64_base_init(g, num_vts);
+  graph_uint64_base_init(g, num_vts, 0);
   g->num_es = 4;
   g->u = malloc(g->num_es * sizeof(uint64_t));
   assert(g->u != NULL);
@@ -49,7 +49,7 @@ void second_vfive_graph_init(graph_uint64_t *g){
   uint64_t u[] = {0, 1, 2, 3};
   uint64_t v[] = {1, 2, 3, 4};
   uint64_t num_vts = 5;
-  graph_uint64_base_init(g, num_vts);
+  graph_uint64_base_init(g, num_vts, 0);
   g->num_es = 4;
   g->u = malloc(g->num_es * sizeof(uint64_t));
   assert(g->u != NULL);
@@ -156,11 +156,13 @@ static void vfive_graph_test_helper(graph_uint64_t *g,
 						     graph_uint64_t *),
 				    int *result){
   adj_lst_uint64_t a;
-  uint64_t *dist, *prev;
+  uint64_t *dist = NULL, *prev = NULL;;
   adj_lst_uint64_init(&a, g);
   build_fn(&a, g);
   dist = malloc(a.num_vts * sizeof(uint64_t));
+  assert(dist != NULL);
   prev = malloc(a.num_vts * sizeof(uint64_t));
+  assert(prev != NULL);
   for (uint64_t i = 0; i < a.num_vts; i++){
     bfs_uint64(&a, i, dist, prev);
     *result *= cmp_uint64_arrs(dist, ret_dist[i], a.num_vts);
@@ -169,6 +171,8 @@ static void vfive_graph_test_helper(graph_uint64_t *g,
   adj_lst_uint64_free(&a);
   free(dist);
   free(prev);
+  dist = NULL;
+  prev = NULL;
 }
 
 /**  
@@ -184,7 +188,7 @@ void run_max_edges_graph_test(){
   int pow_two_end = 15;
   int result = 1;
   uint64_t n, start;
-  uint64_t *dist, *prev;
+  uint64_t *dist = NULL, *prev = NULL;
   uint32_t num = 1;
   uint32_t denom = 1;
   printf("Run a bfs_uint64 test on graphs with n vertices, where "
@@ -194,7 +198,9 @@ void run_max_edges_graph_test(){
   for (int i = pow_two_start; i <  pow_two_end; i++){
     n = pow_two_uint64(i); // 0 < n
     dist = malloc(n * sizeof(uint64_t));
+    assert(dist != NULL);
     prev = malloc(n * sizeof(uint64_t));
+    assert(prev != NULL);
     adj_lst_uint64_rand_dir(&a, n, num, denom); //num/denom = 1
     start = (uint64_t)random_range_uint32((uint32_t)(n - 1));
     bfs_uint64(&a, start, dist, prev);
@@ -209,6 +215,8 @@ void run_max_edges_graph_test(){
     adj_lst_uint64_free(&a);
     free(dist);
     free(prev);
+    dist = NULL;
+    prev = NULL;
   }
   print_test_result(result);
 }
@@ -226,7 +234,7 @@ void run_no_edges_graph_test(){
   int pow_two_end = 15;
   int result = 1;
   uint64_t n, start;
-  uint64_t *dist, *prev;
+  uint64_t *dist = NULL, *prev = NULL;
   uint32_t num = 0;
   uint32_t denom = 1;
   printf("Run a bfs_uint64 test on graphs with n vertices, where "
@@ -236,7 +244,9 @@ void run_no_edges_graph_test(){
   for (int i = pow_two_start; i <  pow_two_end; i++){
     n = pow_two_uint64(i); // 0 < n
     dist = malloc(n * sizeof(uint64_t));
+    assert(dist != NULL);
     prev = malloc(n * sizeof(uint64_t));
+    assert(prev != NULL);
     adj_lst_uint64_rand_dir(&a, n, num, denom); //num/denom = 0
     start = (uint64_t)random_range_uint32((uint32_t)(n - 1));
     bfs_uint64(&a, start, dist, prev);
@@ -251,6 +261,8 @@ void run_no_edges_graph_test(){
     adj_lst_uint64_free(&a);
     free(dist);
     free(prev);
+    dist = NULL;
+    prev = NULL;
   }
   print_test_result(result);
 }
@@ -269,7 +281,7 @@ void run_random_dir_graph_test(){
   int num_nums = 5;
   int ave_iter = 10;
   uint64_t n, start;
-  uint64_t *dist, *prev;
+  uint64_t *dist = NULL, *prev = NULL;
   uint32_t nums[] = {4, 3, 2, 1, 0};
   uint32_t denom = 4;
   clock_t t;
@@ -283,7 +295,9 @@ void run_random_dir_graph_test(){
     for (int i = pow_two_start; i <  pow_two_end; i++){
       n = pow_two_uint64(i); // 0 < n
       dist = malloc(n * sizeof(uint64_t));
+      assert(dist != NULL);
       prev = malloc(n * sizeof(uint64_t));
+      assert(prev != NULL);
       adj_lst_uint64_rand_dir(&a, n, nums[num_ix], denom);
       t = clock();
       for (int i = 0; i < ave_iter; i++){
@@ -293,12 +307,14 @@ void run_random_dir_graph_test(){
       t = clock() - t;
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f, "
 	     "average runtime: %.6f seconds\n",
-	     n, (float)nums[num_ix] / denom * (n * (n - 1)),
+	     n, (float)nums[num_ix] / denom * n * (n - 1),
 	     (float)t / (ave_iter * CLOCKS_PER_SEC));
       fflush(stdout);
       adj_lst_uint64_free(&a);
       free(dist);
       free(prev);
+      dist = NULL;
+      prev = NULL;
     }
   }
 }
