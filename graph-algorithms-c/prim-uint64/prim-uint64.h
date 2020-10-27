@@ -7,7 +7,7 @@
    If there are vertices outside the connected component of start, an mst of 
    the connected component of start is computed.
     
-   The number of vertices is bounded by 2^32 - 2, as in heap-uint32. 
+   The positive number of vertices is bounded by 2^32 - 2, as in heap-uint32.
    Edge weights are of any basic type (e.g. char, int, double).
 */
 

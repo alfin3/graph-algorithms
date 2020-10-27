@@ -20,19 +20,18 @@
 static const uint64_t nr = 0xffffffffffffffff; //not reached
 
 /** 
-    Graph with uint64_t weights.
+    Graphs with uint64_t weights.
 */
 
 /**
-   Initializes an instance of a graph with uint64_t weights.
+   Initialize graphs with uint64_t weights.
 */
 void graph_uint64_wts_init(graph_uint64_t *g){
   uint64_t u[] = {0, 0, 0, 1};
   uint64_t v[] = {1, 2, 3, 3};
   uint64_t wts[] = {4, 3, 2, 1};
-  g->num_vts = 5;
+  graph_uint64_base_init(g, 5, sizeof(uint64_t));
   g->num_es = 4;
-  g->wt_size = sizeof(uint64_t);
   g->u = malloc(g->num_es * sizeof(uint64_t));
   assert(g->u != NULL);
   g->v = malloc(g->num_es * sizeof(uint64_t));
@@ -44,6 +43,10 @@ void graph_uint64_wts_init(graph_uint64_t *g){
     g->v[i] = v[i];
     *((uint64_t *)g->wts + i) = wts[i];
   }
+}
+
+void graph_uint64_wts_no_edges_init(graph_uint64_t *g){
+  graph_uint64_base_init(g, 5, sizeof(uint64_t));
 }
 
 /**
@@ -70,10 +73,12 @@ void print_adj_lst(adj_lst_uint64_t *a,
     printf("\t%lu : ", i);
     print_uint64_elts(a->vts[i]);
   }
-  printf("\tweights: \n");
-  for (uint64_t i = 0; i < a->num_vts; i++){
-    printf("\t%lu : ", i);
-    print_wts_fn(a->wts[i]);
+  if (print_wts_fn != NULL){
+    printf("\tweights: \n");
+    for (uint64_t i = 0; i < a->num_vts; i++){
+      printf("\t%lu : ", i);
+      print_wts_fn(a->wts[i]);
+    }
   }
   printf("\n");
 }
@@ -97,7 +102,7 @@ void print_double_arr(double *arr, uint64_t n){
 }
 
 /**
-   Run a test example of a graph with uint64_t weights.
+   Run a test on graphs with uint64_t weights.
 */
 void init_uint64_fn(void *wt){
   *(uint64_t *)wt = 0;
@@ -109,7 +114,9 @@ int cmp_uint64_fn(void *wt_a, void *wt_b){
 
 void run_uint64_prim(adj_lst_uint64_t *a){
   uint64_t *dist = malloc(a->num_vts * sizeof(uint64_t));
+  assert(dist != NULL);
   uint64_t *prev = malloc(a->num_vts * sizeof(uint64_t));
+  assert(prev != NULL);
   for (uint64_t i = 0; i < a->num_vts; i++){
     prim_uint64(a, i, dist, prev, init_uint64_fn, cmp_uint64_fn);
     printf("mst edge weights and previous vertices with %lu as start \n", i);
@@ -126,8 +133,18 @@ void run_uint64_prim(adj_lst_uint64_t *a){
 void run_uint64_graph_test(){
   graph_uint64_t g;
   adj_lst_uint64_t a;
+  //graph with edges
   graph_uint64_wts_init(&g);
   printf("Running undirected uint64_t graph test... \n\n");
+  adj_lst_uint64_init(&a, &g);
+  adj_lst_uint64_undir_build(&a, &g);
+  print_adj_lst(&a, print_uint64_elts);
+  run_uint64_prim(&a);
+  adj_lst_uint64_free(&a);
+  graph_uint64_free(&g);
+  //graph with no edges
+  graph_uint64_wts_no_edges_init(&g);
+  printf("Running undirected uint64_t graph with no edges test... \n\n");
   adj_lst_uint64_init(&a, &g);
   adj_lst_uint64_undir_build(&a, &g);
   print_adj_lst(&a, print_uint64_elts);
@@ -137,19 +154,18 @@ void run_uint64_graph_test(){
 }
 
 /**
-    Graph with double weights.
+    Graphs with double weights.
 */
 
 /**
-   Initializes an instance of a graph with double weights.
+   Initialize graphs with double weights.
 */
-void double_graph_init(graph_uint64_t *g){
+void graph_double_wts_init(graph_uint64_t *g){
   uint64_t u[] = {0, 0, 0, 1};
   uint64_t v[] = {1, 2, 3, 3};
   double wts[] = {4.0, 3.0, 2.0, 1.0};
-  g->num_vts = 5;
+  graph_uint64_base_init(g, 5, sizeof(double));
   g->num_es = 4;
-  g->wt_size = sizeof(double);
   g->u = malloc(g->num_es * sizeof(uint64_t));
   assert(g->u != NULL);
   g->v = malloc(g->num_es * sizeof(uint64_t));
@@ -163,8 +179,12 @@ void double_graph_init(graph_uint64_t *g){
   }
 }
 
+void graph_double_wts_no_edges_init(graph_uint64_t *g){
+  graph_uint64_base_init(g, 5, sizeof(double));
+}
+
 /**
-   Run a test example of a graph with double weights.
+   Run a test on graphs with double weights.
 */
 void init_double_fn(void *wt){
   *(double *)wt = 0.0;
@@ -184,7 +204,9 @@ int cmp_double_fn(void *wt_a, void *wt_b){
 
 void run_double_prim(adj_lst_uint64_t *a){
   double *dist = malloc(a->num_vts * sizeof(double));
+  assert(dist != NULL);
   uint64_t *prev = malloc(a->num_vts * sizeof(uint64_t));
+  assert(prev != NULL);
   for (uint64_t i = 0; i < a->num_vts; i++){
     prim_uint64(a, i, dist, prev, init_double_fn, cmp_double_fn);
     printf("mst edge weights and previous vertices with %lu as start \n", i);
@@ -201,7 +223,8 @@ void run_double_prim(adj_lst_uint64_t *a){
 void run_double_graph_test(){
   graph_uint64_t g;
   adj_lst_uint64_t a;
-  double_graph_init(&g);
+  //graph with edges
+  graph_double_wts_init(&g);
   printf("Running undirected double graph test... \n\n");
   adj_lst_uint64_init(&a, &g);
   adj_lst_uint64_undir_build(&a, &g);
@@ -209,7 +232,17 @@ void run_double_graph_test(){
   run_double_prim(&a);
   adj_lst_uint64_free(&a);
   graph_uint64_free(&g);
+  //graph with no edges
+  graph_double_wts_no_edges_init(&g);
+  printf("Running undirected double graph with no edges test... \n\n");
+  adj_lst_uint64_init(&a, &g);
+  adj_lst_uint64_undir_build(&a, &g);
+  print_adj_lst(&a, print_double_elts);
+  run_double_prim(&a);
+  adj_lst_uint64_free(&a);
+  graph_uint64_free(&g);
 }
+
 int main(){
   run_uint64_graph_test();
   run_double_graph_test();

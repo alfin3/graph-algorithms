@@ -7,9 +7,10 @@
    If there are vertices outside the connected component of start, an mst of 
    the connected component of start is computed.
     
-   The number of vertices is bounded by 2^32 - 2, as in heap-uint32. 
+   The positive number of vertices is bounded by 2^32 - 2, as in heap-uint32.
    Edge weights are of any basic type (e.g. char, int, double).
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -41,7 +42,7 @@ void prim_uint64(adj_lst_uint64_t *a,
 		 uint64_t *prev,
 		 void (*init_wt_fn)(void *),
 		 int (*cmp_wt_fn)(void *, void *)){
-  assert(a->num_vts < l_num_vts);
+  assert(a->num_vts > 0 && a->num_vts < l_num_vts);
   heap_uint32_t h;
   int vt_size = sizeof(uint64_t);
   int wt_size = a->wt_size;
