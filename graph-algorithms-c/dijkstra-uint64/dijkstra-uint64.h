@@ -4,7 +4,7 @@
    Declarations of accessible functions for running Dijkstra's algorithm on 
    a graph with generic non-negative weights.
 
-   The number of vertices is bounded by 2^32 - 2, as in heap-uint32. 
+   The number of vertices is > 0 and bounded by 2^32 - 2, as in heap-uint32.
    Edge weights are of any basic type (e.g. char, int, double).
 */
 

@@ -4,7 +4,7 @@
    Functions for running Dijkstra's algorithm on a graph with generic 
    non-negative weights.
     
-   The number of vertices is bounded by 2^32 - 2, as in heap-uint32. 
+   The number of vertices is > 0 and bounded by 2^32 - 2, as in heap-uint32.
    Edge weights are of any basic type (e.g. char, int, double).
 */
 
@@ -40,7 +40,7 @@ void dijkstra_uint64(adj_lst_uint64_t *a,
 		     void (*init_wt_fn)(void *),
 		     void (*add_wt_fn)(void *, void *, void *),
 		     int (*cmp_wt_fn)(void *, void *)){
-  assert(a->num_vts < l_num_vts);
+  assert(a->num_vts > 0 && a->num_vts < l_num_vts);
   heap_uint32_t h;
   int vt_size = sizeof(uint64_t);
   int wt_size = a->wt_size;
