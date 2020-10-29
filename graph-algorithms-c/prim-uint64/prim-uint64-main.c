@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include <time.h>
 #include "prim-uint64.h"
 #include "graph-uint64.h"
 #include "stack-uint64.h"
@@ -109,7 +110,15 @@ void init_uint64_fn(void *wt){
 }
   
 int cmp_uint64_fn(void *wt_a, void *wt_b){
-  return *(uint64_t *)wt_a - *(uint64_t *)wt_b;
+  uint64_t wt_a_val = *(uint64_t *)wt_a;
+  uint64_t wt_b_val  = *(uint64_t *)wt_b;
+  if (wt_a_val > wt_b_val){
+    return 1;
+  }else if (wt_a_val < wt_b_val){
+    return -1;
+  }else{
+    return 0;
+  }
 }
 
 void run_uint64_prim(adj_lst_uint64_t *a){
@@ -243,7 +252,161 @@ void run_double_graph_test(){
   graph_uint64_free(&g);
 }
 
+/** 
+    Construct adjacency lists of random undirected graphs with random 
+    weights.
+*/
+
+void add_undir_uint64_edge(adj_lst_uint64_t *a,
+			   uint64_t u,
+			   uint64_t v,
+			   uint32_t num,
+			   uint32_t denom,
+			   uint64_t wt_l,
+			   uint64_t wt_h){
+  uint64_t rand_val;
+  uint64_t prev_num_es = a->num_es;
+  adj_lst_uint64_add_undir_edge(a, u, v, num, denom);
+  if (prev_num_es < a->num_es){
+    rand_val = wt_l + random_range_uint64(wt_h - wt_l);
+    stack_uint64_push(a->wts[u], &rand_val);
+    stack_uint64_push(a->wts[v], &rand_val);
+  }
+}
+
+void add_undir_double_edge(adj_lst_uint64_t *a,
+			   uint64_t u,
+			   uint64_t v,
+			   uint32_t num,
+			   uint32_t denom,
+			   uint64_t wt_l,
+			   uint64_t wt_h){
+  double rand_val;
+  uint64_t prev_num_es = a->num_es;
+  adj_lst_uint64_add_undir_edge(a, u, v, num, denom);
+  if (prev_num_es < a->num_es){
+    rand_val = (double)(wt_l + random_range_uint64(wt_h - wt_l));
+    stack_uint64_push(a->wts[u], &rand_val);
+    stack_uint64_push(a->wts[v], &rand_val);
+  }
+}
+
+void adj_lst_rand_undir_wts(adj_lst_uint64_t *a,
+			    uint64_t n,
+			    int wt_size,
+			    uint32_t num,
+			    uint32_t denom,
+			    uint64_t wt_l,
+			    uint64_t wt_h,
+			    void (*add_undir_edge_fn)(adj_lst_uint64_t *,
+						      uint64_t,
+						      uint64_t,
+						      uint32_t,
+						      uint32_t,
+						      uint64_t,
+						      uint64_t)){
+  assert(n > 0 && num <= denom && denom > 0);;
+  graph_uint64_t g;
+  graph_uint64_base_init(&g, n, wt_size);
+  adj_lst_uint64_init(a, &g);
+  for (uint64_t i = 0; i < n - 1; i++){
+    for (uint64_t j = i + 1; j < n; j++){
+      add_undir_edge_fn(a, i, j, num, denom, wt_l, wt_h);
+    }
+  }
+  graph_uint64_free(&g);
+}
+
+/**
+   Test prim_uint64 on random undirected graphs with random uint64_t weights.
+*/
+void run_rand_uint64_wts_graph_test(){
+  adj_lst_uint64_t a;
+  int pow_two_start = 10, pow_two_end = 14;
+  int num_nums = 12;
+  int iter = 10;
+  uint64_t n;
+  uint64_t mst_wt = 0, mst_num_vts = 0;
+  uint64_t rand_start[iter];
+  uint64_t wt_l = 0, wt_h = pow_two_uint64(32) - 1;
+  uint64_t *prim_dist = NULL, *prim_prev = NULL;
+  uint32_t nums[] = {1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1, 0};
+  uint32_t denom = 1024;
+  clock_t t;
+  printf("Run a prim_uint64 test on random undirected graphs with random "
+	 "uint64_t weights;\nan edge is represented by two directed edges "
+	 "with a weight in [%lu, %lu]\n", wt_l, wt_h);
+  fflush(stdout);
+  srandom(time(0));
+  for (int num_ix = 0; num_ix < num_nums; num_ix++){
+    printf("\tP[an edge is in a graph] = %.4f\n",
+	   (float)nums[num_ix] / denom);
+    for (int i = pow_two_start; i <  pow_two_end; i++){
+      n = pow_two_uint64(i); // 0 < n
+      prim_dist = malloc(n * sizeof(uint64_t));
+      assert(prim_dist != NULL);
+      prim_prev = malloc(n * sizeof(uint64_t));
+      assert(prim_prev != NULL);
+      adj_lst_rand_undir_wts(&a,
+			     n,
+			     sizeof(uint64_t),
+			     nums[num_ix],
+			     denom,
+			     wt_l,
+			     wt_h,
+			     add_undir_uint64_edge);
+      for(int j = 0; j < iter; j++){
+	rand_start[j] = random_range_uint64(n - 1);
+      }
+      t = clock();
+      for(int j = 0; j < iter; j++){
+	prim_uint64(&a,
+		    rand_start[j],
+		    prim_dist,
+		    prim_prev,
+		    init_uint64_fn,
+		    cmp_uint64_fn);
+      }
+      t = clock() - t;
+      printf("\t\tvertices: %lu, # of directed edges: %lu\n",
+	     a.num_vts, a.num_es);
+      printf("\t\t\tave runtime:               %.8f seconds\n",
+	     (float)t / iter / CLOCKS_PER_SEC);
+      fflush(stdout);
+      for(uint64_t v = 0; v < a.num_vts; v++){
+	if (prim_prev[v] != nr){
+	  mst_wt += prim_dist[v];
+	  mst_num_vts++; //< 0
+	}
+      }
+      printf("\t\t\tlast mst # edges:          %lu\n", mst_num_vts - 1);
+      if (mst_num_vts > 1){
+	printf("\t\t\tlast mst ave edge weight:  %.1lf\n",
+	       (double)mst_wt / (mst_num_vts - 1));
+      }else{
+	printf("\t\t\tlast mst ave edge weight:  none\n");
+      }	      
+      mst_wt = 0;
+      mst_num_vts  = 0;
+      adj_lst_uint64_free(&a);
+      free(prim_dist);
+      free(prim_prev);
+      prim_dist = NULL;
+      prim_prev = NULL;
+    }
+  }
+}
+
+void print_test_result(int result){
+  if (result){
+    printf("SUCCESS\n");
+  }else{
+    printf("FAILURE\n");
+  }
+}
+
 int main(){
   run_uint64_graph_test();
   run_double_graph_test();
+  run_rand_uint64_wts_graph_test();
 }
