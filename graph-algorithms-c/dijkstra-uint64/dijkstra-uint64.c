@@ -21,9 +21,7 @@
 
 static uint64_t *vt_ptr(void *vts, uint64_t i);
 static void *wt_ptr(void *wts, uint64_t i, int wt_size);
-static int cmp_vt_fn(void *a, void *b){
-  return *(uint64_t *)a - *(uint64_t *)b;
-}
+static int cmp_vt_fn(void *a, void *b);
 
 static const uint64_t nr = 0xffffffffffffffff; //not reached
 static const uint64_t l_num_vts = 0xffffffff;
@@ -108,3 +106,19 @@ static uint64_t *vt_ptr(void *vts, uint64_t i){
 static void *wt_ptr(void *wts, uint64_t i, int wt_size){
   return (void *)((char *)wts + i * wt_size);
 }
+
+/**
+   Compares two vertices.
+*/
+static int cmp_vt_fn(void *a, void *b){
+  uint64_t a_val = *(uint64_t *)a;
+  uint64_t b_val = *(uint64_t *)b;
+  if (a_val > b_val){
+    return 1;
+  }else if (a_val < b_val){
+    return -1;
+  }else{
+    return 0;
+  }
+}
+
