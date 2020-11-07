@@ -25,7 +25,15 @@
 #include "graph-uint64.h"
 #include "ht-mul-uint64.h"
 #include "stack-uint64.h"
+#include "utilities-ds.h"
 
+static void build_next(adj_lst_uint64_t *a,
+		       stack_uint64_t *next_s,
+		       ht_mul_uint64_t *next_ht,
+		       stack_uint64_t *prev_s,
+		       ht_mul_uint64_t *prev_ht,
+		       void (*add_wt_fn)(void *, void *, void *),
+		       int (*cmp_wt_fn)(void *, void *));
 static uint64_t *vt_ptr(void *vts, uint64_t i);
 static void *wt_ptr(void *wts, uint64_t i, int wt_size);
 static void swap(void *a, void *b);;
@@ -50,7 +58,7 @@ void tsp_uint64(adj_lst_uint64_t *a,
   stack_uint64_t *prev_s = &s_a, *next_s = &s_b;
   ht_mul_uint64_t ht_a, ht_b;
   ht_mul_uint64_t *prev_ht = &ht_a, *next_ht = &ht_b;
-  int vt_size = a->vt_size;
+  int vt_size = sizeof(uint64_t);
   int wt_size = a->wt_size;
   int set_size = 2; //including nr
   uint64_t u, v;
@@ -86,7 +94,7 @@ void tsp_uint64(adj_lst_uint64_t *a,
     swap(&next_ht, &prev_ht);
   }
   //compute only the sets that allow returning to start
-  prev_set = realloc((set_size - 1) * vt_size);
+  prev_set = realloc(prev_set, (set_size - 1) * vt_size);
   assert(prev_set != NULL);
   while (prev_s->num_elts > 0){
     stack_uint64_pop(prev_s, prev_set);
@@ -122,7 +130,7 @@ static void build_next(adj_lst_uint64_t *a,
 		       ht_mul_uint64_t *prev_ht,
 		       void (*add_wt_fn)(void *, void *, void *),
 		       int (*cmp_wt_fn)(void *, void *)){
-  int vt_size = a->vt_size;
+  int vt_size = sizeof(uint64_t);
   int wt_size = a->wt_size;
   int set_size = prev_ht->key_size / vt_size;
   uint64_t u, v;
@@ -140,8 +148,8 @@ static void build_next(adj_lst_uint64_t *a,
       v = *vt_ptr(a->vts[u], j);
       if (bsearch(&v, prev_set, set_size, vt_size, cmp_vt_fn) == NULL){
 	next_set[0] = v;
-	memcpy(next_set[1], prev_set, set_size * vt_size);
-	qsort(next_set[1], set_size, vt_size, cmp_vt_fn);
+	memcpy(&next_set[1], prev_set, set_size * vt_size);
+	qsort(&next_set[1], set_size, vt_size, cmp_vt_fn);
 	add_wt_fn(wt_buf,
 		  ht_mul_uint64_search(prev_ht, prev_set),
 		  wt_ptr(a->wts[u]->elts, j, wt_size));
