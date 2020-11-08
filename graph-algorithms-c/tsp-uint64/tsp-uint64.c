@@ -75,7 +75,7 @@ void tsp_uint64(adj_lst_uint64_t *a,
   ht_mul_uint64_init(prev_ht,
 		     set_size * vt_size,
 		     wt_size,
-		     1.0,
+		     0.5,
 		     cmp_key_fn,
 		     rdc_key_fn,
 		     NULL);
@@ -87,7 +87,7 @@ void tsp_uint64(adj_lst_uint64_t *a,
     ht_mul_uint64_init(next_ht,
 		       set_size * vt_size,
 		       wt_size,
-		       1.0,
+		       0.5,
 		       cmp_key_fn, 
 		       rdc_key_fn,
 		       NULL);
@@ -98,7 +98,7 @@ void tsp_uint64(adj_lst_uint64_t *a,
     swap(&next_ht, &prev_ht);
   }
   //compute only the sets that allow returning to start
-  prev_set = realloc(prev_set, (set_size - 1) * vt_size);
+  prev_set = realloc(prev_set, (a->num_vts + 1) * vt_size);
   assert(prev_set != NULL);
   while (prev_s->num_elts > 0){
     stack_uint64_pop(prev_s, prev_set);
