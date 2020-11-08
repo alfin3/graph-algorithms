@@ -6,7 +6,7 @@
    negative weights, in O(2^n n^2) assymptotic runtime, where n is the 
    number of vertices in a tour. 
 
-   A tour without revisiting must exist. In later versions, the non-existence 
+   A tour without revisiting must exist. In later versions, the non-existence
    of a tour will be detected.
    
    The number of vertices is > 0 and bounded by 2^32 - 1. Edge weights 
@@ -29,6 +29,7 @@
 void tsp_uint64(adj_lst_uint64_t *a,
 		uint64_t start,
 		void *dist,
+		void (*init_wt_fn)(void *),
 		void (*add_wt_fn)(void *, void *, void *),
 		int (*cmp_wt_fn)(void *, void *));
 #endif

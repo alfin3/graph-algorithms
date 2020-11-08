@@ -5,7 +5,7 @@
    of TSP with generic weights, including negative weights, in O(2^n n^2)
    assymptotic runtime, where n is the number of vertices in a tour. 
 
-   A tour without revisiting must exist. In later versions, the non-existence 
+   A tour without revisiting must exist. In later versions, the non-existence
    of a tour will be detected.
    
    The number of vertices is > 0 and bounded by 2^32 - 1. Edge weights 
@@ -51,6 +51,7 @@ static const uint64_t l_num_vts = 0xffffffff;
 void tsp_uint64(adj_lst_uint64_t *a,
 		uint64_t start,
 		void *dist,
+		void (*init_wt_fn)(void *),
 		void (*add_wt_fn)(void *, void *, void *),
 		int (*cmp_wt_fn)(void *, void *)){
   assert(a->num_vts < l_num_vts);
@@ -61,13 +62,14 @@ void tsp_uint64(adj_lst_uint64_t *a,
   int vt_size = sizeof(uint64_t);
   int wt_size = a->wt_size;
   int set_size = 2; //including nr
+  bool final_dist_updated = false;
   uint64_t u, v;
   uint64_t *prev_set = malloc(set_size * vt_size);
   assert(prev_set != NULL);
-  void *wt_buf = malloc(wt_size);
-  assert(wt_buf != NULL);
   prev_set[0] = start;
   prev_set[1] = nr;
+  void *wt_buf = malloc(wt_size);
+  assert(wt_buf != NULL);
   stack_uint64_init(prev_s, 1, set_size * vt_size, NULL);
   stack_uint64_push(prev_s, prev_set);
   ht_mul_uint64_init(prev_ht,
@@ -77,6 +79,8 @@ void tsp_uint64(adj_lst_uint64_t *a,
 		     cmp_key_fn,
 		     rdc_key_fn,
 		     NULL);
+  init_wt_fn(dist); //0
+  ht_mul_uint64_insert(prev_ht, prev_set, dist);
   for (uint64_t i = 0; i < a->num_vts - 1; i++){
     set_size++;
     stack_uint64_init(next_s, 1, set_size * vt_size, NULL);
@@ -100,12 +104,15 @@ void tsp_uint64(adj_lst_uint64_t *a,
     stack_uint64_pop(prev_s, prev_set);
     u = prev_set[0];
     for (uint64_t i = 0; i < a->vts[u]->num_elts; i++){
-      v = *vt_ptr(a->vts[u], i);
+      v = *vt_ptr(a->vts[u]->elts, i);
       if (v == start){
 	add_wt_fn(wt_buf,
 		  ht_mul_uint64_search(prev_ht, prev_set),
 		  wt_ptr(a->wts[u]->elts, i, wt_size));
-	if (cmp_wt_fn(dist, wt_buf) > 0){
+	if (!final_dist_updated){
+	  memcpy(dist, wt_buf, wt_size);
+	  final_dist_updated = true;
+	}else if (cmp_wt_fn(dist, wt_buf) > 0){
 	  memcpy(dist, wt_buf, wt_size);
 	}
       }
@@ -145,7 +152,7 @@ static void build_next(adj_lst_uint64_t *a,
     stack_uint64_pop(prev_s, prev_set);
     u = prev_set[0];
     for (uint64_t j = 0; j < a->vts[u]->num_elts; j++){
-      v = *vt_ptr(a->vts[u], j);
+      v = *vt_ptr(a->vts[u]->elts, j);;
       if (bsearch(&v, prev_set, set_size, vt_size, cmp_vt_fn) == NULL){
 	next_set[0] = v;
 	memcpy(&next_set[1], prev_set, set_size * vt_size);
@@ -155,7 +162,7 @@ static void build_next(adj_lst_uint64_t *a,
 		  wt_ptr(a->wts[u]->elts, j, wt_size));
 	next_wt = ht_mul_uint64_search(next_ht, next_set);
 	if (next_wt == NULL){
-	  ht_mul_uint64_insert(next_ht, next_set, next_wt);
+	  ht_mul_uint64_insert(next_ht, next_set, wt_buf);
 	  stack_uint64_push(next_s, next_set);
 	}else if (cmp_wt_fn(next_wt, wt_buf) > 0){
 	  ht_mul_uint64_insert(next_ht, next_set, wt_buf);
@@ -210,6 +217,7 @@ static int cmp_key_fn(void *a, void *b){
     }else if (a_arr[i] < b_arr[i]){
       return -1;
     }
+    i++;
   }
   return 0;
 }

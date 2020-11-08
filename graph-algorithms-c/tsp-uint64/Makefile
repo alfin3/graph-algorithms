@@ -17,7 +17,7 @@ CFLAGS = -I$(DIJKSTRA_DIR) \
          -I$(DLL_DIR)      \
          -I$(STACK_DIR)    \
          -I$(UTILS_DIR)    \
-         -Wall -Wextra -O3
+         -Wall -Wextra -O3 -g
 
 OBJ = tsp-uint64-main.o                \
       tsp-uint64.o                     \
