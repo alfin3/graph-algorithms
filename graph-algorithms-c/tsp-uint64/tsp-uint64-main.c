@@ -272,14 +272,10 @@ void add_dir_uint64_edge(adj_lst_uint64_t *a,
 			 uint64_t wt_h){
   uint64_t rand_val;
   uint64_t prev_num_es = a->num_es;
-  if ((u == a->num_vts - 1 && v == 0) || (v > u && v - u == 1)){
-    return;
-  }else{
-    adj_lst_uint64_add_dir_edge(a, u, v, num, denom);
-    if (prev_num_es < a->num_es){
-      rand_val = wt_l + random_range_uint64(wt_h - wt_l);
-      stack_uint64_push(a->wts[u], &rand_val);
-    }
+  adj_lst_uint64_add_dir_edge(a, u, v, num, denom);
+  if (prev_num_es < a->num_es){
+    rand_val = wt_l + random_range_uint64(wt_h - wt_l);
+    stack_uint64_push(a->wts[u], &rand_val);
   }
 }
 
@@ -292,14 +288,10 @@ void add_dir_double_edge(adj_lst_uint64_t *a,
 			 uint64_t wt_h){
   double rand_val;
   uint64_t prev_num_es = a->num_es;
-  if ((u == a->num_vts - 1 && v == 0) || (v > u && v - u == 1)){
-    return;
-  }else{
-    adj_lst_uint64_add_dir_edge(a, u, v, num, denom);
-    if (prev_num_es < a->num_es){
-      rand_val = (double)(wt_l + random_range_uint64(wt_h - wt_l));
-      stack_uint64_push(a->wts[u], &rand_val);
-    }
+  adj_lst_uint64_add_dir_edge(a, u, v, num, denom);
+  if (prev_num_es < a->num_es){
+    rand_val = (double)(wt_l + random_range_uint64(wt_h - wt_l));
+    stack_uint64_push(a->wts[u], &rand_val);
   }
 }
 
@@ -317,46 +309,37 @@ void adj_lst_rand_dir_wts(adj_lst_uint64_t *a,
 						  uint32_t,
 						  uint64_t,
 						  uint64_t)){
-  assert(n > 1 && num <= denom && denom > 0);
+  assert(n > 0 && num <= denom && denom > 0);
   graph_uint64_t g;
   graph_uint64_base_init(&g, n, wt_size);
-  g.num_es = n;
-  g.u = malloc(g.num_es * sizeof(uint64_t));
-  assert(g.u != NULL);
-  g.v = malloc(g.num_es * sizeof(uint64_t));
-  assert(g.v != NULL);
-  g.wts = malloc(g.num_es * g.wt_size);
-  assert(g.wts != NULL);
-  for (uint64_t i = 0; i < n; i++){
-    g.u[i] = i;
-    if (i < n - 1){
-      g.v[i] = i + 1;
-    }else{
-      g.v[i] = 0;
-    }
-    *((uint64_t *)g.wts + i) = 1;
-  }
   adj_lst_uint64_init(a, &g);
-  adj_lst_uint64_dir_build(a, &g);
   for (uint64_t i = 0; i < n - 1; i++){
     for (uint64_t j = i + 1; j < n; j++){
-      add_dir_edge_fn(a, i, j, num, denom, wt_l, wt_h);
-      add_dir_edge_fn(a, j, i, num, denom, wt_l, wt_h);
+      if (j - i == 1){
+	add_dir_edge_fn(a, i, j, 1, 1, 1, 1);
+	add_dir_edge_fn(a, j, i, num, denom, wt_l, wt_h);
+      }else if (i == 0 && j == n - 1){
+	add_dir_edge_fn(a, i, j, num, denom, wt_l, wt_h);
+	add_dir_edge_fn(a, j, i, 1, 1, 1, 1);
+      }else{
+	add_dir_edge_fn(a, i, j, num, denom, wt_l, wt_h);
+	add_dir_edge_fn(a, j, i, num, denom, wt_l, wt_h);
+      }
     }
   }
   graph_uint64_free(&g);
 }
 
 /**
-   Test tsp_uint64 on random directed graphs with random uint64_t non-tour weights 
-   and a known tour.
+   Test tsp_uint64 on random directed graphs with random uint64_t non-tour 
+   weights and a known tour.
 */
 void run_rand_uint64_wts_graph_test(){
   adj_lst_uint64_t a;
   int pow_two_start = 2, pow_two_end = 5;
   int num_nums = 5;
   uint64_t n;
-  uint64_t wt_l = 1, wt_h = pow_two_uint64(32) - 1;
+  uint64_t wt_l = 2, wt_h = pow_two_uint64(32) - 1;
   uint64_t tsp_dist;
   uint32_t nums[] = {0, 1, 2, 4, 8};
   uint32_t denom = 8;

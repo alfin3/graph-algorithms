@@ -59,8 +59,7 @@ void tsp_uint64(adj_lst_uint64_t *a,
   stack_uint64_t *prev_s = &s_a, *next_s = &s_b;
   ht_mul_uint64_t ht_a, ht_b;
   ht_mul_uint64_t *prev_ht = &ht_a, *next_ht = &ht_b;
-  int vt_size = sizeof(uint64_t);
-  int wt_size = a->wt_size;
+  int vt_size = sizeof(uint64_t), wt_size = a->wt_size;
   int set_size = 2; //including nr
   bool final_dist_updated = false;
   uint64_t u, v;
@@ -75,7 +74,7 @@ void tsp_uint64(adj_lst_uint64_t *a,
   ht_mul_uint64_init(prev_ht,
 		     set_size * vt_size,
 		     wt_size,
-		     0.5,
+		     0.2,
 		     cmp_key_fn,
 		     rdc_key_fn,
 		     NULL);
@@ -87,7 +86,7 @@ void tsp_uint64(adj_lst_uint64_t *a,
     ht_mul_uint64_init(next_ht,
 		       set_size * vt_size,
 		       wt_size,
-		       0.5,
+		       0.2,
 		       cmp_key_fn, 
 		       rdc_key_fn,
 		       NULL);
@@ -210,7 +209,6 @@ static int cmp_key_fn(void *a, void *b){
   uint64_t *a_arr = (uint64_t *)a;
   uint64_t *b_arr = (uint64_t *)b;
   uint64_t i = 0;
-  //slower than memcmp at this time
   while (a_arr[i] != nr){
     if (a_arr[i] > b_arr[i]){
       return 1;
