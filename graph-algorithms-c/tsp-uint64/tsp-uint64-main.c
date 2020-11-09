@@ -126,16 +126,17 @@ int cmp_uint64_fn(void *wt_a, void *wt_b){
 }
 
 void run_uint64_tsp(adj_lst_uint64_t *a){
+  int ret = -1;
   uint64_t *dist = malloc(sizeof(uint64_t));
   assert(dist != NULL);
   for (uint64_t i = 0; i < a->num_vts; i++){
-    tsp_uint64(a,
-	       i,
-	       dist,
-	       init_uint64_fn,
-	       add_uint64_fn,
-	       cmp_uint64_fn);
-    printf("tour length with %lu as start: ", i);
+    ret = tsp_uint64(a,
+		     i,
+		     dist,
+		     init_uint64_fn,
+		     add_uint64_fn,
+		     cmp_uint64_fn);
+    printf("tsp_uint64 ret: %d, tour length with %lu as start: ", ret, i);
     print_uint64_arr(dist, 1);
   }
   printf("\n");
@@ -218,16 +219,17 @@ int cmp_double_fn(void *wt_a, void *wt_b){
 }
 
 void run_double_tsp(adj_lst_uint64_t *a){
+  int ret = -1;
   double *dist = malloc(sizeof(double));
   assert(dist != NULL);
   for (uint64_t i = 0; i < a->num_vts; i++){
-    tsp_uint64(a,
-	       i,
-	       dist,
-	       init_double_fn,
-	       add_double_fn,
-	       cmp_double_fn);
-    printf("tour length with %lu as start: ", i);
+    ret = tsp_uint64(a,
+		     i,
+		     dist,
+		     init_double_fn,
+		     add_double_fn,
+		     cmp_double_fn);
+    printf("tsp_uint64 ret: %d, tour length with %lu as start: ", ret, i);
     print_double_arr(dist, 1);
   }
   printf("\n");
@@ -338,6 +340,7 @@ void run_rand_uint64_wts_graph_test(){
   adj_lst_uint64_t a;
   int pow_two_start = 2, pow_two_end = 5;
   int num_nums = 5;
+  int ret = -1;
   uint64_t n;
   uint64_t wt_l = 2, wt_h = pow_two_uint64(32) - 1;
   uint64_t tsp_dist;
@@ -362,12 +365,12 @@ void run_rand_uint64_wts_graph_test(){
 			   wt_h,
 			   add_dir_uint64_edge);
       t = clock();
-      tsp_uint64(&a,
-		 random_range_uint64(n - 1),
-		 &tsp_dist,
-		 init_uint64_fn,
-		 add_uint64_fn,
-		 cmp_uint64_fn);
+      ret = tsp_uint64(&a,
+		       random_range_uint64(n - 1),
+		       &tsp_dist,
+		       init_uint64_fn,
+		       add_uint64_fn,
+		       cmp_uint64_fn);
       t = clock() - t;
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
 	     a.num_vts, a.num_es);
@@ -375,7 +378,7 @@ void run_rand_uint64_wts_graph_test(){
 	     (float)t / CLOCKS_PER_SEC);
       fflush(stdout);
       printf("\t\t\tcorrectness: ");
-      print_test_result(tsp_dist == n);
+      print_test_result((tsp_dist == n && ret == 0));
       adj_lst_uint64_free(&a);
     }
   }

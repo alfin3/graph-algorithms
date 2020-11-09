@@ -4,9 +4,6 @@
    Functions for running a dynamic programming version of an exact solution 
    of TSP with generic weights, including negative weights, in O(2^n n^2)
    assymptotic runtime, where n is the number of vertices in a tour. 
-
-   A tour without revisiting must exist. In later versions, the non-existence
-   of a tour will be detected.
    
    The number of vertices is > 0 and bounded by 2^32 - 1. Edge weights 
    are of any basic type (e.g. char, int, double).
@@ -45,16 +42,17 @@ static const uint64_t nr = 0xffffffffffffffff; //not reached
 static const uint64_t l_num_vts = 0xffffffff;
 
 /**
-   Determines the shortest tour length from start to start across all 
-   vertices without revisiting.
+   Copies to the block pointed to by dist the shortest tour length from 
+   start to start across all vertices without revisiting, if a tour exists. 
+   Returns 0 if a tour exists, otherwise returns 1.
 */
-void tsp_uint64(adj_lst_uint64_t *a,
-		uint64_t start,
-		void *dist,
-		void (*init_wt_fn)(void *),
-		void (*add_wt_fn)(void *, void *, void *),
-		int (*cmp_wt_fn)(void *, void *)){
-  assert(a->num_vts < l_num_vts);
+int tsp_uint64(adj_lst_uint64_t *a,
+	       uint64_t start,
+	       void *dist,
+	       void (*init_wt_fn)(void *),
+	       void (*add_wt_fn)(void *, void *, void *),
+	       int (*cmp_wt_fn)(void *, void *)){
+  assert(a->num_vts > 0 && a->num_vts < l_num_vts);
   stack_uint64_t s_a, s_b;
   stack_uint64_t *prev_s = &s_a, *next_s = &s_b;
   ht_mul_uint64_t ht_a, ht_b;
@@ -95,8 +93,18 @@ void tsp_uint64(adj_lst_uint64_t *a,
     ht_mul_uint64_free(prev_ht);
     swap(&next_s, &prev_s);
     swap(&next_ht, &prev_ht);
+    if (prev_s->num_elts == 0){
+      //no progress made
+      stack_uint64_free(prev_s);
+      ht_mul_uint64_free(prev_ht);
+      free(prev_set);
+      free(wt_buf);
+      prev_set = NULL;
+      wt_buf = NULL;
+      return 1;
+    }
   }
-  //compute only the sets that allow returning to start
+  //compute the return to start
   prev_set = realloc(prev_set, (a->num_vts + 1) * vt_size);
   assert(prev_set != NULL);
   while (prev_s->num_elts > 0){
@@ -117,10 +125,14 @@ void tsp_uint64(adj_lst_uint64_t *a,
       }
     }
   }
+  stack_uint64_free(prev_s);
+  ht_mul_uint64_free(prev_ht);
   free(prev_set);
   free(wt_buf);
   prev_set = NULL;
   wt_buf = NULL;
+  if (!final_dist_updated && a->num_vts > 1){return 1;}
+  return 0;
 }
 
 /**
@@ -234,7 +246,6 @@ static void rdc_key_fn(void *t, void *s){
   }
   *(uint64_t *)t = r;
 }
-
 
 /**
    Compares two uint64_t vertices.
