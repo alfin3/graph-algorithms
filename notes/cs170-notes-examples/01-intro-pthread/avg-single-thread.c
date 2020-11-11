@@ -51,7 +51,7 @@ int main(int argc, char **argv){
   assert(a != NULL);
   thread_result_t *r;
   int count, err;
-  double *data = a->data; //for freeing data block in main
+  double *data = NULL; //for freeing data block in main
   if (argc <= 1){
     fprintf(stderr,"must specify count\n %s", usage);
     exit(1);
@@ -62,11 +62,12 @@ int main(int argc, char **argv){
     exit(1);
   }
   a->size = count;
-  a->data = malloc(a->size * sizeof(double));
-  assert(a->data != NULL);
+  data = malloc(a->size * sizeof(double));
+  assert(data != NULL);
   for (int i = 0; i < count; i++){
-    a->data[i] = RAND();
+    data[i] = RAND();
   }
+  a->data = data;
   printf("main thread forking sum thread\n");
   fflush(stdout);
   //a block allocated in main, freed in sum
