@@ -9,7 +9,13 @@
    num_threads: the number of threads
 
    Adoted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
-   with added modifications and refactoring for readability.
+   with added modifications and refactoring.
+
+   A thread argument block is deallocated where it was previously allocated,
+   consistent with the practice of deallocating where resources
+   are allocated. However, the parent thread deallocates a result block 
+   previously allocated by a child thread, consistent with 
+   https://man7.org/linux/man-pages/man3/pthread_create.3.html
 */
 
 #include <unistd.h>
@@ -25,7 +31,7 @@ typedef struct{
   int id;
   int size;
   int start;
-  double *data; //pointer to parent data
+  double *data; //parent data
 } thread_arg_t;
 
 typedef struct{
@@ -47,21 +53,20 @@ void *sum_thread(void *arg){
   }
   printf("sum thread %d done, returning\n", a->id);
   fflush(stdout);
-  free(a); //data block still allocated
   return r;
 }
 
 int main(int argc, char **argv){
-  pthread_t *thread_ids = NULL;
-  thread_arg_t *a = NULL;
+  pthread_t *tid_arr = NULL;
+  thread_arg_t *a_arr = NULL;
   thread_result_t *r = NULL;
   int count, num_thread_elts, num_threads, err;
   int start = 0;
   double sum = 0.0;
   double *data = NULL; //parent data block
-  //input checking
+  //input checking and initialization
   if (argc <= 2){
-    fprintf(stderr,"must specify count and number of threads\n %s",
+    fprintf(stderr,"must specify count and number of threads\n%s\n",
 	    usage);
     exit(1);
   }
@@ -78,55 +83,59 @@ int main(int argc, char **argv){
   if (num_threads > count){
     num_threads = count;
   }
-  //create thread ids and data
-  thread_ids = malloc(sizeof(pthread_t) * num_threads);
-  assert(thread_ids != NULL);
   if ((count / num_threads) * num_threads < count){
     num_thread_elts = count / num_threads + 1;
   }else{
     num_thread_elts = count / num_threads;
   }
+  tid_arr = malloc(sizeof(pthread_t) * num_threads);
+  assert(tid_arr != NULL);
+  a_arr = malloc(sizeof(thread_arg_t) * num_threads);
+  assert(a_arr != NULL);
   data = malloc(count * sizeof(double));
   assert(data != NULL);
   for (int i = 0; i < count; i++){
     data[i] = RAND();
   }
-  //create threads each with a separately allocated argument struct
+  //spawn threads
   printf("main thread about to create %d sum threads\n", num_threads);
   fflush(stdout);
-  for (int t = 0; t < num_threads; t++){
-    a = malloc(sizeof(thread_arg_t));
-    assert(a != NULL);
-    a->id = t;
+  for (int i = 0; i < num_threads; i++){
+    a_arr[i].id = i;
     if (start + num_thread_elts > count){
-      a->size = count - start;
+      a_arr[i].size = count - start;
     }else{
-      a->size = num_thread_elts;
+      a_arr[i].size = num_thread_elts;
     }
-    a->start = start;
-    a->data = data;
-    printf("main thread creating sum thread %d\n", t);
+    a_arr[i].start = start;
+    a_arr[i].data = data;
+    printf("main thread creating sum thread %d\n", i);
     fflush(stdout);
-    err = pthread_create(&(thread_ids[t]), NULL, sum_thread, (void *)a);
+    err = pthread_create(&tid_arr[i], NULL, sum_thread, &a_arr[i]);
     assert(err == 0);
-    printf("main thread has created sum thread %d\n", t);
+    printf("main thread has created sum thread %d\n", i);
     fflush(stdout);
     start += num_thread_elts;
   }
-  //join main with each sum thread one at a time
-  for (int t = 0; t < num_threads; t++){
-    printf("main thread about to join with sum thread %d\n", t);
+  //join with main
+  for (int i = 0; i < num_threads; i++){
+    printf("main thread about to join with sum thread %d\n", i);
     fflush(stdout);
-    err = pthread_join(thread_ids[t],(void **)&r);
-    printf("main thread joined with sum thread %d\n", t);
+    err = pthread_join(tid_arr[i],(void **)&r);
+    printf("main thread joined with sum thread %d\n", i);
     fflush(stdout);
     sum += r->sum;
-    free(r);
+    free(r); //result block allocated by a child thread
+    r = NULL;
   }
   printf("the average over %d random numbers on (0,1) is %f\n",
 	 count, sum / (double)count);
-  free(thread_ids);
+  free(tid_arr);
+  free(a_arr);
   free(data);
+  tid_arr = NULL;
+  a_arr = NULL;
+  data = NULL;
   return 0;
 }
 

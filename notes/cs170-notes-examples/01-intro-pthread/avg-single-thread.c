@@ -8,7 +8,13 @@
    count: the number of random values to generate
 
    Adoted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
-   with added modifications and refactoring for readability.
+   with added modifications and refactoring.
+
+   A thread argument block is deallocated where it was previously allocated,
+   consistent with the practice of deallocating where resources
+   are allocated. However, the parent thread deallocates a result block 
+   previously allocated by a child thread, consistent with 
+   https://man7.org/linux/man-pages/man3/pthread_create.3.html
 */
 
 #include <unistd.h>
@@ -22,7 +28,7 @@ const char *usage = "usage: avg-single-thread count";
 
 typedef struct{
   int size;
-  double *data;
+  double *data; //parent data
 } thread_arg_t;
 
 typedef struct{
@@ -39,21 +45,20 @@ void *sum_thread(void *arg){
   for (int i = 0; i < a->size; i++){
     r->sum += a->data[i];
   }
-  free(a); //data block still allocated
   printf("sum thread done, returning\n");
   fflush(stdout);
   return r;
 }
 
 int main(int argc, char **argv){
-  pthread_t thread_id;
-  thread_arg_t *a = malloc(sizeof(thread_arg_t));
-  assert(a != NULL);
-  thread_result_t *r;
+  pthread_t tid;
+  thread_arg_t *a = NULL;
+  thread_result_t *r = NULL;
   int count, err;
-  double *data = NULL; //for freeing data block in main
+  double *data = NULL; //parent data block
+  //input checking and initialization
   if (argc <= 1){
-    fprintf(stderr,"must specify count\n %s", usage);
+    fprintf(stderr,"must specify count\n%s\n", usage);
     exit(1);
   }
   count = atoi(argv[1]);
@@ -61,30 +66,36 @@ int main(int argc, char **argv){
     fprintf(stderr,"invalid count %d\n", count);
     exit(1);
   }
-  a->size = count;
-  data = malloc(a->size * sizeof(double));
+  a = malloc(sizeof(thread_arg_t));
+  assert(a != NULL);
+  data = malloc(count * sizeof(double));
   assert(data != NULL);
   for (int i = 0; i < count; i++){
     data[i] = RAND();
   }
-  a->data = data;
+  //spawn a thread
   printf("main thread forking sum thread\n");
   fflush(stdout);
-  //a block allocated in main, freed in sum
-  //r block allocated in sum, freed in main
-  err = pthread_create(&thread_id, NULL, sum_thread, (void *)a);
+  a->size = count;
+  a->data = data;
+  err = pthread_create(&tid, NULL, sum_thread, a);
   assert(err == 0);
   printf("main thread running after sum thread created, "
 	 "about to call join\n");
   fflush(stdout);
+  //join with main
   //thread return value is copied to the pointer block pointed to by &r
-  err = pthread_join(thread_id, (void **)&r); //main waits until joined
+  err = pthread_join(tid, (void **)&r); //main waits until joining
   assert(err == 0);
   printf("main thread joined with sum thread\n");
   fflush(stdout);
   printf("the average over %d random numbers on (0,1) is %f\n",
 	 count, r->sum / (double)count);
-  free(r);
+  free(r); //result block allocated by a child thread
+  free(a);
   free(data);
+  r = NULL;
+  a = NULL;
+  data = NULL;
   return 0;
 }
