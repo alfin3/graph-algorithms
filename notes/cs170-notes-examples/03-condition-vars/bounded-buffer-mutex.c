@@ -4,14 +4,16 @@
    A program for running a bounded buffer (producer-consumer) example
    by using only mutex locks.
 
-   usage example: bounded-buffer-mutex -c 2 -t 2 -q 1 -s 1 -o 100000
+   usage example on a 4-core machine:
+   bounded-buffer-mutex -c 1 -t 1 -q 10000 -s 100 -o 1000000
+   bounded-buffer-mutex -c 3 -t 1 -q 10000 -s 100 -o 1000000
 
    Adoted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and fixes:
    -  queue and market initialization and freeing functions are changed 
-      to require a pointer to a preallocated block. 
-   -  the continue statements in entry functions are substituted with if-else
-   -  the names of some varialbes were changed and a few minor bugs were fixed
+      to require a pointer to a preallocated block, 
+   -  the continue statements in entry functions are substituted with if-else,
+   -  the names of some variables are changed and a few minor bugs are fixed.
 */
 
 #include <unistd.h>
@@ -36,8 +38,8 @@ char *usage =
   "-V <verbose on>\n";
 
 /**
-   Structs and initialization and freeing of order, order queue, 
-   and market structures.
+   Order, order queue, and market structs, as well as initialization and 
+   freeing functions.
 */
 
 typedef struct{
@@ -123,9 +125,8 @@ typedef struct{
 } trader_arg_t;
 
 /**
-   Produces and queues order_count orders, as a client (producer). 
-   After queuing an order, waits until the order if fulfilled before 
-   queuing the next order. 
+   Produces and queues order_count orders. After queuing an order, waits 
+   until the order is fulfilled before queuing the next order. 
 */
 void *client_thread(void *arg){
   client_arg_t *ca = arg;
@@ -174,8 +175,7 @@ void *client_thread(void *arg){
 }
 
 /**
-   Dequeues and consumes orders as a trader (consumer), as long as 
-   there are orders.
+   Dequeues and consumes orders, as long as there are orders.
 */
 void *trader_thread(void *arg){
   trader_arg_t *ta = arg;
@@ -300,12 +300,12 @@ int main(int argc, char **argv){
     err = pthread_create(&trader_ids[i], NULL, trader_thread, &ta[i]);
     assert(err == 0);
   }
-  //join client threads after all orders were placed
+  //join client threads after each client's orders are fulfilled
   for (int i = 0; i < num_client_threads; i++){
     err = pthread_join(client_ids[i], NULL);
     assert(err == 0);
   }
-  //each trader thread can exit and join after all orders are fulfilled
+  //each trader thread can exit and join
   done = true;
   for (int i = 0; i < num_trader_threads; i++){
     err = pthread_join(trader_ids[i], NULL);
