@@ -11,14 +11,12 @@
 
    Adopted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and fixes:
-   -  queue and market initialization and freeing functions are changed 
-      to require a pointer to a preallocated block, 
-   -  the continue statements in entry functions are substituted 
-      with if-else,
-   -  the names of some variables are changed and a few minor bugs 
-      are fixed; the names of condition variables are changed to negated 
+   -  queue and market initialization and freeing functions are changed
+      to require a pointer to a preallocated block,
+   -  the names of some variables are changed and a few minor bugs
+      are fixed; the names of condition variables are changed to negated
       names to reflect their use,
-   -  the outer polling while loop is removed due to the use of 
+   -  the outer polling while loop is removed due to the use of
       pthread_cond_wait within a dedicated predicate re-testing while loop.
 */
 
@@ -52,7 +50,7 @@ typedef struct{
   int stock_id;
   int stock_quantity;
   int action; //0 to buy or 1 to sell
-  bool fulfilled;	
+  bool fulfilled;
 } order_t;
 
 typedef struct{
@@ -77,6 +75,8 @@ void order_q_init(order_q_t *q, int size){
   q->orders = calloc(q->size, sizeof(order_t *));
   assert(q->orders != NULL);
   pthread_mutex_init(&q->lock, NULL);
+  pthread_cond_init(&q->not_full, NULL);
+  pthread_cond_init(&q->not_empty, NULL);
 }
 
 void order_q_free(order_q_t *q){
