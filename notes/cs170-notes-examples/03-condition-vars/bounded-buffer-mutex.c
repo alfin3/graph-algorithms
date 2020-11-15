@@ -219,7 +219,7 @@ void *trader_thread(void *arg){
 	     order->stock_id,
 	     order->stock_quantity);
     }
-    //inform the reading client thread
+    //atomic memory write on x86; inform the reading client thread
     order->fulfilled = true;
   }
   return NULL;
@@ -305,7 +305,7 @@ int main(int argc, char **argv){
     err = pthread_join(client_ids[i], NULL);
     assert(err == 0);
   }
-  //each trader thread can exit and join
+  //atomic memory write on x86; each trader thread can exit and join
   done = true;
   for (int i = 0; i < num_trader_threads; i++){
     err = pthread_join(trader_ids[i], NULL);
