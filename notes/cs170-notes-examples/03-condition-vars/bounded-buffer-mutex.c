@@ -8,7 +8,7 @@
    bounded-buffer-mutex -c 1 -t 1 -q 10000 -s 100 -o 1000000
    bounded-buffer-mutex -c 3 -t 1 -q 10000 -s 100 -o 1000000
 
-   Adoted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
+   Adopted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and fixes:
    -  queue and market initialization and freeing functions are changed 
       to require a pointer to a preallocated block, 
@@ -211,7 +211,6 @@ void *trader_thread(void *arg){
     }else{
       ta->m->stocks[order->stock_id] += order->stock_quantity;
     }
-    pthread_mutex_unlock(&(ta->m->lock));
     if (ta->verbose){
       now = ctimer();
       printf("%10.0f trader: %d ", now, ta->id);
@@ -219,6 +218,7 @@ void *trader_thread(void *arg){
 	     order->stock_id,
 	     order->stock_quantity);
     }
+    pthread_mutex_unlock(&(ta->m->lock));
     //atomic memory write on x86; inform the reading client thread
     order->fulfilled = true;
   }
