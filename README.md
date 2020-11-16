@@ -1,4 +1,4 @@
-# ds-algs-c
+# data-structures-algorithms-c
 
 Implementations of generic data structures and graph algorithms in straight C, providing i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) measurements of performance bottlenecks for concurrency-based augmentation.
 
