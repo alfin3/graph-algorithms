@@ -54,13 +54,13 @@ typedef struct{
   int head;
   int tail;
   order_t **orders;
-  pthread_mutex_t lock; //all producers and consumers
+  pthread_mutex_t lock; //producers and consumers
 } order_q_t;
 
 typedef struct market{
   int num_stocks;
   int *stocks;
-  pthread_mutex_t lock; //all consumers
+  pthread_mutex_t lock; //consumers
 } market_t;
 
 void order_q_init(order_q_t *q, int size){
@@ -149,7 +149,7 @@ void *client_thread(void *arg){
       next = (ca->q->head + 1) % ca->q->size;
       if (next == ca->q->tail){
 	//queue is full; unlock mutex to dequeue another order
-	pthread_mutex_unlock(&(ca->q->lock));
+	pthread_mutex_unlock(&ca->q->lock);
       }else{
 	//queue is not full; queue the order and unlock mutex
 	if (ca->verbose){
@@ -162,7 +162,7 @@ void *client_thread(void *arg){
 	}
 	ca->q->orders[next] = order;
 	ca->q->head = next;
-	pthread_mutex_unlock(&(ca->q->lock));
+	pthread_mutex_unlock(&ca->q->lock);
 	queued = true;
 	//wait; no race condition wrt order->fulfilled (producer is reading)
 	while(!order->fulfilled);
@@ -186,10 +186,10 @@ void *trader_thread(void *arg){
   while (true){
     dequeued = false;
     while (!dequeued){
-      pthread_mutex_lock(&(ta->q->lock));
+      pthread_mutex_lock(&ta->q->lock);
       if (ta->q->head == ta->q->tail){
 	//empty queue; unlock mutex to let new orders in, if any
-	pthread_mutex_unlock(&(ta->q->lock));
+	pthread_mutex_unlock(&ta->q->lock);
 	if (*ta->done){
 	  pthread_exit(NULL);
 	}
@@ -197,12 +197,12 @@ void *trader_thread(void *arg){
 	next = (ta->q->tail + 1) % ta->q->size;
 	order = ta->q->orders[next];
 	ta->q->tail = next;
-	pthread_mutex_unlock(&(ta->q->lock));
+	pthread_mutex_unlock(&ta->q->lock);
 	dequeued = true;
       }
     }
     //process a dequeued order
-    pthread_mutex_lock(&(ta->m->lock));
+    pthread_mutex_lock(&ta->m->lock);
     if (order->action == 0){
       ta->m->stocks[order->stock_id] -= order->stock_quantity;
       if (ta->m->stocks[order->stock_id] < 0){
@@ -218,7 +218,7 @@ void *trader_thread(void *arg){
 	     order->stock_id,
 	     order->stock_quantity);
     }
-    pthread_mutex_unlock(&(ta->m->lock));
+    pthread_mutex_unlock(&ta->m->lock);
     //atomic memory write on x86; inform the reading client thread
     order->fulfilled = true;
   }

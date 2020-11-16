@@ -16,8 +16,8 @@
    -  the names of some variables are changed and a few minor bugs
       are fixed; the names of condition variables are changed to negated
       names to reflect their use,
-   -  the outer polling while loop is removed due to the use of
-      pthread_cond_wait within a dedicated predicate re-testing while loop.
+   -  the outer polling while loops are removed due to the use of
+      pthread_cond_wait within dedicated predicate re-testing while loops.
 */
 
 #include <unistd.h>
@@ -154,7 +154,7 @@ void *client_thread(void *arg){
     next = (ca->q->head + 1) % ca->q->size;
     while (next == ca->q->tail){
       //queue is full; wait for not_full signal and retest
-      pthread_cond_wait(&(ca->q->not_full), &(ca->q->lock));
+      pthread_cond_wait(&ca->q->not_full, &ca->q->lock);
       next = (ca->q->head + 1) % ca->q->size;
     }
     //queue is not full; queue the order, signal not_empty, unlock mutex
@@ -168,8 +168,8 @@ void *client_thread(void *arg){
     }
     ca->q->orders[next] = order;
     ca->q->head = next;
-    pthread_cond_signal(&(ca->q->not_empty));
-    pthread_mutex_unlock(&(ca->q->lock));
+    pthread_cond_signal(&ca->q->not_empty);
+    pthread_mutex_unlock(&ca->q->lock);
     //wait; no race condition wrt order->fulfilled (producer is reading)
     while(!order->fulfilled);
     free(order);
@@ -191,20 +191,20 @@ void *trader_thread(void *arg){
     while (ta->q->head == ta->q->tail){
       //empty queue; exit if done, else wait for not_empty signal and retest
       if (*ta->done){
-	pthread_cond_signal(&(ta->q->not_empty));
-	pthread_mutex_unlock(&(ta->q->lock));
+	pthread_cond_signal(&ta->q->not_empty);
+	pthread_mutex_unlock(&ta->q->lock);
 	pthread_exit(NULL);
       }
-      pthread_cond_wait(&(ta->q->not_empty), &(ta->q->lock));
+      pthread_cond_wait(&ta->q->not_empty, &ta->q->lock);
     }
     //queue is not empty; dequeue, signal not_full, unlock mutex
     next = (ta->q->tail + 1) % ta->q->size;
     order = ta->q->orders[next];
     ta->q->tail = next;
-    pthread_cond_signal(&(ta->q->not_full));
-    pthread_mutex_unlock(&(ta->q->lock));
+    pthread_cond_signal(&ta->q->not_full);
+    pthread_mutex_unlock(&ta->q->lock);
     //process a dequeued order
-    pthread_mutex_lock(&(ta->m->lock));
+    pthread_mutex_lock(&ta->m->lock);
     if (order->action == 0){
       ta->m->stocks[order->stock_id] -= order->stock_quantity;
       if (ta->m->stocks[order->stock_id] < 0){
@@ -220,7 +220,7 @@ void *trader_thread(void *arg){
 	     order->stock_id,
 	     order->stock_quantity);
     }
-    pthread_mutex_unlock(&(ta->m->lock));
+    pthread_mutex_unlock(&ta->m->lock);
     //atomic memory write on x86; inform the reading client thread
     order->fulfilled = true;
   }
