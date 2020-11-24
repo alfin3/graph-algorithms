@@ -28,7 +28,7 @@
 #define RAND() (drand48())
 #define ARGS "c:t:o:q:s:V"
 
-char *usage =
+const char *usage =
   "bounded-buffer-mutex "
   "-c clients "
   "-t traders "
@@ -125,15 +125,14 @@ typedef struct{
 } trader_arg_t;
 
 /**
-   Produces and queues order_count orders. After queuing an order, waits 
-   until the order is fulfilled before queuing the next order. 
+   Produces and queues order_count orders. After queuing an order, loops 
+   (waits) until the order is fulfilled before queuing the next order.
 */
 void *client_thread(void *arg){
   client_arg_t *ca = arg;
   order_t *order = NULL;
   int next;
   bool queued;
-  double now;
   for (int i = 0; i < ca->order_count; i++){
     //produce an order
     order = malloc(sizeof(order_t));
@@ -153,8 +152,7 @@ void *client_thread(void *arg){
       }else{
 	//queue is not full; queue the order and unlock mutex
 	if (ca->verbose){
-	  now = ctimer();
-	  printf("%10.0f client %d: ", now, ca->id);
+	  printf("%10.6f client %d: ", ctimer(), ca->id);
 	  printf("queued stock %d, for %d, %s\n",
 		 order->stock_id,
 		 order->stock_quantity,
@@ -182,7 +180,6 @@ void *trader_thread(void *arg){
   order_t *order = NULL;
   int next;
   bool dequeued;
-  double now;
   while (true){
     dequeued = false;
     while (!dequeued){
@@ -212,8 +209,7 @@ void *trader_thread(void *arg){
       ta->m->stocks[order->stock_id] += order->stock_quantity;
     }
     if (ta->verbose){
-      now = ctimer();
-      printf("%10.0f trader: %d ", now, ta->id);
+      printf("%10.6f trader: %d ", ctimer(), ta->id);
       printf("fulfilled stock %d for %d\n",
 	     order->stock_id,
 	     order->stock_quantity);
@@ -239,7 +235,7 @@ int main(int argc, char **argv){
   bool verbose = false;
   bool done = false;
   double start, end;
-  while ((c = getopt(argc, argv, ARGS)) != EOF){
+  while ((c = getopt(argc, argv, ARGS)) != -1){
     switch (c){
     case 'c':
       num_client_threads = atoi(optarg);

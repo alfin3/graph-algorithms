@@ -32,8 +32,8 @@
 #define RAND() (drand48())
 #define ARGS "c:t:o:q:s:V"
 
-char *usage =
-  "bounded-buffer-mutex "
+const char *usage =
+  "bounded-buffer-cond-vars-1 "
   "-c clients "
   "-t traders "
   "-o orders "
@@ -59,8 +59,8 @@ typedef struct{
   int tail;
   order_t **orders;
   pthread_mutex_t lock; //producers and consumers
-  pthread_cond_t not_full;
-  pthread_cond_t not_empty;
+  pthread_cond_t cond_not_full;
+  pthread_cond_t cond_not_empty;
 } order_q_t;
 
 typedef struct market{
@@ -75,8 +75,8 @@ void order_q_init(order_q_t *q, int size){
   q->orders = calloc(q->size, sizeof(order_t *));
   assert(q->orders != NULL);
   pthread_mutex_init(&q->lock, NULL);
-  pthread_cond_init(&q->not_full, NULL);
-  pthread_cond_init(&q->not_empty, NULL);
+  pthread_cond_init(&q->cond_not_full, NULL);
+  pthread_cond_init(&q->cond_not_empty, NULL);
 }
 
 void order_q_free(order_q_t *q){
@@ -140,7 +140,6 @@ void *client_thread(void *arg){
   client_arg_t *ca = arg;
   order_t *order = NULL;
   int next;
-  double now;
   for (int i = 0; i < ca->order_count; i++){
     //produce an order
     order = malloc(sizeof(order_t));
@@ -153,14 +152,13 @@ void *client_thread(void *arg){
     pthread_mutex_lock(&ca->q->lock);
     next = (ca->q->head + 1) % ca->q->size;
     while (next == ca->q->tail){
-      //queue is full; wait for not_full signal and retest
-      pthread_cond_wait(&ca->q->not_full, &ca->q->lock);
+      //queue is full; wait for cond_not_full and retest
+      pthread_cond_wait(&ca->q->cond_not_full, &ca->q->lock);
       next = (ca->q->head + 1) % ca->q->size;
     }
-    //queue is not full; queue the order, signal not_empty, unlock mutex
+    //queue is not full; queue the order, signal cond_not_empty, unlock mutex
     if (ca->verbose){
-      now = ctimer();
-      printf("%10.0f client %d: ", now, ca->id);
+      printf("%10.6f client %d: ", ctimer(), ca->id);
       printf("queued stock %d, for %d, %s\n",
 	     order->stock_id,
 	     order->stock_quantity,
@@ -168,7 +166,7 @@ void *client_thread(void *arg){
     }
     ca->q->orders[next] = order;
     ca->q->head = next;
-    pthread_cond_signal(&ca->q->not_empty);
+    pthread_cond_signal(&ca->q->cond_not_empty);
     pthread_mutex_unlock(&ca->q->lock);
     //wait; no race condition wrt order->fulfilled (producer is reading)
     while(!order->fulfilled);
@@ -185,23 +183,22 @@ void *trader_thread(void *arg){
   trader_arg_t *ta = arg;
   order_t *order = NULL;
   int next;
-  double now;
   while (true){
     pthread_mutex_lock(&(ta->q->lock));
     while (ta->q->head == ta->q->tail){
-      //empty queue; exit if done, else wait for not_empty signal and retest
+      //empty queue; exit if done, else wait for cond_not_empty and retest
       if (*ta->done){
-	pthread_cond_signal(&ta->q->not_empty);
+	pthread_cond_signal(&ta->q->cond_not_empty);
 	pthread_mutex_unlock(&ta->q->lock);
 	pthread_exit(NULL);
       }
-      pthread_cond_wait(&ta->q->not_empty, &ta->q->lock);
+      pthread_cond_wait(&ta->q->cond_not_empty, &ta->q->lock);
     }
-    //queue is not empty; dequeue, signal not_full, unlock mutex
+    //queue is not empty; dequeue, signal cond_not_full, unlock mutex
     next = (ta->q->tail + 1) % ta->q->size;
     order = ta->q->orders[next];
     ta->q->tail = next;
-    pthread_cond_signal(&ta->q->not_full);
+    pthread_cond_signal(&ta->q->cond_not_full);
     pthread_mutex_unlock(&ta->q->lock);
     //process a dequeued order
     pthread_mutex_lock(&ta->m->lock);
@@ -214,8 +211,7 @@ void *trader_thread(void *arg){
       ta->m->stocks[order->stock_id] += order->stock_quantity;
     }
     if (ta->verbose){
-      now = ctimer();
-      printf("%10.0f trader: %d ", now, ta->id);
+      printf("%10.6f trader: %d ", ctimer(), ta->id);
       printf("fulfilled stock %d for %d\n",
 	     order->stock_id,
 	     order->stock_quantity);
@@ -241,7 +237,7 @@ int main(int argc, char **argv){
   bool verbose = false;
   bool done = false;
   double start, end;
-  while ((c = getopt(argc, argv, ARGS)) != EOF){
+  while ((c = getopt(argc, argv, ARGS)) != -1){
     switch (c){
     case 'c':
       num_client_threads = atoi(optarg);
@@ -310,7 +306,7 @@ int main(int argc, char **argv){
   //set done to true, then signal waiting trader threads to stop waiting
   pthread_mutex_lock(&q->lock);
   done = true;
-  pthread_cond_signal(&q->not_empty);
+  pthread_cond_signal(&q->cond_not_empty);
   pthread_mutex_unlock(&q->lock);
   for (int i = 0; i < num_trader_threads; i++){
     err = pthread_join(trader_ids[i], NULL);
