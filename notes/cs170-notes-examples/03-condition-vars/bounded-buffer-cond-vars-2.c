@@ -2,12 +2,17 @@
    bounded-buffer-cond-vars-2.c
 
    A program for running a bounded buffer (producer-consumer) example
-   by using mutex locks and more condition variables, the latter to 
+   by using mutex locks and an additional condition variable, the latter to 
    further reduce while loop polling in time slices.
 
    usage example on a 4-core machine:
    bounded-buffer-cond-vars-2 -c 1 -t 1 -q 10000 -s 100 -o 1000000
    bounded-buffer-cond-vars-2 -c 3 -t 1 -q 10000 -s 100 -o 1000000
+
+   comparison example demonstrating the effect of cond_fulfilled:
+   bounded-buffer-cond-mutex -c 20 -t 1 -q 1 -s 1 -o 10000
+   bounded-buffer-cond-vars-1 -c 20 -t 1 -q 1 -s 1 -o 10000
+   bounded-buffer-cond-vars-2 -c 20 -t 1 -q 1 -s 1 -o 10000
 
    Adopted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and fixes:
