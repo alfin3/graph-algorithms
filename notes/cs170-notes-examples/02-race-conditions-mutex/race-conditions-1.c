@@ -2,7 +2,7 @@
    race-condition-1.c
 
    usage: race-condition-1 nthreads stringsize iterations
-   count: the number of random values to generate
+   usage example: race-conditions-1 4 100 5
 
    Adopted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and fixes.
@@ -24,7 +24,7 @@ typedef struct{
 const char *usage =
   "usage: race-condition-1 nthreads stringsize iterations\n";
 
-void *infloop(void *arg){
+void *thread_fn(void *arg){
   thread_arg_t *a = arg;
   for (int i = 0; i < a->iterations; i++){
     for (int j = 0; j < a->size - 1; j++){
@@ -41,7 +41,6 @@ int main(int argc, char **argv)
 {
   pthread_t *tid_arr = NULL;
   thread_arg_t *a_arr = NULL;
-  void *r = NULL; //pointer buffer for pthread_join
   int num_threads, size, iterations, err;
   char *s = NULL;
   if (argc != 4){
@@ -64,12 +63,12 @@ int main(int argc, char **argv)
     a_arr[i].size = size;
     a_arr[i].iterations = iterations;
     a_arr[i].s = s; //pointer to the parent string
-    err = pthread_create(&tid_arr[i], NULL, infloop, &a_arr[i]);
+    err = pthread_create(&tid_arr[i], NULL, thread_fn, &a_arr[i]);
     assert(err == 0);
   }
   //join with main
   for (int i = 0; i < num_threads; i++){
-    err = pthread_join(tid_arr[i], &r);
+    err = pthread_join(tid_arr[i], NULL);
     assert(err == 0);
   }
   free(tid_arr);

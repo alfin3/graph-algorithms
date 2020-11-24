@@ -2,7 +2,7 @@
    race-condition-mutex.c
 
    usage: race-condition-mutex nthreads stringsize iterations
-   count: the number of random values to generate
+   usage example: race-conditions-mutex 4 100 5
 
    Adopted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and fixes.
@@ -25,7 +25,7 @@ typedef struct{
 const char *usage =
   "usage: race-condition-mutex nthreads stringsize iterations\n";
 
-void *infloop(void *arg){
+void *thread_fn(void *arg){
   thread_arg_t *a = arg;
   for (int i = 0; i < a->iterations; i++){
     pthread_mutex_lock(a->lock);
@@ -47,7 +47,6 @@ int main(int argc, char **argv){
   pthread_t *tid_arr = NULL;
   pthread_attr_t *attr_arr = NULL;
   thread_arg_t *a_arr = NULL;
-  void *r = NULL; //pointer buffer for pthread_join
   int num_threads, size, iterations, err;
   char *s = NULL;
   if (argc != 4){
@@ -76,12 +75,12 @@ int main(int argc, char **argv){
     a_arr[i].s = s; //pointer to the parent string
     pthread_attr_init(&attr_arr[i]);
     pthread_attr_setscope(&attr_arr[i], PTHREAD_SCOPE_SYSTEM);
-    err = pthread_create(&tid_arr[i], &attr_arr[i], infloop, &a_arr[i]);
+    err = pthread_create(&tid_arr[i], &attr_arr[i], thread_fn, &a_arr[i]);
     assert(err == 0);
   }
   //join with main
   for (int i = 0; i < num_threads; i++){
-    err = pthread_join(tid_arr[i], &r);
+    err = pthread_join(tid_arr[i], NULL);
     assert(err == 0);
   }
   free(tid_arr);
