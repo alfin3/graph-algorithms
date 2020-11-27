@@ -22,9 +22,9 @@ typedef struct{
 
 
 /**
-   Create with default attributes and join threads with error checking.
+   Create a thread with default attributes and error checking. Join a thread
+   with error checking.
 */
-
 void thread_create_perror(pthread_t *thread,
 			  void *(*start_routine)(void *),
 			  void *arg);

@@ -15,7 +15,8 @@
 #include "utilities-concur.h"
 
 /**
-   Create with default attributes and join threads with error checking.
+   Create a thread with default attributes and error checking. Join a thread
+   with error checking.
 */
 
 void thread_create_perror(pthread_t *thread,
@@ -111,8 +112,9 @@ void sema_wait_perror(sema_t *sema){
   sema->value--;
   if (sema->value < 0){
     do{
+      //guaranteed queuing of a thread to avoid thread starvation
       cond_wait_perror(&sema->cond, &sema->mutex);
-    }while (sema->num_wakeups < 1);
+    }while (sema->num_wakeups < 1); //accounting due to spurious wakeups 
     sema->num_wakeups--;
   }
   mutex_unlock_perror(&sema->mutex);
