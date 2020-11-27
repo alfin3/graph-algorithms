@@ -1,5 +1,5 @@
 CC = gcc
-UTILS_DIR = ../utilities-concur/
+UTILS_DIR = ../../../utilities-c/utilities-concur/
 CFLAGS = -I$(UTILS_DIR) -Wall -Wextra
 OBJ = ctimer.o                        \
       $(UTILS_DIR)utilities-concur.o 

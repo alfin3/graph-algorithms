@@ -2,22 +2,25 @@
    utilities-concur.c
 
    Utility functions for concurrency, including
-   1) pthread synchronization functions with wrapped error checking, and
-   2) implementation of semaphore operations based on 1),
+   1) pthread functions with wrapped error checking, and
+   2) an implementation of semaphore operations based on 1),
    adopted from The Little Book of Semaphores by Allen B. Downey
    (Version 2.2.1) with modifications.
 */
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include "utilities-concur.h"
 
-/** Create and join threads */
+/**
+   Create with default attributes and join threads with error checking.
+*/
 
-void pthread_create_perror(pthread_t *thread,
-			   void *(*start_routine)(void *),
-			   void *arg){
+void thread_create_perror(pthread_t *thread,
+			  void *(*start_routine)(void *),
+			  void *arg){
   int err = pthread_create(thread, NULL , start_routine, arg);
   if (err != 0){
     perror("pthread_create failed");
@@ -25,7 +28,7 @@ void pthread_create_perror(pthread_t *thread,
   }
 }
 
-void pthread_join_perror(pthread_t thread, void **retval){
+void thread_join_perror(pthread_t thread, void **retval){
   int err = pthread_join(thread, retval);
   if (err != 0){
     perror("pthread_join failed");
@@ -33,9 +36,12 @@ void pthread_join_perror(pthread_t thread, void **retval){
   }
 }
 
-/** Initialize, lock, and unlock mutex */
+/**
+   Initialize with default attributes, lock, and unlock a mutex with
+   error checking.
+*/
 
-void pthread_mutex_init_perror(pthread_mutex_t *mutex){
+void mutex_init_perror(pthread_mutex_t *mutex){
   int err = pthread_mutex_init(mutex, NULL);
   if (err != 0){
     perror("pthread_mutex_init failed");
@@ -43,7 +49,7 @@ void pthread_mutex_init_perror(pthread_mutex_t *mutex){
   }
 }
 
-void pthread_mutex_lock_perror(pthread_mutex_t *mutex){
+void mutex_lock_perror(pthread_mutex_t *mutex){
   int err = pthread_mutex_lock(mutex);
   if (err != 0){
     perror("pthread_mutex_lock failed");
@@ -51,7 +57,7 @@ void pthread_mutex_lock_perror(pthread_mutex_t *mutex){
   }
 }
 
-void pthread_mutex_unlock_perror(pthread_mutex_t *mutex){
+void mutex_unlock_perror(pthread_mutex_t *mutex){
   int err = pthread_mutex_unlock(mutex);
   if (err != 0){
     perror("pthread_mutex_unlock failed");
@@ -59,9 +65,12 @@ void pthread_mutex_unlock_perror(pthread_mutex_t *mutex){
   }
 }
 
-/** Initialize, wait on, and signal a condition */
+/**
+   Initialize a condition variable with default attributes and
+   error checking. Wait on and signal a condition with error checking.
+*/
 
-void pthread_cond_init_perror(pthread_cond_t *cond){
+void cond_init_perror(pthread_cond_t *cond){
   int err = pthread_cond_init(cond, NULL);
   if (err != 0){
     perror("pthread_cond_init failed");
@@ -69,7 +78,7 @@ void pthread_cond_init_perror(pthread_cond_t *cond){
   }
 }
 
-void pthread_cond_wait_perror(pthread_cond_t *cond, pthread_mutex_t *mutex){
+void cond_wait_perror(pthread_cond_t *cond, pthread_mutex_t *mutex){
   int err = pthread_cond_wait(cond, mutex);
   if (err != 0){
     perror("pthread_cond_wait failed");
@@ -77,7 +86,7 @@ void pthread_cond_wait_perror(pthread_cond_t *cond, pthread_mutex_t *mutex){
   }
 }
 
-void pthread_cond_signal_perror(pthread_cond_t *cond){
+void cond_signal_perror(pthread_cond_t *cond){
   int err = pthread_cond_signal(cond);
   if (err != 0){
     perror("pthread_cond_signal failed");
@@ -85,33 +94,36 @@ void pthread_cond_signal_perror(pthread_cond_t *cond){
   }
 }
 
-/** Initialize, wait on, and signal a semaphore */
+/**
+   Initialize, wait on, and signal a semaphore with error checking
+   provided by mutex and condition variable operations.
+*/
 
-void sema_init_perror(semaphore_t *sema, int value){
+void sema_init_perror(sema_t *sema, int value){
   sema->value = value;
   sema->num_wakeups = 0;
-  pthread_mutex_init_perror(&sema->mutex);
-  pthread_cond_init_perror(&sema->cond);
+  mutex_init_perror(&sema->mutex);
+  cond_init_perror(&sema->cond);
 }
 
-void sema_wait_perror(semaphore_t *sema){
-  pthread_mutex_lock_perror(&sema->mutex);
+void sema_wait_perror(sema_t *sema){
+  mutex_lock_perror(&sema->mutex);
   sema->value--;
   if (sema->value < 0){
     do{
-      pthread_cond_wait_perror(&sema->cond, &sema->mutex);
+      cond_wait_perror(&sema->cond, &sema->mutex);
     }while (sema->num_wakeups < 1);
     sema->num_wakeups--;
   }
-  pthread_mutex_unlock_perror(&sema->mutex);
+  mutex_unlock_perror(&sema->mutex);
 }
 
-void sema_signal_perror(semaphore_t *sema){
-  pthread_mutex_lock_perror(&sema->mutex);
+void sema_signal_perror(sema_t *sema){
+  mutex_lock_perror(&sema->mutex);
   sema->value++;
   if (sema->value <= 0){
     sema->num_wakeups++;
-    pthread_cond_signal_perror(&sema->cond);
+    cond_signal_perror(&sema->cond);
   }
-  pthread_mutex_unlock_perror(&sema->mutex);
+  mutex_unlock_perror(&sema->mutex);
 }

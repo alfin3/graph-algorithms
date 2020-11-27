@@ -75,9 +75,9 @@ void order_q_init(order_q_t *q, int size){
   q->size = size + 1; //+ 1 due to fifo queue implementation
   q->orders = calloc(q->size, sizeof(order_t *));
   assert(q->orders != NULL);
-  pthread_mutex_init_perror(&q->lock);
-  pthread_cond_init_perror(&q->cond_not_full);
-  pthread_cond_init_perror(&q->cond_not_empty);
+  mutex_init_perror(&q->lock);
+  cond_init_perror(&q->cond_not_full);
+  cond_init_perror(&q->cond_not_empty);
 }
 
 void order_q_free(order_q_t *q){
@@ -97,7 +97,7 @@ void market_init(market_t *m, int num_stocks, int stock_quantity){
   for (int i = 0; i < num_stocks; i++){
     m->stocks[i] = stock_quantity;
   }
-  pthread_mutex_init_perror(&m->lock);
+  mutex_init_perror(&m->lock);
 }
 
 void market_free(market_t *m){
@@ -150,11 +150,11 @@ void *client_thread(void *arg){
     order->action = (RAND() > 0.5) ? 0 : 1;
     order->fulfilled = false;
     //queue the order
-    pthread_mutex_lock_perror(&ca->q->lock);
+    mutex_lock_perror(&ca->q->lock);
     next = (ca->q->head + 1) % ca->q->size;
     while (next == ca->q->tail){
       //queue is full; wait for cond_not_full and retest
-      pthread_cond_wait_perror(&ca->q->cond_not_full, &ca->q->lock);
+      cond_wait_perror(&ca->q->cond_not_full, &ca->q->lock);
       next = (ca->q->head + 1) % ca->q->size;
     }
     //queue is not full; queue the order, signal cond_not_empty, unlock mutex
@@ -167,8 +167,8 @@ void *client_thread(void *arg){
     }
     ca->q->orders[next] = order;
     ca->q->head = next;
-    pthread_cond_signal_perror(&ca->q->cond_not_empty);
-    pthread_mutex_unlock_perror(&ca->q->lock);
+    cond_signal_perror(&ca->q->cond_not_empty);
+    mutex_unlock_perror(&ca->q->lock);
     //wait; no race condition wrt order->fulfilled (producer is reading)
     while(!order->fulfilled);
     free(order);
@@ -185,24 +185,24 @@ void *trader_thread(void *arg){
   order_t *order = NULL;
   int next;
   while (true){
-    pthread_mutex_lock_perror(&ta->q->lock);
+    mutex_lock_perror(&(ta->q->lock));
     while (ta->q->head == ta->q->tail){
       //empty queue; exit if done, else wait for cond_not_empty and retest
       if (*ta->done){
-	pthread_cond_signal_perror(&ta->q->cond_not_empty);
-	pthread_mutex_unlock_perror(&ta->q->lock);
+	cond_signal_perror(&ta->q->cond_not_empty);
+	mutex_unlock_perror(&ta->q->lock);
 	pthread_exit(NULL);
       }
-      pthread_cond_wait_perror(&ta->q->cond_not_empty, &ta->q->lock);
+      cond_wait_perror(&ta->q->cond_not_empty, &ta->q->lock);
     }
     //queue is not empty; dequeue, signal cond_not_full, unlock mutex
     next = (ta->q->tail + 1) % ta->q->size;
     order = ta->q->orders[next];
     ta->q->tail = next;
-    pthread_cond_signal_perror(&ta->q->cond_not_full);
-    pthread_mutex_unlock_perror(&ta->q->lock);
+    cond_signal_perror(&ta->q->cond_not_full);
+    mutex_unlock_perror(&ta->q->lock);
     //process a dequeued order
-    pthread_mutex_lock_perror(&ta->m->lock);
+    mutex_lock_perror(&ta->m->lock);
     if (order->action == 0){
       ta->m->stocks[order->stock_id] -= order->stock_quantity;
       if (ta->m->stocks[order->stock_id] < 0){
@@ -217,7 +217,7 @@ void *trader_thread(void *arg){
 	     order->stock_id,
 	     order->stock_quantity);
     }
-    pthread_mutex_unlock_perror(&ta->m->lock);
+    mutex_unlock_perror(&ta->m->lock);
     //atomic memory write on x86; inform the reading client thread
     order->fulfilled = true;
   }
@@ -287,7 +287,7 @@ int main(int argc, char **argv){
     ca[i].stock_quantity = stock_quantity;
     ca[i].q = q;
     ca[i].verbose = verbose;
-    pthread_create_perror(&client_ids[i], client_thread, &ca[i]);
+    thread_create_perror(&client_ids[i], client_thread, &ca[i]);
   }
   for (int i = 0; i < num_trader_threads; i++){
     ta[i].id = i;
@@ -295,19 +295,19 @@ int main(int argc, char **argv){
     ta[i].m = m;
     ta[i].done = &done;
     ta[i].verbose = verbose;
-    pthread_create_perror(&trader_ids[i], trader_thread, &ta[i]);
+    thread_create_perror(&trader_ids[i], trader_thread, &ta[i]);
   }
   //join client threads after each client's orders are fulfilled
   for (int i = 0; i < num_client_threads; i++){
-    pthread_join_perror(client_ids[i], NULL);
+    thread_join_perror(client_ids[i], NULL);
   }
   //set done to true, then signal waiting trader threads to stop waiting
-  pthread_mutex_lock_perror(&q->lock);
+  mutex_lock_perror(&q->lock);
   done = true;
-  pthread_cond_signal_perror(&q->cond_not_empty);
-  pthread_mutex_unlock_perror(&q->lock);
+  cond_signal_perror(&q->cond_not_empty);
+  mutex_unlock_perror(&q->lock);
   for (int i = 0; i < num_trader_threads; i++){
-    pthread_join_perror(trader_ids[i], NULL);
+    thread_join_perror(trader_ids[i], NULL);
   }
   end = ctimer();
   if (verbose){market_print(m);}
