@@ -36,7 +36,7 @@ void pthread_join_perror(pthread_t thread, void **retval){
 /** Initialize, lock, and unlock mutex */
 
 void pthread_mutex_init_perror(pthread_mutex_t *mutex){
-  int err = pthread_mutex_init(mutex);
+  int err = pthread_mutex_init(mutex, NULL);
   if (err != 0){
     perror("pthread_mutex_init failed");
     exit(EXIT_FAILURE);
