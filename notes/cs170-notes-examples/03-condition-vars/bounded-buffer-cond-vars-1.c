@@ -17,7 +17,9 @@
       are fixed; the names of condition variables are changed to negated
       names to reflect their use,
    -  the outer polling while loops are removed due to the use of
-      pthread_cond_wait within dedicated predicate re-testing while loops.
+      pthread_cond_wait within dedicated predicate re-testing while loops,
+   -  memory allocation and pthread functions are used with wrapped 
+      error checking.
 */
 
 #include <unistd.h>
@@ -28,6 +30,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "ctimer.h"
+#include "utilities-mem.h"
 #include "utilities-concur.h"
 
 #define RAND() (drand48())
@@ -73,8 +76,7 @@ typedef struct market{
 void order_q_init(order_q_t *q, int size){
   memset(q, 0, sizeof(order_q_t)); //head = 0 and tail = 0
   q->size = size + 1; //+ 1 due to fifo queue implementation
-  q->orders = calloc(q->size, sizeof(order_t *));
-  assert(q->orders != NULL);
+  q->orders = calloc_perror(q->size, sizeof(order_t *));
   mutex_init_perror(&q->lock);
   cond_init_perror(&q->cond_not_full);
   cond_init_perror(&q->cond_not_empty);
@@ -92,8 +94,7 @@ void order_q_free(order_q_t *q){
 
 void market_init(market_t *m, int num_stocks, int stock_quantity){
   m->num_stocks = num_stocks;
-  m->stocks = malloc(num_stocks * sizeof(int));
-  assert(m->stocks != NULL);
+  m->stocks = malloc_perror(num_stocks * sizeof(int));
   for (int i = 0; i < num_stocks; i++){
     m->stocks[i] = stock_quantity;
   }
@@ -143,8 +144,7 @@ void *client_thread(void *arg){
   int next;
   for (int i = 0; i < ca->order_count; i++){
     //produce an order
-    order = malloc(sizeof(order_t));
-    assert(order != NULL);
+    order = malloc_perror(sizeof(order_t));
     order->stock_id = (int)(RAND() * (ca->num_stocks - 1));
     order->stock_quantity = (int)(RAND() * ca->stock_quantity);
     order->action = (RAND() > 0.5) ? 0 : 1;
@@ -264,18 +264,12 @@ int main(int argc, char **argv){
       exit(1);
     }
   }
-  ca = malloc(num_client_threads * sizeof(client_arg_t));
-  assert(ca != NULL);
-  ta = malloc(num_trader_threads * sizeof(trader_arg_t));
-  assert(ta != NULL);
-  client_ids = malloc(num_client_threads * sizeof(pthread_t));
-  assert(client_ids != NULL);
-  trader_ids = malloc(num_trader_threads * sizeof(pthread_t));
-  assert(trader_ids != NULL);
-  q = malloc(sizeof(order_q_t));
-  assert(q != NULL);
-  m = malloc(sizeof(market_t));
-  assert(m != NULL);
+  ca = malloc_perror(num_client_threads * sizeof(client_arg_t));
+  ta = malloc_perror(num_trader_threads * sizeof(trader_arg_t));
+  client_ids = malloc_perror(num_client_threads * sizeof(pthread_t));
+  trader_ids = malloc_perror(num_trader_threads * sizeof(pthread_t));
+  q = malloc_perror(sizeof(order_q_t));
+  m = malloc_perror(sizeof(market_t));
   order_q_init(q, queue_size);
   market_init(m, num_stocks, stock_quantity);
   start = ctimer();
