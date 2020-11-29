@@ -1,6 +1,6 @@
 CC = gcc
-UTILS_MEM_DIR = ../../../utilities-c/utilities-mem/
-UTILS_CONCUR_DIR = ../../../utilities-c/utilities-concur/
+UTILS_MEM_DIR = ../../../utilities/utilities-mem/
+UTILS_CONCUR_DIR = ../../../utilities/utilities-concur/
 CFLAGS = -I$(UTILS_MEM_DIR)    \
          -I$(UTILS_CONCUR_DIR) \
          -Wall -Wextra
