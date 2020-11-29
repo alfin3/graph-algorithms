@@ -5,7 +5,7 @@ CFLAGS = -I$(UTILS_MEM_DIR)    \
          -I$(UTILS_CONCUR_DIR) \
          -pthread -Wall -Wextra
 
-EXC = bounded-buffer-mutex       \
+EXE = bounded-buffer-mutex       \
       bounded-buffer-cond-vars-1 \
       bounded-buffer-cond-vars-2
 
@@ -13,7 +13,7 @@ OBJ = ctimer.o                              \
       $(UTILS_MEM_DIR)utilities-mem.o       \
       $(UTILS_CONCUR_DIR)utilities-concur.o
 
-all                                    : $(EXC)
+all                                    : $(EXE)
 bounded-buffer-mutex                   : bounded-buffer-mutex.c $(OBJ)
 bounded-buffer-cond-vars-1             : bounded-buffer-cond-vars-1.c $(OBJ)
 bounded-buffer-cond-vars-2             : bounded-buffer-cond-vars-2.c $(OBJ)
@@ -25,4 +25,4 @@ $(UTILS_CONCUR_DIR)utilities-concur.o  : $(UTILS_CONCUR_DIR)utilities-concur.h
 .PHONY : clean
 
 clean :
-	rm -f $(EXC) $(OBJ)
+	rm -f $(EXE) $(OBJ)
