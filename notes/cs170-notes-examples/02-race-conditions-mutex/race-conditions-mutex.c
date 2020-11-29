@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
+#include "utilities-mem.h"
+#include "utilities-concur.h"
 
 typedef struct{
   pthread_mutex_t *lock;
@@ -28,7 +30,7 @@ const char *usage =
 void *thread_fn(void *arg){
   thread_arg_t *a = arg;
   for (int i = 0; i < a->iterations; i++){
-    pthread_mutex_lock(a->lock);
+    mutex_lock_perror(a->lock);
     for (int j = 0; j < a->size - 1; j++){
       a->s[j] = 'A'+ a->id;
       //increase the probability of preemption within a string
@@ -36,9 +38,8 @@ void *thread_fn(void *arg){
     }
     a->s[a->size - 1] = '\0';
     printf("thread %d: %s\n", a->id, a->s);
-    pthread_mutex_unlock(a->lock);
+    mutex_unlock_perror(a->lock);
   }
-  //pthread_exit(NULL);
   return NULL;
 }
 
@@ -51,21 +52,17 @@ int main(int argc, char **argv){
   char *s = NULL;
   if (argc != 4){
     fprintf(stderr,"%s\n", usage);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   //initialize
   num_threads = atoi(argv[1]);
   size = atoi(argv[2]) + 1;
   iterations = atoi(argv[3]);
-  pthread_mutex_init(&lock, NULL);
-  tid_arr = malloc(sizeof(pthread_t) * num_threads);
-  assert(tid_arr != NULL);
-  attr_arr = malloc(sizeof(pthread_attr_t) * num_threads);
-  assert(attr_arr != NULL);
-  a_arr = malloc(sizeof(thread_arg_t) * num_threads);
-  assert(a_arr != NULL);
-  s = malloc(sizeof(char) * size);
-  assert(s != NULL);
+  mutex_init_perror(&lock);
+  tid_arr = malloc_perror(sizeof(pthread_t) * num_threads);
+  attr_arr = malloc_perror(sizeof(pthread_attr_t) * num_threads);
+  a_arr = malloc_perror(sizeof(thread_arg_t) * num_threads);
+  s = malloc_perror(sizeof(char) * size);
   //spawn threads
   for (int i = 0; i < num_threads; i++){
     a_arr[i].lock = &lock;
@@ -76,12 +73,14 @@ int main(int argc, char **argv){
     pthread_attr_init(&attr_arr[i]);
     pthread_attr_setscope(&attr_arr[i], PTHREAD_SCOPE_SYSTEM);
     err = pthread_create(&tid_arr[i], &attr_arr[i], thread_fn, &a_arr[i]);
-    assert(err == 0);
+    if (err != 0){
+      perror("pthread_create failed");
+      exit(EXIT_FAILURE);
+    }
   }
   //join with main
   for (int i = 0; i < num_threads; i++){
-    err = pthread_join(tid_arr[i], NULL);
-    assert(err == 0);
+    thread_join_perror(tid_arr[i], NULL);
   }
   free(tid_arr);
   free(attr_arr);

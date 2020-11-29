@@ -1,18 +1,26 @@
 CC = gcc
-CFLAGS = -Wall -Wextra
+UTILS_MEM_DIR = ../../../utilities/utilities-mem/
+UTILS_CONCUR_DIR = ../../../utilities/utilities-concur/
+CFLAGS = -I$(UTILS_MEM_DIR)    \
+         -I$(UTILS_CONCUR_DIR) \
+         -pthread -Wall -Wextra
 
-all : race-conditions-1 race-conditions-2 race-conditions-mutex
+EXE = race-conditions-mutex \
+      race-conditions-1     \
+      race-conditions-2
 
-race-conditions-1 : race-conditions-1.c
-	$(CC) $(CFLAGS) -o $@ $^ -lpthread
+OBJ = $(UTILS_MEM_DIR)utilities-mem.o       \
+      $(UTILS_CONCUR_DIR)utilities-concur.o
 
-race-conditions-2 : race-conditions-2.c
-	$(CC) $(CFLAGS) -o $@ $^ -lpthread
+all                                    : $(EXE)
+race-conditions-mutex                  : race-conditions-mutex.c $(OBJ)
+race-conditions-1                      : race-conditions-1.c $(OBJ)
+race-conditions-2                      : race-conditions-2.c $(OBJ)
 
-race-conditions-mutex : race-conditions-mutex.c
-	$(CC) $(CFLAGS) -o $@ $^ -lpthread
+$(UTILS_MEM_DIR)utilities-mem.o        : $(UTILS_MEM_DIR)utilities-mem.h
+$(UTILS_CONCUR_DIR)utilities-concur.o  : $(UTILS_CONCUR_DIR)utilities-concur.h
 
 .PHONY : clean
 
 clean :
-	rm -f race-conditions-1 race-conditions-2 race-conditions-mutex
+	rm -f $(EXE) $(OBJ)
