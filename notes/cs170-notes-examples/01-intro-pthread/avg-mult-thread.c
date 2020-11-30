@@ -7,6 +7,7 @@
    usage: avg-mult-thread count num_threads
    count: the number of random values to generate
    num_threads: the number of threads
+   usage example: avg-mult-thread 100000000 3
 
    Adoted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and refactoring.
@@ -23,6 +24,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
+#include "utilities-mem.h"
+#include "utilities-concur.h"
 
 const char *usage = "usage: avg-mult-thread count num_threads";
 #define RAND() (drand48()) //basic Linux random number generator
@@ -40,8 +43,7 @@ typedef struct{
 
 void *sum_thread(void *arg){
   thread_arg_t *a = arg;
-  thread_result_t *r = malloc(sizeof(thread_result_t));
-  assert(r != NULL);
+  thread_result_t *r = malloc_perror(sizeof(thread_result_t));
   r->sum = 0.0;
   printf("sum thread %d running, starting at %d for %d\n",
 	 a->id,
@@ -60,7 +62,7 @@ int main(int argc, char **argv){
   pthread_t *tid_arr = NULL;
   thread_arg_t *a_arr = NULL;
   thread_result_t *r = NULL;
-  int count, num_thread_elts, num_threads, err;
+  int count, num_thread_elts, num_threads;
   int start = 0;
   double sum = 0.0;
   double *data = NULL; //parent data block
@@ -68,17 +70,17 @@ int main(int argc, char **argv){
   if (argc <= 2){
     fprintf(stderr,"must specify count and number of threads\n%s\n",
 	    usage);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   count = atoi(argv[1]);
   if (count <= 0){
     fprintf(stderr,"invalid count %d\n", count);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   num_threads = atoi(argv[2]);
   if (num_threads <= 0){
     fprintf(stderr,"invalid thread count %d\n", num_threads);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   if (num_threads > count){
     num_threads = count;
@@ -88,12 +90,9 @@ int main(int argc, char **argv){
   }else{
     num_thread_elts = count / num_threads;
   }
-  tid_arr = malloc(sizeof(pthread_t) * num_threads);
-  assert(tid_arr != NULL);
-  a_arr = malloc(sizeof(thread_arg_t) * num_threads);
-  assert(a_arr != NULL);
-  data = malloc(count * sizeof(double));
-  assert(data != NULL);
+  tid_arr = malloc_perror(sizeof(pthread_t) * num_threads);
+  a_arr = malloc_perror(sizeof(thread_arg_t) * num_threads);
+  data = malloc_perror(count * sizeof(double));
   for (int i = 0; i < count; i++){
     data[i] = RAND();
   }
@@ -111,8 +110,7 @@ int main(int argc, char **argv){
     a_arr[i].data = data;
     printf("main thread creating sum thread %d\n", i);
     fflush(stdout);
-    err = pthread_create(&tid_arr[i], NULL, sum_thread, &a_arr[i]);
-    assert(err == 0);
+    thread_create_perror(&tid_arr[i], sum_thread, &a_arr[i]);
     printf("main thread has created sum thread %d\n", i);
     fflush(stdout);
     start += num_thread_elts;
@@ -121,7 +119,7 @@ int main(int argc, char **argv){
   for (int i = 0; i < num_threads; i++){
     printf("main thread about to join with sum thread %d\n", i);
     fflush(stdout);
-    err = pthread_join(tid_arr[i],(void **)&r);
+    thread_join_perror(tid_arr[i], (void **)&r);
     printf("main thread joined with sum thread %d\n", i);
     fflush(stdout);
     sum += r->sum;

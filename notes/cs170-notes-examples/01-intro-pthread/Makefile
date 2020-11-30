@@ -1,15 +1,24 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2
+UTILS_MEM_DIR = ../../../utilities/utilities-mem/
+UTILS_CONCUR_DIR = ../../../utilities/utilities-concur/
+CFLAGS = -I$(UTILS_MEM_DIR)    \
+         -I$(UTILS_CONCUR_DIR) \
+         -pthread -Wall -Wextra -O2
 
-all : avg-single-thread avg-mult-thread
+EXE = avg-single-thread \
+      avg-mult-thread
 
-avg-single-thread : avg-single-thread.c
-	$(CC) $(CFLAGS) -o $@ $^ -lpthread
+OBJ = $(UTILS_MEM_DIR)utilities-mem.o       \
+      $(UTILS_CONCUR_DIR)utilities-concur.o
 
-avg-mult-thread : avg-mult-thread.c
-	$(CC) $(CFLAGS) -o $@ $^ -lpthread
+all                                   : $(EXE)
+avg-single-thread                     : avg-single-thread.c $(OBJ)
+avg-mult-thread                       : avg-mult-thread.c $(OBJ)
+
+$(UTILS_MEM_DIR)utilities-mem.o       : $(UTILS_MEM_DIR)utilities-mem.h
+$(UTILS_CONCUR_DIR)utilities-concur.o : $(UTILS_CONCUR_DIR)utilities-concur.h
 
 .PHONY : clean
 
 clean :
-	rm -f avg-single-thread avg-mult-thread
+	rm -f $(EXE) $(OBJ)

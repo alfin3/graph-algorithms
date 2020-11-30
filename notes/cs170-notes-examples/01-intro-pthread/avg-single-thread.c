@@ -6,6 +6,7 @@
 
    usage: avg-single-thread count
    count: the number of random values to generate
+   usage example: avg-single-thread 100000000
 
    Adoted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and refactoring.
@@ -22,6 +23,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
+#include "utilities-mem.h"
+#include "utilities-concur.h"
 
 const char *usage = "usage: avg-single-thread count";
 #define RAND() (drand48()) //basic Linux random number generator
@@ -37,8 +40,7 @@ typedef struct{
 
 void *sum_thread(void *arg){
   thread_arg_t *a = arg;
-  thread_result_t *r = malloc(sizeof(thread_result_t));
-  assert(r != NULL);
+  thread_result_t *r = malloc_perror(sizeof(thread_result_t));
   r->sum = 0.0;
   printf("sum thread running\n");
   fflush(stdout);
@@ -54,22 +56,20 @@ int main(int argc, char **argv){
   pthread_t tid;
   thread_arg_t *a = NULL;
   thread_result_t *r = NULL;
-  int count, err;
+  int count;
   double *data = NULL; //parent data block
   //input checking and initialization
   if (argc <= 1){
     fprintf(stderr,"must specify count\n%s\n", usage);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   count = atoi(argv[1]);
   if (count <= 0){
     fprintf(stderr,"invalid count %d\n", count);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
-  a = malloc(sizeof(thread_arg_t));
-  assert(a != NULL);
-  data = malloc(count * sizeof(double));
-  assert(data != NULL);
+  a = malloc_perror(sizeof(thread_arg_t));
+  data = malloc_perror(count * sizeof(double));
   for (int i = 0; i < count; i++){
     data[i] = RAND();
   }
@@ -78,15 +78,13 @@ int main(int argc, char **argv){
   fflush(stdout);
   a->size = count;
   a->data = data;
-  err = pthread_create(&tid, NULL, sum_thread, a);
-  assert(err == 0);
+  thread_create_perror(&tid, sum_thread, a);
   printf("main thread running after sum thread created, "
 	 "about to call join\n");
   fflush(stdout);
   //join with main
   //thread return value is copied to the pointer block pointed to by &r
-  err = pthread_join(tid, (void **)&r); //main waits until joining
-  assert(err == 0);
+  thread_join_perror(tid, (void **)&r); //main waits until joining
   printf("main thread joined with sum thread\n");
   fflush(stdout);
   printf("the average over %d random numbers on (0,1) is %f\n",
