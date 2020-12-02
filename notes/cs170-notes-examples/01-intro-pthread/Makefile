@@ -8,17 +8,28 @@ CFLAGS = -I$(UTILS_MEM_DIR)    \
 EXE = avg-single-thread \
       avg-mult-thread
 
-OBJ = $(UTILS_MEM_DIR)utilities-mem.o       \
-      $(UTILS_CONCUR_DIR)utilities-concur.o
+SHARED_OBJ = $(UTILS_MEM_DIR)utilities-mem.o       \
+             $(UTILS_CONCUR_DIR)utilities-concur.o
 
-all                                   : $(EXE)
-avg-single-thread                     : avg-single-thread.c $(OBJ)
-avg-mult-thread                       : avg-mult-thread.c $(OBJ)
+NSHARED_OBJ = avg-single-thread.o \
+              avg-mult-thread.o
 
+all               : $(EXE)
+avg-single-thread : avg-single-thread.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+avg-mult-thread   : avg-mult-thread.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+
+avg-single-thread.o                   : $(UTILS_MEM_DIR)utilities-mem.h       \
+                                        $(UTILS_CONCUR_DIR)utilities-concur.h
+avg-mult-thread.o                     : $(UTILS_MEM_DIR)utilities-mem.h       \
+                                        $(UTILS_CONCUR_DIR)utilities-concur.h
 $(UTILS_MEM_DIR)utilities-mem.o       : $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_CONCUR_DIR)utilities-concur.o : $(UTILS_CONCUR_DIR)utilities-concur.h
 
-.PHONY : clean
+.PHONY : clean clean-all
 
 clean :
-	rm -f $(EXE) $(OBJ)
+	rm $(SHARED_OBJ) $(NSHARED_OBJ)
+clean-all :
+	rm -f $(EXE) $(SHARED_OBJ) $(NSHARED_OBJ)

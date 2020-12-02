@@ -9,18 +9,33 @@ EXE = race-conditions-mutex \
       race-conditions-1     \
       race-conditions-2
 
-OBJ = $(UTILS_MEM_DIR)utilities-mem.o       \
-      $(UTILS_CONCUR_DIR)utilities-concur.o
+SHARED_OBJ = $(UTILS_MEM_DIR)utilities-mem.o       \
+             $(UTILS_CONCUR_DIR)utilities-concur.o
 
-all                                    : $(EXE)
-race-conditions-mutex                  : race-conditions-mutex.c $(OBJ)
-race-conditions-1                      : race-conditions-1.c $(OBJ)
-race-conditions-2                      : race-conditions-2.c $(OBJ)
+NSHARED_OBJ = race-conditions-mutex.o \
+              race-conditions-1.o     \
+              race-conditions-2.o
 
-$(UTILS_MEM_DIR)utilities-mem.o        : $(UTILS_MEM_DIR)utilities-mem.h
-$(UTILS_CONCUR_DIR)utilities-concur.o  : $(UTILS_CONCUR_DIR)utilities-concur.h
+all                   : $(EXE)
+race-conditions-mutex : race-conditions-mutex.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+race-conditions-1     : race-conditions-1.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+race-conditions-2     : race-conditions-2.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 
-.PHONY : clean
+race-conditions-mutex.o               : $(UTILS_MEM_DIR)utilities-mem.h       \
+                                        $(UTILS_CONCUR_DIR)utilities-concur.h
+race-conditions-1.o                   : $(UTILS_MEM_DIR)utilities-mem.h       \
+                                        $(UTILS_CONCUR_DIR)utilities-concur.h
+race-conditions-2.o                   : $(UTILS_MEM_DIR)utilities-mem.h       \
+                                        $(UTILS_CONCUR_DIR)utilities-concur.h
+$(UTILS_MEM_DIR)utilities-mem.o       : $(UTILS_MEM_DIR)utilities-mem.h
+$(UTILS_CONCUR_DIR)utilities-concur.o : $(UTILS_CONCUR_DIR)utilities-concur.h
+
+.PHONY : clean clean-all
 
 clean :
-	rm -f $(EXE) $(OBJ)
+	rm $(SHARED_OBJ) $(NSHARED_OBJ)
+clean-all :
+	rm -f $(EXE) $(SHARED_OBJ) $(NSHARED_OBJ)

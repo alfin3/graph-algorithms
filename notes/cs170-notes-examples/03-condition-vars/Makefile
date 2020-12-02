@@ -9,20 +9,38 @@ EXE = bounded-buffer-mutex       \
       bounded-buffer-cond-vars-1 \
       bounded-buffer-cond-vars-2
 
-OBJ = ctimer.o                              \
-      $(UTILS_MEM_DIR)utilities-mem.o       \
-      $(UTILS_CONCUR_DIR)utilities-concur.o
+SHARED_OBJ = ctimer.o                              \
+             $(UTILS_MEM_DIR)utilities-mem.o       \
+             $(UTILS_CONCUR_DIR)utilities-concur.o
 
-all                                    : $(EXE)
-bounded-buffer-mutex                   : bounded-buffer-mutex.c $(OBJ)
-bounded-buffer-cond-vars-1             : bounded-buffer-cond-vars-1.c $(OBJ)
-bounded-buffer-cond-vars-2             : bounded-buffer-cond-vars-2.c $(OBJ)
+NSHARED_OBJ = bounded-buffer-mutex.o        \
+              bounded-buffer-cond-vars-1.o  \
+              bounded-buffer-cond-vars-2.o
 
-ctimer.o                               : ctimer.h
-$(UTILS_MEM_DIR)utilities-mem.o        : $(UTILS_MEM_DIR)utilities-mem.h
-$(UTILS_CONCUR_DIR)utilities-concur.o  : $(UTILS_CONCUR_DIR)utilities-concur.h
+all                        : $(EXE)
+bounded-buffer-mutex       : bounded-buffer-mutex.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+bounded-buffer-cond-vars-1 : bounded-buffer-cond-vars-1.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+bounded-buffer-cond-vars-2 : bounded-buffer-cond-vars-2.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 
-.PHONY : clean
+bounded-buffer-mutex.o                : ctimer.h                              \
+                                        $(UTILS_MEM_DIR)utilities-mem.h       \
+                                        $(UTILS_CONCUR_DIR)utilities-concur.h
+bounded-buffer-cond-vars-1.o          : ctimer.h                              \
+                                        $(UTILS_MEM_DIR)utilities-mem.h       \
+                                        $(UTILS_CONCUR_DIR)utilities-concur.h
+bounded-buffer-cond-vars-2.o          : ctimer.h                              \
+                                        $(UTILS_MEM_DIR)utilities-mem.h       \
+                                        $(UTILS_CONCUR_DIR)utilities-concur.h
+ctimer.o                              : ctimer.h
+$(UTILS_MEM_DIR)utilities-mem.o       : $(UTILS_MEM_DIR)utilities-mem.h
+$(UTILS_CONCUR_DIR)utilities-concur.o : $(UTILS_CONCUR_DIR)utilities-concur.h
+
+.PHONY : clean clean-all
 
 clean :
-	rm -f $(EXE) $(OBJ)
+	rm $(SHARED_OBJ) $(NSHARED_OBJ)
+clean-all :
+	rm -f $(EXE) $(SHARED_OBJ) $(NSHARED_OBJ)
