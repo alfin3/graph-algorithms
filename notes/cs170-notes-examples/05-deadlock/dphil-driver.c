@@ -2,6 +2,9 @@
    dphil-driver.c
 
    Driver functions for solutions of the "Dining Philosophers" problem.
+   
+   usage: executable_name num_phil max_eat_think_dur
+   usage example: dphil-deadlock-1 5 5
 
    Adopted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and fixes:
@@ -79,7 +82,7 @@ int main(int argc, char **argv){
   char s[500], *curr = NULL;
   void *state = NULL;
   if (argc != 3) {
-    fprintf(stderr, "usage: executable_name num_phil maxsleepsec\n");
+    fprintf(stderr, "usage: executable_name num_phil max_eat_think_dur\n");
     exit(EXIT_FAILURE);
   }
   num_phil = atoi(argv[1]);
