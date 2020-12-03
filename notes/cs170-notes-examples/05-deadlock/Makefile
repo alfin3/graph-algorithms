@@ -7,17 +7,17 @@ CFLAGS = -I$(UTILS_MEM_DIR)    \
 
 EXE = dphil-deadlock-1
 
-SHARED_OBJ = dphil-driver.o                        \
+OBJ_SHARED = dphil-driver.o                        \
              $(UTILS_MEM_DIR)utilities-mem.o       \
              $(UTILS_CONCUR_DIR)utilities-concur.o
 
-NSHARED_OBJ = dphil-deadlock-1.o
+OBJ_NSHARED = dphil-deadlock-1.o
 
 all              : $(EXE)
-dphil-deadlock-1 : dphil-deadlock-1.o $(SHARED_OBJ)
+dphil-deadlock-1 : dphil-deadlock-1.o $(OBJ_SHARED)
 	$(CC) $(CFLAGS) -o $@ $^
 
-dphil-deadlock-1.o                     : dphil.h                               \
+dphil-deadlock-1.o                    : dphil.h                               \
                                         $(UTILS_MEM_DIR)utilities-mem.h       \
                                         $(UTILS_CONCUR_DIR)utilities-concur.h
 dphil-driver.o                        : dphil.h                               \
@@ -29,6 +29,6 @@ $(UTILS_CONCUR_DIR)utilities-concur.o : $(UTILS_CONCUR_DIR)utilities-concur.h
 .PHONY : clean clean-all
 
 clean :
-	rm $(SHARED_OBJ) $(NSHARED_OBJ)
+	rm $(OBJ_SHARED) $(OBJ_NSHARED)
 clean-all :
-	rm -f $(EXE) $(SHARED_OBJ) $(NSHARED_OBJ)
+	rm -f $(EXE) $(OBJ_SHARED) $(OBJ_NSHARED)

@@ -6,9 +6,9 @@
    Adopted from https://sites.cs.ucsb.edu/~rich/class/cs170/notes/,
    with added modifications and fixes:
    -  state modifying functions take a state pointer and an integer id of
-      a thread as parameters, and the thread argument struct is moved to
+      a thread as parameters; the thread argument struct is moved to
       dphil-driver.c, where the thread entry function is defined,
-   -  some variables were renamed or eliminated; some functions were
+   -  some variables are renamed or eliminated; some functions are
       renamed,
    -  memory allocation and pthread functions are used with wrapped
       error checking.
@@ -31,7 +31,7 @@ typedef struct{
   long max_dur;          //max time for thinking/eating
   long *block_times;     //total time each thread is blocked
   void *state;           //sync. state wrt the pickup and putdown ops
-  pthread_mutex_t *block_times_lock; //monitor for updating block times
+  pthread_mutex_t *block_times_lock; //updating and printing block times
 } phil_arg_t;
 
 void *phil_thread(void *arg){

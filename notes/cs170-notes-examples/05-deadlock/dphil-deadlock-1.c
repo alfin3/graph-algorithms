@@ -51,7 +51,7 @@ void *state_new(int num_phil){
 */
 
 /**
-   Tells a thread with id to perform a pickup operation.
+   Performs a pickup operation.
 */
 void state_pickup(void *state, int id){
   forks_t *f = state;
@@ -60,7 +60,7 @@ void state_pickup(void *state, int id){
 }
 
 /**
-   Tells a thread with id to perform a putdown operation.
+   Performs a putdown operation.
 */
 void state_putdown(void *state, int id){
   forks_t *f = state;

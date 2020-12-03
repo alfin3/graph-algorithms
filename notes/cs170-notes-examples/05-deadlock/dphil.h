@@ -9,7 +9,7 @@
    -  state modifying functions take a state pointer and an integer id of
       a thread as parameters; the thread argument struct is moved to
       dphil-driver.c, where the thread entry function is defined,
-   -  some variables were renamed or eliminated; some functions were
+   -  some variables are renamed or eliminated; some functions are
       renamed.
 */
 
@@ -28,12 +28,12 @@ void *state_new(int num_phil);
 */
 
 /**
-   Tells a thread with id to perform a pickup operation.
+   Performs a pickup operation.
 */
 void state_pickup(void *state, int id);
 
 /**
-   Tells a thread with id to perform a putdown operation.
+   Performs a putdown operation.
 */
 void state_putdown(void *state, int id);
 
