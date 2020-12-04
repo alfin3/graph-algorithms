@@ -7,7 +7,8 @@
    right. The pairs odd - right first and even - left first are also
    correct. A deadlock cannot occur.
 
-   Correctness proof for n > 1, where n is the number of threads:
+   Correctness (# threads > 1):
+
    At any time, there exists a thread A that will acquire or has acquired
    its first mutex.
    case 1: A is odd and the adjacent threads are even, or A is even and
@@ -24,6 +25,15 @@
               for its second mutex, then B acquired it. The second mutex
               of B is the second mutex of another thread. Thus, B will
               release its first mutex. A will acquire its second mutex.
+   
+   Fairness:
+
+   The solution is prone to unfair treatment of threads. In the setting
+   with five threads, thread 4 has an unfair advantage over other threads
+   and is blocked for less time, because its first mutex is the second
+   mutex of thread 0, whereas for all other threads the first mutex is
+   also the first mutex of another thread. A second mutex has a smaller
+   critical section than a first mutex.
    
    The functions for creating a thread synchronization state and pickup and
    putdown operations are called from the driver implemented in
