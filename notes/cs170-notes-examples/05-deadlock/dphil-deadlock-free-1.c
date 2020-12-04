@@ -8,20 +8,22 @@
    correct. A deadlock cannot occur.
 
    Correctness proof for n > 1, where n is the number of threads:
-   At any time, there exists a thread A that has acquired its first mutex.
+   At any time, there exists a thread A that will acquire or has acquired
+   its first mutex.
    case 1: A is odd and the adjacent threads are even, or A is even and
            the adjacent threads are odd. If A waits for the second mutex,
            then an adjacent thread has acquired this mutex as its second
-           mutex and will release it. Thus, A will acquire both mutexes.
+           mutex and will release it. Thus, A will acquire its second 
+           mutex.
    case 2: A is odd and an adjacent thread B is odd, or A is even and an
            adjacent thread B is even.
            a) The first mutex of A is the second mutex of B. The second
               mutex of A is the second mutex of another thread. Thus, A
-              will acquire both mutexes.
+              will acquire its second mutex.
            b) The second mutex of A is the first mutex of B. If A waits
               for its second mutex, then B acquired it. The second mutex
               of B is the second mutex of another thread. Thus, B will
-              release its first mutex. A will acquire both mutexes.
+              release its first mutex. A will acquire its second mutex.
    
    The functions for creating a thread synchronization state and pickup and
    putdown operations are called from the driver implemented in
