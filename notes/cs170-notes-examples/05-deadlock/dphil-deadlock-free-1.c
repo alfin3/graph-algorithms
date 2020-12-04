@@ -16,8 +16,7 @@
            then an adjacent thread has acquired this mutex as its second
            mutex and will release it. Thus, A will acquire its second 
            mutex.
-   case 2: A is odd and an adjacent thread B is odd, or A is even and an
-           adjacent thread B is even.
+   case 2: A is even and an adjacent thread B is even.
            a) The first mutex of A is the second mutex of B. The second
               mutex of A is the second mutex of another thread. Thus, A
               will acquire its second mutex.
