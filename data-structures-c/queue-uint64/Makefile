@@ -6,8 +6,8 @@ OBJ = queue-uint64-main.o queue-uint64.o $(UTILS_DIR)utilities-ds.o
 queue-uint64 : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
 
-queue-uint64-main.o                 : queue-uint64.h $(UTILS_DIR)utilities-ds.o
-queue-uint64.o                      : queue-uint64.h $(UTILS_DIR)utilities-ds.o
+queue-uint64-main.o                 : queue-uint64.h $(UTILS_DIR)utilities-ds.h
+queue-uint64.o                      : queue-uint64.h $(UTILS_DIR)utilities-ds.h
 $(UTILS_DIR)utilities-ds.o          : $(UTILS_DIR)utilities-ds.h
 
 .PHONY : clean clean-all

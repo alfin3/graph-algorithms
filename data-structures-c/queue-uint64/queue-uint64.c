@@ -76,6 +76,17 @@ void queue_uint64_pop(queue_uint64_t *q, void *elt){
 }
 
 /**
+   If a queue is not empty, returns a pointer to the first element,
+   otherwise returns NULL. The returned pointer is guaranteed to point to
+   the first element until a queue modifying operation is performed.
+*/
+void *queue_uint64_first(queue_uint64_t *q){
+  if (q->num_elts == 0){return NULL;}
+  uint64_t ix = q->num_popped_elts;
+  return elt_ptr(q, ix);
+}
+
+/**
    Frees a queue, and leaves a block of size sizeof(queue_uint64_t) pointed
    to by the q parameter.
 */
