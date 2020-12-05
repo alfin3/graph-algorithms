@@ -7,7 +7,8 @@ CFLAGS = -I$(UTILS_MEM_DIR)    \
 
 EXE = dphil-deadlock-1      \
       dphil-deadlock-2      \
-      dphil-deadlock-free-1
+      dphil-deadlock-free-1 \
+      dphil-deadlock-free-2
 
 OBJ_SHARED = dphil-driver.o                        \
              $(UTILS_MEM_DIR)utilities-mem.o       \
@@ -15,7 +16,8 @@ OBJ_SHARED = dphil-driver.o                        \
 
 OBJ_NSHARED = dphil-deadlock-1.o      \
               dphil-deadlock-2.o      \
-              dphil-deadlock-free-1.o
+              dphil-deadlock-free-1.o \
+              dphil-deadlock-free-2.o
 
 all                   : $(EXE)
 dphil-deadlock-1      : dphil-deadlock-1.o $(OBJ_SHARED)
@@ -23,6 +25,8 @@ dphil-deadlock-1      : dphil-deadlock-1.o $(OBJ_SHARED)
 dphil-deadlock-2      : dphil-deadlock-2.o $(OBJ_SHARED)
 	$(CC) $(CFLAGS) -o $@ $^
 dphil-deadlock-free-1 : dphil-deadlock-free-1.o $(OBJ_SHARED)
+	$(CC) $(CFLAGS) -o $@ $^
+dphil-deadlock-free-2 : dphil-deadlock-free-2.o $(OBJ_SHARED)
 	$(CC) $(CFLAGS) -o $@ $^
 
 dphil-deadlock-1.o                    : dphil.h                               \
@@ -32,6 +36,9 @@ dphil-deadlock-2.o                    : dphil.h                               \
                                         $(UTILS_MEM_DIR)utilities-mem.h       \
                                         $(UTILS_CONCUR_DIR)utilities-concur.h
 dphil-deadlock-free-1.o               : dphil.h                               \
+                                        $(UTILS_MEM_DIR)utilities-mem.h       \
+                                        $(UTILS_CONCUR_DIR)utilities-concur.h
+dphil-deadlock-free-2.o               : dphil.h                               \
                                         $(UTILS_MEM_DIR)utilities-mem.h       \
                                         $(UTILS_CONCUR_DIR)utilities-concur.h
 dphil-driver.o                        : dphil.h                               \
