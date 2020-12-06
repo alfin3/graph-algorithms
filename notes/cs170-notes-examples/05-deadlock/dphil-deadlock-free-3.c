@@ -4,8 +4,19 @@
    A solution of the "Dining Philosophers" problem. In the provided
    implementation, a fifo queue is used to ensure (outside the scheduler)
    that the first thread to acquire mutex after calling state_pickup is
-   also the first to "eat", guaranteeing fairness at the expense of
+   also the first to "eat", guaranteeing non-starvation at the expense of
    performance. A thread may be able to "eat" but must wait for its turn.
+
+   Correctness:
+
+   Every thread pushed onto a queue is “thinking”. Thus, the first thread
+   (tail) in the queue can only be blocked by the threads that are “eating”
+   and are not in the queue. The first thread will be popped.
+
+   Thread starvation:
+
+   The fifo queue guarantees that every waiting thread will make progress
+   and will not starve.
 
    The functions for creating a thread synchronization state and pickup and
    putdown operations are called from the driver implemented in
@@ -79,7 +90,7 @@ void state_pickup(void *state, int id){
   queue_uint64_pop(&s->q, &id);
   s->thinking[id] = false;
   if (queue_uint64_first(&s->q) != NULL){
-    //signal the thread that reached the queue tail
+    //signal the new first thread that reached the queue tail
     id = *(int *)queue_uint64_first(&s->q);
     cond_signal_perror(&s->cond_tail_adj_thinking[id]);
   }
