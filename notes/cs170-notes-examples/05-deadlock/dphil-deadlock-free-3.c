@@ -10,7 +10,7 @@
    Correctness:
 
    Every thread pushed onto a queue is “thinking”. Thus, the first thread
-   (tail) in the queue can only be blocked by the threads that are “eating”
+   (front) in the queue can only be blocked by the threads that are “eating”
    and are not in the queue. The first thread will be popped.
 
    Thread starvation:
@@ -50,7 +50,7 @@ typedef struct{
   int num_phil;
   bool thinking[MAX_NUM_THREADS];
   queue_uint64_t q; //fifo queue of integer thread ids
-  pthread_cond_t cond_tail_adj_thinking[MAX_NUM_THREADS];
+  pthread_cond_t cond_first_adj_thinking[MAX_NUM_THREADS];
   pthread_mutex_t lock;
 } state_t;
 
@@ -63,7 +63,7 @@ void *state_new(int num_phil){
   s->num_phil = num_phil; 
   for (int i = 0; i < s->num_phil; i++){
     s->thinking[i] = true;
-    cond_init_perror(&s->cond_tail_adj_thinking[i]);
+    cond_init_perror(&s->cond_first_adj_thinking[i]);
   }
   queue_uint64_init(&s->q, 1, sizeof(int), NULL);
   mutex_init_perror(&s->lock);
@@ -80,19 +80,22 @@ void *state_new(int num_phil){
 */
 void state_pickup(void *state, int id){
   state_t *s = state;
+  int first_id;
   mutex_lock_perror(&s->lock);
   queue_uint64_push(&s->q, &id);
-  while (*(int *)queue_uint64_first(&s->q) != id ||
+  first_id = *(int *)queue_uint64_first(&s->q);
+  while (first_id != id ||
 	 !s->thinking[(id + 1) % s->num_phil] ||
 	 !s->thinking[(id + s->num_phil - 1) % s->num_phil]){
-    cond_wait_perror(&s->cond_tail_adj_thinking[id], &s->lock);
+    cond_wait_perror(&s->cond_first_adj_thinking[id], &s->lock);
+    first_id = *(int *)queue_uint64_first(&s->q);
   }
-  queue_uint64_pop(&s->q, &id);
+  queue_uint64_pop(&s->q, &first_id);
   s->thinking[id] = false;
   if (queue_uint64_first(&s->q) != NULL){
-    //signal the new first thread that reached the queue tail
-    id = *(int *)queue_uint64_first(&s->q);
-    cond_signal_perror(&s->cond_tail_adj_thinking[id]);
+    //signal the new first thread
+    first_id = *(int *)queue_uint64_first(&s->q);
+    cond_signal_perror(&s->cond_first_adj_thinking[first_id]);
   }
   mutex_unlock_perror(&s->lock);
 }
@@ -104,8 +107,8 @@ void state_putdown(void *state, int id){
   state_t *s = state;
   mutex_lock_perror(&s->lock);
   s->thinking[id] = true;
-  cond_signal_perror(&s->cond_tail_adj_thinking[(id + 1) % s->num_phil]);
-  cond_signal_perror(&s->cond_tail_adj_thinking[(id + s->num_phil - 1) %
+  cond_signal_perror(&s->cond_first_adj_thinking[(id + 1) % s->num_phil]);
+  cond_signal_perror(&s->cond_first_adj_thinking[(id + s->num_phil - 1) %
 						s->num_phil]);
   mutex_unlock_perror(&s->lock);
 }
