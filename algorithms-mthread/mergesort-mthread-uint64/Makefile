@@ -3,7 +3,7 @@ UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_CONCUR_DIR = ../../utilities/utilities-concur/
 CFLAGS = -I$(UTILS_MEM_DIR)    \
          -I$(UTILS_CONCUR_DIR) \
-         -pthread -Wall -Wextra
+         -pthread -Wall -Wextra -O3
 
 OBJ = mergesort-mthread-uint64-main.o       \
       mergesort-mthread-uint64.o            \
