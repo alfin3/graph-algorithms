@@ -13,6 +13,10 @@
 #include "mergesort-mthread-uint64.h"
 #include "utilities-mem.h"
 
+int cmp_int_fn(const void *a, const void *b){
+  return *(int *)a - *(int *)b;
+}
+
 /**
    Printing helper function.
 */
@@ -31,7 +35,7 @@ int main(){
     a[i] = random() % 100;
   }
   print_int_elts(a, count);
-  mergesort_mthread_uint64(a, count, 2);
+  mergesort_mthread_uint64(a, count, 2, sizeof(int), cmp_int_fn);
   print_int_elts(a, count);
   free(a);
   a = NULL;

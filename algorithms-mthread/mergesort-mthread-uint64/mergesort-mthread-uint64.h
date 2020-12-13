@@ -9,6 +9,10 @@
 
 #include <stdint.h>
 
-void mergesort_mthread_uint64(void *a, uint64_t count, uint64_t base_count);
+void mergesort_mthread_uint64(void *elts,
+			      uint64_t count,
+			      uint64_t sbase_count,
+			      int elt_size,
+			      int (*cmp_elt_fn)(const void *, const void *));
 
 #endif
