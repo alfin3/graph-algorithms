@@ -23,7 +23,7 @@ typedef struct{
   int (*cmp_elt_fn)(const void *, const void *);
 } mergesort_arg_t;
 
-#define MAX_NUM_ONTHREAD_REC (30) //max # recursive calls on a thread stack
+const int MAX_NUM_ONTHREAD_REC = 30; //max # recursive calls on thread stack
 
 static void *mergesort_thread(void *arg);
 static void merge(void *elts,
@@ -56,8 +56,8 @@ void mergesort_mthread_uint64(void *elts,
   
 /**
    Enters a mergesort thread that spawns mergesort threads recursively.
-   Reduces the total number of threads by a factor of 2 if allowed to
-   place O(logn) recursive calls on a thread (see MAX_NUM_ONTHREAD_REC). 
+   Reduces the total number of threads by placing O(logn) recursive calls
+   on a thread, with the tightness of the bound set by MAX_NUM_ONTHREAD_REC.
    The default thread stack size should be sufficient for most inputs.
 */
 static void *mergesort_thread(void *arg){
