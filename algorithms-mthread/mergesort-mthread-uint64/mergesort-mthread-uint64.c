@@ -1,6 +1,9 @@
 /**
    mergesort-mthread-uint64.c
 
+   generic implementation wihtout race conditions (and overhead). 
+   base count parameters can be used to optimizing on
+   for input ranges and specific hardware settings.
 */
 
 #include <unistd.h>
@@ -16,42 +19,57 @@
 
 typedef struct{
   uint64_t p, r;
-  uint64_t sbase_count; //>1, count of the sort base case
+  uint64_t mbase_count; //>1, count of merge base case
+  uint64_t sbase_count; //>0, count of sort base case
   int elt_size;
   int num_onthread_rec;
   void *elts; //pointer to an input array
   int (*cmp_elt_fn)(const void *, const void *);
 } mergesort_arg_t;
 
+typedef struct{
+  uint64_t ap, ar, bp, br, cs;
+  uint64_t mbase_count; //>1, count of merge base case
+  int elt_size;
+  int num_onthread_rec;
+  void *cat_elts; 
+  void *elts; //pointer to an input array
+  int (*cmp_elt_fn)(const void *, const void *);
+} merge_arg_t;
+
 const int MAX_NUM_ONTHREAD_REC = 30; //max # recursive calls on thread stack
+const uint64_t NR = 0xffffffffffffffff; //cannot be reached as array index
 
 static void *mergesort_thread(void *arg);
-static void merge(void *elts,
-		  uint64_t p,
-		  uint64_t q ,
-		  uint64_t r,
-		  int elt_size,
-		  int (*cmp_elt_fn)(const void *, const void *));
-static void *elt_ptr(void *elts, uint64_t i, int elt_size);
+static void *merge_thread(void *arg);
+static void merge(merge_arg_t *ma);
+static uint64_t geq_bsearch(const void *key,
+			    const void *elts,
+			    uint64_t count,
+			    int elt_size,
+			    int (*cmp)(const void*, const void*));
+static void *elt_ptr(const void *elts, uint64_t i, int elt_size);
 
 /**
    Runs the first thread entry on the thread of the caller.
 */
 void mergesort_mthread_uint64(void *elts,
 			      uint64_t count,
+			      uint64_t mbase_count,
 			      uint64_t sbase_count,
 			      int elt_size,
 			      int (*cmp_elt_fn)(const void *, const void *)){
-  mergesort_arg_t ma;
+  mergesort_arg_t msa;
   if (count < 2) return;
-  ma.p = 0;
-  ma.r = count - 1;
-  ma.sbase_count = sbase_count;
-  ma.elt_size = elt_size;
-  ma.num_onthread_rec = 0;
-  ma.elts = elts;
-  ma.cmp_elt_fn = cmp_elt_fn;
-  mergesort_thread(&ma);
+  msa.p = 0;
+  msa.r = count - 1;
+  msa.mbase_count = mbase_count;
+  msa.sbase_count = sbase_count;
+  msa.elt_size = elt_size;
+  msa.num_onthread_rec = 0;
+  msa.elts = elts;
+  msa.cmp_elt_fn = cmp_elt_fn;
+  mergesort_thread(&msa);
 }
   
 /**
@@ -61,88 +79,262 @@ void mergesort_mthread_uint64(void *elts,
    The default thread stack size should be sufficient for most inputs.
 */
 static void *mergesort_thread(void *arg){
-  mergesort_arg_t *ma = arg;
-  mergesort_arg_t child_mas[2];
+  mergesort_arg_t *msa = arg;
+  mergesort_arg_t child_msas[2];
   pthread_t child_ids[2];
+  merge_arg_t ma;
   uint64_t q;
-  if (ma->r - ma->p + 1 <= ma->sbase_count){
-    qsort(elt_ptr(ma->elts, ma->p, ma->elt_size),
-	  ma->r - ma->p + 1,
-	  ma->elt_size,
-	  ma->cmp_elt_fn);
+  if (msa->r - msa->p + 1 <= msa->sbase_count){
+    qsort(elt_ptr(msa->elts, msa->p, msa->elt_size),
+	  msa->r - msa->p + 1,
+	  msa->elt_size,
+	  msa->cmp_elt_fn);
   }else{
-    q = (ma->p + ma->r) / 2; //rounds down
-    child_mas[0].p = ma->p;
-    child_mas[0].r = q;
-    child_mas[0].sbase_count = ma->sbase_count;
-    child_mas[0].elt_size = ma->elt_size;
-    child_mas[0].num_onthread_rec = 0;
-    child_mas[0].elts = ma->elts;
-    child_mas[0].cmp_elt_fn = ma->cmp_elt_fn;
-    child_mas[1].p = q + 1;
-    child_mas[1].r = ma->r;
-    child_mas[1].sbase_count = ma->sbase_count;
-    child_mas[1].elt_size = ma->elt_size;
-    child_mas[1].elts = ma->elts;
-    child_mas[1].cmp_elt_fn = ma->cmp_elt_fn;
-    thread_create_perror(&child_ids[0], mergesort_thread, &child_mas[0]);
-    if (ma->num_onthread_rec < MAX_NUM_ONTHREAD_REC){
+    
+    //sort recursion
+    q = (msa->p + msa->r) / 2; //rounds down
+    child_msas[0].p = msa->p;
+    child_msas[0].r = q;
+    child_msas[0].sbase_count = msa->sbase_count;
+    child_msas[0].elt_size = msa->elt_size;
+    child_msas[0].num_onthread_rec = 0;
+    child_msas[0].elts = msa->elts;
+    child_msas[0].cmp_elt_fn = msa->cmp_elt_fn;
+    child_msas[1].p = q + 1;
+    child_msas[1].r = msa->r;
+    child_msas[1].sbase_count = msa->sbase_count;
+    child_msas[1].elt_size = msa->elt_size;
+    child_msas[1].elts = msa->elts;
+    child_msas[1].cmp_elt_fn = msa->cmp_elt_fn;
+    thread_create_perror(&child_ids[0], mergesort_thread, &child_msas[0]);
+    if (msa->num_onthread_rec < MAX_NUM_ONTHREAD_REC){
       //keep putting mergesort_thread calls on the current thread stack
-      child_mas[1].num_onthread_rec = ma->num_onthread_rec + 1;
-      mergesort_thread(&child_mas[1]);
+      child_msas[1].num_onthread_rec = msa->num_onthread_rec + 1;
+      mergesort_thread(&child_msas[1]);
     }else{
-      child_mas[1].num_onthread_rec = 0;
-      thread_create_perror(&child_ids[1], mergesort_thread, &child_mas[1]);
+      child_msas[1].num_onthread_rec = 0;
+      thread_create_perror(&child_ids[1], mergesort_thread, &child_msas[1]);
       thread_join_perror(child_ids[1], NULL);
     }
     thread_join_perror(child_ids[0], NULL);
-    merge(ma->elts, ma->p, q, ma->r, ma->elt_size, ma->cmp_elt_fn);
+
+    //merge recursiom
+    ma.ap = msa->p;
+    ma.ar = q;
+    ma.bp = q + 1;
+    ma.br = msa->r;
+    ma.cs = 0;
+    ma.mbase_count = msa->mbase_count;
+    ma.elt_size = msa->elt_size;
+    ma.num_onthread_rec = msa->num_onthread_rec;
+    ma.cat_elts = malloc_perror((msa->r - msa->p + 1) * msa->elt_size);
+    ma.elts = msa->elts;
+    ma.cmp_elt_fn = msa->cmp_elt_fn;
+    merge_thread(&ma);
+    //copy the merged result into the input array
+    memcpy(elt_ptr(msa->elts, msa->p, msa->elt_size),
+	   elt_ptr(ma.cat_elts, 0, msa->elt_size),
+	   (msa->r - msa->p + 1) * msa->elt_size);
+    free(ma.cat_elts);
+    ma.cat_elts = NULL;
   }
   return NULL;
 }
 
- /**
-   Merge with minimized copying steps. Not yet parallel.
+/**
+   Merges two subproblems in a parallel manner without race conditions.
 */
-static void merge(void *elts,
-		  uint64_t p,
-		  uint64_t q ,
-		  uint64_t r,
-		  int elt_size,
-		  int (*cmp_elt_fn)(const void *, const void *)){
-  void *temp = malloc_perror((r - p + 1) * elt_size);
-  uint64_t first_ix = p, second_ix = q + 1, temp_ix = 0;
-  while(first_ix <= q && second_ix <= r){
-    if (cmp_elt_fn(elt_ptr(elts, first_ix, elt_size),
-		   elt_ptr(elts, second_ix, elt_size)) < 0){
-      memcpy(elt_ptr(temp, temp_ix, elt_size),
-	     elt_ptr(elts, first_ix, elt_size),
-	     elt_size);
-      temp_ix++;
-      first_ix++;
+static void *merge_thread(void *arg){
+  merge_arg_t *ma = arg;
+  merge_arg_t child_mas[2];
+  pthread_t child_ids[2];
+  uint64_t aq, bq, ix;
+
+  //base case, where ma->mbase_count > 1
+  if ((ma->ap == NR && ma->ar == NR) ||
+      (ma->bp == NR && ma->br == NR) ||
+      (ma->ar - ma->ap) + (ma->br - ma->bp) + 2 <= ma->mbase_count){
+    merge(ma);
+    return NULL;
+  }
+  
+  //recursion parameters with <= 3/4 problem size for the larger subproblem
+  if (ma->ar - ma->ap > ma->br - ma->bp){
+    aq = (ma->ap + ma->ar) / 2; //ma->ar - ma->ap >= 1; rounds down
+    child_mas[0].ap = ma->ap;
+    child_mas[0].ar = aq;
+    child_mas[0].cs = ma->cs;
+    child_mas[1].ap = aq + 1;
+    child_mas[1].ar = ma->ar;
+    ix = geq_bsearch(elt_ptr(ma->elts, aq, ma->elt_size),
+		     elt_ptr(ma->elts, ma->bp, ma->elt_size),
+		     ma->br - ma->bp + 1, //at least 1 element
+		     ma->elt_size,
+		     ma->cmp_elt_fn);
+    if (ix == 0){
+      child_mas[0].bp = NR;
+      child_mas[0].br = NR;
+      child_mas[1].bp = ma->bp;
+      child_mas[1].br = ma->br;
+      child_mas[1].cs = ma->cs + (aq - ma->ap + 1);
+    }else if (ix == NR){
+      child_mas[0].bp = ma->bp;
+      child_mas[0].br = ma->br;
+      child_mas[1].bp = NR;
+      child_mas[1].br = NR;
+      child_mas[1].cs = ma->cs + (aq - ma->ap) + (ma->br - ma->bp) + 2;
     }else{
-      memcpy(elt_ptr(temp, temp_ix, elt_size),
-	     elt_ptr(elts, second_ix, elt_size),
-	     elt_size);
-      temp_ix++;
-      second_ix++;
+      child_mas[0].bp = ma->bp;
+      child_mas[0].br = ma->bp + ix;
+      child_mas[1].bp = ma->bp + ix + 1;
+      child_mas[1].br = ma->br;
+      child_mas[1].cs = ma->cs + (aq - ma->ap) + ix + 2;
+    }
+  }else{
+    bq = (ma->bp + ma->br) / 2; //ma->br - ma->bp >= 1; rounds down
+    child_mas[0].bp = ma->bp;
+    child_mas[0].br = bq;
+    child_mas[0].cs = ma->cs;
+    child_mas[1].bp = bq + 1;
+    child_mas[1].br = ma->br;
+    ix = geq_bsearch(elt_ptr(ma->elts, bq, ma->elt_size),
+		     elt_ptr(ma->elts, ma->ap, ma->elt_size),
+		     ma->ar - ma->ap + 1, //at least 1 element
+		     ma->elt_size,
+		     ma->cmp_elt_fn);
+    if (ix == 0){
+      child_mas[0].ap = NR;
+      child_mas[0].ar = NR;
+      child_mas[1].ap = ma->ap;
+      child_mas[1].ar = ma->ar;
+      child_mas[1].cs = ma->cs + (bq - ma->bp + 1);
+    }else if (ix == NR){
+      child_mas[0].ap = ma->ap;
+      child_mas[0].ar = ma->ar;
+      child_mas[1].ap = NR;
+      child_mas[1].ar = NR;
+      child_mas[1].cs = ma->cs + (ma->ap - ma->ar) + (bq - ma->bp) + 2;
+    }else{
+      child_mas[0].ap = ma->ap;
+      child_mas[0].ar = ma->ap + ix;
+      child_mas[1].ap = ma->ap + ix + 1;
+      child_mas[1].ar = ma->ar;
+      child_mas[1].cs = ma->cs + ix + (bq - ma->bp) + 2;
     }
   }
-  if (second_ix == r + 1){
-    memcpy(elt_ptr(elts, p + temp_ix, elt_size),
-	   elt_ptr(elts, first_ix, elt_size),
-	   (q - first_ix + 1) * elt_size);
+  child_mas[0].mbase_count = ma->mbase_count;
+  child_mas[0].elt_size = ma->elt_size;
+  child_mas[0].num_onthread_rec = ma->num_onthread_rec;
+  child_mas[0].cat_elts = ma->cat_elts;
+  child_mas[0].elts = ma->elts;
+  child_mas[0].cmp_elt_fn = ma->cmp_elt_fn;
+  child_mas[1].mbase_count = ma->mbase_count;
+  child_mas[1].elt_size = ma->elt_size;
+  child_mas[1].num_onthread_rec = ma->num_onthread_rec;
+  child_mas[1].cat_elts = ma->cat_elts;
+  child_mas[1].elts = ma->elts;
+  child_mas[1].cmp_elt_fn = ma->cmp_elt_fn;
+
+  //recursion
+  thread_create_perror(&child_ids[0], merge_thread, &child_mas[0]);
+  if (ma->num_onthread_rec < MAX_NUM_ONTHREAD_REC){
+    //keep putting merge_thread calls on the current thread stack
+    child_mas[1].num_onthread_rec = ma->num_onthread_rec + 1;
+    merge_thread(&child_mas[1]);
+  }else{
+    child_mas[1].num_onthread_rec = 0;
+    thread_create_perror(&child_ids[1], merge_thread, &child_mas[1]);
+    thread_join_perror(child_ids[1], NULL);
   }
-  memcpy(elt_ptr(elts, p, elt_size),
-	 elt_ptr(temp, 0, elt_size),
-	 temp_ix * elt_size);
-  free(temp);
-  temp = NULL;
+  thread_join_perror(child_ids[0], NULL);
+  return NULL;
+}
+
+/**
+   Merge two contiguous or non-contiguous sorted regions of an element array 
+   onto a concatenation array. This is the base case for parallel merge.
+*/
+static void merge(merge_arg_t *ma){
+  uint64_t first_ix, second_ix, cat_ix;
+  int elt_size = ma->elt_size;
+  if (ma->ap == NR && ma->ar == NR){
+    memcpy(elt_ptr(ma->cat_elts, ma->cs, elt_size),
+	   elt_ptr(ma->elts, ma->bp, elt_size),
+	   (ma->br - ma->bp + 1) * elt_size);
+  }else if (ma->bp == NR && ma->br == NR){
+    memcpy(elt_ptr(ma->cat_elts, ma->cs, elt_size),
+	   elt_ptr(ma->elts, ma->ap, elt_size),
+	   (ma->ar - ma->ap + 1) * elt_size);
+  }else{
+    //a and b are each not empty
+    first_ix = ma->ap;
+    second_ix = ma->bp;
+    cat_ix = ma->cs;
+    while(first_ix <= ma->ar && second_ix <= ma->br){
+      if (ma->cmp_elt_fn(elt_ptr(ma->elts, first_ix, elt_size),
+			 elt_ptr(ma->elts, second_ix, elt_size)) < 0){
+	memcpy(elt_ptr(ma->cat_elts, cat_ix, elt_size),
+	       elt_ptr(ma->elts, first_ix, elt_size),
+	       elt_size);
+	cat_ix++;
+	first_ix++;
+      }else{
+	memcpy(elt_ptr(ma->cat_elts, cat_ix, elt_size),
+	       elt_ptr(ma->elts, second_ix, elt_size),
+	       elt_size);
+	cat_ix++;
+	second_ix++;
+      }
+    }
+    if (second_ix == ma->br + 1){
+      memcpy(elt_ptr(ma->cat_elts, cat_ix, elt_size),
+	     elt_ptr(ma->elts, first_ix, elt_size),
+	     (ma->ar - first_ix + 1) * elt_size);
+    }else{
+      memcpy(elt_ptr(ma->cat_elts, cat_ix, elt_size),
+	     elt_ptr(ma->elts, second_ix, elt_size),
+	     (ma->br - second_ix + 1) * elt_size);
+    }
+  }
+}
+
+/**
+   Returns the index of the first element that is greater or equal
+   to a key element, according to a comparison function.
+*/
+static uint64_t geq_bsearch(const void *key,
+			    const void *elts,
+			    uint64_t count,
+			    int elt_size,
+			    int (*cmp)(const void*, const void*)){
+  uint64_t ix = (count - 1) / 2;
+  uint64_t prev_high_ix = count - 1, prev_low_ix = 0;
+  if (cmp(key, elt_ptr(elts, count - 1, elt_size)) > 0){
+    //key is greater than the last element
+    return NR;
+  }else if (cmp(key, elt_ptr(elts, 0, elt_size)) <= 0){
+    //key is lower or equal to the first element
+    return 0;
+  }else{
+    //>1 elements in array; search for a[ix] <= key <= a[ix + 1]
+    while (true){
+      if (cmp(key, elt_ptr(elts, ix, elt_size)) < 0){
+	prev_high_ix = ix;
+	ix = (ix + prev_low_ix) / 2;
+      }else if (cmp(key, elt_ptr(elts, ix + 1, elt_size)) > 0){
+	prev_low_ix = ix;
+	ix = (ix + prev_high_ix) / 2; //ix < count - 1 due to rounding down
+      }else{
+	break;
+      }
+    }
+  }
+  return ix + 1;
 }
 
 /**
    Computes a pointer to an element in an element array.
 */
-static void *elt_ptr(void *elts, uint64_t i, int elt_size){
+static void *elt_ptr(const void *elts, uint64_t i, int elt_size){
   return (void *)((char *)elts + i * elt_size);
 }

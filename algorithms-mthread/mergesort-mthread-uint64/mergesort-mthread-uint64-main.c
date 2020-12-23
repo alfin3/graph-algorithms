@@ -29,48 +29,54 @@ void run_int_test(){
   int result = 1;
   int num_iter = 5;
   int num_counts = 2;
-  int num_sbase_counts = 5;
+  int num_mbase_counts = 3;
+  int num_sbase_counts = 1;
   uint64_t count_arr[2] = {1000000, 10000000};
   uint64_t max_count = count_arr[1];
-  uint64_t sbase_count_arr[5] = {1000, 10000, 100000, 1000000, 10000000};
+  uint64_t mbase_count_arr[3] = {100000, 1000000, 10000000};
+  uint64_t sbase_count_arr[1] = {10000000};
   int *arr_a =  malloc_perror(max_count * sizeof(int));
   int *arr_b =  malloc_perror(max_count * sizeof(int));
   double t_tot_m, t_tot_q, t_m, t_q;
   printf("Test mergesort_mthread_uint64 performance on random integer "
 	 "arrays\n");
-  for (int c_ix = 0; c_ix < num_counts; c_ix++){
-    printf("\tarray count: %lu, # trials: %d\n", count_arr[c_ix], num_iter);
-    for (int sbc_ix = 0; sbc_ix < num_sbase_counts; sbc_ix++){
-      printf("\t\tmergesort base count:  %lu\n", sbase_count_arr[sbc_ix]);
-      t_tot_m = 0.0;
-      t_tot_q = 0.0;
-      for(int i = 0; i < num_iter; i++){
-	for (uint64_t j = 0; j < count_arr[c_ix]; j++){
-	  arr_a[j] = random() % count_arr[c_ix]; //to get repeated vals
+  for (int ci = 0; ci < num_counts; ci++){
+    printf("\tarray count: %lu, # trials: %d\n", count_arr[ci], num_iter);
+    for (int mi = 0; mi < num_mbase_counts; mi++){
+      printf("\t\tmerge base count:  %lu\n", mbase_count_arr[mi]);
+      for (int si = 0; si < num_sbase_counts; si++){
+	printf("\t\t\tsort base count:  %lu\n", sbase_count_arr[si]);
+	t_tot_m = 0.0;
+	t_tot_q = 0.0;
+	for(int i = 0; i < num_iter; i++){
+	  for (uint64_t j = 0; j < count_arr[ci]; j++){
+	    arr_a[j] = random() % count_arr[ci]; //to get repeated vals
+	  }
+	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(int));
+	  t_m = timer();
+	  mergesort_mthread_uint64(arr_a,
+				   count_arr[ci],
+				   mbase_count_arr[mi],
+				   sbase_count_arr[si],
+				   sizeof(int),
+				   cmp_int_fn);
+	  t_m = timer() - t_m;
+	  t_q = timer();
+	  qsort(arr_b, count_arr[ci], sizeof(int), cmp_int_fn);
+	  t_q = timer() - t_q;
+	  t_tot_m += t_m;
+	  t_tot_q += t_q;
+	  for (uint64_t j = 0; j < count_arr[ci]; j++){
+	    result *= (cmp_int_fn(&arr_a[j], &arr_b[j]) == 0);
+	  }
 	}
-	memcpy(arr_b, arr_a, count_arr[c_ix] * sizeof(int));
-	t_m = timer();
-	mergesort_mthread_uint64(arr_a,
-				 count_arr[c_ix],
-				 sbase_count_arr[sbc_ix],
-				 sizeof(int),
-				 cmp_int_fn);
-	t_m = timer() - t_m;
-	t_q = timer();
-	qsort(arr_b, count_arr[c_ix], sizeof(int), cmp_int_fn);
-	t_q = timer() - t_q;
-	t_tot_m += t_m;
-	t_tot_q += t_q;
-	for (uint64_t j = 0; j < count_arr[c_ix]; j++){
-	  result *= (cmp_int_fn(&arr_a[j], &arr_b[j]) == 0);
-	}
+	printf("\t\t\tave mthread mergesort: %.6f seconds\n",
+	       t_tot_m / num_iter);
+	printf("\t\t\tave qsort:             %.6f seconds\n",
+	       t_tot_q / num_iter);
+	printf("\t\t\tcorrectness:           ");
+	print_test_result(result);
       }
-      printf("\t\tave mthread mergesort: %.6f seconds\n",
-	     t_tot_m / num_iter);
-      printf("\t\tave qsort:             %.6f seconds\n",
-	     t_tot_q / num_iter);
-      printf("\t\tcorrectness:           ");
-      print_test_result(result);
     }
   }
   free(arr_a);
