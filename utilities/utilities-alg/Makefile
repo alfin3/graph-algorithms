@@ -1,19 +1,25 @@
 CC = gcc
-UTILS_MEM_DIR = ../../utilities/utilities-mem/
+UTILS_MEM_DIR = ../utilities-mem/
+UTILS_RM_DIR = ../utilities-rand-mod/
 CFLAGS = -I$(UTILS_MEM_DIR) \
-         -Wall -Wextra -O3
+         -I$(UTILS_RM_DIR)  \
+         -Wall -Wextra -Wno-unused-result  -O3
 
-OBJ = utilities-alg-main.o            \
-      utilities-alg.o                 \
-      $(UTILS_MEM_DIR)utilities-mem.o
+OBJ = utilities-alg-main.o                      \
+      utilities-alg.o                           \
+      $(UTILS_MEM_DIR)utilities-mem.o           \
+      $(UTILS_RM_DIR)utilities-rand-mod.o
 
 utilities-alg : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
-utilities-alg-main.o            : utilities-alg.h
-utilities-alg.o                 : utilities-alg.h                 \
-                                  $(UTILS_MEM_DIR)utilities-mem.h
-$(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
+utilities-alg-main.o                : utilities-alg.h                     \
+                                      $(UTILS_MEM_DIR)utilities-mem.h     \
+                                      $(UTILS_RM_DIR)utilities-rand-mod.h 
+utilities-alg.o                     : utilities-alg.h                     \
+                                      $(UTILS_MEM_DIR)utilities-mem.h
+$(UTILS_MEM_DIR)utilities-mem.o     : $(UTILS_MEM_DIR)utilities-mem.h
+$(UTILS_RM_DIR)utilities-rand-mod.o : $(UTILS_RM_DIR)utilities-rand-mod.h
 
 .PHONY : clean clean-all
 
