@@ -13,7 +13,6 @@
 #include <time.h>
 #include "utilities-alg.h"
 #include "utilities-mem.h"
-#include "utilities-rand-mod.h"
 
 #define RANDOM() (random())
 #define DRAND48() (drand48())
