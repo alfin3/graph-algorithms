@@ -114,7 +114,6 @@ void run_geq_leq_bsearch_int_test(){
       key = RANDOM() % count - RANDOM() % count;
       geq_ix = geq_bsearch(&key, elts, count, elt_size, cmp_int_fn);
       leq_ix = leq_bsearch(&key, elts, count, elt_size, cmp_int_fn);
-      bsearch(&key, elts, count, elt_size, cmp_int_fn);
       res *= test_geq_leq_indices(&key,
 				  elts,
 				  count,
@@ -197,7 +196,6 @@ void run_geq_leq_bsearch_double_test(){
       key = DRAND48(); 
       geq_ix = geq_bsearch(&key, elts, count, elt_size, cmp_double_fn);
       leq_ix = leq_bsearch(&key, elts, count, elt_size, cmp_double_fn);
-      bsearch(&key, elts, count, elt_size, cmp_double_fn);
       res *= test_geq_leq_indices(&key,
 				  elts,
 				  count,
