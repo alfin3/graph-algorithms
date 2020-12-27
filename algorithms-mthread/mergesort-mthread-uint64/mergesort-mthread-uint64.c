@@ -14,8 +14,9 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include "mergesort-mthread-uint64.h"
-#include "utilities-mem.h"
+#include "utilities-alg.h"
 #include "utilities-concur.h"
+#include "utilities-mem.h"
 
 typedef struct{
   uint64_t p, r;
@@ -43,11 +44,6 @@ const uint64_t NR = 0xffffffffffffffff; //cannot be reached as array index
 static void *mergesort_thread(void *arg);
 static void *merge_thread(void *arg);
 static void merge(merge_arg_t *ma);
-static uint64_t geq_bsearch(const void *key,
-			    const void *elts,
-			    uint64_t count,
-			    int elt_size,
-			    int (*cmp)(const void*, const void*));
 static void *elt_ptr(const void *elts, uint64_t i, int elt_size);
 
 /**
@@ -96,6 +92,7 @@ static void *mergesort_thread(void *arg){
     child_msas[0].p = msa->p;
     child_msas[0].r = q;
     child_msas[0].sbase_count = msa->sbase_count;
+    child_msas[0].mbase_count = msa->mbase_count;
     child_msas[0].elt_size = msa->elt_size;
     child_msas[0].num_onthread_rec = 0;
     child_msas[0].elts = msa->elts;
@@ -103,6 +100,7 @@ static void *mergesort_thread(void *arg){
     child_msas[1].p = q + 1;
     child_msas[1].r = msa->r;
     child_msas[1].sbase_count = msa->sbase_count;
+    child_msas[1].mbase_count = msa->mbase_count;
     child_msas[1].elt_size = msa->elt_size;
     child_msas[1].elts = msa->elts;
     child_msas[1].cmp_elt_fn = msa->cmp_elt_fn;
@@ -166,18 +164,18 @@ static void *merge_thread(void *arg){
     child_mas[0].cs = ma->cs;
     child_mas[1].ap = aq + 1;
     child_mas[1].ar = ma->ar;
-    ix = geq_bsearch(elt_ptr(ma->elts, aq, ma->elt_size),
+    ix = leq_bsearch(elt_ptr(ma->elts, aq, ma->elt_size),
 		     elt_ptr(ma->elts, ma->bp, ma->elt_size),
 		     ma->br - ma->bp + 1, //at least 1 element
 		     ma->elt_size,
 		     ma->cmp_elt_fn);
-    if (ix == 0){
+    if (ix == ma->br - ma->bp + 1){
       child_mas[0].bp = NR;
       child_mas[0].br = NR;
       child_mas[1].bp = ma->bp;
       child_mas[1].br = ma->br;
       child_mas[1].cs = ma->cs + (aq - ma->ap + 1);
-    }else if (ix == NR){
+    }else if (ix == ma->br - ma->bp){
       child_mas[0].bp = ma->bp;
       child_mas[0].br = ma->br;
       child_mas[1].bp = NR;
@@ -197,23 +195,23 @@ static void *merge_thread(void *arg){
     child_mas[0].cs = ma->cs;
     child_mas[1].bp = bq + 1;
     child_mas[1].br = ma->br;
-    ix = geq_bsearch(elt_ptr(ma->elts, bq, ma->elt_size),
+    ix = leq_bsearch(elt_ptr(ma->elts, bq, ma->elt_size),
 		     elt_ptr(ma->elts, ma->ap, ma->elt_size),
 		     ma->ar - ma->ap + 1, //at least 1 element
 		     ma->elt_size,
 		     ma->cmp_elt_fn);
-    if (ix == 0){
+    if (ix == ma->ar - ma->ap + 1){
       child_mas[0].ap = NR;
       child_mas[0].ar = NR;
       child_mas[1].ap = ma->ap;
       child_mas[1].ar = ma->ar;
       child_mas[1].cs = ma->cs + (bq - ma->bp + 1);
-    }else if (ix == NR){
+    }else if (ix == ma->ar - ma->ap){
       child_mas[0].ap = ma->ap;
       child_mas[0].ar = ma->ar;
       child_mas[1].ap = NR;
       child_mas[1].ar = NR;
-      child_mas[1].cs = ma->cs + (ma->ap - ma->ar) + (bq - ma->bp) + 2;
+      child_mas[1].cs = ma->cs + (ma->ar - ma->ap) + (bq - ma->bp) + 2;
     }else{
       child_mas[0].ap = ma->ap;
       child_mas[0].ar = ma->ap + ix;
@@ -296,40 +294,6 @@ static void merge(merge_arg_t *ma){
 	     (ma->br - second_ix + 1) * elt_size);
     }
   }
-}
-
-/**
-   Returns the index of the first element that is greater or equal
-   to a key element, according to a comparison function.
-*/
-static uint64_t geq_bsearch(const void *key,
-			    const void *elts,
-			    uint64_t count,
-			    int elt_size,
-			    int (*cmp)(const void*, const void*)){
-  uint64_t ix = (count - 1) / 2;
-  uint64_t prev_high_ix = count - 1, prev_low_ix = 0;
-  if (cmp(key, elt_ptr(elts, count - 1, elt_size)) > 0){
-    //key is greater than the last element
-    return NR;
-  }else if (cmp(key, elt_ptr(elts, 0, elt_size)) <= 0){
-    //key is lower or equal to the first element
-    return 0;
-  }else{
-    //>1 elements in array; search for a[ix] <= key <= a[ix + 1]
-    while (true){
-      if (cmp(key, elt_ptr(elts, ix, elt_size)) < 0){
-	prev_high_ix = ix;
-	ix = (ix + prev_low_ix) / 2;
-      }else if (cmp(key, elt_ptr(elts, ix + 1, elt_size)) > 0){
-	prev_low_ix = ix;
-	ix = (ix + prev_high_ix) / 2; //ix < count - 1 due to rounding down
-      }else{
-	break;
-      }
-    }
-  }
-  return ix + 1;
 }
 
 /**

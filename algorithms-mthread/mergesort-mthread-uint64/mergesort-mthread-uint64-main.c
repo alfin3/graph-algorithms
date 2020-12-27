@@ -28,13 +28,13 @@ int cmp_int_fn(const void *a, const void *b){
 void run_int_test(){
   int result = 1;
   int num_iter = 5;
-  int num_counts = 2;
-  int num_mbase_counts = 3;
-  int num_sbase_counts = 1;
-  uint64_t count_arr[2] = {1000000, 10000000};
-  uint64_t max_count = count_arr[1];
-  uint64_t mbase_count_arr[3] = {100000, 1000000, 10000000};
-  uint64_t sbase_count_arr[1] = {10000000};
+  int num_counts = 1;
+  int num_mbase_counts = 4;
+  int num_sbase_counts = 2;
+  uint64_t count_arr[1] = {10000000};
+  uint64_t max_count = count_arr[0];
+  uint64_t mbase_count_arr[4] = {2000000, 3000000, 4000000, 10000000};
+  uint64_t sbase_count_arr[2] = {1000000, 10000000};
   int *arr_a =  malloc_perror(max_count * sizeof(int));
   int *arr_b =  malloc_perror(max_count * sizeof(int));
   double t_tot_m, t_tot_q, t_m, t_q;
