@@ -1,5 +1,5 @@
 /**
-   mergesort-mthread-uint64-main.c
+   mergesort-mthread-main.c
 
 */
 
@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/time.h>
-#include "mergesort-mthread-uint64.h"
+#include "mergesort-mthread.h"
 #include "utilities-mem.h"
 
 double timer();
@@ -42,14 +42,13 @@ void run_int_test(){
   int *arr_a =  malloc_perror(max_count * sizeof(int));
   int *arr_b =  malloc_perror(max_count * sizeof(int));
   double t_tot_m, t_tot_q, t_m, t_q;
-  printf("Test mergesort_mthread_uint64 performance on random integer "
-	 "arrays\n");
+  printf("Test mergesort_mthread performance on random integer arrays\n");
   for (int ci = 0; ci < num_counts; ci++){
     printf("\tarray count: %lu, # trials: %d\n", count_arr[ci], num_iter);
-    for (int mi = 0; mi < num_mbase_counts; mi++){
-      printf("\t\tmerge base count:  %lu\n", mbase_count_arr[mi]);
-      for (int si = 0; si < num_sbase_counts; si++){
-	printf("\t\t\tsort base count:  %lu\n", sbase_count_arr[si]);
+    for (int si = 0; si < num_sbase_counts; si++){
+      printf("\t\tsort base count:  %lu\n", sbase_count_arr[si]);
+      for (int mi = 0; mi < num_mbase_counts; mi++){
+	printf("\t\t\tmerge base count:  %lu\n", mbase_count_arr[mi]);
 	t_tot_m = 0.0;
 	t_tot_q = 0.0;
 	for(int i = 0; i < num_iter; i++){
@@ -58,12 +57,12 @@ void run_int_test(){
 	  }
 	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(int));
 	  t_m = timer();
-	  mergesort_mthread_uint64(arr_a,
-				   count_arr[ci],
-				   mbase_count_arr[mi],
-				   sbase_count_arr[si],
-				   sizeof(int),
-				   cmp_int_fn);
+	  mergesort_mthread(arr_a,
+			    count_arr[ci],
+			    sizeof(int),
+			    sbase_count_arr[si],
+			    mbase_count_arr[mi],
+			    cmp_int_fn);
 	  t_m = timer() - t_m;
 	  t_q = timer();
 	  qsort(arr_b, count_arr[ci], sizeof(int), cmp_int_fn);
@@ -108,7 +107,6 @@ void print_test_result(int result){
     printf("FAILURE\n");
   }
 }
-
 
 int main(){
   run_int_test();

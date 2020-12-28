@@ -1,5 +1,5 @@
 /**
-   mergesort-mthread-uint64.c
+   mergesort-mthread.c
 
    generic implementation without race conditions (and overhead). 
    base count parameters can be used to optimizing on
@@ -13,25 +13,25 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include "mergesort-mthread-uint64.h"
+#include "mergesort-mthread.h"
 #include "utilities-alg.h"
 #include "utilities-concur.h"
 #include "utilities-mem.h"
 
 typedef struct{
-  uint64_t p, r;
-  uint64_t mbase_count; //>1, count of merge base case
-  uint64_t sbase_count; //>0, count of sort base case
-  int elt_size;
+  size_t p, r;
+  size_t mbase_count; //>1, count of merge base case
+  size_t sbase_count; //>0, count of sort base case
+  size_t elt_size;
   int num_onthread_rec;
   void *elts; //pointer to an input array
   int (*cmp_elt_fn)(const void *, const void *);
 } mergesort_arg_t;
 
 typedef struct{
-  uint64_t ap, ar, bp, br, cs;
-  uint64_t mbase_count; //>1, count of merge base case
-  int elt_size;
+  size_t ap, ar, bp, br, cs;
+  size_t mbase_count; //>1, count of merge base case
+  size_t elt_size;
   int num_onthread_rec;
   void *cat_elts; 
   void *elts; //pointer to an input array
@@ -39,22 +39,22 @@ typedef struct{
 } merge_arg_t;
 
 const int MAX_NUM_ONTHREAD_REC = 20; //max # recursive calls on thread stack
-const uint64_t NR = 0xffffffffffffffff; //cannot be reached as array index
+const size_t NR = SIZE_MAX; //cannot be reached as array index
 
 static void *mergesort_thread(void *arg);
 static void *merge_thread(void *arg);
 static void merge(merge_arg_t *ma);
-static void *elt_ptr(const void *elts, uint64_t i, int elt_size);
+static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 
 /**
    Runs the first thread entry on the thread of the caller.
 */
-void mergesort_mthread_uint64(void *elts,
-			      uint64_t count,
-			      uint64_t mbase_count,
-			      uint64_t sbase_count,
-			      int elt_size,
-			      int (*cmp_elt_fn)(const void *, const void *)){
+void mergesort_mthread(void *elts,
+		       size_t count,
+		       size_t elt_size,
+		       size_t sbase_count,
+		       size_t mbase_count,
+		       int (*cmp_elt_fn)(const void *, const void *)){
   mergesort_arg_t msa;
   if (count < 2) return;
   msa.p = 0;
@@ -79,7 +79,7 @@ static void *mergesort_thread(void *arg){
   mergesort_arg_t child_msas[2];
   pthread_t child_ids[2];
   merge_arg_t ma;
-  uint64_t q;
+  size_t q;
   if (msa->r - msa->p + 1 <= msa->sbase_count){
     qsort(elt_ptr(msa->elts, msa->p, msa->elt_size),
 	  msa->r - msa->p + 1,
@@ -146,7 +146,7 @@ static void *merge_thread(void *arg){
   merge_arg_t *ma = arg;
   merge_arg_t child_mas[2];
   pthread_t child_ids[2];
-  uint64_t aq, bq, ix;
+  size_t aq, bq, ix;
   if ((ma->ap == NR && ma->ar == NR) ||
       (ma->bp == NR && ma->br == NR) ||
       (ma->ar - ma->ap) + (ma->br - ma->bp) + 2 <= ma->mbase_count){
@@ -251,8 +251,8 @@ static void *merge_thread(void *arg){
    onto a concatenation array. This is the base case for parallel merge.
 */
 static void merge(merge_arg_t *ma){
-  uint64_t first_ix, second_ix, cat_ix;
-  int elt_size = ma->elt_size;
+  size_t first_ix, second_ix, cat_ix;
+  size_t elt_size = ma->elt_size;
   if (ma->ap == NR && ma->ar == NR){
     //a is empty
     memcpy(elt_ptr(ma->cat_elts, ma->cs, elt_size),
@@ -299,6 +299,6 @@ static void merge(merge_arg_t *ma){
 /**
    Computes a pointer to an element in an element array.
 */
-static void *elt_ptr(const void *elts, uint64_t i, int elt_size){
+static void *elt_ptr(const void *elts, size_t i, size_t elt_size){
   return (void *)((char *)elts + i * elt_size);
 }
