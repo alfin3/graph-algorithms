@@ -1,9 +1,9 @@
 /**
    mergesort-mthread-uint64.c
 
-   generic implementation wihtout race conditions (and overhead). 
+   generic implementation without race conditions (and overhead). 
    base count parameters can be used to optimizing on
-   for input ranges and specific hardware settings.
+   input ranges and specific hardware settings.
 */
 
 #include <unistd.h>
@@ -38,7 +38,7 @@ typedef struct{
   int (*cmp_elt_fn)(const void *, const void *);
 } merge_arg_t;
 
-const int MAX_NUM_ONTHREAD_REC = 30; //max # recursive calls on thread stack
+const int MAX_NUM_ONTHREAD_REC = 20; //max # recursive calls on thread stack
 const uint64_t NR = 0xffffffffffffffff; //cannot be reached as array index
 
 static void *mergesort_thread(void *arg);
@@ -147,8 +147,6 @@ static void *merge_thread(void *arg){
   merge_arg_t child_mas[2];
   pthread_t child_ids[2];
   uint64_t aq, bq, ix;
-
-  //base case, where ma->mbase_count > 1
   if ((ma->ap == NR && ma->ar == NR) ||
       (ma->bp == NR && ma->br == NR) ||
       (ma->ar - ma->ap) + (ma->br - ma->bp) + 2 <= ma->mbase_count){
@@ -158,7 +156,7 @@ static void *merge_thread(void *arg){
   
   //recursion parameters with <= 3/4 problem size for the larger subproblem
   if (ma->ar - ma->ap > ma->br - ma->bp){
-    aq = (ma->ap + ma->ar) / 2; //ma->ar - ma->ap >= 1; rounds down
+    aq = (ma->ap + ma->ar) / 2;
     child_mas[0].ap = ma->ap;
     child_mas[0].ar = aq;
     child_mas[0].cs = ma->cs;
@@ -189,7 +187,7 @@ static void *merge_thread(void *arg){
       child_mas[1].cs = ma->cs + (aq - ma->ap) + ix + 2;
     }
   }else{
-    bq = (ma->bp + ma->br) / 2; //ma->br - ma->bp >= 1; rounds down
+    bq = (ma->bp + ma->br) / 2;
     child_mas[0].bp = ma->bp;
     child_mas[0].br = bq;
     child_mas[0].cs = ma->cs;
@@ -256,10 +254,12 @@ static void merge(merge_arg_t *ma){
   uint64_t first_ix, second_ix, cat_ix;
   int elt_size = ma->elt_size;
   if (ma->ap == NR && ma->ar == NR){
+    //a is empty
     memcpy(elt_ptr(ma->cat_elts, ma->cs, elt_size),
 	   elt_ptr(ma->elts, ma->bp, elt_size),
 	   (ma->br - ma->bp + 1) * elt_size);
   }else if (ma->bp == NR && ma->br == NR){
+    //b is empty
     memcpy(elt_ptr(ma->cat_elts, ma->cs, elt_size),
 	   elt_ptr(ma->elts, ma->ap, elt_size),
 	   (ma->ar - ma->ap + 1) * elt_size);
