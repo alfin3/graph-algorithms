@@ -23,7 +23,7 @@ typedef struct{
   size_t mbase_count; //>1, count of merge base case
   size_t sbase_count; //>0, count of sort base case
   size_t elt_size;
-  int num_onthread_rec;
+  size_t num_onthread_rec;
   void *elts; //pointer to an input array
   int (*cmp_elt_fn)(const void *, const void *);
 } mergesort_arg_t;
@@ -32,13 +32,12 @@ typedef struct{
   size_t ap, ar, bp, br, cs;
   size_t mbase_count; //>1, count of merge base case
   size_t elt_size;
-  int num_onthread_rec;
+  size_t num_onthread_rec;
   void *cat_elts; 
   void *elts; //pointer to an input array
   int (*cmp_elt_fn)(const void *, const void *);
 } merge_arg_t;
 
-const int MAX_NUM_ONTHREAD_REC = 20; //max # recursive calls on thread stack
 const size_t NR = SIZE_MAX; //cannot be reached as array index
 
 static void *mergesort_thread(void *arg);
@@ -105,7 +104,7 @@ static void *mergesort_thread(void *arg){
     child_msas[1].elts = msa->elts;
     child_msas[1].cmp_elt_fn = msa->cmp_elt_fn;
     thread_create_perror(&child_ids[0], mergesort_thread, &child_msas[0]);
-    if (msa->num_onthread_rec < MAX_NUM_ONTHREAD_REC){
+    if (msa->num_onthread_rec < MERGESORT_MTHREAD_MAX_ONTHREAD_REC){
       //keep putting mergesort_thread calls on the current thread stack
       child_msas[1].num_onthread_rec = msa->num_onthread_rec + 1;
       mergesort_thread(&child_msas[1]);
@@ -233,7 +232,7 @@ static void *merge_thread(void *arg){
 
   //recursion
   thread_create_perror(&child_ids[0], merge_thread, &child_mas[0]);
-  if (ma->num_onthread_rec < MAX_NUM_ONTHREAD_REC){
+  if (ma->num_onthread_rec < MERGESORT_MTHREAD_MAX_ONTHREAD_REC){
     //keep putting merge_thread calls on the current thread stack
     child_mas[1].num_onthread_rec = ma->num_onthread_rec + 1;
     merge_thread(&child_mas[1]);
