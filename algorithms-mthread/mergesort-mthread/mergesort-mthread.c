@@ -25,7 +25,7 @@ typedef struct{
   size_t elt_size;
   size_t num_onthread_rec;
   void *elts; //pointer to an input array
-  int (*cmp_elt_fn)(const void *, const void *);
+  int (*cmp)(const void *, const void *);
 } mergesort_arg_t;
 
 typedef struct{
@@ -35,7 +35,7 @@ typedef struct{
   size_t num_onthread_rec;
   void *cat_elts; 
   void *elts; //pointer to an input array
-  int (*cmp_elt_fn)(const void *, const void *);
+  int (*cmp)(const void *, const void *);
 } merge_arg_t;
 
 const size_t NR = SIZE_MAX; //cannot be reached as array index
@@ -53,7 +53,7 @@ void mergesort_mthread(void *elts,
 		       size_t elt_size,
 		       size_t sbase_count,
 		       size_t mbase_count,
-		       int (*cmp_elt_fn)(const void *, const void *)){
+		       int (*cmp)(const void *, const void *)){
   mergesort_arg_t msa;
   if (count < 2) return;
   msa.p = 0;
@@ -63,15 +63,15 @@ void mergesort_mthread(void *elts,
   msa.elt_size = elt_size;
   msa.num_onthread_rec = 0;
   msa.elts = elts;
-  msa.cmp_elt_fn = cmp_elt_fn;
+  msa.cmp = cmp;
   mergesort_thread(&msa);
 }
   
 /**
    Enters a mergesort thread that spawns mergesort threads recursively.
-   Reduces the total number of threads by placing O(logn) recursive calls
-   on a thread, with the tightness of the bound set by MAX_NUM_ONTHREAD_REC.
-   The default thread stack size should be sufficient for most inputs.
+   The total number of threads is reduced and an additional speedup is
+   provided by placing O(logn) recursive calls on a thread stack, with the
+   tightness of the bound set by MERGESORT_MTHREAD_MAX_ONTHREAD_REC.
 */
 static void *mergesort_thread(void *arg){
   mergesort_arg_t *msa = arg;
@@ -83,7 +83,7 @@ static void *mergesort_thread(void *arg){
     qsort(elt_ptr(msa->elts, msa->p, msa->elt_size),
 	  msa->r - msa->p + 1,
 	  msa->elt_size,
-	  msa->cmp_elt_fn);
+	  msa->cmp);
   }else{
     
     //sort recursion
@@ -95,14 +95,14 @@ static void *mergesort_thread(void *arg){
     child_msas[0].elt_size = msa->elt_size;
     child_msas[0].num_onthread_rec = 0;
     child_msas[0].elts = msa->elts;
-    child_msas[0].cmp_elt_fn = msa->cmp_elt_fn;
+    child_msas[0].cmp = msa->cmp;
     child_msas[1].p = q + 1;
     child_msas[1].r = msa->r;
     child_msas[1].sbase_count = msa->sbase_count;
     child_msas[1].mbase_count = msa->mbase_count;
     child_msas[1].elt_size = msa->elt_size;
     child_msas[1].elts = msa->elts;
-    child_msas[1].cmp_elt_fn = msa->cmp_elt_fn;
+    child_msas[1].cmp = msa->cmp;
     thread_create_perror(&child_ids[0], mergesort_thread, &child_msas[0]);
     if (msa->num_onthread_rec < MERGESORT_MTHREAD_MAX_ONTHREAD_REC){
       //keep putting mergesort_thread calls on the current thread stack
@@ -126,7 +126,7 @@ static void *mergesort_thread(void *arg){
     ma.num_onthread_rec = msa->num_onthread_rec;
     ma.cat_elts = malloc_perror((msa->r - msa->p + 1) * msa->elt_size);
     ma.elts = msa->elts;
-    ma.cmp_elt_fn = msa->cmp_elt_fn;
+    ma.cmp = msa->cmp;
     merge_thread(&ma);
     //copy the merged result into the input array
     memcpy(elt_ptr(msa->elts, msa->p, msa->elt_size),
@@ -165,7 +165,7 @@ static void *merge_thread(void *arg){
 		     elt_ptr(ma->elts, ma->bp, ma->elt_size),
 		     ma->br - ma->bp + 1, //at least 1 element
 		     ma->elt_size,
-		     ma->cmp_elt_fn);
+		     ma->cmp);
     if (ix == ma->br - ma->bp + 1){
       child_mas[0].bp = NR;
       child_mas[0].br = NR;
@@ -196,7 +196,7 @@ static void *merge_thread(void *arg){
 		     elt_ptr(ma->elts, ma->ap, ma->elt_size),
 		     ma->ar - ma->ap + 1, //at least 1 element
 		     ma->elt_size,
-		     ma->cmp_elt_fn);
+		     ma->cmp);
     if (ix == ma->ar - ma->ap + 1){
       child_mas[0].ap = NR;
       child_mas[0].ar = NR;
@@ -222,13 +222,13 @@ static void *merge_thread(void *arg){
   child_mas[0].num_onthread_rec = ma->num_onthread_rec;
   child_mas[0].cat_elts = ma->cat_elts;
   child_mas[0].elts = ma->elts;
-  child_mas[0].cmp_elt_fn = ma->cmp_elt_fn;
+  child_mas[0].cmp = ma->cmp;
   child_mas[1].mbase_count = ma->mbase_count;
   child_mas[1].elt_size = ma->elt_size;
   child_mas[1].num_onthread_rec = ma->num_onthread_rec;
   child_mas[1].cat_elts = ma->cat_elts;
   child_mas[1].elts = ma->elts;
-  child_mas[1].cmp_elt_fn = ma->cmp_elt_fn;
+  child_mas[1].cmp = ma->cmp;
 
   //recursion
   thread_create_perror(&child_ids[0], merge_thread, &child_mas[0]);
@@ -268,8 +268,8 @@ static void merge(merge_arg_t *ma){
     second_ix = ma->bp;
     cat_ix = ma->cs;
     while(first_ix <= ma->ar && second_ix <= ma->br){
-      if (ma->cmp_elt_fn(elt_ptr(ma->elts, first_ix, elt_size),
-			 elt_ptr(ma->elts, second_ix, elt_size)) < 0){
+      if (ma->cmp(elt_ptr(ma->elts, first_ix, elt_size),
+		  elt_ptr(ma->elts, second_ix, elt_size)) < 0){
 	memcpy(elt_ptr(ma->cat_elts, cat_ix, elt_size),
 	       elt_ptr(ma->elts, first_ix, elt_size),
 	       elt_size);
