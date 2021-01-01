@@ -1,10 +1,10 @@
 /**
    queue.h
 
-   Struct declarations and declarations of accessible functions of a generic 
-   dynamically allocated fifo queue.
+   Struct declarations, declarations of accessible functions, and macro
+   definitions for a generic dynamically allocated fifo queue.
 
-   Through a user-defined deallocation function, the implementation provides 
+   Through a user-defined deallocation function, the implementation provides
    a dynamic set of any objects in the fifo queue form.
 */
 
@@ -24,23 +24,23 @@ typedef struct{
 } queue_t;
 
 /**
-   Initializes a queue. 
+   Initializes a queue.
    init_count       : > 0
-   elt_size         : - the size of an element, if the element is within a 
+   elt_size         : - the size of an element, if the element is within a
                       contiguous memory block
-                      - the size of a pointer to an element, if the element 
+                      - the size of a pointer to an element, if the element
                       is within a noncontiguous memory block
-   free_elt         : - if an element is within a contiguous memory block, 
-                      as reflected by elt_size, and a pointer to the element 
-                      is passed as elt in queue_push, then the element is 
-                      fully copied onto the queue, and NULL as free_elt is 
+   free_elt         : - if an element is within a contiguous memory block,
+                      as reflected by elt_size, and a pointer to the element
+                      is passed as elt in queue_push, then the element is
+                      fully copied onto the queue, and NULL as free_elt is
                       sufficient to free the queue;
-                      - if an element is an object within a noncontiguous 
+                      - if an element is an object within a noncontiguous
                       memory block, and a pointer to a pointer to the element
                       is passed as elt in queue_push, then the pointer to the
                       element is copied onto the queue, and an element-
                       specific free_elt, taking a pointer to a pointer to an
-                      element as its only parameter, is necessary to free the
+                      element as its parameter, is necessary to free the
                       queue.
 */
 void queue_init(queue_t *q,
@@ -51,11 +51,11 @@ void queue_init(queue_t *q,
 /**
    Pushes an element onto a queue. The elt parameter is not NULL.
 */
-void queue_push(queue_t *q, void *elt);
+void queue_push(queue_t *q, const void *elt);
 
 /**
-   Pops an element off a queue. Elt points to a preallocated memory block of 
-   size elt_size. If the queue is empty, the memory block pointed to by elt 
+   Pops an element off a queue. Elt points to a preallocated memory block of
+   size elt_size. If the queue is empty, the memory block pointed to by elt
    remains unchanged.
 */
 void queue_pop(queue_t *q, void *elt);
@@ -65,7 +65,7 @@ void queue_pop(queue_t *q, void *elt);
    otherwise returns NULL. The returned pointer is guaranteed to point to
    the first element until a queue modifying operation is performed.
 */
-void *queue_first(queue_t *q);
+void *queue_first(const queue_t *q);
 
 /**
    Frees a queue, and leaves a block of size sizeof(queue_t) pointed
@@ -74,12 +74,15 @@ void *queue_first(queue_t *q);
 void queue_free(queue_t *q);
 
 /**
-   Sets the queue count maximum reached, if possible, by growing the queue
-   from its initial count. By default it is set to SIZE_MAX. QUEUE_COUNT_MAX
-   must be greater or equal to the value of the init_count parameter in
-   stack_init, otherwise the program will exit with an error message. The
-   program will also exit with an error message if it tries to grow the queue
-   and exceed QUEUE_COUNT_MAX. The macro is used as size_t.
+   Sets the queue count maximum that may be reached, if possible, as a queue
+   grows by repetitive doubling from its initial count and by adding, if
+   necessary, the difference between QUEUE_COUNT_MAX and the last count in
+   the last step.
+
+   The program exits with an error message, if a) the value of the init_count
+   parameter in queue_init is greater than QUEUE_COUNT_MAX, or b) if a queue
+   growth step is attempted after QUEUE_COUNT_MAX was reached. The macro is
+   set to SIZE_MAX by default and is used as size_t.
 */
 #define QUEUE_COUNT_MAX (SIZE_MAX)
 

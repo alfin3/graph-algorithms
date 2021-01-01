@@ -17,7 +17,7 @@
 static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 static void queue_grow(queue_t *q);
 static void queue_move(queue_t *q);
-static void stderr_exit(const char *s, int line);
+static void fprintf_stderr_exit(const char *s, int line);
 
 /**
    Initializes a queue. 
@@ -36,7 +36,7 @@ static void stderr_exit(const char *s, int line);
                       is passed as elt in queue_push, then the pointer to the
                       element is copied onto the queue, and an element-
                       specific free_elt, taking a pointer to a pointer to an
-                      element as its only parameter, is necessary to free the
+                      element as its parameter, is necessary to free the
                       queue.
 */
 void queue_init(queue_t *q,
@@ -46,7 +46,7 @@ void queue_init(queue_t *q,
   q->count = init_count;
   q->count_max = QUEUE_COUNT_MAX; //the only use of the macro in the file
   if (q->count > q->count_max){
-    stderr_exit("initial queue count > queue count maximum", __LINE__);
+    fprintf_stderr_exit("init_count > count maximum", __LINE__);
   }
   q->num_elts = 0;
   q->num_popped_elts = 0;
@@ -58,7 +58,7 @@ void queue_init(queue_t *q,
 /**
    Pushes an element onto a queue. The elt parameter is not NULL.
 */
-void queue_push(queue_t *q, void *elt){
+void queue_push(queue_t *q, const void *elt){
   if (q->count == q->num_popped_elts + q->num_elts) queue_grow(q);
   memcpy(elt_ptr(q->elts, q->num_popped_elts + q->num_elts, q->elt_size),
 	 elt,
@@ -88,7 +88,7 @@ void queue_pop(queue_t *q, void *elt){
    otherwise returns NULL. The returned pointer is guaranteed to point to
    the first element until a queue modifying operation is performed.
 */
-void *queue_first(queue_t *q){
+void *queue_first(const queue_t *q){
   if (q->num_elts == 0) return NULL;
   return elt_ptr(q->elts, q->num_popped_elts, q->elt_size);
 }
@@ -123,7 +123,7 @@ static void *elt_ptr(const void *elts, size_t i, size_t elt_size){
 */
 static void queue_grow(queue_t *q){
   if (q->count == q->count_max){
-    stderr_exit("tried to exceed the queue count maximum", __LINE__);
+    fprintf_stderr_exit("tried to exceed the count maximum", __LINE__);
   }
   if (q->count_max - q->count < q->count){
     q->count = q->count_max;
@@ -136,19 +136,20 @@ static void queue_grow(queue_t *q){
 /**
    Moves elements to the beginning of the element array of a queue. 
    Constant overhead in the worst case because each element is 
-   moved at most once.
+   moved at most once. The destination and source regions must
+   not overlap.
 */
 static void queue_move(queue_t *q){
   memcpy(q->elts,
 	 elt_ptr(q->elts, q->num_popped_elts, q->elt_size),
-	 q->num_elts * q->elt_size); //no overlap guarantee
+	 q->num_elts * q->elt_size);
   q->num_popped_elts = 0;
 }
 
 /**
    Prints an error message and exits.
 */
-static void stderr_exit(const char *s, int line){
+static void fprintf_stderr_exit(const char *s, int line){
   fprintf(stderr, "%s in %s at line %d\n", s,  __FILE__, line);
   exit(EXIT_FAILURE);
 }
