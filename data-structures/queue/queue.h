@@ -25,6 +25,7 @@ typedef struct{
 
 /**
    Initializes a queue.
+   q                : pointer to a preallocated block of size sizeof(queue_t)
    init_count       : > 0
    elt_size         : - the size of an element, if the element is within a
                       contiguous memory block
