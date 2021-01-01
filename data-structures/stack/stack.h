@@ -1,8 +1,8 @@
 /**
    stack.h
 
-   Struct declarations and declarations of accessible functions for a 
-   generic dynamically allocated stack.
+   Struct declarations, declarations of accessible functions, and macro
+   definitions for a generic dynamically allocated stack.
 
    Through a user-defined deallocation function, the implementation provides 
    a dynamic set of any objects in the stack form. 
@@ -15,7 +15,7 @@
 #ifndef STACK_H  
 #define STACK_H
 
-#include <stdint.h>
+#include <stdlib.h>
 
 typedef struct{
   size_t count;
@@ -27,23 +27,25 @@ typedef struct{
 } stack_t;
 
 /**
-   Initializes a stack. 
+   Initializes a stack.
+   s                : pointer to a preallocated block of size sizeof(stack_t)
    init_count       : > 0
-   elt_size         : - the size of an element, if the element is within a 
+   elt_size         : - the size of an element, if the element is within a
                       contiguous memory block
-                      - the size of a pointer to an element, if the element 
+                      - the size of a pointer to an element, if the element
                       is within a noncontiguous memory block
-   free_elt         : - if an element is within a contiguous memory block, 
-                      as reflected by elt_size, and a pointer to the element 
-                      is passed as elt in stack_push, then the element is 
-                      fully copied onto the stack, and NULL as free_elt is 
-                      sufficient to free the stack;
-                      - if an element is an object within a noncontiguous 
+   free_elt         : - if an element is within a contiguous memory block,
+                      as reflected by elt_size, and a pointer to the element
+                      is passed as elt in stack_push, then the element is
+                      fully copied onto the stack, and NULL as free_elt is
+                      sufficient to free the stack
+                      - if an element is an object within a noncontiguous
                       memory block, and a pointer to a pointer to the element
                       is passed as elt in stack_push, then the pointer to the
                       element is copied onto the stack, and an element-
                       specific free_elt, taking a pointer to a pointer to an
-                      element as its only parameter, is necessary to free the stack.
+                      element as its parameter, is necessary to free the
+                      stack.
 */
 void stack_init(stack_t *s,
 		size_t init_count,
@@ -53,14 +55,21 @@ void stack_init(stack_t *s,
 /**
    Pushes an element onto a stack. The elt parameter is not NULL.
 */
-void stack_push(stack_t *s, void *elt);
+void stack_push(stack_t *s, const void *elt);
 
 /**
-   Pops an element of a stack. Elt points to a preallocated memory block of 
-   size elt_size. If the stack is empty, the memory block pointed to by elt 
+   Pops an element of a stack. Elt points to a preallocated memory block of
+   size elt_size. If the stack is empty, the memory block pointed to by elt
    remains unchanged.
 */
 void stack_pop(stack_t *s, void *elt);
+
+/**
+   If a stack is not empty, returns a pointer to the first element,
+   otherwise returns NULL. The returned pointer is guaranteed to point to
+   the first element until a stack modifying operation is performed.
+*/
+void *stack_first(const stack_t *s);
 
 /**
    Frees a stack, and leaves a block of size sizeof(stack_t) pointed to by
@@ -69,10 +78,15 @@ void stack_pop(stack_t *s, void *elt);
 void stack_free(stack_t *s);
 
 /**
-   Sets the stack count maximum so that it can be reached, if possible, 
-   even if it is not equal to the product of init_count and a power of two 
-   by growing the stack from its initial count. By default it is set to 
-   SIZE_MAX. The macro is used as size_t.
+   Sets the stack count maximum that may be reached, if possible, as a stack
+   grows by repetitive doubling from its initial count and by adding, if
+   necessary, the difference between STACK_COUNT_MAX and the last count in
+   the last step.
+
+   The program exits with an error message, if a) the value of the init_count
+   parameter in stack_init is greater than STACK_COUNT_MAX, or b) if a stack
+   growth step is attempted after STACK_COUNT_MAX was reached. The macro is
+   set to SIZE_MAX by default and is used as size_t.
 */
 #define STACK_COUNT_MAX (SIZE_MAX)
 
