@@ -14,7 +14,7 @@
 #define GRAPH_UINT64_H
 
 #include <stdint.h>
-#include "stack-uint64.h"
+#include "stack.h"
 
 typedef struct{
   uint64_t num_vts; 
@@ -30,8 +30,8 @@ typedef struct{
   uint64_t num_vts;
   uint64_t num_es;
   int wt_size;
-  stack_uint64_t **vts; //NULL if no vertices
-  stack_uint64_t **wts; //NULL if no vertices or edge weights
+  stack_t **vts; //NULL if no vertices
+  stack_t **wts; //NULL if no vertices or edge weights
 } adj_lst_uint64_t;
 
 /**

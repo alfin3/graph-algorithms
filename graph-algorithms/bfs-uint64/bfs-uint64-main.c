@@ -11,7 +11,7 @@
 #include <time.h>
 #include "bfs-uint64.h"
 #include "graph-uint64.h"
-#include "stack-uint64.h"
+#include "stack.h"
 #include "utilities-rand-mod.h"
 
 static int cmp_uint64_arrs(uint64_t a[], uint64_t b[], uint64_t n);

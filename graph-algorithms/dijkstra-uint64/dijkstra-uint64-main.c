@@ -13,7 +13,7 @@
 #include "dijkstra-uint64.h"
 #include "bfs-uint64.h"
 #include "graph-uint64.h"
-#include "stack-uint64.h"
+#include "stack.h"
 #include "utilities-rand-mod.h"
 
 int cmp_uint64_arrs(uint64_t *a, uint64_t *b, uint64_t n);
@@ -55,14 +55,14 @@ void graph_uint64_wts_no_edges_init(graph_uint64_t *g){
 /**
    Printing helper functions.
 */
-void print_uint64_elts(stack_uint64_t *s){
+void print_uint64_elts(stack_t *s){
   for (uint64_t i = 0; i < s->num_elts; i++){
     printf("%lu ", *((uint64_t *)s->elts + i));
   }
   printf("\n");
 }
 
-void print_double_elts(stack_uint64_t *s){
+void print_double_elts(stack_t *s){
   for (uint64_t i = 0; i < s->num_elts; i++){
     printf("%.2lf ", *((double *)s->elts + i));
   }
@@ -70,7 +70,7 @@ void print_double_elts(stack_uint64_t *s){
 }
   
 void print_adj_lst(adj_lst_uint64_t *a,
-		   void (*print_wts_fn)(stack_uint64_t *)){
+		   void (*print_wts_fn)(stack_t *)){
   printf("\tvertices: \n");
   for (uint64_t i = 0; i < a->num_vts; i++){
     printf("\t%lu : ", i);
@@ -314,7 +314,7 @@ void add_dir_uint64_edge(adj_lst_uint64_t *a,
   adj_lst_uint64_add_dir_edge(a, u, v, num, denom);
   if (prev_num_es < a->num_es){
     rand_val = wt_l + random_range_uint64(wt_h - wt_l);
-    stack_uint64_push(a->wts[u], &rand_val);
+    stack_push(a->wts[u], &rand_val);
   }
 }
 
@@ -330,7 +330,7 @@ void add_dir_double_edge(adj_lst_uint64_t *a,
   adj_lst_uint64_add_dir_edge(a, u, v, num, denom);
   if (prev_num_es < a->num_es){
     rand_val = (double)(wt_l + random_range_uint64(wt_h - wt_l));
-    stack_uint64_push(a->wts[u], &rand_val);
+    stack_push(a->wts[u], &rand_val);
   }
 }
 

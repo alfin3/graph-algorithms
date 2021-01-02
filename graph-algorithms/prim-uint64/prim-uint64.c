@@ -20,7 +20,7 @@
 #include "prim-uint64.h"
 #include "graph-uint64.h"
 #include "heap-uint32.h"
-#include "stack-uint64.h"
+#include "stack.h"
 
 static uint64_t *vt_ptr(void *vts, uint64_t i);
 static void *wt_ptr(void *wts, uint64_t i, int wt_size);

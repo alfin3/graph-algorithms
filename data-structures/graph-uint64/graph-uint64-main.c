@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include "graph-uint64.h"
-#include "stack-uint64.h"
+#include "stack.h"
 #include "utilities-rand-mod.h"
 
 void print_test_result(int result);
@@ -71,14 +71,14 @@ void double_wts_graph_init(graph_uint64_t *g){
 /**
    Printing helper functions.
 */
-void print_uint64_elts(stack_uint64_t *s){
+void print_uint64_elts(stack_t *s){
   for (uint64_t i = 0; i < s->num_elts; i++){
     printf("%lu ", *((uint64_t *)s->elts + i));
   }
   printf("\n");
 }
 
-void print_double_elts(stack_uint64_t *s){
+void print_double_elts(stack_t *s){
   for (uint64_t i = 0; i < s->num_elts; i++){
     printf("%0.2lf ", *((double *)s->elts + i));
   }
@@ -86,7 +86,7 @@ void print_double_elts(stack_uint64_t *s){
 }
   
 void print_adj_lst(adj_lst_uint64_t *a,
-		   void (*print_wts_fn)(stack_uint64_t *)){
+		   void (*print_wts_fn)(stack_t *)){
   printf("\tvertices: \n");
   for (uint64_t i = 0; i < a->num_vts; i++){
     printf("\t%lu : ", i);

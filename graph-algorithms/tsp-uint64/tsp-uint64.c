@@ -21,13 +21,13 @@
 #include "tsp-uint64.h"
 #include "graph-uint64.h"
 #include "ht-mul-uint64.h"
-#include "stack-uint64.h"
+#include "stack.h"
 #include "utilities-rand-mod.h"
 
 static void build_next(adj_lst_uint64_t *a,
-		       stack_uint64_t *next_s,
+		       stack_t *next_s,
 		       ht_mul_uint64_t *next_ht,
-		       stack_uint64_t *prev_s,
+		       stack_t *prev_s,
 		       ht_mul_uint64_t *prev_ht,
 		       void (*add_wt_fn)(void *, void *, void *),
 		       int (*cmp_wt_fn)(void *, void *));
@@ -53,8 +53,8 @@ int tsp_uint64(adj_lst_uint64_t *a,
 	       void (*add_wt_fn)(void *, void *, void *),
 	       int (*cmp_wt_fn)(void *, void *)){
   assert(a->num_vts > 0 && a->num_vts < l_num_vts);
-  stack_uint64_t s_a, s_b;
-  stack_uint64_t *prev_s = &s_a, *next_s = &s_b;
+  stack_t s_a, s_b;
+  stack_t *prev_s = &s_a, *next_s = &s_b;
   ht_mul_uint64_t ht_a, ht_b;
   ht_mul_uint64_t *prev_ht = &ht_a, *next_ht = &ht_b;
   int vt_size = sizeof(uint64_t), wt_size = a->wt_size;
@@ -67,8 +67,8 @@ int tsp_uint64(adj_lst_uint64_t *a,
   prev_set[1] = nr;
   void *wt_buf = malloc(wt_size);
   assert(wt_buf != NULL);
-  stack_uint64_init(prev_s, 1, set_size * vt_size, NULL);
-  stack_uint64_push(prev_s, prev_set);
+  stack_init(prev_s, 1, set_size * vt_size, NULL);
+  stack_push(prev_s, prev_set);
   ht_mul_uint64_init(prev_ht,
 		     set_size * vt_size,
 		     wt_size,
@@ -80,7 +80,7 @@ int tsp_uint64(adj_lst_uint64_t *a,
   ht_mul_uint64_insert(prev_ht, prev_set, dist);
   for (uint64_t i = 0; i < a->num_vts - 1; i++){
     set_size++;
-    stack_uint64_init(next_s, 1, set_size * vt_size, NULL);
+    stack_init(next_s, 1, set_size * vt_size, NULL);
     ht_mul_uint64_init(next_ht,
 		       set_size * vt_size,
 		       wt_size,
@@ -89,13 +89,13 @@ int tsp_uint64(adj_lst_uint64_t *a,
 		       rdc_key_fn,
 		       NULL);
     build_next(a, next_s, next_ht, prev_s, prev_ht, add_wt_fn, cmp_wt_fn);
-    stack_uint64_free(prev_s);
+    stack_free(prev_s);
     ht_mul_uint64_free(prev_ht);
     swap(&next_s, &prev_s);
     swap(&next_ht, &prev_ht);
     if (prev_s->num_elts == 0){
       //no progress made
-      stack_uint64_free(prev_s);
+      stack_free(prev_s);
       ht_mul_uint64_free(prev_ht);
       free(prev_set);
       free(wt_buf);
@@ -108,7 +108,7 @@ int tsp_uint64(adj_lst_uint64_t *a,
   prev_set = realloc(prev_set, (a->num_vts + 1) * vt_size);
   assert(prev_set != NULL);
   while (prev_s->num_elts > 0){
-    stack_uint64_pop(prev_s, prev_set);
+    stack_pop(prev_s, prev_set);
     u = prev_set[0];
     for (uint64_t i = 0; i < a->vts[u]->num_elts; i++){
       v = *vt_ptr(a->vts[u]->elts, i);
@@ -125,7 +125,7 @@ int tsp_uint64(adj_lst_uint64_t *a,
       }
     }
   }
-  stack_uint64_free(prev_s);
+  stack_free(prev_s);
   ht_mul_uint64_free(prev_ht);
   free(prev_set);
   free(wt_buf);
@@ -142,9 +142,9 @@ int tsp_uint64(adj_lst_uint64_t *a,
    A hashtable, maps a set to a distance. 
  */
 static void build_next(adj_lst_uint64_t *a,
-		       stack_uint64_t *next_s,
+		       stack_t *next_s,
 		       ht_mul_uint64_t *next_ht,
-		       stack_uint64_t *prev_s,
+		       stack_t *prev_s,
 		       ht_mul_uint64_t *prev_ht,
 		       void (*add_wt_fn)(void *, void *, void *),
 		       int (*cmp_wt_fn)(void *, void *)){
@@ -160,7 +160,7 @@ static void build_next(adj_lst_uint64_t *a,
   assert(wt_buf != NULL);
   void *next_wt = NULL;
   while (prev_s->num_elts > 0){
-    stack_uint64_pop(prev_s, prev_set);
+    stack_pop(prev_s, prev_set);
     u = prev_set[0];
     for (uint64_t j = 0; j < a->vts[u]->num_elts; j++){
       v = *vt_ptr(a->vts[u]->elts, j);;
@@ -174,7 +174,7 @@ static void build_next(adj_lst_uint64_t *a,
 	next_wt = ht_mul_uint64_search(next_ht, next_set);
 	if (next_wt == NULL){
 	  ht_mul_uint64_insert(next_ht, next_set, wt_buf);
-	  stack_uint64_push(next_s, next_set);
+	  stack_push(next_s, next_set);
 	}else if (cmp_wt_fn(next_wt, wt_buf) > 0){
 	  ht_mul_uint64_insert(next_ht, next_set, wt_buf);
 	}

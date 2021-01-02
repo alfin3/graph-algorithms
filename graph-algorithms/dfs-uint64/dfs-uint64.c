@@ -17,7 +17,7 @@
 #include <stdbool.h>
 #include "dfs-uint64.h"
 #include "graph-uint64.h"
-#include "stack-uint64.h"
+#include "stack.h"
 
 typedef struct{
   uint64_t u;
@@ -25,7 +25,7 @@ typedef struct{
 } u_vi_t;
 
 static void search(adj_lst_uint64_t *a,
-		   stack_uint64_t *s,
+		   stack_t *s,
 		   uint64_t *c,
 		   uint64_t *pre,
 		   uint64_t *post);
@@ -42,7 +42,7 @@ static const uint64_t l_num_vts = 1 + 0xffffffffffffffff / sizeof(uint64_t);
 void dfs_uint64(adj_lst_uint64_t *a, uint64_t *pre, uint64_t *post){
   assert(a->num_vts < l_num_vts);
   u_vi_t p;
-  stack_uint64_t s;
+  stack_t s;
   uint64_t c = 0; //counter
   uint64_t init_stack_size = 1;
   int elt_size = sizeof(u_vi_t);
@@ -50,42 +50,42 @@ void dfs_uint64(adj_lst_uint64_t *a, uint64_t *pre, uint64_t *post){
     pre[i] = nr; 
     post[i] = nr;
   }
-  stack_uint64_init(&s, init_stack_size, elt_size, NULL);
+  stack_init(&s, init_stack_size, elt_size, NULL);
   for (uint64_t i = 0; i < a->num_vts; i++){
     if (pre[i] == nr){
       pre[i] = c;
       c++;
       p.u = i;
       p.vi = 0;
-      stack_uint64_push(&s, &p);
+      stack_push(&s, &p);
       search(a, &s, &c, pre, post);
       assert(s.num_elts == 0);
     }
   }
-  stack_uint64_free(&s);
+  stack_free(&s);
 }
 
 static void search(adj_lst_uint64_t *a,
-		   stack_uint64_t *s,
+		   stack_t *s,
 		   uint64_t *c,
 		   uint64_t *pre,
 		   uint64_t *post){
   u_vi_t p;
   uint64_t v;
   while (s->num_elts > 0){
-    stack_uint64_pop(s, &p);
+    stack_pop(s, &p);
     next_p(a, &p, pre);
     if (p.vi == a->vts[p.u]->num_elts){
       post[p.u] = *c;
       (*c)++;
     }else{
-      stack_uint64_push(s, &p); //push again the unfinished vertex
+      stack_push(s, &p); //push again the unfinished vertex
       v = *vt_ptr(a->vts[p.u]->elts, p.vi);
       pre[v] = *c;
       (*c)++;
       p.u = v;
       p.vi = 0;
-      stack_uint64_push(s, &p); //then push an unexplored vertex
+      stack_push(s, &p); //then push an unexplored vertex
     }
   }
 }
