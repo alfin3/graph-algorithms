@@ -1,6 +1,6 @@
 # data-structures-algorithms-c
 
-Implementations of generic data structures and graph algorithms in straight C, providing i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) measurements of performance bottlenecks for concurrency-based augmentation.
+A set of generic data structures and algorithms were implemented from first principles in straight C, providing i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, ii) measurements of performance bottlenecks for concurrency-based augmentation, and iii) parameters for optimizing the parallelism and concurrency-associated overhead across input ranges and hardware settings (work in progress).
 
 In each directory with a Makefile, run:
 
