@@ -5,8 +5,9 @@
    representing a graph with generic weights.
 
    Each list in an adjacency list is represented by a dynamically growing 
-   stack. A vertex is an size_t index starting from 0. If a graph has edge
-   weights, the edge weights are of any basic type (e.g. char, int, double). 
+   stack. A vertex is a size_t index starting from 0. If a graph is
+   weighted, the edge weights are of any basic type (e.g. char, int,
+   double).
 */
 
 #ifndef GRAPH_H  
@@ -27,7 +28,7 @@ typedef struct{
 typedef struct{
   size_t num_vts;
   size_t num_es;
-  size_t wt_size; //0 if a graph is unweighted
+  size_t wt_size;
   stack_t **vts;  //NULL if no vertices
   stack_t **wts;  //NULL if no vertices or wt_size is 0
 } adj_lst_t;
@@ -36,8 +37,8 @@ typedef struct{
    Initializes a weighted or unweighted graph with n vertices and no edges,
    providing a basis for graph construction.
    g           : pointer to a preallocated block of size sizeof(graph_t)
-   n           : number of vertices >= 0
-   wt_size     : 0 if the graph is not weighted, > 0 otherwise
+   n           : number of vertices
+   wt_size     : 0 if the graph is unweighted, > 0 otherwise
 */
 void graph_base_init(graph_t *g, size_t n, size_t wt_size);
 
@@ -74,22 +75,26 @@ void adj_lst_undir_build(adj_lst_t *a, const graph_t *g);
 /**
    Adds a directed unweighted edge (u, v) according to the Bernoulli
    distribution provided by bern that takes arg as its parameter. The edge
-   is added if bern returns nonzero.
+   is added if bern returns nonzero. If a graph is weighted, wt points to a
+   a weight of size wt_size, otherwise wt is NULL.
 */
 void adj_lst_add_dir_edge(adj_lst_t *a,
 			  size_t u,
 			  size_t v,
+			  const void *wt,
 			  int (*bern)(void *),
 			  void *arg);
 
 /**
    Adds an undirected unweighted edge (u, v) according to the Bernoulli
    distribution provided by bern that takes arg as its parameter. The edge
-   is added if bern returns nonzero.
+   is added if bern returns nonzero. If a graph is weighted, wt points to a
+   a weight of size wt_size, otherwise wt is NULL.
 */
 void adj_lst_add_undir_edge(adj_lst_t *a,
 			    size_t u,
 			    size_t v,
+			    const void *wt,
 			    int (*bern)(void *),
 			    void *arg);
 

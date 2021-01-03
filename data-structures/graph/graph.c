@@ -4,8 +4,9 @@
    Functions for representing a graph with generic weights. 
 
    Each list in an adjacency list is represented by a dynamically growing 
-   stack. A vertex is an size_t index starting from 0. If a graph has edge
-   weights, the edge weights are of any basic type (e.g. char, int, double). 
+   stack. A vertex is a size_t index starting from 0. If a graph is
+   weighted, the edge weights are of any basic type (e.g. char, int,
+   double).
 */
 
 #include <stdio.h>
@@ -25,8 +26,8 @@ const size_t STACK_INIT_COUNT = 1;
    Initializes a weighted or unweighted graph with n vertices and no edges,
    providing a basis for graph construction.
    g           : pointer to a preallocated block of size sizeof(graph_t)
-   n           : number of vertices >= 0
-   wt_size     : 0 if the graph is not weighted, > 0 otherwise
+   n           : number of vertices
+   wt_size     : 0 if the graph is unweighted, > 0 otherwise
 */
 void graph_base_init(graph_t *g, size_t n, size_t wt_size){
   g->num_vts = n;
@@ -56,9 +57,6 @@ void graph_free(graph_t *g){
    g           : pointer to a graph previously constructed with at least
                  graph_base_init
 */
-
-static void adj_lst_init_helper(stack_t **s, size_t elt_size);
-
 void adj_lst_init(adj_lst_t *a, const graph_t *g){
   a->num_vts = g->num_vts;
   a->num_es = 0; 
@@ -71,18 +69,15 @@ void adj_lst_init(adj_lst_t *a, const graph_t *g){
       a->wts = malloc_perror(a->num_vts * sizeof(stack_t *));
     }
   }
-  //initialize stacks pointed from vts and wts arrays
+  //initialize stacks
   for (size_t i = 0; i < a->num_vts; i++){
-    adj_lst_init_helper(&(a->vts[i]), sizeof(size_t));
+    a->vts[i] = malloc_perror(sizeof(stack_t));
+    stack_init(a->vts[i], STACK_INIT_COUNT, sizeof(size_t), NULL);
     if (a->wt_size > 0){
-      adj_lst_init_helper(&(a->wts[i]), a->wt_size);
+      a->wts[i] = malloc_perror(sizeof(stack_t));
+      stack_init(a->wts[i], STACK_INIT_COUNT, a->wt_size, NULL);
     }
   }
-}
-
-static void adj_lst_init_helper(stack_t **s, size_t elt_size){
-  *s = malloc_perror(sizeof(stack_t));
-  stack_init(*s, STACK_INIT_COUNT, elt_size, NULL);
 }
 
 /**
@@ -101,7 +96,7 @@ void adj_lst_free(adj_lst_t *a){
     }
   }
   free(a->vts); //free(NULL) performs no operation
-  free(a->wts); //free(NULL) performs no operation
+  free(a->wts);
   a->vts = NULL;
   a->wts = NULL;
 }
@@ -139,15 +134,20 @@ void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
 /**
    Adds a directed unweighted edge (u, v) according to the Bernoulli
    distribution provided by bern that takes arg as its parameter. The edge
-   is added if bern returns nonzero.
+   is added if bern returns nonzero. If a graph is weighted, wt points to a
+   a weight of size wt_size, otherwise wt is NULL.
 */
 void adj_lst_add_dir_edge(adj_lst_t *a,
 			  size_t u,
 			  size_t v,
+			  const void *wt,
 			  int (*bern)(void *),
 			  void *arg){
   if (bern(arg)){
     stack_push(a->vts[u], &v);
+    if (wt != NULL){
+      stack_push(a->wts[u], wt);
+    }
     a->num_es++;
   }
 }
@@ -155,16 +155,22 @@ void adj_lst_add_dir_edge(adj_lst_t *a,
 /**
    Adds an undirected unweighted edge (u, v) according to the Bernoulli
    distribution provided by bern that takes arg as its parameter. The edge
-   is added if bern returns nonzero.
+   is added if bern returns nonzero. If a graph is weighted, wt points to a
+   a weight of size wt_size, otherwise wt is NULL.
 */
 void adj_lst_add_undir_edge(adj_lst_t *a,
 			    size_t u,
 			    size_t v,
+			    const void *wt,
 			    int (*bern)(void *),
 			    void *arg){
   if (bern(arg)){
     stack_push(a->vts[u], &v);
     stack_push(a->vts[v], &u);
+    if (wt != NULL){
+      stack_push(a->wts[u], wt);
+      stack_push(a->wts[v], wt);
+    }
     a->num_es += 2;
   }
 }
@@ -185,8 +191,8 @@ void adj_lst_rand_dir(adj_lst_t *a,
   if (n < 1) return;
   for (size_t i = 0; i < n - 1; i++){
     for (size_t j = i + 1; j < n; j++){
-      adj_lst_add_dir_edge(a, i, j, bern, arg);
-      adj_lst_add_dir_edge(a, j, i, bern, arg);
+      adj_lst_add_dir_edge(a, i, j, NULL, bern, arg);
+      adj_lst_add_dir_edge(a, j, i, NULL, bern, arg);
     }
   }
 }
@@ -207,7 +213,7 @@ void adj_lst_rand_undir(adj_lst_t *a,
   if (n < 1) return;
   for (size_t i = 0; i < n - 1; i++){
     for (size_t j = i + 1; j < n; j++){
-      adj_lst_add_undir_edge(a, i, j, bern, arg);
+      adj_lst_add_undir_edge(a, i, j, NULL, bern, arg);
     }
   }
 }

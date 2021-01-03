@@ -14,12 +14,12 @@
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
-#include "utilities-rand-mod.h"
 
 #define DRAND48() (drand48())
 
+uint64_t sum(const uint64_t *a, uint64_t num_elts);
+uint64_t pow_two(int k);
 void print_test_result(int res);
-uint64_t uint64_sum(uint64_t *a, uint64_t num_elts);
 
 /** 
    Test adj_lst_{init, dir_build, undir_build, free} on a small graph
@@ -300,7 +300,7 @@ void run_adj_lst_undir_build_test(){
   printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) "
 	 "directed edges \n");
   for (int i = pow_start; i < pow_end; i++){
-    n = pow_two_uint64(i);
+    n = pow_two(i);
     complete_graph_init(&g, n);
     adj_lst_init(&a, &g);
     t = clock();
@@ -332,12 +332,14 @@ int bern_fn(void *arg){
   return 0;
 }
 
-void add_edge_test_helper(void (*build_fn)(adj_lst_t *, const graph_t *),
-			  void (*add_edge_fn)(adj_lst_t *,
-					      uint64_t,
-					      uint64_t,
-					      int (*)(void *),
-					      void *));
+void add_edge_test_helper(void (*build)(adj_lst_t *,
+					const graph_t *),
+			  void (*add_edge)(adj_lst_t *,
+					   uint64_t,
+					   uint64_t,
+					   const void *,
+					   int (*)(void *),
+					   void *));
 
 void run_adj_lst_add_dir_edge_test(){
   printf("Test adj_lst_add_dir_edge on DAGs \n");
@@ -352,12 +354,14 @@ void run_adj_lst_add_undir_edge_test(){
   add_edge_test_helper(adj_lst_undir_build, adj_lst_add_undir_edge);
 }
 
-void add_edge_test_helper(void (*build_fn)(adj_lst_t *, const graph_t *),
-			  void (*add_edge_fn)(adj_lst_t *,
-					      uint64_t,
-					      uint64_t,
-					      int (*)(void *),
-					      void *)){
+void add_edge_test_helper(void (*build)(adj_lst_t *,
+					const graph_t *),
+			  void (*add_edge)(adj_lst_t *,
+					   uint64_t,
+					   uint64_t,
+					   const void *,
+					   int (*)(void *),
+					   void *)){
   int res = 1;
   int pow_start = 4; //> 0
   int pow_end = 15;
@@ -368,17 +372,17 @@ void add_edge_test_helper(void (*build_fn)(adj_lst_t *, const graph_t *),
   clock_t t;
   b.p = 1.0;
   for (int i = pow_start; i < pow_end; i++){
-    n = pow_two_uint64(i);
+    n = pow_two(i);
     complete_graph_init(&g_blt, n);
     graph_base_init(&g_bld, n, 0);
     adj_lst_init(&a_blt, &g_blt);
     adj_lst_init(&a_bld, &g_bld);
-    build_fn(&a_blt, &g_blt);
-    build_fn(&a_bld, &g_bld);
+    build(&a_blt, &g_blt);
+    build(&a_bld, &g_bld);
     t = clock();
     for (uint64_t i = 0; i < n - 1; i++){
       for (uint64_t j = i + 1; j < n; j++){
-	add_edge_fn(&a_bld, i, j, bern_fn, &b);
+	add_edge(&a_bld, i, j, NULL, bern_fn, &b);
       }
     }
     t = clock() - t;
@@ -387,13 +391,11 @@ void add_edge_test_helper(void (*build_fn)(adj_lst_t *, const graph_t *),
 	   "build time: %.6f seconds\n",
 	   a_bld.num_vts, a_bld.num_es, (float)t / CLOCKS_PER_SEC);
     fflush(stdout);
-    //uint64_sum test
+    //sum test
     for (uint64_t i = 0; i < n; i++){
       res *= (a_blt.vts[i]->num_elts == a_bld.vts[i]->num_elts);
-      res *= (uint64_sum((uint64_t *)a_blt.vts[i]->elts,
-			 a_blt.vts[i]->num_elts) ==
-	      uint64_sum((uint64_t *)a_bld.vts[i]->elts,
-			 a_bld.vts[i]->num_elts));
+      res *= (sum((uint64_t *)a_blt.vts[i]->elts, a_blt.vts[i]->num_elts) ==
+	      sum((uint64_t *)a_bld.vts[i]->elts, a_bld.vts[i]->num_elts));
     }
     res *= (a_blt.num_vts == a_bld.num_vts);
     res *= (a_blt.num_es == a_bld.num_es);
@@ -412,10 +414,10 @@ void add_edge_test_helper(void (*build_fn)(adj_lst_t *, const graph_t *),
    in expectation.
 */
 
-void rand_build_test_helper(void (*rand_build_fn)(adj_lst_t *,
-						  uint64_t,
-						  int (*)(void *),
-						  void *));
+void rand_build_test_helper(void (*rand_build)(adj_lst_t *,
+					       uint64_t,
+					       int (*)(void *),
+					       void *));
 
 void run_adj_lst_rand_dir_test(){
   printf("Test adj_lst_rand_dir on the number of edges in expectation\n");
@@ -429,18 +431,18 @@ void run_adj_lst_rand_undir_test(){
   rand_build_test_helper(adj_lst_rand_undir);
 }
 
-void rand_build_test_helper(void (*rand_build_fn)(adj_lst_t *,
-						  uint64_t,
-						  int (*)(void *),
-						  void *)){
+void rand_build_test_helper(void (*rand_build)(adj_lst_t *,
+					       uint64_t,
+					       int (*)(void *),
+					       void *)){
   int pow_start = 10, pow_end = 15;
   uint64_t n;
   bern_arg_t b;
   adj_lst_t a;
   b.p = 0.5;
   for (int i = pow_start; i < pow_end; i++){
-    n = pow_two_uint64(i);
-    rand_build_fn(&a, n, bern_fn, &b);
+    n = pow_two(i);
+    rand_build(&a, n, bern_fn, &b);
     printf("\t\tvertices: %lu, "
 	   "expected directed edges: %.1f, "
 	   "directed edges: %lu\n",
@@ -450,14 +452,28 @@ void rand_build_test_helper(void (*rand_build_fn)(adj_lst_t *,
   }
 }
 
-uint64_t uint64_sum(uint64_t *a, uint64_t num_elts){
+/**
+   Sums num_elts elements of an uint64_t array.
+*/
+uint64_t sum(const uint64_t *a, uint64_t num_elts){
   uint64_t ret = 0;
   for (uint64_t i = 0; i < num_elts; i++){
     ret += a[i];
   }
   return ret;
 }
-    
+
+/**
+   Returns the kth power of 2, where 0 <= k <= 63.
+*/
+uint64_t pow_two(int k){
+  uint64_t ret = 1;
+  return ret << k;
+} 
+
+/**
+   Prints a test result.
+*/   
 void print_test_result(int res){
   if (res){
     printf("SUCCESS\n");
