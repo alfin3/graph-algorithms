@@ -4,9 +4,8 @@
    Functions for representing a graph with generic weights. 
 
    Each list in an adjacency list is represented by a dynamically growing 
-   stack. A vertex is a size_t index starting from 0. If a graph is
-   weighted, the edge weights are of any basic type (e.g. char, int,
-   double).
+   stack. A vertex is a size_t index starting from 0. If a graph is weighted,
+   the edge weights are of any basic type (e.g. char, int, double).
 */
 
 #include <stdio.h>
@@ -106,12 +105,11 @@ void adj_lst_free(adj_lst_t *a){
 */
 void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
   for (size_t i = 0; i < g->num_es; i++){
-    //at least one edge
     stack_push(a->vts[*u_ptr(g, i)], v_ptr(g, i));
-    a->num_es++;
     if (a->wt_size > 0){
       stack_push(a->wts[*u_ptr(g, i)], wt_ptr(g, i));
     }
+    a->num_es++;
   }
 }
 
@@ -120,22 +118,21 @@ void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
 */
 void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
   for (size_t i = 0; i < g->num_es; i++){
-    //at least one edge
     stack_push(a->vts[*u_ptr(g, i)], v_ptr(g, i));
     stack_push(a->vts[*v_ptr(g, i)], u_ptr(g, i));
-    a->num_es += 2;
     if (a->wt_size > 0){
       stack_push(a->wts[*u_ptr(g, i)], wt_ptr(g, i));
       stack_push(a->wts[*v_ptr(g, i)], wt_ptr(g, i));
     }
+    a->num_es += 2;
   }
 }
 
 /**
-   Adds a directed unweighted edge (u, v) according to the Bernoulli
-   distribution provided by bern that takes arg as its parameter. The edge
-   is added if bern returns nonzero. If a graph is weighted, wt points to a
-   a weight of size wt_size, otherwise wt is NULL.
+   Adds a directed edge (u, v) according to the Bernoulli distribution
+   provided by bern that takes arg as its parameter. The edge is added if
+   bern returns nonzero. If a graph is weighted, wt points to a weight
+   of size wt_size, otherwise wt is NULL.
 */
 void adj_lst_add_dir_edge(adj_lst_t *a,
 			  size_t u,
@@ -145,7 +142,7 @@ void adj_lst_add_dir_edge(adj_lst_t *a,
 			  void *arg){
   if (bern(arg)){
     stack_push(a->vts[u], &v);
-    if (wt != NULL){
+    if (a->wt_size > 0){
       stack_push(a->wts[u], wt);
     }
     a->num_es++;
@@ -153,10 +150,10 @@ void adj_lst_add_dir_edge(adj_lst_t *a,
 }
 
 /**
-   Adds an undirected unweighted edge (u, v) according to the Bernoulli
-   distribution provided by bern that takes arg as its parameter. The edge
-   is added if bern returns nonzero. If a graph is weighted, wt points to a
-   a weight of size wt_size, otherwise wt is NULL.
+   Adds an undirected edge (u, v) according to the Bernoulli distribution
+   provided by bern that takes arg as its parameter. The edge is added if
+   bern returns nonzero. If a graph is weighted, wt points to a weight of
+   size wt_size, otherwise wt is NULL.
 */
 void adj_lst_add_undir_edge(adj_lst_t *a,
 			    size_t u,
@@ -167,7 +164,7 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
   if (bern(arg)){
     stack_push(a->vts[u], &v);
     stack_push(a->vts[v], &u);
-    if (wt != NULL){
+    if (a->wt_size > 0){
       stack_push(a->wts[u], wt);
       stack_push(a->wts[v], wt);
     }
@@ -188,11 +185,12 @@ void adj_lst_rand_dir(adj_lst_t *a,
   graph_t g;
   graph_base_init(&g, n, 0);
   adj_lst_init(a, &g);
-  if (n < 1) return;
-  for (size_t i = 0; i < n - 1; i++){
-    for (size_t j = i + 1; j < n; j++){
-      adj_lst_add_dir_edge(a, i, j, NULL, bern, arg);
-      adj_lst_add_dir_edge(a, j, i, NULL, bern, arg);
+  if (n > 0){
+    for (size_t i = 0; i < n - 1; i++){
+      for (size_t j = i + 1; j < n; j++){
+	adj_lst_add_dir_edge(a, i, j, NULL, bern, arg);
+	adj_lst_add_dir_edge(a, j, i, NULL, bern, arg);
+      }
     }
   }
 }
@@ -210,10 +208,11 @@ void adj_lst_rand_undir(adj_lst_t *a,
   graph_t g;
   graph_base_init(&g, n, 0);
   adj_lst_init(a, &g);
-  if (n < 1) return;
-  for (size_t i = 0; i < n - 1; i++){
-    for (size_t j = i + 1; j < n; j++){
-      adj_lst_add_undir_edge(a, i, j, NULL, bern, arg);
+  if (n > 0){
+    for (size_t i = 0; i < n - 1; i++){
+      for (size_t j = i + 1; j < n; j++){
+	adj_lst_add_undir_edge(a, i, j, NULL, bern, arg);
+      }
     }
   }
 }

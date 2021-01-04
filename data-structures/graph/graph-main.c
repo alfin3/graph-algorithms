@@ -106,10 +106,10 @@ void print_adj_lst(const adj_lst_t *a,
    small graph with edges and uint64_t weights. The test relies on the 
    construction order in adj_lst_{dir_build, undir_build}.
 */
-void uint64_graph_test_helper(const adj_lst_t *a,
-			      uint64_t split[],
-			      uint64_t vts[],
-			      uint64_t wts[]);
+void uint64_graph_helper(const adj_lst_t *a,
+			 uint64_t split[],
+			 uint64_t vts[],
+			 uint64_t wts[]);
 
 void run_uint64_graph_test(){
   uint64_t split_dir[] = {3, 1, 0, 0, 0};
@@ -125,23 +125,23 @@ void run_uint64_graph_test(){
 	 "with uint64_t weights --> ");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
-  uint64_graph_test_helper(&a, split_dir, vts_dir, wts_dir);
+  uint64_graph_helper(&a, split_dir, vts_dir, wts_dir);
   print_adj_lst(&a, print_uint64_elts);
   adj_lst_free(&a);
   printf("Test adj_lst_{init, undir_build, free} on an undirected "
 	 "graph with uint64_t weights --> ");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
-  uint64_graph_test_helper(&a, split_undir, vts_undir, wts_undir);
+  uint64_graph_helper(&a, split_undir, vts_undir, wts_undir);
   print_adj_lst(&a, print_uint64_elts);
   adj_lst_free(&a);
   graph_free(&g);
 }
 
-void uint64_graph_test_helper(const adj_lst_t *a,
-			      uint64_t split[],
-			      uint64_t vts[],
-			      uint64_t wts[]){
+void uint64_graph_helper(const adj_lst_t *a,
+			 uint64_t split[],
+			 uint64_t vts[],
+			 uint64_t wts[]){
   int res = 1;
   uint64_t ix = 0;
   for (uint64_t i = 0; i < a->num_vts; i++){
@@ -160,10 +160,10 @@ void uint64_graph_test_helper(const adj_lst_t *a,
    graph with edges and double weights. The test relies on the construction
    order in adj_lst_{dir_build, undir_build}.
 */
-void double_graph_test_helper(const adj_lst_t *a,
-			      uint64_t split[],
-			      uint64_t vts[],
-			      double wts[]);
+void double_graph_helper(const adj_lst_t *a,
+			 uint64_t split[],
+			 uint64_t vts[],
+			 double wts[]);
 
 void run_double_graph_test(){
   uint64_t split_dir[] = {3, 1, 0, 0, 0};
@@ -179,23 +179,23 @@ void run_double_graph_test(){
 	 "with double weights --> ");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
-  double_graph_test_helper(&a, split_dir, vts_dir, wts_dir);
+  double_graph_helper(&a, split_dir, vts_dir, wts_dir);
   print_adj_lst(&a, print_double_elts);
   adj_lst_free(&a);
   printf("Test adj_lst_{init, undir_build, free} on an undirected "
 	 "graph with double weights --> ");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
-  double_graph_test_helper(&a, split_undir, vts_undir, wts_undir); 
+  double_graph_helper(&a, split_undir, vts_undir, wts_undir); 
   print_adj_lst(&a, print_double_elts);
   adj_lst_free(&a);
   graph_free(&g);
 }
 
-void double_graph_test_helper(const adj_lst_t *a,
-			      uint64_t split[],
-			      uint64_t vts[],
-			      double wts[]){
+void double_graph_helper(const adj_lst_t *a,
+			 uint64_t split[],
+			 uint64_t vts[],
+			 double wts[]){
   int res = 1;
   uint64_t ix = 0;
   for (uint64_t i = 0; i < a->num_vts; i++){
@@ -215,9 +215,7 @@ void double_graph_test_helper(const adj_lst_t *a,
    i.e. graphs with no edge weights and edges, and 0 or more vertices.
 */
 
-void corner_cases_test_helper(const adj_lst_t *a,
-			      uint64_t num_vts,
-			      int *res);
+void corner_cases_helper(const adj_lst_t *a, uint64_t num_vts, int *res);
   
 void run_corner_cases_test(){
   int res = 1;
@@ -232,7 +230,7 @@ void run_corner_cases_test(){
 	    a.num_es == 0 &&
 	    a.wt_size == 0 &&
 	    a.wts == NULL);
-    corner_cases_test_helper(&a, i, &res);
+    corner_cases_helper(&a, i, &res);
     adj_lst_free(&a);
     adj_lst_init(&a, &g);
     adj_lst_undir_build(&a, &g);
@@ -240,7 +238,7 @@ void run_corner_cases_test(){
 	    a.num_es == 0 &&
 	    a.wt_size == 0 &&
 	    a.wts == NULL);
-    corner_cases_test_helper(&a, i, &res);
+    corner_cases_helper(&a, i, &res);
     adj_lst_free(&a);
     graph_free(&g);
   }
@@ -249,9 +247,7 @@ void run_corner_cases_test(){
   print_test_result(res);
 }
 
-void corner_cases_test_helper(const adj_lst_t *a,
-			      uint64_t num_vts,
-			      int *res){
+void corner_cases_helper(const adj_lst_t *a, uint64_t num_vts, int *res){
   if(num_vts){
     *res *= (a->vts != NULL);
     for(uint64_t i = 0; i < num_vts; i++){
@@ -291,17 +287,15 @@ void complete_graph_init(graph_t *g, uint64_t n){
    Runs a adj_lst_undir_build test on complete unweighted graphs.
 */
 void run_adj_lst_undir_build_test(){
-  int pow_start = 4, pow_end = 15;
-  uint64_t n;
+  int pow_end = 15;
   graph_t g;
   adj_lst_t a;
   clock_t t;
   printf("Test adj_lst_undir_build on complete unweighted graphs \n");
   printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) "
 	 "directed edges \n");
-  for (int i = pow_start; i < pow_end; i++){
-    n = pow_two(i);
-    complete_graph_init(&g, n);
+  for (int i = 0; i < pow_end; i++){
+    complete_graph_init(&g, pow_two(i));
     adj_lst_init(&a, &g);
     t = clock();
     adj_lst_undir_build(&a, &g);
@@ -332,46 +326,44 @@ int bern_fn(void *arg){
   return 0;
 }
 
-void add_edge_test_helper(void (*build)(adj_lst_t *,
-					const graph_t *),
-			  void (*add_edge)(adj_lst_t *,
-					   uint64_t,
-					   uint64_t,
-					   const void *,
-					   int (*)(void *),
-					   void *));
+void add_edge_helper(void (*build)(adj_lst_t *,
+				   const graph_t *),
+		     void (*add_edge)(adj_lst_t *,
+				      uint64_t,
+				      uint64_t,
+				      const void *,
+				      int (*)(void *),
+				      void *));
 
 void run_adj_lst_add_dir_edge_test(){
   printf("Test adj_lst_add_dir_edge on DAGs \n");
   printf("\tn vertices, 0 as source, n(n - 1)/2 directed edges \n");
-  add_edge_test_helper(adj_lst_dir_build, adj_lst_add_dir_edge);
+  add_edge_helper(adj_lst_dir_build, adj_lst_add_dir_edge);
 }
 
 void run_adj_lst_add_undir_edge_test(){
   printf("Test adj_lst_add_undir_edge on complete graphs \n");
   printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) "
 	 "directed edges \n");
-  add_edge_test_helper(adj_lst_undir_build, adj_lst_add_undir_edge);
+  add_edge_helper(adj_lst_undir_build, adj_lst_add_undir_edge);
 }
 
-void add_edge_test_helper(void (*build)(adj_lst_t *,
-					const graph_t *),
-			  void (*add_edge)(adj_lst_t *,
-					   uint64_t,
-					   uint64_t,
-					   const void *,
-					   int (*)(void *),
-					   void *)){
-  int res = 1;
-  int pow_start = 4; //> 0
-  int pow_end = 15;
+void add_edge_helper(void (*build)(adj_lst_t *,
+				   const graph_t *),
+		     void (*add_edge)(adj_lst_t *,
+				      uint64_t,
+				      uint64_t,
+				      const void *,
+				      int (*)(void *),
+				      void *)){
+  int res = 1, pow_end = 15;
   uint64_t n;
   bern_arg_t b;
   graph_t g_blt, g_bld;
   adj_lst_t a_blt, a_bld;
   clock_t t;
   b.p = 1.0;
-  for (int i = pow_start; i < pow_end; i++){
+  for (int i = 0; i < pow_end; i++){
     n = pow_two(i);
     complete_graph_init(&g_blt, n);
     graph_base_init(&g_bld, n, 0);
@@ -394,8 +386,8 @@ void add_edge_test_helper(void (*build)(adj_lst_t *,
     //sum test
     for (uint64_t i = 0; i < n; i++){
       res *= (a_blt.vts[i]->num_elts == a_bld.vts[i]->num_elts);
-      res *= (sum((uint64_t *)a_blt.vts[i]->elts, a_blt.vts[i]->num_elts) ==
-	      sum((uint64_t *)a_bld.vts[i]->elts, a_bld.vts[i]->num_elts));
+      res *= (sum(a_blt.vts[i]->elts, a_blt.vts[i]->num_elts) ==
+	      sum(a_bld.vts[i]->elts, a_bld.vts[i]->num_elts));
     }
     res *= (a_blt.num_vts == a_bld.num_vts);
     res *= (a_blt.num_es == a_bld.num_es);
@@ -414,35 +406,33 @@ void add_edge_test_helper(void (*build)(adj_lst_t *,
    in expectation.
 */
 
-void rand_build_test_helper(void (*rand_build)(adj_lst_t *,
-					       uint64_t,
-					       int (*)(void *),
-					       void *));
+void rand_build_helper(void (*rand_build)(adj_lst_t *,
+					  uint64_t,
+					  int (*)(void *),
+					  void *));
 
 void run_adj_lst_rand_dir_test(){
   printf("Test adj_lst_rand_dir on the number of edges in expectation\n");
   printf("\tn vertices, E[# of directed edges] = n(n - 1) * (0.5 * 1)\n");
-  rand_build_test_helper(adj_lst_rand_dir);
+  rand_build_helper(adj_lst_rand_dir);
 }
 
 void run_adj_lst_rand_undir_test(){
   printf("Test adj_lst_rand_undir on the number of edges in expectation\n");
   printf("\tn vertices, E[# of directed edges] = n(n - 1)/2 * (0.5 * 2)\n");
-  rand_build_test_helper(adj_lst_rand_undir);
+  rand_build_helper(adj_lst_rand_undir);
 }
 
-void rand_build_test_helper(void (*rand_build)(adj_lst_t *,
-					       uint64_t,
-					       int (*)(void *),
-					       void *)){
-  int pow_start = 10, pow_end = 15;
-  uint64_t n;
+void rand_build_helper(void (*rand_build)(adj_lst_t *,
+					  uint64_t,
+					  int (*)(void *),
+					  void *)){
+  int pow_end = 15;
   bern_arg_t b;
   adj_lst_t a;
   b.p = 0.5;
-  for (int i = pow_start; i < pow_end; i++){
-    n = pow_two(i);
-    rand_build(&a, n, bern_fn, &b);
+  for (int i = 0; i < pow_end; i++){
+    rand_build(&a, pow_two(i), bern_fn, &b);
     printf("\t\tvertices: %lu, "
 	   "expected directed edges: %.1f, "
 	   "directed edges: %lu\n",
@@ -467,8 +457,8 @@ uint64_t sum(const uint64_t *a, uint64_t num_elts){
    Returns the kth power of 2, where 0 <= k <= 63.
 */
 uint64_t pow_two(int k){
-  uint64_t ret = 1;
-  return ret << k;
+  uint64_t ret = 1 << k;
+  return ret;
 } 
 
 /**

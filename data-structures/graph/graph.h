@@ -5,9 +5,8 @@
    representing a graph with generic weights.
 
    Each list in an adjacency list is represented by a dynamically growing 
-   stack. A vertex is a size_t index starting from 0. If a graph is
-   weighted, the edge weights are of any basic type (e.g. char, int,
-   double).
+   stack. A vertex is a size_t index starting from 0. If a graph is weighted,
+   the edge weights are of any basic type (e.g. char, int, double).
 */
 
 #ifndef GRAPH_H  
@@ -20,8 +19,8 @@ typedef struct{
   size_t num_vts; 
   size_t num_es;
   size_t wt_size; //0 if a graph is unweighted
-  size_t *u;      //u of (u, v), NULL if no edges
-  size_t *v;      //v of (u, v), NULL if no edges
+  size_t *u;      //u of (u, v) edges, NULL if no edges
+  size_t *v;      //v of (u, v) edges, NULL if no edges
   void *wts;      //NULL if no edges or wt_size is 0
 } graph_t;
 
@@ -73,10 +72,10 @@ void adj_lst_dir_build(adj_lst_t *a, const graph_t *g);
 void adj_lst_undir_build(adj_lst_t *a, const graph_t *g);
 
 /**
-   Adds a directed unweighted edge (u, v) according to the Bernoulli
-   distribution provided by bern that takes arg as its parameter. The edge
-   is added if bern returns nonzero. If a graph is weighted, wt points to a
-   a weight of size wt_size, otherwise wt is NULL.
+   Adds a directed edge (u, v) according to the Bernoulli distribution
+   provided by bern that takes arg as its parameter. The edge is added if
+   bern returns nonzero. If a graph is weighted, wt points to a weight
+   of size wt_size, otherwise wt is NULL.
 */
 void adj_lst_add_dir_edge(adj_lst_t *a,
 			  size_t u,
@@ -86,10 +85,10 @@ void adj_lst_add_dir_edge(adj_lst_t *a,
 			  void *arg);
 
 /**
-   Adds an undirected unweighted edge (u, v) according to the Bernoulli
-   distribution provided by bern that takes arg as its parameter. The edge
-   is added if bern returns nonzero. If a graph is weighted, wt points to a
-   a weight of size wt_size, otherwise wt is NULL.
+   Adds an undirected edge (u, v) according to the Bernoulli distribution
+   provided by bern that takes arg as its parameter. The edge is added if
+   bern returns nonzero. If a graph is weighted, wt points to a weight of
+   size wt_size, otherwise wt is NULL.
 */
 void adj_lst_add_undir_edge(adj_lst_t *a,
 			    size_t u,
