@@ -18,24 +18,22 @@
 
 static size_t *vt_ptr(const void *vts, size_t i, size_t vt_size);
 
-static const size_t NR = SIZE_MAX; //not reached as index
 static const size_t QUEUE_INIT_COUNT = 1;
 
 /**
    Computes and copies to dist the lowest # of edges from start to each 
-   reached vertex, and provides the previous vertex in prev, with NR in 
-   prev for unreached vertices.
+   reached vertex, and provides the previous vertex in prev, with SIZE_MAX
+   in prev for unreached vertices. Assumes start is valid and there is
+   at least one vertex.
 */
 void bfs(const adj_lst_t *a, size_t start, size_t *dist, size_t *prev){
   bool *placed = NULL;
-  size_t u, v, vt_size = sizeof(size_t);
+  size_t u, v;
+  size_t vt_size = sizeof(size_t);
   queue_t q;
-  if (a->num_vts == 0) return;
   placed = calloc_perror(a->num_vts, sizeof(bool));
-  for (size_t i = 0; i < a->num_vts; i++){
-    dist[i] = 0;
-    prev[i] = NR;
-  }
+  memset(dist, 0, a->num_vts * sizeof(size_t));
+  memset(prev, 0xff, a->num_vts * sizeof(size_t)); //no SIZE_MAX vertex
   queue_init(&q, QUEUE_INIT_COUNT, vt_size, NULL);
   prev[start] = start;
   queue_push(&q, &start);
