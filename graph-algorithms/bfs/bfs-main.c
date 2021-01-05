@@ -16,7 +16,7 @@
 #define RANDOM() (random())
 #define DRAND48() (drand48())
 
-int cmp_uint64_arrs(uint64_t a[], uint64_t b[], uint64_t n);
+int cmp_arr(const uint64_t *a, const uint64_t *b, uint64_t n);
 uint64_t pow_two(int k);
 void print_test_result(int res);
 
@@ -144,8 +144,8 @@ void vfive_graph_helper(graph_t *g,
   prev = malloc_perror(a.num_vts * sizeof(uint64_t));
   for (uint64_t i = 0; i < a.num_vts; i++){
     bfs(&a, i, dist, prev);
-    *res *= cmp_uint64_arrs(dist, ret_dist[i], a.num_vts);
-    *res *= cmp_uint64_arrs(prev, ret_prev[i], a.num_vts);
+    *res *= cmp_arr(dist, ret_dist[i], a.num_vts);
+    *res *= cmp_arr(prev, ret_prev[i], a.num_vts);
   }
   adj_lst_free(&a);
   free(dist);
@@ -192,13 +192,13 @@ void run_max_edges_graph_test(){
     adj_lst_rand_dir(&a, n, bern_fn, &b);
     start =  RANDOM() % n;
     bfs(&a, start, dist, prev);
-    for (uint64_t i = 0; i < n; i++){
-      if (i == start){
-	res *= (dist[i] == 0);
+    for (uint64_t j = 0; j < n; j++){
+      if (j == start){
+	res *= (dist[j] == 0);
       }else{
-	res *= (dist[i] == 1);
+	res *= (dist[j] == 1);
       }
-      res *= (prev[i] == start);
+      res *= (prev[j] == start);
     }
     adj_lst_free(&a);
     free(dist);
@@ -235,13 +235,13 @@ void run_no_edges_graph_test(){
     adj_lst_rand_dir(&a, n, bern_fn, &b);
     start =  RANDOM() % n;
     bfs(&a, start, dist, prev);
-    for (uint64_t i = 0; i < n; i++){
-      if (i == start){
-	res *= (prev[i] == start);
+    for (uint64_t j = 0; j < n; j++){
+      if (j == start){
+	res *= (prev[j] == start);
       }else{
-	res *= (prev[i] == NR);
+	res *= (prev[j] == NR);
       }
-      res *= (dist[i] == 0);
+      res *= (dist[j] == 0);
     }
     adj_lst_free(&a);
     free(dist);
@@ -302,7 +302,7 @@ void run_random_dir_graph_test(){
 /**
    Compares elements of two uint64_t arrays.
 */
-int cmp_uint64_arrs(uint64_t a[], uint64_t b[], uint64_t n){
+int cmp_arr(const uint64_t *a, const uint64_t *b, uint64_t n){
   int res = 1;
   for (uint64_t i = 0; i < n; i++){
     res *= (a[i] == b[i]);
