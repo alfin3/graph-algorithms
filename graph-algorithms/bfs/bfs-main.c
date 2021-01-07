@@ -17,7 +17,7 @@
 #include "utilities-mem.h"
 
 
-#define SEED(s) do{srandom(s); srand48(s);} while (0)
+#define RGENS_SEED() do{srandom(time(0)); srand48(random());}while (0)
 #define RANDOM() (random())
 #define DRAND48() (drand48())
 
@@ -185,7 +185,6 @@ void run_max_edges_graph_test(){
   bern_arg_t b;
   adj_lst_t a;
   b.p = 1.00;
-  SEED(time(0));
   printf("Run a bfs test on graphs with n vertices, where "
 	 "0 < n <= 2^%d, and n(n - 1) edges --> ", pow_end - 1);
   fflush(stdout);
@@ -227,7 +226,6 @@ void run_no_edges_graph_test(){
   bern_arg_t b;
   adj_lst_t a;
   b.p = 0.00;
-  SEED(time(0));
   printf("Run a bfs test on graphs with n vertices, where "
 	 "0 < n <= 2^%d, and no edges --> ", pow_end - 1);
   fflush(stdout);
@@ -274,7 +272,6 @@ void run_random_dir_graph_test(){
   printf("Run a bfs test on random directed graphs, from %d random "
 	 "start vertices in each graph \n", ave_iter);
   fflush(stdout);
-  SEED(time(0));
   for (int i = 0; i < num_p; i++){
     b.p = p[i];
     printf("\tP[an edge is in a graph] = %.2f\n", b.p);
@@ -332,6 +329,7 @@ void print_test_result(int res){
 }
 
 int main(){
+  RGENS_SEED();
   run_first_vfive_graph_test();
   run_second_vfive_graph_test();
   run_max_edges_graph_test();
