@@ -12,14 +12,14 @@
 #define DIJKSTRA_UINT64_H
 
 #include <stdint.h>
-#include "graph-uint64.h"
+#include "graph.h"
 
 /**
    Computes and copies the shortest distances from start to dist array and 
    previous vertices to prev array, with nr in prev for unreached vertices.
    Assumes immutability of an adjacency list during execution.
 */
-void dijkstra_uint64(adj_lst_uint64_t *a,
+void dijkstra_uint64(adj_lst_t *a,
 		     uint64_t start,
 		     void *dist,
 		     uint64_t *prev,

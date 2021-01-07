@@ -15,9 +15,10 @@
 #include <string.h>
 #include <stdbool.h>
 #include "dijkstra-uint64.h"
-#include "graph-uint64.h"
+#include "graph.h"
 #include "heap-uint32.h"
 #include "stack.h"
+#include "utilities-mem.h"
 
 static uint64_t *vt_ptr(void *vts, uint64_t i);
 static void *wt_ptr(void *wts, uint64_t i, int wt_size);
@@ -31,7 +32,7 @@ static const uint64_t l_num_vts = 0xffffffff;
    previous vertices to prev array, with nr in prev for unreached vertices.
    Assumes immutability of an adjacency list during execution.
 */
-void dijkstra_uint64(adj_lst_uint64_t *a,
+void dijkstra_uint64(adj_lst_t *a,
 		     uint64_t start,
 		     void *dist,
 		     uint64_t *prev,
@@ -44,11 +45,9 @@ void dijkstra_uint64(adj_lst_uint64_t *a,
   int wt_size = a->wt_size;
   uint64_t init_heap_size = 1;
   uint64_t u, v;
-  void *wt_buf = malloc(wt_size);
-  assert(wt_buf != NULL);
+  void *wt_buf = malloc_perror(wt_size);
   void *v_wt_ptr = NULL;
-  bool *in_heap = calloc(a->num_vts, sizeof(bool));
-  assert(in_heap != NULL);
+  bool *in_heap = calloc_perror(a->num_vts, sizeof(bool));
   for (uint64_t i = 0; i < a->num_vts; i++){
     init_wt_fn(wt_ptr(dist, i, wt_size));
     prev[i] = nr; //use as infinity

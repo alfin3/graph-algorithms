@@ -1,8 +1,8 @@
 CC = gcc
 DS_DIR = ../../data-structures/
 ALG_DIR = ../
-BFS_DIR   = $(ALG_DIR)bfs-uint64/
-GRAPH_DIR = $(DS_DIR)graph-uint64/
+BFS_DIR   = $(ALG_DIR)bfs/
+GRAPH_DIR = $(DS_DIR)graph/
 HEAP_DIR  = $(DS_DIR)heap-uint32/
 HT_DIR    = $(DS_DIR)ht-div-uint32/
 DLL_DIR   = $(DS_DIR)dll/
@@ -23,8 +23,8 @@ CFLAGS = -I$(BFS_DIR)       \
 
 OBJ = dijkstra-uint64-main.o              \
       dijkstra-uint64.o                   \
-      $(BFS_DIR)bfs-uint64.o              \
-      $(GRAPH_DIR)graph-uint64.o          \
+      $(BFS_DIR)bfs.o                     \
+      $(GRAPH_DIR)graph.o                 \
       $(HEAP_DIR)heap-uint32.o            \
       $(HT_DIR)ht-div-uint32.o            \
       $(DLL_DIR)dll.o                     \
@@ -37,21 +37,24 @@ dijkstra-uint64 : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
 
 dijkstra-uint64-main.o              : dijkstra-uint64.h                   \
-                                      $(BFS_DIR)bfs-uint64.h              \
-                                      $(GRAPH_DIR)graph-uint64.h          \
+                                      $(BFS_DIR)bfs.h                     \
+                                      $(GRAPH_DIR)graph.h                 \
                                       $(STACK_DIR)stack.h                 \
+                                      $(UTILS_MEM_DIR)utilities-mem.h     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
 dijkstra-uint64.o                   : dijkstra-uint64.h                   \
-                                      $(GRAPH_DIR)graph-uint64.h          \
+                                      $(GRAPH_DIR)graph.h                 \
                                       $(HEAP_DIR)heap-uint32.h            \
-                                      $(STACK_DIR)stack.h
-$(BFS_DIR)bfs-uint64.o              : $(BFS_DIR)bfs-uint64.h              \
-                                      $(GRAPH_DIR)graph-uint64.h          \
-                                      $(QUEUE_DIR)queue.h                 \
-                                      $(STACK_DIR)stack.h
-$(GRAPH_DIR)graph-uint64.o          : $(GRAPH_DIR)graph-uint64.h          \
                                       $(STACK_DIR)stack.h                 \
-                                      $(UTILS_RM_DIR)utilities-rand-mod.h
+                                      $(UTILS_MEM_DIR)utilities-mem.h
+$(BFS_DIR)bfs.o                     : $(BFS_DIR)bfs.h                     \
+                                      $(GRAPH_DIR)graph.h                 \
+                                      $(QUEUE_DIR)queue.h                 \
+                                      $(STACK_DIR)stack.h                 \
+                                      $(UTILS_MEM_DIR)utilities-mem.h
+$(GRAPH_DIR)graph.o                 : $(GRAPH_DIR)graph.h                 \
+                                      $(STACK_DIR)stack.h                 \
+                                      $(UTILS_MEM_DIR)utilities-mem.h
 $(HEAP_DIR)heap-uint32.o            : $(HEAP_DIR)heap-uint32.h            \
                                       $(HT_DIR)ht-div-uint32.h            \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
