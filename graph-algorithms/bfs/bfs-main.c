@@ -1,7 +1,10 @@
 /**
    bfs-main.c
 
-   Tests of the BFS algorithm. 
+   Tests of the BFS algorithm.
+   
+   Requirements for running tests: 
+   - UINT64_MAX must be defined
 */
 
 #include <stdio.h>
@@ -13,6 +16,8 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
+
+#define SEED(s) do{srandom(s); srand48(s);} while (0)
 #define RANDOM() (random())
 #define DRAND48() (drand48())
 
@@ -63,7 +68,7 @@ void second_vfive_graph_init(graph_t *g){
 /**
    Run bfs tests on small graphs.
 */
-void vfive_graph_helper(graph_t *g,
+void vfive_graph_helper(const graph_t *g,
 			uint64_t ret_dist[][5],
 			uint64_t ret_prev[][5],
 			void (*build)(adj_lst_t *, const graph_t *),
@@ -131,7 +136,7 @@ void run_second_vfive_graph_test(){
   print_test_result(res);
 }
 
-void vfive_graph_helper(graph_t *g,
+void vfive_graph_helper(const graph_t *g,
 			uint64_t ret_dist[][5],
 			uint64_t ret_prev[][5],
 			void (*build)(adj_lst_t *, const graph_t *),
@@ -180,8 +185,7 @@ void run_max_edges_graph_test(){
   bern_arg_t b;
   adj_lst_t a;
   b.p = 1.00;
-  srandom(time(0));
-  srand48(time(0));
+  SEED(time(0));
   printf("Run a bfs test on graphs with n vertices, where "
 	 "0 < n <= 2^%d, and n(n - 1) edges --> ", pow_end - 1);
   fflush(stdout);
@@ -223,8 +227,7 @@ void run_no_edges_graph_test(){
   bern_arg_t b;
   adj_lst_t a;
   b.p = 0.00;
-  srandom(time(0));
-  srand48(time(0));
+  SEED(time(0));
   printf("Run a bfs test on graphs with n vertices, where "
 	 "0 < n <= 2^%d, and no edges --> ", pow_end - 1);
   fflush(stdout);
@@ -262,7 +265,7 @@ void run_no_edges_graph_test(){
 void run_random_dir_graph_test(){
   int pow_end = 15, ave_iter = 10;
   int num_p = 5;
-  uint64_t n, start;
+  uint64_t n, start[10];
   uint64_t *dist = NULL, *prev = NULL;
   double p[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
   bern_arg_t b;
@@ -271,7 +274,7 @@ void run_random_dir_graph_test(){
   printf("Run a bfs test on random directed graphs, from %d random "
 	 "start vertices in each graph \n", ave_iter);
   fflush(stdout);
-  srandom(time(0));
+  SEED(time(0));
   for (int i = 0; i < num_p; i++){
     b.p = p[i];
     printf("\tP[an edge is in a graph] = %.2f\n", b.p);
@@ -280,10 +283,12 @@ void run_random_dir_graph_test(){
       dist = malloc_perror(n * sizeof(uint64_t));
       prev = malloc_perror(n * sizeof(uint64_t));
       adj_lst_rand_dir(&a, n, bern_fn, &b);
+      for (int k = 0; k < ave_iter; k++){
+	start[k] =  RANDOM() % n;
+      }
       t = clock();
       for (int k = 0; k < ave_iter; k++){
-	start =  RANDOM() % n;
-	bfs(&a, start, dist, prev);
+	bfs(&a, start[k], dist, prev);
       }
       t = clock() - t;
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f, "
