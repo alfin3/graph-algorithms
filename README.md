@@ -2,6 +2,8 @@
 
 A set of generic data structures and algorithms were implemented from first principles in straight C, providing i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, ii) measurements of performance bottlenecks for concurrency-based augmentation, and iii) parameters for optimizing the parallelism and concurrency-associated overhead across input ranges and hardware settings (work in progress).
 
+Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
+
 In each directory with a Makefile, run:
 
 `make`
