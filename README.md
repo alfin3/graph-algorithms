@@ -18,19 +18,20 @@ In each directory with a Makefile, run:
 
 A dynamic set of upto 2^32 - 2 generic priority values and generic elements in the (min) heap form, where a priority value is an object of basic type (e.g. char, int, long, double), and an element is any object in memory.
 
-A hash table enables heap search in O(1 + alpha) time in expectation under the simple uniform hashing assumption, where alpha is a constant load factor upper bound. Tests across priority value types are provided with respect to element objects within continuous memory blocks as well as multi-layered element objects in memory.
+A hash table enables heap search in O(1 + alpha) time in expectation under the simple uniform hashing assumption, where alpha is a constant load factor upper bound. Tests across priority value types are provided with respect to element objects within contiguous and noncontiguous memory blocks.
 
 `./data-structures/ht-mul-uint64/`
 
-A hash table with generic hash keys and generic elements, where a hash key is an object within a continuous memory block (e.g. a basic type, array, struct), and an element is any object in memory.
+A hash table with generic hash keys and generic elements, where a hash key is an object within a contiguous memory block (e.g. a basic type, array, struct), and an element is any object in memory.
 
-The implementation is based on a multiplication method for hashing into upto 2^63 slots and double hashing as an open addressing strategy for resolving collisions. The expected number of probes in a search is upper-bounded by 1/(1 - alpha) under the uniform hashing assumption, where alpha is a load factor upper bound. For every delete and remove operation at most one (re)insert operation is performed, resulting in a probing overhead per delete and remove operation bounded by 1/(1 - alpha) in expectation, and thus a 2/(1 – alpha) overall upper bound for the expected number of probes per delete and remove operation by linearity of expectation. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to element objects within continuous memory blocks as well as multi-layered element objects in memory.
+The implementation is based on a multiplication method for hashing into upto 2^63 slots and double hashing as an open addressing strategy for resolving collisions. The expected number of probes in a search is upper-bounded by 1/(1 - alpha) under the uniform hashing assumption, where alpha is a load factor upper bound. For every delete and remove operation at most one (re)insert operation is performed, resulting in a probing overhead per delete and remove operation bounded by 1/(1 - alpha) in expectation, and thus a 2/(1 – alpha) overall upper bound for the expected number of probes per delete and remove operation by linearity of expectation. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to element objects within contiguous and noncontiguous memory blocks.
 
 `./data-structures/ht-div-{uint32, uint64}/`
 
-A hash table with generic hash keys and generic elements, where a hash key is an object within a continuous memory block (e.g. a basic type, array, struct), and an element is any object in memory. 
+A hash table with generic hash keys and generic elements, where a hash key is an object within a contiguous memory block (e.g. a basic type, array, struct), and an element is any object in memory. 
 
-The implementation is based on a division method for hashing into upto {2^32 - 1,  2^64 - 1} slots and a chaining method for resolving collisions. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to element objects within continuous memory blocks as well as multi-layered element objects in memory.
+The implementation is based on a division method for hashing into upto {2^32 - 1,  2^64 - 1} slots and a chaining method for resolving collisions. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to element objects within contiguous and noncontiguous memory blocks.
+
 
 `./utilities/utilities-rand-mod/`
 
