@@ -69,6 +69,7 @@ void second_vsix_graph_init(graph_t *g){
 */
 
 void small_graph_helper(const graph_t *g,
+			uint64_t start,
 			uint64_t ret_pre[],
 			uint64_t ret_post[],
 			void (*build)(adj_lst_t *, const graph_t *),
@@ -76,6 +77,7 @@ void small_graph_helper(const graph_t *g,
 
 void run_first_vsix_graph_test(){
   int res = 1;
+  uint64_t start = 0;
   uint64_t dir_pre[6] = {0, 1, 2, 3, 8, 9};
   uint64_t dir_post[6] = {7, 6, 5, 4, 11, 10};
   uint64_t undir_pre[6] = {0, 1, 2, 3, 5, 6};
@@ -83,14 +85,20 @@ void run_first_vsix_graph_test(){
   graph_t g;
   printf("Run a dfs test on the first small graph instance --> ");
   first_vsix_graph_init(&g);
-  small_graph_helper(&g,dir_pre, dir_post, adj_lst_dir_build, &res);
-  small_graph_helper(&g, undir_pre, undir_post, adj_lst_undir_build, &res);
+  small_graph_helper(&g, start, dir_pre, dir_post, adj_lst_dir_build, &res);
+  small_graph_helper(&g,
+		     start,
+		     undir_pre,
+		     undir_post,
+		     adj_lst_undir_build,
+		     &res);
   graph_free(&g);
   print_test_result(res);
 }
 
 void run_second_vsix_graph_test(){
   int res = 1;
+  uint64_t start = 0;
   uint64_t dir_pre[6] = {0, 1, 2, 3, 4, 5};
   uint64_t dir_post[6] = {11, 10, 9, 8, 7, 6};
   uint64_t undir_pre[6] = {0, 1, 2, 3, 4, 5};
@@ -98,19 +106,24 @@ void run_second_vsix_graph_test(){
   graph_t g;
   printf("Run a dfs test on the second small graph instance --> ");
   second_vsix_graph_init(&g);
-  small_graph_helper(&g, dir_pre, dir_post, adj_lst_dir_build, &res);
-  small_graph_helper(&g, undir_pre, undir_post, adj_lst_undir_build, &res);
+  small_graph_helper(&g, start, dir_pre, dir_post, adj_lst_dir_build, &res);
+  small_graph_helper(&g,
+		     start,
+		     undir_pre,
+		     undir_post,
+		     adj_lst_undir_build,
+		     &res);
   graph_free(&g);
   print_test_result(res);
 }
 
 void small_graph_helper(const graph_t *g,
+			uint64_t start,
 			uint64_t ret_pre[],
 			uint64_t ret_post[],
 			void (*build)(adj_lst_t *, const graph_t *),
 			int *res){
   uint64_t *pre = NULL, *post = NULL;
-  uint64_t start = 0;
   adj_lst_t a;
   adj_lst_init(&a, g);
   build(&a, g);
@@ -148,11 +161,6 @@ int bern_fn(void *arg){
    Runs a dfs test on directed graphs with n(n - 1) edges. The test relies
    on the construction order in adj_lst_rand_dir.
 */
-
-/**
-   Printing helper functions.
-*/
-
 void run_max_edges_graph_test(){
   int res = 1, pow_end = 15;
   uint64_t n, start;
@@ -164,7 +172,7 @@ void run_max_edges_graph_test(){
 	 "0 < n <= 2^%d, and n(n - 1) edges --> ", pow_end - 1);
   fflush(stdout);
   for (int i = 0; i < pow_end; i++){
-    n = pow_two(i); //0 < n
+    n = pow_two(i); //n > 0
     pre = malloc_perror(n * sizeof(uint64_t));
     post = malloc_perror(n * sizeof(uint64_t));
     adj_lst_rand_dir(&a, n, bern_fn, &b);
@@ -175,6 +183,7 @@ void run_max_edges_graph_test(){
 	res *= (pre[j] == 0);
 	res *= (post[j] == 2 * n - 1);
       }else if (j < start){
+	//n >= 2
 	res *= (pre[j] == j + 1);
 	res *= (post[j] == 2 * n - 2 - j);
       }else{
@@ -272,7 +281,7 @@ void run_random_dir_graph_test(){
 }
 
 /**
-   Compares elements of two uint64_t arrays.
+   Compares the elements of two uint64_t arrays.
 */
 int cmp_arr(const uint64_t *a, const uint64_t *b, uint64_t n){
   int res = 1;

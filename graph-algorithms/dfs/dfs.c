@@ -33,7 +33,15 @@ static const size_t NR = SIZE_MAX; //not reached as index
 static const size_t STACK_INIT_COUNT = 1;
 
 /**
-   Computes and copies pre and postvisit values to pre and post arrays.
+   Computes and copies to the arrays pointed to by pre and post the previsit
+   and postvisit values of a DFS search from a start vertex. Assumes start
+   is valid and there is at least one vertex.
+   a           : pointer to an adjacency list with at least one vertex
+   start       : a start vertex for running dfs
+   pre         : pointer to a preallocated array with the count equal to the
+                 number of vertices in the adjacency list
+   post        : pointer to a preallocated array with the count equal to the
+                 number of vertices in the adjacency list
 */
 void dfs(const adj_lst_t *a, size_t start, size_t *pre, size_t *post){
   size_t c = 0; //counter
@@ -56,7 +64,11 @@ void dfs(const adj_lst_t *a, size_t start, size_t *pre, size_t *post){
   stack_free(&s);
 }
 
-//searches from an unexplored vertex u
+/**
+   Performs a DFS search of a graph component reachable from an unexplored
+   vertex provided by the u parameter by emulating the recursion in DFS on
+   a dynamically allocated stack data structure.
+*/
 static void search(const adj_lst_t *a,
 		   stack_t *s,
 		   size_t u,
@@ -77,7 +89,7 @@ static void search(const adj_lst_t *a,
       post[uvi.u] = *c;
       (*c)++;
     }else{
-      stack_push(s, &uvi); //push again the unfinished vertex
+      stack_push(s, &uvi); //push the unfinished vertex
       vts = a->vts[uvi.u]->elts;
       pre[vts[uvi.vi]] = *c;
       (*c)++;
@@ -88,12 +100,10 @@ static void search(const adj_lst_t *a,
   }
 }
 
-/** Helper functions */
-
 /**
-   Given a uvi_t pair, computes the index of the next unexplored vertex 
-   in u's stack in an adjacency list, in order to emulate the recursion 
-   in DFS on a dynamically allocated stack data structure.
+   Updates a uvi_t pair by computing the index of the next unexplored vertex 
+   in u's stack in an adjacency list. Updates the uvi_t pair to the count of
+   vertices in u's stack if threre is no next unexplored vertex.
 */
 static void next_uvi(const adj_lst_t *a, uvi_t *uvi, const size_t *pre){
   size_t *vts = a->vts[uvi->u]->elts;
