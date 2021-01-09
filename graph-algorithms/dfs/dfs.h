@@ -17,6 +17,6 @@
 /**
    Computes and copies pre and postvisit values to pre and post arrays.
 */
-void dfs(const adj_lst_t *a, size_t *pre, size_t *post);
+void dfs(const adj_lst_t *a, size_t start, size_t *pre, size_t *post);
 
 #endif

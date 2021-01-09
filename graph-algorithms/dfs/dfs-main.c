@@ -110,13 +110,14 @@ void small_graph_helper(const graph_t *g,
 			void (*build)(adj_lst_t *, const graph_t *),
 			int *res){
   uint64_t *pre = NULL, *post = NULL;
+  uint64_t start = 0;
   adj_lst_t a;
   adj_lst_init(&a, g);
   build(&a, g);
   pre = malloc_perror(a.num_vts * sizeof(uint64_t));
   post = malloc_perror(a.num_vts * sizeof(uint64_t));
   for (uint64_t i = 0; i < a.num_vts; i++){
-    dfs(&a, pre, post);
+    dfs(&a, start, pre, post);
     *res *= cmp_arr(pre, ret_pre, a.num_vts);
     *res *= cmp_arr(post, ret_post, a.num_vts);
   }
@@ -147,9 +148,14 @@ int bern_fn(void *arg){
    Runs a dfs test on directed graphs with n(n - 1) edges. The test relies
    on the construction order in adj_lst_rand_dir.
 */
+
+/**
+   Printing helper functions.
+*/
+
 void run_max_edges_graph_test(){
   int res = 1, pow_end = 15;
-  uint64_t n;
+  uint64_t n, start;
   uint64_t *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
@@ -162,10 +168,19 @@ void run_max_edges_graph_test(){
     pre = malloc_perror(n * sizeof(uint64_t));
     post = malloc_perror(n * sizeof(uint64_t));
     adj_lst_rand_dir(&a, n, bern_fn, &b);
-    dfs(&a, pre, post);
-    for (uint64_t i = 0; i < n; i++){
-      res *= (pre[i] == i);
-      res *= (post[i] == 2 * n - 1 - i);
+    start =  RANDOM() % n;
+    dfs(&a, start, pre, post);
+    for (uint64_t j = 0; j < n; j++){
+      if (j == start){
+	res *= (pre[j] == 0);
+	res *= (post[j] == 2 * n - 1);
+      }else if (j < start){
+	res *= (pre[j] == j + 1);
+	res *= (post[j] == 2 * n - 2 - j);
+      }else{
+	res *= (pre[j] == j);
+	res *= (post[j] == 2 * n - 1 - j);
+      }
     }
     adj_lst_free(&a);
     free(pre);
@@ -181,30 +196,23 @@ void run_max_edges_graph_test(){
 */
 void run_no_edges_graph_test(){
   int res = 1, pow_end = 15;
-  uint64_t n;
+  uint64_t n, start;
   uint64_t *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
   b.p = 0.00;
   printf("Run a dfs test on graphs with n vertices, where "
-	 "0 <= n <= 2^%d, and no edges --> ", pow_end - 1);
+	 "0 < n <= 2^%d, and no edges --> ", pow_end - 1);
   fflush(stdout);
-  //no vertices
-  n = 0;
-  pre = NULL;
-  post = NULL;
-  adj_lst_rand_dir(&a, n, bern_fn, &b);
-  dfs(&a, pre, post);
-  res *= (pre == NULL && post == NULL);
-  //one or more vertices
   for (int i = 0; i < pow_end; i++){
     n = pow_two(i);
     pre = malloc_perror(n * sizeof(uint64_t));
     post = malloc_perror(n * sizeof(uint64_t));
     adj_lst_rand_dir(&a, n, bern_fn, &b);
-    dfs(&a, pre, post);
-    for (uint64_t i = 0; i < n; i++){
-      res *= (post[i] - pre[i] == 1);
+    start =  RANDOM() % n;
+    dfs(&a, start, pre, post);
+    for (uint64_t j = 0; j < n; j++){
+      res *= (post[j] - pre[j] == 1);
     }
     adj_lst_free(&a);
     free(pre);
@@ -223,15 +231,16 @@ void run_no_edges_graph_test(){
    Runs a dfs test on random directed graphs.
 */
 void run_random_dir_graph_test(){
-  int pow_end = 15;
+  int pow_end = 15, ave_iter = 10;
   int num_p = 5;
-  uint64_t n;
+  uint64_t n, start[10];
   uint64_t *pre = NULL, *post = NULL;
   double p[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
   bern_arg_t b;
   adj_lst_t a;
   clock_t t;
-  printf("Run a dfs test on random directed graphs \n");
+  printf("Run a dfs test on random directed graphs from %d random "
+	 "start vertices in each graph \n", ave_iter);
   fflush(stdout);
   for (int i = 0; i < num_p; i++){
     b.p = p[i];
@@ -241,12 +250,17 @@ void run_random_dir_graph_test(){
       pre = malloc_perror(n * sizeof(uint64_t));
       post = malloc_perror(n * sizeof(uint64_t));
       adj_lst_rand_dir(&a, n, bern_fn, &b);
+      for (int k = 0; k < ave_iter; k++){
+	start[k] =  RANDOM() % n;
+      }
       t = clock();
-      dfs(&a, pre, post);
+      for (int k = 0; k < ave_iter; k++){
+	dfs(&a, start[k], pre, post);
+      }
       t = clock() - t;
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f, "
-	     "runtime: %.6f seconds\n",
-	     a.num_vts, b.p * n * (n - 1), (float)t / CLOCKS_PER_SEC);
+	     "average runtime: %.6f seconds\n",
+	     n, b.p * n * (n - 1), (float)t / ave_iter / CLOCKS_PER_SEC);
       fflush(stdout);
       adj_lst_free(&a);
       free(pre);
