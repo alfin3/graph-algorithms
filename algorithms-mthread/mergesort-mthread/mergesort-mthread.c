@@ -4,14 +4,14 @@
    Functions for optimizing and running a generic merge sort algorithm
    with parallel sorting and parallel merging. 
 
-   The algorithm provide a Theta(n/(logn)^2) theoretical parallelism without
-   race conditions.
+   The algorithm provides \Theta(n/log^{2}n) theoretical parallelism within
+   the dynamic multithreading model.
 
    The implementation provides base case upper bound parameters for setting
-   the conditions for switching during recursion between parallel sorting and
-   serial sorting, as well as parallel merging and serial merging, thereby
-   enabling the optimization of the actual parallelism and concurrency-
-   associated overhead across input ranges and hardware settings.
+   the conditions for switching from parallel sorting to serial sorting and
+   from parallel merging to serial merging during recursion, thereby enabling
+   the optimization of the actual parallelism and concurrency-associated
+   overhead across input ranges and hardware settings.
 
    On a 4-core machine, the optimization of the base case upper bound
    parameters, demonstrated in the accompanying tests, resulted in a speedup
@@ -33,8 +33,8 @@
 
 typedef struct{
   size_t p, r;
-  size_t sbase_count; //>0, count of sort base case
-  size_t mbase_count; //>1, count of merge base case
+  size_t sbase_count; //>0, count of sort base case bound
+  size_t mbase_count; //>1, count of merge base case bound
   size_t elt_size;
   size_t num_onthread_rec;
   void *elts; //pointer to an input array
@@ -43,7 +43,7 @@ typedef struct{
 
 typedef struct{
   size_t ap, ar, bp, br, cs;
-  size_t mbase_count; //>1, count of merge base case
+  size_t mbase_count; //>1, count of merge base case bound
   size_t elt_size;
   size_t num_onthread_rec;
   void *cat_elts; 
@@ -61,22 +61,22 @@ static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 /**
    Sorts a given array pointed to by elts in ascending order according to
    cmp. The array contains count elements of elt_size bytes. The first
-   thread entry is placed on the thread of the caller.
+   thread entry is placed on the thread stack of the caller.
    elts        : pointer to the array to sort
    count       : number of elements in the array
    elt_size    : size of each element in the array in bytes
    sbase_count : >0 base case upper bound for parallel sorting; if the count
                  of an unsorted subarray is less or equal to sbase_count,
-                 then the subarray is sorted in the serial manner
+                 then the subarray is sorted with serial sort routine (qsort)
    mbase_count : >1 base case upper bound for parallel merging; if the sum of
                  the counts of two sorted subarrays is less or equal to
-                 mbase_count, then the two subarrays are merged in the serial
-                 manner
+                 mbase_count, then the two subarrays are merged with a serial
+                 merge routine
    cmp         : comparison function which returns a negative integer value
                  if the element pointed to by the first argument is less than
                  the element pointed to by the second, a positive integer value
                  if the element pointed to by the first argument is greater
-                 than the element pointed to by the second and zero integer
+                 than the element pointed to by the second, and zero integer
                  value if the two elements are equal
 */
 void mergesort_mthread(void *elts,
@@ -86,7 +86,7 @@ void mergesort_mthread(void *elts,
 		       size_t mbase_count,
 		       int (*cmp)(const void *, const void *)){
   mergesort_arg_t msa;
-  if (count < 2) return;
+  if (count < 1) return;
   msa.p = 0;
   msa.r = count - 1;
   msa.sbase_count = sbase_count;
@@ -277,8 +277,8 @@ static void *merge_thread(void *arg){
 }
 
 /**
-   Merges two sorted subarrays onto a concatenation array, as
-   the base case of parallel merge.
+   Merges two sorted subarrays onto a concatenation array as the base case
+   of parallel merge.
 */
 static void merge(merge_arg_t *ma){
   size_t first_ix, second_ix, cat_ix;

@@ -1,6 +1,9 @@
 /**
    mergesort-mthread-main.c
 
+   Optimization and correctness tests of a generic merge sort algorithm with
+   parallel sorting and parallel merging. 
+
    Requirements for running tests: 
    - UINT64_MAX must be defined
 
@@ -16,6 +19,8 @@
 #include "mergesort-mthread.h"
 #include "utilities-mem.h"
 
+#define RGENS_SEED() \
+  do{srandom((unsigned int)timer()); srand48(random());}while (0)
 #define RANDOM() (random())
 #define DRAND48() (drand48())
 
@@ -46,7 +51,7 @@ int cmp_double_fn(const void *a, const void *b){
 /**
    Runs a mergesort_mthread corner cases test on random integer arrays.
 */
-void run_mergesort_mthread_int_corner_test(){
+void run_int_corner_test(){
   int res = 1;
   int num_iter = 100;
   int num_counts = 7;
@@ -99,9 +104,9 @@ void run_mergesort_mthread_int_corner_test(){
 
 /**
    Runs a test comparing mergesort_mthread vs. qsort performance on random 
-   integer arrays across sort and merge base parameter values.
+   integer arrays across sort and merge base count bounds.
 */
-void run_mergesort_mthread_int_opt_test(){
+void run_int_opt_test(){
   int res = 1;
   int num_iter = 5;
   int num_counts = 1;
@@ -164,7 +169,7 @@ void run_mergesort_mthread_int_opt_test(){
 /**
    Runs a mergesort_mthread corner cases test on random double arrays.
 */
-void run_mergesort_mthread_double_corner_test(){
+void run_double_corner_test(){
   int res = 1;
   int num_iter = 100;
   int num_counts = 7;
@@ -217,9 +222,9 @@ void run_mergesort_mthread_double_corner_test(){
 
 /**
    Runs a test comparing mergesort_mthread vs. qsort performance on random 
-   double arrays across sort and merge base parameter values.
+   double arrays across sort and merge base count bounds.
 */
-void run_mergesort_mthread_double_opt_test(){
+void run_double_opt_test(){
   int res = 1;
   int num_iter = 5;
   int num_counts = 1;
@@ -312,9 +317,10 @@ void print_test_result(int res){
 }
 
 int main(){
-  run_mergesort_mthread_int_corner_test();
-  run_mergesort_mthread_int_opt_test();
-  run_mergesort_mthread_double_corner_test();
-  run_mergesort_mthread_double_opt_test();
+  RGENS_SEED();
+  run_int_corner_test();
+  run_int_opt_test();
+  run_double_corner_test();
+  run_double_opt_test();
   return 0;
 }
