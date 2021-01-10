@@ -21,7 +21,7 @@
 
 double timer();
 void print_uint64_elts(const uint64_t *a, size_t count);
-void print_test_result(int result);
+void print_test_result(int res);
 
 int cmp_int_fn(const void *a, const void *b){
   if (*(int *)a > *(int *)b){
@@ -47,7 +47,7 @@ int cmp_double_fn(const void *a, const void *b){
    Runs a mergesort_mthread corner cases test on random integer arrays.
 */
 void run_mergesort_mthread_int_corner_test(){
-  int result = 1;
+  int res = 1;
   int num_iter = 100;
   int num_counts = 7;
   int num_sbase_counts = 3;
@@ -83,14 +83,14 @@ void run_mergesort_mthread_int_corner_test(){
 			    cmp_int_fn);
 	  qsort(arr_b, count_arr[ci], sizeof(int), cmp_int_fn);
 	  for (uint64_t j = 0; j < count_arr[ci]; j++){
-	    result *= (cmp_int_fn(&arr_a[j], &arr_b[j]) == 0);
+	    res *= (cmp_int_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
       }
     }
   }
   printf("\tcorrectness:       ");
-  print_test_result(result);
+  print_test_result(res);
   free(arr_a);
   free(arr_b);
   arr_a = NULL;
@@ -102,7 +102,7 @@ void run_mergesort_mthread_int_corner_test(){
    integer arrays across sort and merge base parameter values.
 */
 void run_mergesort_mthread_int_opt_test(){
-  int result = 1;
+  int res = 1;
   int num_iter = 5;
   int num_counts = 1;
   int num_sbase_counts = 4;
@@ -147,7 +147,7 @@ void run_mergesort_mthread_int_opt_test(){
 	  tot_m += t_m;
 	  tot_q += t_q;
 	  for (uint64_t j = 0; j < count_arr[ci]; j++){
-	    result *= (cmp_int_fn(&arr_a[j], &arr_b[j]) == 0);
+	    res *= (cmp_int_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
 	printf("\t\t\tave mthread mergesort: %.6f seconds\n",
@@ -155,7 +155,7 @@ void run_mergesort_mthread_int_opt_test(){
 	printf("\t\t\tave qsort:             %.6f seconds\n",
 	       tot_q / num_iter);
 	printf("\t\t\tcorrectness:           ");
-	print_test_result(result);
+	print_test_result(res);
       }
     }
   }
@@ -165,7 +165,7 @@ void run_mergesort_mthread_int_opt_test(){
    Runs a mergesort_mthread corner cases test on random double arrays.
 */
 void run_mergesort_mthread_double_corner_test(){
-  int result = 1;
+  int res = 1;
   int num_iter = 100;
   int num_counts = 7;
   int num_sbase_counts = 3;
@@ -201,14 +201,14 @@ void run_mergesort_mthread_double_corner_test(){
 	  qsort(arr_b, count_arr[ci], sizeof(double), cmp_double_fn);
 	  for (uint64_t j = 0; j < count_arr[ci]; j++){
 	    //== 0 because of the same bit patterns
-	    result *= (cmp_double_fn(&arr_a[j], &arr_b[j]) == 0);
+	    res *= (cmp_double_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
       }
     }
   }
   printf("\tcorrectness:       ");
-  print_test_result(result);
+  print_test_result(res);
   free(arr_a);
   free(arr_b);
   arr_a = NULL;
@@ -220,7 +220,7 @@ void run_mergesort_mthread_double_corner_test(){
    double arrays across sort and merge base parameter values.
 */
 void run_mergesort_mthread_double_opt_test(){
-  int result = 1;
+  int res = 1;
   int num_iter = 5;
   int num_counts = 1;
   int num_sbase_counts = 4;
@@ -265,7 +265,7 @@ void run_mergesort_mthread_double_opt_test(){
 	  tot_q += t_q;
 	  for (uint64_t j = 0; j < count_arr[ci]; j++){
 	    //== 0 because of the same bit patterns
-	    result *= (cmp_double_fn(&arr_a[j], &arr_b[j]) == 0);
+	    res *= (cmp_double_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
 	printf("\t\t\tave mthread mergesort: %.6f seconds\n",
@@ -273,7 +273,7 @@ void run_mergesort_mthread_double_opt_test(){
 	printf("\t\t\tave qsort:             %.6f seconds\n",
 	       tot_q / num_iter);
 	printf("\t\t\tcorrectness:           ");
-	print_test_result(result);
+	print_test_result(res);
       }
     }
   }
@@ -303,8 +303,8 @@ void print_uint64_elts(const uint64_t *a, size_t count){
   printf("\n");
 }
 
-void print_test_result(int result){
-  if (result){
+void print_test_result(int res){
+  if (res){
     printf("SUCCESS\n");
   }else{
     printf("FAILURE\n");

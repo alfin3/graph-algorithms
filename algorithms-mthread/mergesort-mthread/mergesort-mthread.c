@@ -1,9 +1,22 @@
 /**
    mergesort-mthread.c
 
-   generic implementation without race conditions (and overhead). 
-   base count parameters can be used to optimizing on
-   input ranges and specific hardware settings.
+   Functions for optimizing and running a generic merge sort algorithm
+   with parallel sorting and parallel merging. 
+
+   The algorithm provide a Theta(n/(logn)^2) theoretical parallelism without
+   race conditions.
+
+   The implementation provides base case upper bound parameters for setting
+   the conditions for switching during recursion between parallel sorting and
+   serial sorting, as well as parallel merging and serial merging, thereby
+   enabling the optimization of the actual parallelism and concurrency-
+   associated overhead across input ranges and hardware settings.
+
+   On a 4-core machine, the optimization of the base case upper bound
+   parameters, demonstrated in the accompanying tests, resulted in a speedup
+   of approximately 2.6X in comparison to serial qsort (stdlib.h) on arrays
+   of 10M random integer or double elements.
 */
 
 #include <unistd.h>
@@ -20,8 +33,8 @@
 
 typedef struct{
   size_t p, r;
-  size_t mbase_count; //>1, count of merge base case
   size_t sbase_count; //>0, count of sort base case
+  size_t mbase_count; //>1, count of merge base case
   size_t elt_size;
   size_t num_onthread_rec;
   void *elts; //pointer to an input array
@@ -46,7 +59,25 @@ static void merge(merge_arg_t *ma);
 static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 
 /**
-   Runs the first thread entry on the thread of the caller.
+   Sorts a given array pointed to by elts in ascending order according to
+   cmp. The array contains count elements of elt_size bytes. The first
+   thread entry is placed on the thread of the caller.
+   elts        : pointer to the array to sort
+   count       : number of elements in the array
+   elt_size    : size of each element in the array in bytes
+   sbase_count : >0 base case upper bound for parallel sorting; if the count
+                 of an unsorted subarray is less or equal to sbase_count,
+                 then the subarray is sorted in the serial manner
+   mbase_count : >1 base case upper bound for parallel merging; if the sum of
+                 the counts of two sorted subarrays is less or equal to
+                 mbase_count, then the two subarrays are merged in the serial
+                 manner
+   cmp         : comparison function which returns a negative integer value
+                 if the element pointed to by the first argument is less than
+                 the element pointed to by the second, a positive integer value
+                 if the element pointed to by the first argument is greater
+                 than the element pointed to by the second and zero integer
+                 value if the two elements are equal
 */
 void mergesort_mthread(void *elts,
 		       size_t count,
@@ -58,8 +89,8 @@ void mergesort_mthread(void *elts,
   if (count < 2) return;
   msa.p = 0;
   msa.r = count - 1;
-  msa.mbase_count = mbase_count;
   msa.sbase_count = sbase_count;
+  msa.mbase_count = mbase_count;
   msa.elt_size = elt_size;
   msa.num_onthread_rec = 0;
   msa.elts = elts;
@@ -139,7 +170,7 @@ static void *mergesort_thread(void *arg){
 }
 
 /**
-   Merges two subproblems in a parallel manner without race conditions.
+   Merges two sorted subarrays in a parallel manner.
 */
 static void *merge_thread(void *arg){
   merge_arg_t *ma = arg;
@@ -246,8 +277,8 @@ static void *merge_thread(void *arg){
 }
 
 /**
-   Merge two contiguous or non-contiguous sorted regions of an element array 
-   onto a concatenation array. This is the base case for parallel merge.
+   Merges two sorted subarrays onto a concatenation array, as
+   the base case of parallel merge.
 */
 static void merge(merge_arg_t *ma){
   size_t first_ix, second_ix, cat_ix;
