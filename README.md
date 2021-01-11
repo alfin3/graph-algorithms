@@ -14,6 +14,12 @@ In each directory with a Makefile, run:
 
 **Design and implementation highlights:**
 
+`./algorithms-mthread/mergesort-mthread/`
+
+A merge sort algorithm with parallel sorting and parallel merging for sorting arrays of generic elements, providing \Theta(n/log^{2}n) theoretical parallelism within the dynamic multithreading model. 
+
+The implementation provides base case upper bound parameters for setting the conditions for switching from parallel sorting to serial sorting and from parallel merging to serial merging during recursion, thereby enabling the optimization of the actual parallelism and concurrency-associated overhead across input ranges and hardware settings. On a 4-core machine, the optimization of the base case upper bound parameters, demonstrated in the accompanying tests, resulted in a speedup of approximately 2.6X in comparison to serial qsort (stdlib.h) on arrays of 10M random integer or double elements.
+
 `./data-structures/heap-uint32/`
 
 A dynamic set of upto 2^32 - 2 generic priority values and generic elements in the (min) heap form, where a priority value is an object of basic type (e.g. char, int, long, double), and an element is any object in memory.
