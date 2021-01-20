@@ -27,5 +27,5 @@ void prim_uint64(adj_lst_uint64_t *a,
 		 void *dist,
 		 uint64_t *prev,
 		 void (*init_wt_fn)(void *),
-		 int (*cmp_wt_fn)(void *, void *));
+		 int (*cmp_wt_fn)(const void *, const void *));
 #endif

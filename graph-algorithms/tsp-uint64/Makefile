@@ -47,7 +47,8 @@ $(GRAPH_DIR)graph-uint64.o          : $(GRAPH_DIR)graph-uint64.h          \
 $(HT_MUL_DIR)ht-mul-uint64.o        : $(HT_MUL_DIR)ht-mul-uint64.h        \
                                       $(DLL_DIR)dll.h                     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
-$(DLL_DIR)dll.o                     : $(DLL_DIR)dll.h
+$(DLL_DIR)dll.o                     : $(DLL_DIR)dll.h                     \
+                                      $(UTILS_MEM_DIR)utilities-mem.h
 $(STACK_DIR)stack.o                 : $(STACK_DIR)stack.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o     : $(UTILS_MEM_DIR)utilities-mem.h

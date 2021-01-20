@@ -112,12 +112,10 @@ void add_uint64_fn(void *sum, void *wt_a, void *wt_b){
   *(uint64_t *)sum = *(uint64_t *)wt_a + *(uint64_t *)wt_b;
 }
   
-int cmp_uint64_fn(void *wt_a, void *wt_b){
-  uint64_t wt_a_val = *(uint64_t *)wt_a;
-  uint64_t wt_b_val = *(uint64_t *)wt_b;
-  if (wt_a_val > wt_b_val){
+int cmp_uint64_fn(const void *wt_a, const void *wt_b){
+  if (*(uint64_t *)wt_a > *(uint64_t *)wt_b){
     return 1;
-  }else if (wt_a_val < wt_b_val){
+  }else if (*(uint64_t *)wt_a < *(uint64_t *)wt_b){
     return -1;
   }else{
     return 0;
@@ -205,12 +203,10 @@ void add_double_fn(void *sum, void *wt_a, void *wt_b){
   *(double *)sum = *(double *)wt_a + *(double *)wt_b;
 }
   
-int cmp_double_fn(void *wt_a, void *wt_b){
-  double wt_a_val = *(double *)wt_a;
-  double wt_b_val = *(double *)wt_b;
-  if (wt_a_val > wt_b_val){
+int cmp_double_fn(const void *wt_a, const void *wt_b){
+  if (*(double *)wt_a > *(double *)wt_b){
     return 1;
-  }else if (wt_a_val < wt_b_val){
+  }else if (*(double *)wt_a < *(double *)wt_b){
     return -1;
   }else{
     return 0;

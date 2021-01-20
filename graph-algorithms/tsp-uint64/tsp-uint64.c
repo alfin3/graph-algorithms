@@ -30,11 +30,11 @@ static void build_next(adj_lst_uint64_t *a,
 		       stack_t *prev_s,
 		       ht_mul_uint64_t *prev_ht,
 		       void (*add_wt_fn)(void *, void *, void *),
-		       int (*cmp_wt_fn)(void *, void *));
+		       int (*cmp_wt_fn)(const void *, const void *));
 static uint64_t *vt_ptr(void *vts, uint64_t i);
 static void *wt_ptr(void *wts, uint64_t i, int wt_size);
 static void swap(void *a, void *b);;
-static int cmp_key_fn(void *a, void *b);
+static int cmp_key_fn(const void *a, const void *b);
 static void rdc_key_fn(void *t, void *s);
 static int cmp_vt_fn(const void *a, const void *b);
 
@@ -51,7 +51,7 @@ int tsp_uint64(adj_lst_uint64_t *a,
 	       void *dist,
 	       void (*init_wt_fn)(void *),
 	       void (*add_wt_fn)(void *, void *, void *),
-	       int (*cmp_wt_fn)(void *, void *)){
+	       int (*cmp_wt_fn)(const void *, const void *)){
   assert(a->num_vts > 0 && a->num_vts < l_num_vts);
   stack_t s_a, s_b;
   stack_t *prev_s = &s_a, *next_s = &s_b;
@@ -147,7 +147,7 @@ static void build_next(adj_lst_uint64_t *a,
 		       stack_t *prev_s,
 		       ht_mul_uint64_t *prev_ht,
 		       void (*add_wt_fn)(void *, void *, void *),
-		       int (*cmp_wt_fn)(void *, void *)){
+		       int (*cmp_wt_fn)(const void *, const void *)){
   int vt_size = sizeof(uint64_t);
   int wt_size = a->wt_size;
   int set_size = prev_ht->key_size / vt_size;
@@ -217,7 +217,7 @@ static void swap(void *a, void *b){
 /**
    Compares two nr terminated uint64_t arrays of the same size.
 */
-static int cmp_key_fn(void *a, void *b){
+static int cmp_key_fn(const void *a, const void *b){
   uint64_t *a_arr = (uint64_t *)a;
   uint64_t *b_arr = (uint64_t *)b;
   uint64_t i = 0;
@@ -251,11 +251,9 @@ static void rdc_key_fn(void *t, void *s){
    Compares two uint64_t vertices.
 */
 static int cmp_vt_fn(const void *a, const void *b){
-  uint64_t a_val = *(uint64_t *)a;
-  uint64_t b_val = *(uint64_t *)b;
-  if (a_val > b_val){
+  if (*(uint64_t *)a > *(uint64_t *)b){
     return 1;
-  }else if (a_val < b_val){
+  }else if (*(uint64_t *)a < *(uint64_t *)b){
     return -1;
   }else{
     return 0;

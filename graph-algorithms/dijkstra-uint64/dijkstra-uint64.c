@@ -22,7 +22,7 @@
 
 static uint64_t *vt_ptr(void *vts, uint64_t i);
 static void *wt_ptr(void *wts, uint64_t i, int wt_size);
-static int cmp_vt_fn(void *a, void *b);
+static int cmp_vt_fn(const void *a, const void *b);
 
 static const uint64_t nr = 0xffffffffffffffff; //not reached
 static const uint64_t l_num_vts = 0xffffffff;
@@ -38,7 +38,7 @@ void dijkstra_uint64(adj_lst_t *a,
 		     uint64_t *prev,
 		     void (*init_wt_fn)(void *),
 		     void (*add_wt_fn)(void *, void *, void *),
-		     int (*cmp_wt_fn)(void *, void *)){
+		     int (*cmp_wt_fn)(const void *, const void *)){
   assert(a->num_vts > 0 && a->num_vts < l_num_vts);
   heap_uint32_t h;
   int vt_size = sizeof(uint64_t);
@@ -109,12 +109,10 @@ static void *wt_ptr(void *wts, uint64_t i, int wt_size){
 /**
    Compares two vertices.
 */
-static int cmp_vt_fn(void *a, void *b){
-  uint64_t a_val = *(uint64_t *)a;
-  uint64_t b_val = *(uint64_t *)b;
-  if (a_val > b_val){
+static int cmp_vt_fn(const void *a, const void *b){
+  if (*(uint64_t *)a > *(uint64_t *)b){
     return 1;
-  }else if (a_val < b_val){
+  }else if (*(uint64_t *)a < *(uint64_t *)b){
     return -1;
   }else{
     return 0;

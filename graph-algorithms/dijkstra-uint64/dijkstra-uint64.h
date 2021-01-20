@@ -25,5 +25,5 @@ void dijkstra_uint64(adj_lst_t *a,
 		     uint64_t *prev,
 		     void (*init_wt_fn)(void *),
 		     void (*add_wt_fn)(void *, void *, void *),
-		     int (*cmp_wt_fn)(void *, void *));
+		     int (*cmp_wt_fn)(const void *, const void *));
 #endif

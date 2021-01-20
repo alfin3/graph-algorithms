@@ -61,7 +61,8 @@ $(HEAP_DIR)heap-uint32.o            : $(HEAP_DIR)heap-uint32.h            \
 $(HT_DIR)ht-div-uint32.o            : $(HT_DIR)ht-div-uint32.h            \
                                       $(DLL_DIR)dll.h                     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
-$(DLL_DIR)dll.o                     : $(DLL_DIR)dll.h
+$(DLL_DIR)dll.o                     : $(DLL_DIR)dll.h                     \
+                                      $(UTILS_MEM_DIR)utilities-mem.h
 $(QUEUE_DIR)queue.o                 : $(QUEUE_DIR)queue.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h
 $(STACK_DIR)stack.o                 : $(STACK_DIR)stack.h                 \
