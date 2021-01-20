@@ -90,7 +90,7 @@ void ht_div_uint64_init(ht_div_uint64_t *ht,
                         int key_size,
 	                int elt_size,
 			float alpha,
-                        int (*cmp_key_fn)(void *, void *),
+                        int (*cmp_key_fn)(const void *, const void *),
 	                void (*free_elt_fn)(void *)){
   ht->ht_size_ix = 0;
   ht->key_size = key_size;
@@ -122,11 +122,11 @@ void ht_div_uint64_insert(ht_div_uint64_t *ht, void *key, void *elt){
   dll_node_t **head = &(ht->key_elts[ix]);
   dll_node_t *node = dll_search_key(head, key, ht->cmp_key_fn);
   if (node == NULL){
-    dll_insert(head, key, elt, ht->key_size, ht->elt_size);
+    dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
     ht->num_elts++;
   }else{
     dll_delete(head, node, ht->free_elt_fn);
-    dll_insert(head, key, elt, ht->key_size, ht->elt_size);
+    dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
   }   
 }
 
@@ -249,6 +249,6 @@ static void ht_grow(ht_div_uint64_t *ht){
 static void copy_reinsert(ht_div_uint64_t *ht, dll_node_t *node){
   uint64_t ix = hash(ht, node->key);
   dll_node_t **head = &(ht->key_elts[ix]);
-  dll_insert(head, node->key, node->elt, ht->key_size, ht->elt_size);
+  dll_prepend(head, node->key, node->elt, ht->key_size, ht->elt_size);
   ht->num_elts++;   
 }

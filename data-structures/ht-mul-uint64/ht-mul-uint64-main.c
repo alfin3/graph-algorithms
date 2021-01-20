@@ -23,7 +23,8 @@ static void insert_search_free_alphas(uint64_t num_inserts,
 				      int num_alphas,
 				      int key_size,
 				      int elt_size,
-				      int (*cmp_key_fn)(void *, void *),
+				      int (*cmp_key_fn)(const void *,
+							const void *),
 				      void (*rdc_key_fn)(void *, void *),
 				      void (*cstr_elt_fn)(void *, uint64_t),
 				      uint64_t (*elt_val_fn)(void *),
@@ -33,7 +34,8 @@ static void remove_delete_alphas(uint64_t num_inserts,
 				 int num_alphas,
 				 int key_size,
 				 int elt_size,
-				 int (*cmp_key_fn)(void *, void *),
+				 int (*cmp_key_fn)(const void *,
+						   const void *),
 				 void (*rdc_key_fn)(void *, void *),
 				 void (*cstr_elt_fn)(void *, uint64_t),
 				 uint64_t (*elt_val_fn)(void *),
@@ -47,15 +49,15 @@ static void remove_delete_alphas(uint64_t num_inserts,
    A NULL as free_elt_fn is sufficient to delete the element.
 */
 
-int cmp_uint64_fn(void *a, void *b){
+int cmp_uint64_fn(const void *a, const void *b){
   return memcmp(a, b, sizeof(uint64_t));
 }
 
-int cmp_32_fn(void *a, void *b){
+int cmp_32_fn(const void *a, const void *b){
   return memcmp(a, b, 32);
 }
 
-int cmp_256_fn(void *a, void *b){
+int cmp_256_fn(const void *a, const void *b){
   return memcmp(a, b, 256);
 }
 
@@ -102,9 +104,9 @@ void run_insert_search_free_uint64_elt_test(){
   //key_size >= sizeof(uint64_t) for this test
   int key_sizes[3] = {sizeof(uint64_t), 32, 256}; 
   int num_key_sizes = 3;
-  int (*cmp_fn_arr[3])(void *, void *) = {cmp_uint64_fn,
-					  cmp_32_fn,
-					  cmp_256_fn};
+  int (*cmp_fn_arr[3])(const void *, const void *) = {cmp_uint64_fn,
+						      cmp_32_fn,
+						      cmp_256_fn};
   void (*rdc_fn_arr[3])(void *, void *) = {NULL,
 					   rdc_32_fn,
 					   rdc_256_fn};
@@ -135,9 +137,9 @@ void run_remove_delete_uint64_elt_test(){
   //key_size >= sizeof(uint64_t) for this test
   int key_sizes[3] = {sizeof(uint64_t), 32, 256}; 
   int num_key_sizes = 3;
-  int (*cmp_fn_arr[3])(void *, void *) = {cmp_uint64_fn,
-					  cmp_32_fn,
-					  cmp_256_fn};
+  int (*cmp_fn_arr[3])(const void *, const void *) = {cmp_uint64_fn,
+						      cmp_32_fn,
+						      cmp_256_fn};
   void (*rdc_fn_arr[3])(void *, void *) = {NULL,
 					   rdc_32_fn,
 					   rdc_256_fn};
@@ -215,9 +217,9 @@ void run_insert_search_free_uint64_ptr_elt_test(){
   //key_size >= sizeof(uint64_t) for this test
   int key_sizes[3] = {sizeof(uint64_t), 32, 256}; 
   int num_key_sizes = 3;
-  int (*cmp_fn_arr[3])(void *, void *) = {cmp_uint64_fn,
-					  cmp_32_fn,
-					  cmp_256_fn};
+  int (*cmp_fn_arr[3])(const void *, const void *) = {cmp_uint64_fn,
+						      cmp_32_fn,
+						      cmp_256_fn};
   void (*rdc_fn_arr[3])(void *, void *) = {NULL,
 					   rdc_32_fn,
 					   rdc_256_fn};
@@ -250,9 +252,9 @@ void run_remove_delete_uint64_ptr_elt_test(){
   //key_size >= sizeof(uint64_t) for this test
   int key_sizes[3] = {sizeof(uint64_t), 32, 256}; 
   int num_key_sizes = 3;
-  int (*cmp_fn_arr[3])(void *, void *) = {cmp_uint64_fn,
-					  cmp_32_fn,
-					  cmp_256_fn};
+  int (*cmp_fn_arr[3])(const void *, const void *) = {cmp_uint64_fn,
+						      cmp_32_fn,
+						      cmp_256_fn};
   void (*rdc_fn_arr[3])(void *, void *) = {NULL,
 					   rdc_32_fn,
 					   rdc_256_fn};
@@ -347,7 +349,7 @@ static void insert_search_free(uint64_t num_inserts,
 			       float alpha,
 			       int key_size,
 			       int elt_size,
-			       int (*cmp_key_fn)(void *, void *),
+			       int (*cmp_key_fn)(const void *, const void *),
 			       void (*rdc_key_fn)(void *, void *),
 			       void (*cstr_elt_fn)(void *, uint64_t),
 			       uint64_t (*elt_val_fn)(void *),
@@ -402,7 +404,8 @@ static void insert_search_free_alphas(uint64_t num_inserts,
 				      int num_alphas,
 				      int key_size,
 				      int elt_size,
-				      int (*cmp_key_fn)(void *, void *),
+				      int (*cmp_key_fn)(const void *,
+							const void *),
 				      void (*rdc_key_fn)(void *, void *),
 				      void (*cstr_elt_fn)(void *, uint64_t),
 				      uint64_t (*elt_val_fn)(void *),
@@ -522,7 +525,7 @@ static void remove_delete(uint64_t num_inserts,
 			  float alpha,
 			  int key_size,
 			  int elt_size,
-			  int (*cmp_key_fn)(void *, void *),
+			  int (*cmp_key_fn)(const void *, const void *),
 			  void (*rdc_key_fn)(void *, void *),
 			  void (*cstr_elt_fn)(void *, uint64_t),
 			  uint64_t (*elt_val_fn)(void *),
@@ -573,7 +576,8 @@ static void remove_delete_alphas(uint64_t num_inserts,
 				 int num_alphas,
 				 int key_size,
 				 int elt_size,
-				 int (*cmp_key_fn)(void *, void *),
+				 int (*cmp_key_fn)(const void *,
+						   const void *),
 				 void (*rdc_key_fn)(void *, void *),
 				 void (*cstr_elt_fn)(void *, uint64_t),
 				 uint64_t (*elt_val_fn)(void *),
@@ -598,7 +602,7 @@ static void remove_delete_alphas(uint64_t num_inserts,
 /**
    Run a corner cases test.
 */
-int cmp_uint8_fn(void *a, void *b){
+int cmp_uint8_fn(const void *a, const void *b){
   return memcmp(a, b, sizeof(uint8_t));
 }
 

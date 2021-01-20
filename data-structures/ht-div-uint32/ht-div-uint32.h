@@ -32,7 +32,7 @@ typedef struct{
   uint32_t num_elts;
   float alpha; 
   dll_node_t **key_elts; //array of pointers to nodes
-  int (*cmp_key_fn)(void *, void *);
+  int (*cmp_key_fn)(const void *, const void *);
   void (*free_elt_fn)(void *);
 } ht_div_uint32_t;
 
@@ -59,7 +59,7 @@ void ht_div_uint32_init(ht_div_uint32_t *ht,
                         int key_size,
 	                int elt_size,
 			float alpha,
-                        int (*cmp_key_fn)(void *, void *),
+                        int (*cmp_key_fn)(const void *, const void *),
 	                void (*free_elt_fn)(void *));
 
 /**

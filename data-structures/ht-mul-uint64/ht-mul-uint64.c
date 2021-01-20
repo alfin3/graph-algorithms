@@ -80,7 +80,7 @@ void ht_mul_uint64_init(ht_mul_uint64_t *ht,
                         int key_size,
 	                int elt_size,
 			float alpha,
-                        int (*cmp_key_fn)(void *, void *),
+                        int (*cmp_key_fn)(const void *, const void *),
                         void (*rdc_key_fn)(void *, void *),
 	                void (*free_elt_fn)(void *)){
   ht->key_size = key_size;
@@ -144,7 +144,7 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht, void *key, void *elt){
     if (!is_placeholder(*head) &&
 	dll_search_key(head, key, ht->cmp_key_fn) != NULL){
       dll_delete(head, *head, ht->free_elt_fn);
-      dll_insert(head, key_block, elt, key_block_size, ht->elt_size);
+      dll_prepend(head, key_block, elt, key_block_size, ht->elt_size);
       return;
     }
     ix = probe_dbl_hash(ht, d, ix);
@@ -154,7 +154,7 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht, void *key, void *elt){
       ht->max_num_probes = num_probes;
     }
   }
-  dll_insert(head, key_block, elt, key_block_size, ht->elt_size);
+  dll_prepend(head, key_block, elt, key_block_size, ht->elt_size);
   ht->num_elts++;
   free(key_block);
   key_block = NULL;

@@ -46,7 +46,7 @@ typedef struct{
   float alpha;
   dll_node_t *placeholder; //node with node->key == NULL
   dll_node_t **key_elts; //array of pointers to dlls, each with <= 1 node
-  int (*cmp_key_fn)(void *, void *);
+  int (*cmp_key_fn)(const void *, const void *);
   void (*rdc_key_fn)(void *, void *);
   void (*free_elt_fn)(void *);
 } ht_mul_uint64_t;
@@ -76,7 +76,7 @@ void ht_mul_uint64_init(ht_mul_uint64_t *ht,
                         int key_size,
 	                int elt_size,
 			float alpha,
-                        int (*cmp_key_fn)(void *, void *),
+                        int (*cmp_key_fn)(const void *, const void *),
                         void (*rdc_key_fn)(void *, void *),
 	                void (*free_elt_fn)(void *));
 
