@@ -56,8 +56,8 @@ void heap_uint32_init(heap_uint32_t *h,
 		      uint32_t init_heap_size,
 		      int pty_size,
 		      int elt_size,
-		      int (*cmp_pty_fn)(void *, void *),
-		      int (*cmp_elt_fn)(void *, void *),
+		      int (*cmp_pty_fn)(const void *, const void *),
+		      int (*cmp_elt_fn)(const void *, const void *),
 		      void (*free_elt_fn)(void *)){
   h->heap_size = init_heap_size;
   //2^32 - 2 due to uint32_t index tests in heapify_down involving i + 2

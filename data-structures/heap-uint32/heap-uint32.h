@@ -32,8 +32,8 @@ typedef struct{
   void *elts;
   float alpha; //hash table load factor upper bound
   ht_div_uint32_t *ht;
-  int (*cmp_pty_fn)(void *, void *);
-  int (*cmp_elt_fn)(void *, void *);
+  int (*cmp_pty_fn)(const void *, const void *);
+  int (*cmp_elt_fn)(const void *, const void *);
   void (*free_elt_fn)(void *);
 } heap_uint32_t;
 
@@ -61,8 +61,8 @@ void heap_uint32_init(heap_uint32_t *h,
 		      uint32_t init_heap_size,
 		      int pty_size,
 		      int elt_size,
-		      int (*cmp_pty_fn)(void *, void *),
-		      int (*cmp_elt_fn)(void *, void *),
+		      int (*cmp_pty_fn)(const void *, const void *),
+		      int (*cmp_elt_fn)(const void *, const void *),
 		      void (*free_elt_fn)(void *));
 
 /**

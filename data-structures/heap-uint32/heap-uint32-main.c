@@ -15,24 +15,24 @@
 #include "utilities-rand-mod.h"
 
 void print_test_result(int result);
-static void push_pop_free_pty_type(uint32_t n,
-				   int pty_size,
-				   int elt_size,
-				   int (*cmp_pty_fn)(void *, void *),
-				   int (*cmp_elt_val_fn)(void *, void *),
-				   int (*cmp_elt_size_fn)(void *, void *),
-				   void (*cstr_pty_fn)(void *, uint32_t),
-				   void (*cstr_elt_fn)(void *, uint32_t),
-				   void (*free_elt_fn)(void *));
-static void update_search_pty_type(uint32_t n,
-				   int pty_size,
-				   int elt_size,
-				   int (*cmp_pty_fn)(void *, void *),
-				   int (*cmp_elt_val_fn)(void *, void *),
-				   int (*cmp_elt_size_fn)(void *, void *),
-				   void (*cstr_pty_fn)(void *, uint32_t),
-				   void (*cstr_elt_fn)(void *, uint32_t),
-				   void (*free_elt_fn)(void *));
+void push_pop_free_pty_type(uint32_t n,
+			    int pty_size,
+			    int elt_size,
+			    int (*cmp_pty_fn)(const void *, const void *),
+			    int (*cmp_elt_val_fn)(const void *, const void *),
+			    int (*cmp_elt_size_fn)(const void *, const void *),
+			    void (*cstr_pty_fn)(void *, uint32_t),
+			    void (*cstr_elt_fn)(void *, uint32_t),
+			    void (*free_elt_fn)(void *));
+void update_search_pty_type(uint32_t n,
+			    int pty_size,
+			    int elt_size,
+			    int (*cmp_pty_fn)(const void *, const void *),
+			    int (*cmp_elt_val_fn)(const void *, const void *),
+			    int (*cmp_elt_size_fn)(const void *, const void *),
+			    void (*cstr_pty_fn)(void *, uint32_t),
+			    void (*cstr_elt_fn)(void *, uint32_t),
+			    void (*free_elt_fn)(void *));
 
 /**
    Run heap_uint32_{push, pop, free} and heap_uint32_{update, search} tests 
@@ -42,7 +42,7 @@ static void update_search_pty_type(uint32_t n,
    the heap.
 */
 
-int cmp_uint32_fn(void *a, void *b){
+int cmp_uint32_fn(const void *a, const void *b){
   if (*(uint32_t *)a >  *(uint32_t *)b){
     return 1;
   }else if(*(uint32_t *)a < *(uint32_t *)b){
@@ -52,7 +52,7 @@ int cmp_uint32_fn(void *a, void *b){
   }
 }
 
-int cmp_uint64_fn(void *a, void *b){
+int cmp_uint64_fn(const void *a, const void *b){
   if (*(uint64_t *)a >  *(uint64_t *)b){
     return 1;
   }else if(*(uint64_t *)a < *(uint64_t *)b){
@@ -62,11 +62,11 @@ int cmp_uint64_fn(void *a, void *b){
   }
 }
 
-int cmp_double_fn(void *a, void *b){
+int cmp_double_fn(const void *a, const void *b){
   return *(double *)a - *(double *)b;
 }
 
-int cmp_long_double_fn(void *a, void *b){
+int cmp_long_double_fn(const void *a, const void *b){
   return *(long double *)a - *(long double *)b;
 }
 
@@ -114,10 +114,10 @@ void run_push_pop_free_uint32_elt_test(){
 		      sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int (*cmp_pty_fn_arr[4])(void *, void *) = {cmp_uint32_fn,
-					      cmp_uint64_fn,
-					      cmp_double_fn,
-					      cmp_long_double_fn};
+  int (*cmp_pty_fn_arr[4])(const void *, const void *) = {cmp_uint32_fn,
+							  cmp_uint64_fn,
+							  cmp_double_fn,
+							  cmp_long_double_fn};
   void (*cstr_pty_fn_arr[4])(void *, uint32_t) = {cstr_uint32_fn,
 						  cstr_uint64_fn,
 						  cstr_double_fn,
@@ -153,10 +153,10 @@ void run_update_search_uint32_elt_test(){
 		      sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int (*cmp_pty_fn_arr[4])(void *, void *) = {cmp_uint32_fn,
-					      cmp_uint64_fn,
-					      cmp_double_fn,
-					      cmp_long_double_fn};
+  int (*cmp_pty_fn_arr[4])(const void *, const void *) = {cmp_uint32_fn,
+							  cmp_uint64_fn,
+							  cmp_double_fn,
+							  cmp_long_double_fn};
   void (*cstr_pty_fn_arr[4])(void *, uint32_t) = {cstr_uint32_fn,
 						  cstr_uint64_fn,
 						  cstr_double_fn,
@@ -192,12 +192,10 @@ typedef struct{
 /**
    Compares the values of two uint32_ptr_t elements. 
 */
-int cmp_uint32_ptr_val_fn(void *a, void *b){
-  uint32_ptr_t **s_a  = a;
-  uint32_ptr_t **s_b  = b;
-  if (*((*s_a)->val) > *((*s_b)->val)){
+int cmp_uint32_ptr_val_fn(const void *a, const void *b){
+  if (*((*(uint32_ptr_t ** )a)->val) > *((*(uint32_ptr_t ** )b)->val)){
     return 1;
-  }else if(*((*s_a)->val) < *((*s_b)->val)){
+  }else if(*((*(uint32_ptr_t ** )a)->val) < *((*(uint32_ptr_t ** )b)->val)){
     return -1;
   }else{
     return 0;
@@ -207,7 +205,7 @@ int cmp_uint32_ptr_val_fn(void *a, void *b){
 /**
    Compares the elt_size blocks of two uint32_ptr_t elements for hashing.
 */
-int cmp_uint32_ptr_elt_size_fn(void *a, void *b){
+int cmp_uint32_ptr_elt_size_fn(const void *a, const void *b){
   return memcmp(a, b, sizeof(uint32_ptr_t *));
 }
 
@@ -253,10 +251,10 @@ void run_push_pop_free_uint32_ptr_t_elt_test(){
 		      sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int (*cmp_pty_fn_arr[4])(void *, void *) = {cmp_uint32_fn,
-					      cmp_uint64_fn,
-					      cmp_double_fn,
-					      cmp_long_double_fn};
+  int (*cmp_pty_fn_arr[4])(const void *, const void *) = {cmp_uint32_fn,
+							  cmp_uint64_fn,
+							  cmp_double_fn,
+							  cmp_long_double_fn};
   void (*cstr_pty_fn_arr[4])(void *, uint32_t) = {cstr_uint32_fn,
 						  cstr_uint64_fn,
 						  cstr_double_fn,
@@ -292,10 +290,10 @@ void run_update_search_uint32_ptr_t_elt_test(){
 		      sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int (*cmp_pty_fn_arr[4])(void *, void *) = {cmp_uint32_fn,
-					      cmp_uint64_fn,
-					      cmp_double_fn,
-					      cmp_long_double_fn};
+  int (*cmp_pty_fn_arr[4])(const void *, const void *) = {cmp_uint32_fn,
+							  cmp_uint64_fn,
+							  cmp_double_fn,
+							  cmp_long_double_fn};
   void (*cstr_pty_fn_arr[4])(void *, uint32_t) = {cstr_uint32_fn,
 						  cstr_uint64_fn,
 						  cstr_double_fn,
@@ -320,12 +318,12 @@ void run_update_search_uint32_ptr_t_elt_test(){
    Helper functions for heap_uint32_{push, pop, free} tests.
 */
 
-static void push_incr_ptys_elts(heap_uint32_t *h,
-				int *result,
-				int pty_size,
-				void **elt_arr,
-				uint32_t arr_size,
-				void (*cstr_pty_fn)(void *, uint32_t)){
+void push_incr_ptys_elts(heap_uint32_t *h,
+			 int *result,
+			 int pty_size,
+			 void **elt_arr,
+			 uint32_t arr_size,
+			 void (*cstr_pty_fn)(void *, uint32_t)){
   uint32_t first_half_arr_size = arr_size / 2;
   uint32_t n = h->num_elts;
   void *pty = malloc(pty_size);
@@ -353,12 +351,12 @@ static void push_incr_ptys_elts(heap_uint32_t *h,
   pty = NULL;
 }
 
-static void push_decr_ptys_elts(heap_uint32_t *h,
-				int *result,
-				int pty_size,
-				void **elt_arr,
-				uint32_t arr_size,
-				void (*cstr_pty_fn)(void *, uint32_t)){
+void push_decr_ptys_elts(heap_uint32_t *h,
+			 int *result,
+			 int pty_size,
+			 void **elt_arr,
+			 uint32_t arr_size,
+			 void (*cstr_pty_fn)(void *, uint32_t)){
   uint32_t first_half_arr_size = arr_size / 2;
   uint32_t n = h->num_elts;
   void *pty = malloc(pty_size);
@@ -386,14 +384,14 @@ static void push_decr_ptys_elts(heap_uint32_t *h,
   pty = NULL;
 }
 
-static void pop_ptys_elts(heap_uint32_t *h,
-			  int *result,
-			  int pty_size,
-			  int elt_size,
-			  void **elt_arr,
-			  uint32_t arr_size,
-			  int (*cmp_pty_fn)(void *, void *),
-			  int (*cmp_elt_val_fn)(void *, void *)){
+void pop_ptys_elts(heap_uint32_t *h,
+		   int *result,
+		   int pty_size,
+		   int elt_size,
+		   void **elt_arr,
+		   uint32_t arr_size,
+		   int (*cmp_pty_fn)(const void *, const void *),
+		   int (*cmp_elt_val_fn)(const void *, const void *)){
   uint32_t first_half_arr_size = arr_size / 2;
   uint32_t n = h->num_elts;
   void *pty_prev, *pty_cur, *elt;
@@ -444,7 +442,7 @@ static void pop_ptys_elts(heap_uint32_t *h,
   elt = NULL;
 }
 
-static void free_heap(heap_uint32_t *h){
+void free_heap(heap_uint32_t *h){
   clock_t t;
   t = clock();
   heap_uint32_free(h);
@@ -453,15 +451,15 @@ static void free_heap(heap_uint32_t *h){
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
 }
 
-static void push_pop_free_pty_type(uint32_t n,
-				   int pty_size,
-				   int elt_size,
-				   int (*cmp_pty_fn)(void *, void *),
-				   int (*cmp_elt_val_fn)(void *, void *),
-				   int (*cmp_elt_size_fn)(void *, void *),
-				   void (*cstr_pty_fn)(void *, uint32_t),
-				   void (*cstr_elt_fn)(void *, uint32_t),
-				   void (*free_elt_fn)(void *)){
+void push_pop_free_pty_type(uint32_t n,
+			    int pty_size,
+			    int elt_size,
+			    int (*cmp_pty_fn)(const void *, const void *),
+			    int (*cmp_elt_val_fn)(const void *, const void *),
+			    int (*cmp_elt_size_fn)(const void *, const void *),
+			    void (*cstr_pty_fn)(void *, uint32_t),
+			    void (*cstr_elt_fn)(void *, uint32_t),
+			    void (*free_elt_fn)(void *)){
   heap_uint32_t h;
   uint32_t init_size = 1;
   void **elt_arr;
@@ -514,12 +512,12 @@ static void push_pop_free_pty_type(uint32_t n,
    Helper functions for heap_uint32_{update, search} tests.
 */
 
-static void push_rev_incr_ptys_elts(heap_uint32_t *h,
-				    int *result,
-				    int pty_size,
-				    void **elt_arr,
-				    uint32_t arr_size,
-				    void (*cstr_pty_fn)(void *, uint32_t)){
+void push_rev_incr_ptys_elts(heap_uint32_t *h,
+			     int *result,
+			     int pty_size,
+			     void **elt_arr,
+			     uint32_t arr_size,
+			     void (*cstr_pty_fn)(void *, uint32_t)){
   uint32_t first_half_arr_size = arr_size / 2;
   uint32_t n = h->num_elts;
   void *pty = malloc(pty_size);
@@ -547,12 +545,12 @@ static void push_rev_incr_ptys_elts(heap_uint32_t *h,
   pty = NULL;
 }
 
-static void update_rev_ptys_elts(heap_uint32_t *h,
-				 int *result,
-				 int pty_size,
-				 void **elt_arr,
-				 uint32_t arr_size,
-				 void (*cstr_pty_fn)(void *, uint32_t)){
+void update_rev_ptys_elts(heap_uint32_t *h,
+			  int *result,
+			  int pty_size,
+			  void **elt_arr,
+			  uint32_t arr_size,
+			  void (*cstr_pty_fn)(void *, uint32_t)){
   uint32_t first_half_arr_size = arr_size / 2;
   uint32_t n = h->num_elts;
   void *pty = malloc(pty_size);
@@ -580,12 +578,12 @@ static void update_rev_ptys_elts(heap_uint32_t *h,
   pty = NULL;
 }
 
-static void search_ptys_elts(heap_uint32_t *h,
-			     int *result,
-			     int pty_size,
-			     int elt_size,
-			     void **elt_arr,
-			     uint32_t arr_size){
+void search_ptys_elts(heap_uint32_t *h,
+		      int *result,
+		      int pty_size,
+		      int elt_size,
+		      void **elt_arr,
+		      uint32_t arr_size){
   uint32_t n = h->num_elts;
   void *pty, *elt, *ptr;
   pty = malloc(pty_size);
@@ -620,15 +618,15 @@ static void search_ptys_elts(heap_uint32_t *h,
   elt = NULL;
 }
 
-static void update_search_pty_type(uint32_t n,
-				   int pty_size,
-				   int elt_size,
-				   int (*cmp_pty_fn)(void *, void *),
-				   int (*cmp_elt_val_fn)(void *, void *),
-				   int (*cmp_elt_size_fn)(void *, void *),
-				   void (*cstr_pty_fn)(void *, uint32_t),
-				   void (*cstr_elt_fn)(void *, uint32_t),
-				   void (*free_elt_fn)(void *)){
+void update_search_pty_type(uint32_t n,
+			    int pty_size,
+			    int elt_size,
+			    int (*cmp_pty_fn)(const void *, const void *),
+			    int (*cmp_elt_val_fn)(const void *, const void *),
+			    int (*cmp_elt_size_fn)(const void *, const void *),
+			    void (*cstr_pty_fn)(void *, uint32_t),
+			    void (*cstr_elt_fn)(void *, uint32_t),
+			    void (*free_elt_fn)(void *)){
   heap_uint32_t h;
   uint32_t init_size = 1;
   void **elt_arr;
