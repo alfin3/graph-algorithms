@@ -5,12 +5,11 @@
    dynamically allocated doubly linked list in a circular representation.
 
    Given the circular representation of the list, the head pointer in the
-   provided list operations is not limited to and is not treated as a pointer
-   to a fixed position in the list. The head pointer determines the
-   "beginning" and "end" of a list each time with respect to a call to an
-   operation and can be used as a positional pointer for searching and
-   modifying the list from and at any position, including a fixed position
-   if desired.
+   provided list operations is not limited to a fixed position in the list.
+   The head pointer determines the "beginning" and "end" of a list each time
+   with respect to a call to an operation and can be used as a positional
+   pointer for searching and modifying the list from and at any position,
+   including a fixed position if desired.
    
    A list node contains i) a pointer to a key that is an object within a 
    contiguous memory block (e.g. basic type, array, or struct), and ii) a 
@@ -69,20 +68,8 @@ void dll_prepend(dll_node_t **head,
 /**
    Appends a node relative to a head pointer. A head pointer is NULL if
    the list is empty, or points to any node in the list to determine the
-   position for an append operation. 
-   head        : pointer to a head pointer to an initialized list           
-   key         : pointer to a key object of size key_size within a contiguous
-                 memory block (e.g. basic type, array, struct), or NULL if 
-                 there is no key
-   elt         : - pointer to an element object of size elt_size, if the
-                 element object is within a contiguous memory block,
-                 - pointer to a pointer to an element object, if the element
-                 object is within a noncontiguous memory block
-   key_size    : size of a key object
-   elt_size    : - size of an element object, if the element object is
-                 within a contiguous memory block,
-                 - size of a pointer to an element object, if the element
-                 object is within a noncontiguous memory block
+   position for an append operation. Please see the parameter specification
+   in dll_prepend.
 */
 void dll_append(dll_node_t **head,
 		const void *key,
@@ -121,11 +108,12 @@ dll_node_t *dll_search_elt(dll_node_t **head,
 			   int (*cmp_elt)(const void *, const void *));
 
 /**
-   Deletes a node in a doubly linked list. If the node pointer points to the
-   node pointed to by the head pointer, then the head pointer is set to point
-   to the next node from the deleted node, or NULL if the last node is
-   deleted.
+   Deletes a node in a doubly linked list.
    head        : pointer to a head pointer to an initialized list
+   node        : pointer to a node in an initialized list; if the pointer
+                 points to the node pointed to by the head pointer, then the
+                 head pointer is set to point to the next node from the
+                 deleted node, or to NULL if the last node is deleted
    free_elt    : - if an element is within a contiguous memory block,
                  as reflected by elt_size, and a pointer to the element is 
                  passed as elt in dll_prepend or dll_append, then the

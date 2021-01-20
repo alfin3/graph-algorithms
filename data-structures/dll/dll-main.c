@@ -136,10 +136,6 @@ void free_int_ptr_fn(void *a){
   s = NULL;
 }
 
-/**
-   Run a dll_{prepend, append, free} test on integer keys and noncontiguous
-   int_ptr_t elements.
-*/
 void run_prepend_append_free_int_ptr_test(){
   int count = 10000000;
   int start_val = 0;
@@ -186,6 +182,100 @@ void run_prepend_append_free_int_ptr_test(){
 		      val_int_ptr_fn,
 		      free_int_ptr_fn);
 }
+
+/**
+   Runs a corner cases tests.
+*/
+void run_corner_cases_test(){
+  dll_node_t *head_none;
+  dll_node_t *head_one_prep, *head_one_app;
+  dll_node_t *head_two_prep, *head_two_app;
+  int res = 1;
+  int key, elt;
+  dll_init(&head_none);
+  dll_init(&head_one_prep);
+  dll_init(&head_one_app);
+  dll_init(&head_two_prep);
+  dll_init(&head_two_app);
+  for (int i = 0; i < 2; i++){
+    if (i < 1){
+      dll_prepend(&head_one_prep, &i, &i, sizeof(int), sizeof(int));
+      dll_append(&head_one_app, &i, &i, sizeof(int), sizeof(int));
+    }
+  dll_prepend(&head_two_prep, &i, &i, sizeof(int), sizeof(int));
+  dll_append(&head_two_app, &i, &i, sizeof(int), sizeof(int));
+  }
+  //search
+  key = 0;
+  elt = 0;
+  res *= (NULL == dll_search_key(&head_none, &key, cmp_int_fn));
+  res *= (NULL == dll_search_elt(&head_none, &elt, cmp_int_fn));
+  res *= (NULL != dll_search_key(&head_one_prep, &key, cmp_int_fn));
+  res *= (NULL != dll_search_elt(&head_one_prep, &elt, cmp_int_fn));
+  res *= (NULL != dll_search_key(&head_one_app, &key, cmp_int_fn));
+  res *= (NULL != dll_search_elt(&head_one_app, &elt, cmp_int_fn));
+  res *= (NULL != dll_search_key(&head_two_prep, &key, cmp_int_fn));
+  res *= (NULL != dll_search_elt(&head_two_prep, &elt, cmp_int_fn));
+  res *= (NULL != dll_search_key(&head_two_app, &key, cmp_int_fn));
+  res *= (NULL != dll_search_elt(&head_two_app, &elt, cmp_int_fn));
+  key = 1;
+  elt = 1;
+  res *= (NULL == dll_search_key(&head_none, &key, cmp_int_fn));
+  res *= (NULL == dll_search_elt(&head_none, &elt, cmp_int_fn));
+  res *= (NULL == dll_search_key(&head_one_prep, &key, cmp_int_fn));
+  res *= (NULL == dll_search_elt(&head_one_prep, &elt, cmp_int_fn));
+  res *= (NULL == dll_search_key(&head_one_app, &key, cmp_int_fn));
+  res *= (NULL == dll_search_elt(&head_one_app, &elt, cmp_int_fn));
+  res *= (NULL != dll_search_key(&head_two_prep, &key, cmp_int_fn));
+  res *= (NULL != dll_search_elt(&head_two_prep, &elt, cmp_int_fn));
+  res *= (NULL != dll_search_key(&head_two_app, &key, cmp_int_fn));
+  res *= (NULL != dll_search_elt(&head_two_app, &elt, cmp_int_fn));
+  key = 2;
+  elt = 2;
+  res *= (NULL == dll_search_key(&head_none, &key, cmp_int_fn));
+  res *= (NULL == dll_search_elt(&head_none, &elt, cmp_int_fn));
+  res *= (NULL == dll_search_key(&head_one_prep, &key, cmp_int_fn));
+  res *= (NULL == dll_search_elt(&head_one_prep, &elt, cmp_int_fn));
+  res *= (NULL == dll_search_key(&head_one_app, &key, cmp_int_fn));
+  res *= (NULL == dll_search_elt(&head_one_app, &elt, cmp_int_fn));
+  res *= (NULL == dll_search_key(&head_two_prep, &key, cmp_int_fn));
+  res *= (NULL == dll_search_elt(&head_two_prep, &elt, cmp_int_fn));
+  res *= (NULL == dll_search_key(&head_two_app, &key, cmp_int_fn));
+  res *= (NULL == dll_search_elt(&head_two_app, &elt, cmp_int_fn));
+  //delete
+  dll_delete(&head_none, NULL, NULL);
+  dll_delete(&head_one_prep, NULL, NULL);
+  dll_delete(&head_one_app, NULL, NULL);
+  dll_delete(&head_two_prep, NULL, NULL);
+  dll_delete(&head_two_app, NULL, NULL);
+  res *= (NULL == head_none);
+  res *= (0 == *(int *)head_one_prep->elt);
+  res *= (0 == *(int *)head_one_prep->key);
+  res *= (0 == *(int *)head_one_app->elt);
+  res *= (0 == *(int *)head_one_app->key);
+  res *= (1 == *(int *)head_two_prep->elt);
+  res *= (1 == *(int *)head_two_prep->key);
+  res *= (0 == *(int *)head_two_app->elt);
+  res *= (0 == *(int *)head_two_app->key);
+  dll_delete(&head_one_prep, head_one_prep, NULL);
+  dll_delete(&head_one_app, head_one_app, NULL);
+  dll_delete(&head_two_prep, head_two_prep, NULL);
+  dll_delete(&head_two_app, head_two_app, NULL);
+  res *= (NULL == head_one_prep);
+  res *= (NULL == head_one_app);
+  res *= (0 == *(int *)head_two_prep->elt);
+  res *= (0 == *(int *)head_two_prep->key);
+  res *= (1 == *(int *)head_two_app->elt);
+  res *= (1 == *(int *)head_two_app->key);
+  dll_delete(&head_two_prep, head_two_prep, NULL);
+  dll_delete(&head_two_app, head_two_app, NULL);
+  res *= (NULL == head_two_prep);
+  res *= (NULL == head_two_app);
+  printf("Run corner cases test --> ");
+  print_test_result(res);
+}
+
+/** Helper functions */
 
 /**
    Runs the prepend, append, and free test routine.
@@ -285,5 +375,6 @@ void print_test_result(int res){
 int main(){
   run_prepend_append_free_int_test();
   run_prepend_append_free_int_ptr_test();
+  run_corner_cases_test();
   return 0;
 }
