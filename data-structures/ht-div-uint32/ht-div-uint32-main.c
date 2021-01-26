@@ -24,19 +24,19 @@
 
 void print_test_result(int res);
 void insert_search_free_alphas(uint32_t num_inserts,
-			       float alphas[],
-			       int alphas_count,
 			       uint32_t key_size,
 			       uint32_t elt_size,
+			       float alphas[],
+			       int alphas_count,
 			       int (*cmp_key)(const void *, const void *),
 			       void (*new_elt)(void *, uint32_t),
 			       uint32_t (*elt_val)(const void *),
 			       void (*free_elt)(void *));
 void remove_delete_alphas(uint32_t num_inserts,
-			  float alphas[],
-			  int alphas_count,
 			  uint32_t key_size,
 			  uint32_t elt_size,
+			  float alphas[],
+			  int alphas_count,
 			  int (*cmp_key)(const void *, const void *),
 			  void (*new_elt)(void *, uint32_t),
 			  uint32_t (*elt_val)(const void *),
@@ -77,8 +77,8 @@ uint32_t val_uint32_fn(const void *elt){
    uint32_t elements across key sizes and load factor upper bounds.
 */
 void run_insert_search_free_uint32_test(){
-  int alphas_count = 4;
   int key_sizes_count = 3;
+  int alphas_count = 4;
   uint32_t key_sizes[3] = {sizeof(uint32_t), 32, 256}; //>= sizeof(uint32_t)
   uint32_t num_inserts = 1000000; //< 2^31
   float alphas[4] = {0.1, 1.0, 10.0, 100.0};
@@ -89,10 +89,10 @@ void run_insert_search_free_uint32_test(){
     printf("Run a ht_div_uint32_{insert, search, free} test on distinct "
 	   "%d-byte keys and uint32_t elements\n", key_sizes[i]);
     insert_search_free_alphas(num_inserts,
-			      alphas,
-			      alphas_count,
 			      key_sizes[i],
 			      sizeof(uint32_t),
+			      alphas,
+			      alphas_count,
 			      cmp_fn_arr[i],
 			      new_uint32_fn,
 			      val_uint32_fn,
@@ -105,8 +105,8 @@ void run_insert_search_free_uint32_test(){
    elements across key sizes and load factor upper bounds.
 */
 void run_remove_delete_uint32_test(){
-  int alphas_count = 4;
   int key_sizes_count = 3;
+  int alphas_count = 4;
   uint32_t key_sizes[3] = {sizeof(uint32_t), 32, 256}; //>= sizeof(uint32_t)
   uint32_t num_inserts = 1000000; //< 2^31
   float alphas[4] = {0.1, 1.0, 10.0, 100.0};
@@ -117,10 +117,10 @@ void run_remove_delete_uint32_test(){
     printf("Run a ht_div_uint32_{remove, delete} test on distinct "
 	   "%d-byte keys and uint32_t elements\n", key_sizes[i]);
     remove_delete_alphas(num_inserts,
-			 alphas,
-			 alphas_count,
 			 key_sizes[i],
 			 sizeof(uint32_t),
+			 alphas,
+			 alphas_count,
 			 cmp_fn_arr[i],
 			 new_uint32_fn,
 			 val_uint32_fn,
@@ -169,8 +169,8 @@ void free_uint32_ptr_fn(void *elt){
    upper bounds.
 */
 void run_insert_search_free_uint32_ptr_test(){
-  int alphas_count = 4;
   int key_sizes_count = 3;
+  int alphas_count = 4;
   uint32_t key_sizes[3] = {sizeof(uint32_t), 32, 256}; // >= sizeof(uint32_t)
   uint32_t num_inserts = 1000000; //< 2^31 for this test
   float alphas[4] = {0.1, 1.0, 10.0, 100.0};
@@ -182,10 +182,10 @@ void run_insert_search_free_uint32_ptr_test(){
 	   "%d-byte keys and noncontiguous uint32_ptr_t elements\n",
 	   key_sizes[i]);
     insert_search_free_alphas(num_inserts,
-			      alphas,
-			      alphas_count,
 			      key_sizes[i],
 			      sizeof(uint32_ptr_t *),
+			      alphas,
+			      alphas_count,
 			      cmp_fn_arr[i],
 			      new_uint32_ptr_fn,
 			      val_uint32_ptr_fn,
@@ -199,8 +199,8 @@ void run_insert_search_free_uint32_ptr_test(){
    upper bounds.
 */
 void run_remove_delete_uint32_ptr_test(){
-  int alphas_count = 4;
   int key_sizes_count = 3;
+  int alphas_count = 4;
   uint32_t key_sizes[3] = {sizeof(uint32_t), 32, 256}; //>= sizeof(uint32_t)
   uint32_t num_inserts = 1000000; //< 2^31
   float alphas[4] = {0.1, 1.0, 10.0, 100.0};
@@ -212,10 +212,10 @@ void run_remove_delete_uint32_ptr_test(){
 	   "%d-byte keys and noncontiguous uint32_ptr_t elements\n",
 	   key_sizes[i]);
     remove_delete_alphas(num_inserts,
-			 alphas,
-			 alphas_count,
 			 key_sizes[i],
 			 sizeof(uint32_ptr_t *),
+			 alphas,
+			 alphas_count,
 			 cmp_fn_arr[i],
 			 new_uint32_ptr_fn,
 			 val_uint32_ptr_fn,
@@ -294,9 +294,9 @@ void free_ht(ht_div_uint32_t *ht){
 }
 
 void insert_search_free(uint32_t num_inserts,
-			float alpha,
 			uint32_t key_size,
 			uint32_t elt_size,
+			float alpha,
 			int (*cmp_key)(const void *, const void *),
 			void (*new_elt)(void *, uint32_t),
 			uint32_t (*elt_val)(const void *),
@@ -335,10 +335,10 @@ void insert_search_free(uint32_t num_inserts,
 }
 
 void insert_search_free_alphas(uint32_t num_inserts,
-			       float alphas[],
-			       int alphas_count,
 			       uint32_t key_size,
 			       uint32_t elt_size,
+			       float alphas[],
+			       int alphas_count,
 			       int (*cmp_key)(const void *, const void *),
 			       void (*new_elt)(void *, uint32_t),
 			       uint32_t (*elt_val)(const void *),
@@ -347,9 +347,9 @@ void insert_search_free_alphas(uint32_t num_inserts,
     printf("\tnumber of inserts: %u, load factor upper bound: %.1f\n",
 	   num_inserts, alphas[i]);
     insert_search_free(num_inserts,
-		       alphas[i],
 		       key_size,
 		       elt_size,
+		       alphas[i],
 		       cmp_key,
 		       new_elt,
 		       elt_val,
@@ -457,9 +457,9 @@ void delete_key_elts(ht_div_uint32_t *ht,
 }
 
 void remove_delete(uint32_t num_inserts,
-		   float alpha,
 		   uint32_t key_size,
 		   uint32_t elt_size,
+		   float alpha,
 		   int (*cmp_key)(const void *, const void *),
 		   void (*new_elt)(void *, uint32_t),
 		   uint32_t (*elt_val)(const void *),
@@ -495,10 +495,10 @@ void remove_delete(uint32_t num_inserts,
 }
 
 void remove_delete_alphas(uint32_t num_inserts,
-			  float alphas[],
-			  int alphas_count,
 			  uint32_t key_size,
 			  uint32_t elt_size,
+			  float alphas[],
+			  int alphas_count,
 			  int (*cmp_key)(const void *, const void *),
 			  void (*new_elt)(void *, uint32_t),
 			  uint32_t (*elt_val)(const void *),
@@ -507,9 +507,9 @@ void remove_delete_alphas(uint32_t num_inserts,
     printf("\tnumber of inserts: %u, load factor upper bound: %.1f\n",
 	   num_inserts, alphas[i]);
     remove_delete(num_inserts,
-		  alphas[i],
 		  key_size,
 		  elt_size,
+		  alphas[i],
 		  cmp_key,
 		  new_elt,
 		  elt_val,

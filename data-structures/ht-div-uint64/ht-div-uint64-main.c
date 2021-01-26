@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <inttypes.h>
 #include <string.h>
 #include <time.h>
 #include "ht-div-uint64.h"
@@ -25,19 +24,19 @@
 
 void print_test_result(int res);
 void insert_search_free_alphas(uint64_t num_inserts,
-			       float alphas[],
-			       int alphas_count,
 			       uint64_t key_size,
 			       uint64_t elt_size,
+			       float alphas[],
+			       int alphas_count,
 			       int (*cmp_key)(const void *, const void *),
 			       void (*new_elt)(void *, uint64_t),
 			       uint64_t (*elt_val)(const void *),
 			       void (*free_elt)(void *));
 void remove_delete_alphas(uint64_t num_inserts,
-			  float alphas[],
-			  int alphas_count,
 			  uint64_t key_size,
 			  uint64_t elt_size,
+			  float alphas[],
+			  int alphas_count,
 			  int (*cmp_key)(const void *, const void *),
 			  void (*new_elt)(void *, uint64_t),
 			  uint64_t (*elt_val)(const void *),
@@ -78,8 +77,8 @@ uint64_t val_uint64_fn(const void *elt){
    uint64_t elements across key sizes and load factor upper bounds.
 */
 void run_insert_search_free_uint64_test(){
-  int alphas_count = 4;
   int key_sizes_count = 3;
+  int alphas_count = 4;
   uint64_t key_sizes[3] = {sizeof(uint64_t), 32, 256}; //>= sizeof(uint64_t)
   uint64_t num_inserts = 1000000; //< 2^63
   float alphas[4] = {0.1, 1.0, 10.0, 100.0};
@@ -90,10 +89,10 @@ void run_insert_search_free_uint64_test(){
     printf("Run a ht_div_uint64_{insert, search, free} test on distinct "
 	   "%lu-byte keys and uint64_t elements\n", key_sizes[i]);
     insert_search_free_alphas(num_inserts,
-			      alphas,
-			      alphas_count,
 			      key_sizes[i],
 			      sizeof(uint64_t),
+			      alphas,
+			      alphas_count,
 			      cmp_fn_arr[i],
 			      new_uint64_fn,
 			      val_uint64_fn,
@@ -106,8 +105,8 @@ void run_insert_search_free_uint64_test(){
    elements across key sizes and load factor upper bounds.
 */
 void run_remove_delete_uint64_test(){
-  int alphas_count = 4;
   int key_sizes_count = 3;
+  int alphas_count = 4;
   uint64_t key_sizes[3] = {sizeof(uint64_t), 32, 256}; //>= sizeof(uint64_t)
   uint64_t num_inserts = 1000000; //< 2^63
   float alphas[4] = {0.1, 1.0, 10.0, 100.0};
@@ -118,10 +117,10 @@ void run_remove_delete_uint64_test(){
     printf("Run a ht_div_uint64_{remove, delete} test on distinct "
 	   "%lu-byte keys and uint64_t elements\n", key_sizes[i]);
     remove_delete_alphas(num_inserts,
-			 alphas,
-			 alphas_count,
 			 key_sizes[i],
 			 sizeof(uint64_t),
+			 alphas,
+			 alphas_count,
 			 cmp_fn_arr[i],
 			 new_uint64_fn,
 			 val_uint64_fn,
@@ -170,8 +169,8 @@ void free_uint64_ptr_fn(void *elt){
    upper bounds.
 */
 void run_insert_search_free_uint64_ptr_test(){
-  int alphas_count = 4;
   int key_sizes_count = 3;
+  int alphas_count = 4;
   uint64_t key_sizes[3] = {sizeof(uint64_t), 32, 256}; // >= sizeof(uint64_t)
   uint64_t num_inserts = 1000000; //< 2^63 for this test
   float alphas[4] = {0.1, 1.0, 10.0, 100.0};
@@ -183,10 +182,10 @@ void run_insert_search_free_uint64_ptr_test(){
 	   "%lu-byte keys and noncontiguous uint64_ptr_t elements\n",
 	   key_sizes[i]);
     insert_search_free_alphas(num_inserts,
-			      alphas,
-			      alphas_count,
 			      key_sizes[i],
 			      sizeof(uint64_ptr_t *),
+			      alphas,
+			      alphas_count,
 			      cmp_fn_arr[i],
 			      new_uint64_ptr_fn,
 			      val_uint64_ptr_fn,
@@ -200,8 +199,8 @@ void run_insert_search_free_uint64_ptr_test(){
    upper bounds.
 */
 void run_remove_delete_uint64_ptr_test(){
-  int alphas_count = 4;
   int key_sizes_count = 3;
+  int alphas_count = 4;
   uint64_t key_sizes[3] = {sizeof(uint64_t), 32, 256}; //>= sizeof(uint64_t)
   uint64_t num_inserts = 1000000; //< 2^63
   float alphas[4] = {0.1, 1.0, 10.0, 100.0};
@@ -213,10 +212,10 @@ void run_remove_delete_uint64_ptr_test(){
 	   "%lu-byte keys and noncontiguous uint64_ptr_t elements\n",
 	   key_sizes[i]);
     remove_delete_alphas(num_inserts,
-			 alphas,
-			 alphas_count,
 			 key_sizes[i],
 			 sizeof(uint64_ptr_t *),
+			 alphas,
+			 alphas_count,
 			 cmp_fn_arr[i],
 			 new_uint64_ptr_fn,
 			 val_uint64_ptr_fn,
@@ -295,9 +294,9 @@ void free_ht(ht_div_uint64_t *ht){
 }
 
 void insert_search_free(uint64_t num_inserts,
-			float alpha,
 			uint64_t key_size,
 			uint64_t elt_size,
+			float alpha,
 			int (*cmp_key)(const void *, const void *),
 			void (*new_elt)(void *, uint64_t),
 			uint64_t (*elt_val)(const void *),
@@ -336,10 +335,10 @@ void insert_search_free(uint64_t num_inserts,
 }
 
 void insert_search_free_alphas(uint64_t num_inserts,
-			       float alphas[],
-			       int alphas_count,
 			       uint64_t key_size,
 			       uint64_t elt_size,
+			       float alphas[],
+			       int alphas_count,
 			       int (*cmp_key)(const void *, const void *),
 			       void (*new_elt)(void *, uint64_t),
 			       uint64_t (*elt_val)(const void *),
@@ -348,9 +347,9 @@ void insert_search_free_alphas(uint64_t num_inserts,
     printf("\tnumber of inserts: %lu, load factor upper bound: %.1f\n",
 	   num_inserts, alphas[i]);
     insert_search_free(num_inserts,
-		       alphas[i],
 		       key_size,
 		       elt_size,
+		       alphas[i],
 		       cmp_key,
 		       new_elt,
 		       elt_val,
@@ -458,9 +457,9 @@ void delete_key_elts(ht_div_uint64_t *ht,
 }
 
 void remove_delete(uint64_t num_inserts,
-		   float alpha,
 		   uint64_t key_size,
 		   uint64_t elt_size,
+		   float alpha,
 		   int (*cmp_key)(const void *, const void *),
 		   void (*new_elt)(void *, uint64_t),
 		   uint64_t (*elt_val)(const void *),
@@ -496,10 +495,10 @@ void remove_delete(uint64_t num_inserts,
 }
 
 void remove_delete_alphas(uint64_t num_inserts,
-			  float alphas[],
-			  int alphas_count,
 			  uint64_t key_size,
 			  uint64_t elt_size,
+			  float alphas[],
+			  int alphas_count,
 			  int (*cmp_key)(const void *, const void *),
 			  void (*new_elt)(void *, uint64_t),
 			  uint64_t (*elt_val)(const void *),
@@ -508,9 +507,9 @@ void remove_delete_alphas(uint64_t num_inserts,
     printf("\tnumber of inserts: %lu, load factor upper bound: %.1f\n",
 	   num_inserts, alphas[i]);
     remove_delete(num_inserts,
-		  alphas[i],
 		  key_size,
 		  elt_size,
+		  alphas[i],
 		  cmp_key,
 		  new_elt,
 		  elt_val,

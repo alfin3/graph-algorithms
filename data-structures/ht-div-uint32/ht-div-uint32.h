@@ -5,13 +5,13 @@
    table with generic hash keys and generic elements. The implementation is 
    based on a division method for hashing into upto > 2^31 slots (last entry
    in the PRIMES array) and a chaining method for resolving collisions. Due
-   to chaining, the number of keys and elements that can be hashed is not
+   to chaining, the number of keys and elements that can be inserted is not
    limited by the hash table implementation.
    
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by the 
    alpha parameter. The alpha parameter does not provide an upper bound 
-   after the maximum size of a hash table is reached.
+   after the maximum count of slots in a hash table is reached.
 
    A hash key is an object within a contiguous block of memory (e.g. a basic 
    type, array, struct). An element is an object within a contiguous or
