@@ -18,10 +18,11 @@ ht-div-uint32 : $(OBJ)
 
 ht-div-uint32-main.o                : ht-div-uint32.h                     \
                                       $(DLL_DIR)dll.h                     \
-                                      $(UTILS_RM_DIR)utilities-rand-mod.h
+                                      $(UTILS_MEM_DIR)utilities-mem.h
 ht-div-uint32.o                     : ht-div-uint32.h                     \
                                       $(DLL_DIR)dll.h                     \
-                                      $(UTILS_RM_DIR)utilities-rand-mod.h
+                                      $(UTILS_MEM_DIR)utilities-mem.h     \
+                                      $(UTILS_RM_DIR)utilities-rand-mod.h 
 $(DLL_DIR)dll.o                     : $(DLL_DIR)dll.h                     \
                                       $(UTILS_MEM_DIR)utilities-mem.o
 $(UTILS_MEM_DIR)utilities-mem.o     : $(UTILS_MEM_DIR)utilities-mem.h

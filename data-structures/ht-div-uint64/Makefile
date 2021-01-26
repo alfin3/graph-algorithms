@@ -21,6 +21,7 @@ ht-div-uint64-main.o                : ht-div-uint64.h                     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
 ht-div-uint64.o                     : ht-div-uint64.h                     \
                                       $(DLL_DIR)dll.h                     \
+                                      $(UTILS_MEM_DIR)utilities-mem.h     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
 $(DLL_DIR)dll.o                     : $(DLL_DIR)dll.h                     \
                                       $(UTILS_MEM_DIR)utilities-mem.o
