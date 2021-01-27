@@ -18,12 +18,14 @@ ht-mul-uint64 : $(OBJ)
 
 ht-mul-uint64-main.o                : ht-mul-uint64.h                     \
                                       $(DLL_DIR)dll.h                     \
+                                      $(UTILS_MEM_DIR)utilities-mem.h     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
 ht-mul-uint64.o                     : ht-mul-uint64.h                     \
                                       $(DLL_DIR)dll.h                     \
+                                      $(UTILS_MEM_DIR)utilities-mem.h     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
 $(DLL_DIR)dll.o                     : $(DLL_DIR)dll.h                     \
-                                      $(UTILS_MEM_DIR)utilities-mem.o
+                                      $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o     : $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_RM_DIR)utilities-rand-mod.o : $(UTILS_RM_DIR)utilities-rand-mod.h
 
