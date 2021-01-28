@@ -81,8 +81,8 @@ typedef struct{
                  element as its parameter, is necessary to delete the element
 */
 void ht_mul_uint64_init(ht_mul_uint64_t *ht,
-                        int key_size,
-	                int elt_size,
+                        size_t key_size,
+	                size_t elt_size,
 			float alpha,
                         int (*cmp_key)(const void *, const void *),
                         void (*rdc_key)(void *, const void *),
