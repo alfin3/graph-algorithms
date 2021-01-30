@@ -57,7 +57,6 @@ typedef struct{
   void *pty_elts;
   heap_ht_t *ht;
   int (*cmp_pty)(const void *, const void *);
-  int (*cmp_elt)(const void *, const void *);
   void (*free_elt)(void *);
 } heap_t;
 
@@ -80,9 +79,6 @@ typedef struct{
                  the first argument is greater than the priority value 
                  pointed to by the second, and zero integer value if the two
                  priority values are equal
-   cmp_elt     : comparison function which returns a zero integer value iff
-                 the two blocks of size elt_size pointed to by the first and
-                 second arguments are equal
    free_elt    : - if an element is within a contiguous memory block,
                  as reflected by elt_size, and a pointer to the element is 
                  passed as elt in ht_push, then the element is fully copied
@@ -101,7 +97,6 @@ void heap_init(heap_t *h,
 	       size_t elt_size,
 	       const heap_ht_t *ht,
 	       int (*cmp_pty)(const void *, const void *),
-	       int (*cmp_elt)(const void *, const void *),
 	       void (*free_elt)(void *));
 
 /**

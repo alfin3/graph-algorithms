@@ -28,6 +28,7 @@
 #include "heap.h"
 #include "utilities-mem.h"
 
+static size_t KEY_SIZE; //elt_size as size of a hash key
 static void *HT = NULL; //points to a hash table
 static void *SWAP_BUF = NULL; //points to buffer of size pty_size +  elt_size
 
@@ -35,6 +36,7 @@ static void swap(heap_t *h, size_t i, size_t j);
 static void heap_grow(heap_t *h);
 static void heapify_up(heap_t *h, size_t i);
 static void heapify_down(heap_t *h, size_t i);
+static int cmp_key(const void *a, const void *b);
 static void *pty_ptr(const heap_t *h, size_t i);
 static void *elt_ptr(const heap_t *h, size_t i);
 static void fprintf_stderr_exit(const char *s, int line);
@@ -58,9 +60,6 @@ static void fprintf_stderr_exit(const char *s, int line);
                  the first argument is greater than the priority value 
                  pointed to by the second, and zero integer value if the two
                  priority values are equal
-   cmp_elt     : comparison function which returns a zero integer value iff
-                 the two blocks of size elt_size pointed to by the first and
-                 second arguments are equal
    free_elt    : - if an element is within a contiguous memory block,
                  as reflected by elt_size, and a pointer to the element is 
                  passed as elt in ht_push, then the element is fully copied
@@ -79,7 +78,6 @@ void heap_init(heap_t *h,
 	       size_t elt_size,
 	       const heap_ht_t *ht,
 	       int (*cmp_pty)(const void *, const void *),
-	       int (*cmp_elt)(const void *, const void *),
 	       void (*free_elt)(void *)){
   h->count = init_count;
   h->count_max = HEAP_COUNT_MAX;
@@ -92,11 +90,11 @@ void heap_init(heap_t *h,
   h->pty_elts = malloc_perror(init_count * (pty_size + elt_size));
   h->ht = (heap_ht_t *)ht;
   h->cmp_pty = cmp_pty;
-  h->cmp_elt = cmp_elt;
   h->free_elt = free_elt;
   //HT maps an elt_size block (hash key) to an array index
+  KEY_SIZE = elt_size;
   HT = malloc_perror(ht->size);
-  h->ht->init(HT, elt_size, sizeof(size_t), ht->alpha, cmp_elt, NULL);
+  h->ht->init(HT, KEY_SIZE, sizeof(size_t), ht->alpha, cmp_key, NULL);
   SWAP_BUF = malloc_perror(pty_size + elt_size);
 }
 
@@ -281,6 +279,13 @@ static void *pty_ptr(const heap_t *h, size_t i){
 static void *elt_ptr(const heap_t *h, size_t i){
   return (void *)((char *)h->pty_elts +
 		  i * (h->pty_size + h->elt_size) + h->pty_size);
+}
+
+/**
+   Compares two hash keys in a hash table.
+*/
+static int cmp_key(const void *a, const void *b){
+  return memcmp(a, b, KEY_SIZE);
 }
 
 /**
