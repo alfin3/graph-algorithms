@@ -2,24 +2,23 @@
    heap.h
 
    Struct declarations and declarations of accessible functions of a generic 
-   dynamicaly allocated (min) heap with a hash table type and load factor
-   upper bound as parameters. 
+   dynamicaly allocated (min) heap with a hash table parameter. 
 
    The implementation provides a dynamic set in the min heap form for any
-   element objects associated with priority values of basic type (e.g. char,
-   int, long, double).
+   element objects in memory associated with priority values of basic type
+   (e.g. char, int, long, double).
 
-   The hash table parameter set specifies the hash table used for in-heap
-   search and modifications. By providing the choice of a hash table type
-   and load factor upper bound, the hash table parameter set enables the
-   optimization of the space and runtime of the heap data structure
-   relative to input and use requirements.
+   The hash table parameter specifies a hash table used for in-heap
+   search and modifications, and enables the optimization of space and
+   time resources associated with heap operations by choice of a hash
+   table and its load factor upper bound.
 
    The implementation assumes that for every element in a heap, the 
-   block of size elt_size pointed to by the elt parameter in heap_push is
-   unique. Because an element object can be represented by its unique
-   pointer, this invariant only prevents associating a given element object
-   in memory with more than one priority value in a heap.
+   block of size elt_size pointed to by an argument passed as the elt
+   parameter in heap_push is unique. Because an element object can be
+   represented by its unique pointer, this invariant only prevents
+   associating a given element object in memory with more than one priority
+   value in a heap.
 */
 
 #ifndef HEAP_H  
@@ -67,11 +66,14 @@ typedef struct{
    pty_size    : size of a contiguous priority object
    elt_size    : - size of an element object, if the element object is
                  within a contiguous memory block and element copies
-                 are not pushed as unique elements,
+                 are not pushed as distinct elements
                  - size of a pointer to an element object, if the element
-                 object is within a contigous or noncontiguous memory block
-   ht          : a non-NULL pointer to a set of parameters comprising the
-                 parameters in heap_ht_t that specify a hash table
+                 object is within a contiguous memory block and element
+                 copies are pushed as distinct elements
+                 - size of a pointer to an element object, if the element
+                 object is within a noncontiguous memory block
+   ht          : a non-NULL pointer to a set of parameters specifying a
+                 hash table for in-heap search and modifications
    cmp_pty     : comparison function which returns a negative integer value
                  if the priority value pointed to by the first argument is
                  less than the priority value pointed to by the second, a
@@ -103,23 +105,24 @@ void heap_init(heap_t *h,
    Pushes an element not in a heap and an associated priority value. 
    Prior to pushing, the membership of an element can be tested, if 
    necessary, with heap_search in O(1) time in expectation under the
-   uniformity assumptions for the used hash table type.
+   uniformity assumptions suitable for the used hash table.
    h           : pointer to an initialized heap
    pty         : pointer to a block of size pty_size that is an object of
                  basic type (e.g. char, int, long, double)
    elt         : pointer to a block of size elt_size that is either a
                  contiguous element object or a pointer to a contiguous or
-                 non-contiguous element object
+                 non-contiguous element object; the block must have a unique
+                 bit pattern associated for each pushed element
 */
 void heap_push(heap_t *h, const void *pty, const void *elt);
 
 /** 
-   Returns a pointer to the priority of an element in a heap or NULL if
-   the element is not in the heap in O(1) time in expectation under the
-   uniformity assumptions for the used hash table type. The returned
-   pointer is guaranteed to point to the current priority value until
-   another heap operation is performed. Please see the parameter
-   specification in heap_push.
+   Returns a pointer to the priority of an element in a heap or NULL if the
+   element is not in the heap in O(1) time in expectation under the
+   uniformity assumptions suitable for the used hash table. The returned
+   pointer is guaranteed to point to the current priority value until another
+   heap operation is performed. Please see the parameter specification in
+   heap_push.
 */
 void *heap_search(const heap_t *h, const void *elt);
 
@@ -127,7 +130,7 @@ void *heap_search(const heap_t *h, const void *elt);
    Updates the priority value of an element that is in a heap. Prior
    to updating, the membership of an element can be tested, if necessary, 
    with heap_search in O(1) time in expectation under the uniformity
-   assumptions for the used hash table type. Please see the parameter
+   assumptions suitable for the used hash table. Please see the parameter
    specification in heap_push.
 */
 void heap_update(heap_t *h, const void *pty, const void *elt);
@@ -141,8 +144,8 @@ void heap_update(heap_t *h, const void *pty, const void *elt);
 void heap_pop(heap_t *h, void *pty, void *elt);
 
 /**
-   Frees a heap and leaves a block of size sizeof(heap_t) pointed to by the
-   h parameter.
+   Frees a heap and leaves a block of size sizeof(heap_t) pointed to by
+   an argument passed as the h parameter.
 */
 void heap_free(heap_t *h);
 
