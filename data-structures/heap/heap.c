@@ -55,7 +55,8 @@ static void fprintf_stderr_exit(const char *s, int line);
                  - size of a pointer to an element object, if the element
                  object is within a noncontiguous memory block
    ht          : a non-NULL pointer to a set of parameters specifying a
-                 hash table for in-heap search and modifications
+                 hash table for in-heap search and modifications; the hash
+                 table takes a hash key of size elt_size as input
    cmp_pty     : comparison function which returns a negative integer value
                  if the priority value pointed to by the first argument is
                  less than the priority value pointed to by the second, a
@@ -112,7 +113,7 @@ void heap_init(heap_t *h,
    elt         : pointer to a block of size elt_size that is either a
                  contiguous element object or a pointer to a contiguous or
                  non-contiguous element object; the block must have a unique
-                 bit pattern associated for each pushed element
+                 bit pattern for each pushed element
 */
 void heap_push(heap_t *h, const void *pty, const void *elt){
   size_t ix = h->num_elts;
