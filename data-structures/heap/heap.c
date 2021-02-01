@@ -30,9 +30,11 @@
 
 static size_t HT_KEY_SIZE; //== elt_size
 static void *HT = NULL; //points to a hash table
-static void *SWAP_BUF = NULL; //points to buffer of size pty_size +  elt_size
+static void *SWAP_BUF = NULL; //points to a pty_size + elt_size size block
+static void *HEAPIFY_BUF = NULL; //points to a pty_size + elt_size size block
 
 static void swap(heap_t *h, size_t i, size_t j);
+static void half_swap(heap_t *h, size_t t, size_t s);
 static void heap_grow(heap_t *h);
 static void heapify_up(heap_t *h, size_t i);
 static void heapify_down(heap_t *h, size_t i);
@@ -100,6 +102,7 @@ void heap_init(heap_t *h,
   HT = malloc_perror(ht->size);
   h->ht->init(HT, HT_KEY_SIZE, sizeof(size_t), ht->alpha, cmp_key, NULL);
   SWAP_BUF = malloc_perror(pty_size + elt_size);
+  HEAPIFY_BUF = malloc_perror(pty_size + elt_size);
 }
 
 /**
@@ -187,15 +190,18 @@ void heap_free(heap_t *h){
   h->ht->free(HT);
   free(HT);
   free(SWAP_BUF);
+  free(HEAPIFY_BUF);
   h->pty_elts = NULL;
   HT = NULL;
   SWAP_BUF = NULL;
+  HEAPIFY_BUF = NULL;
 }
 
 /** Helper functions */
 
 /**
-   Swaps priorities and elements at indices i and j.
+   Swaps priorities and elements at indices i and j and maps the elements
+   to their new indices in the hash table.
 */
 static void swap(heap_t *h, size_t i, size_t j){
   if (i == j) return;
@@ -204,6 +210,16 @@ static void swap(heap_t *h, size_t i, size_t j){
   memcpy(pty_ptr(h, j), SWAP_BUF, h->pty_size + h->elt_size);
   h->ht->insert(HT, elt_ptr(h, i), &i);
   h->ht->insert(HT, elt_ptr(h, j), &j);
+}
+
+/**
+   Copies the priority and element at index s to index t, and maps the
+   copied element at index t to t in the hash table.
+*/
+static void half_swap(heap_t *h, size_t t, size_t s){
+  if (s == t) return;
+  memcpy(pty_ptr(h, t), pty_ptr(h, s), h->pty_size + h->elt_size);
+  h->ht->insert(HT, elt_ptr(h, t), &t);
 }
 
 /**
@@ -229,15 +245,17 @@ static void heap_grow(heap_t *h){
 */
 static void heapify_up(heap_t *h, size_t i){
   size_t ju;
+  memcpy(HEAPIFY_BUF, pty_ptr(h, i), h->pty_size + h->elt_size);
   while(i > 0){
     ju = (i - 1) / 2;
-    if (h->cmp_pty(pty_ptr(h, ju), pty_ptr(h, i)) > 0){
-      swap(h, i, ju);
+    if (h->cmp_pty(pty_ptr(h, ju), HEAPIFY_BUF) > 0){
+      half_swap(h, i, ju);
       i = ju;
     }else{
       break;
     }
   }
+  memcpy(pty_ptr(h, i), HEAPIFY_BUF, h->pty_size + h->elt_size);
 }
 
 /**
@@ -246,18 +264,19 @@ static void heapify_up(heap_t *h, size_t i){
 */
 static void heapify_down(heap_t *h, size_t i){
   size_t jl, jr;
+  memcpy(HEAPIFY_BUF, pty_ptr(h, i), h->pty_size + h->elt_size);
   //0 <= i <= num_elts - 1 <= SIZE_MAX - 2
   while (i + 2 <= h->num_elts - 1 - i){
     //both next left and next right indices have elements
     jl = 2 * i + 1;
     jr = 2 * i + 2;
-    if (h->cmp_pty(pty_ptr(h, i), pty_ptr(h, jl)) > 0 &&
+    if (h->cmp_pty(HEAPIFY_BUF, pty_ptr(h, jl)) > 0 &&
 	h->cmp_pty(pty_ptr(h, jl), pty_ptr(h, jr)) <= 0){
-      swap(h, i, jl);
+      half_swap(h, i, jl);
       i = jl;
-    }else if (h->cmp_pty(pty_ptr(h, i), pty_ptr(h, jr)) > 0){
+    }else if (h->cmp_pty(HEAPIFY_BUF, pty_ptr(h, jr)) > 0){
       //jr has min priority relative to jl and the ith priority is greater
-      swap(h, i, jr);
+      half_swap(h, i, jr);
       i = jr;
     }else{
       break;
@@ -265,10 +284,12 @@ static void heapify_down(heap_t *h, size_t i){
   }
   if (i + 1 == h->num_elts - 1 - i){
     jl = 2 * i + 1;
-    if (h->cmp_pty(pty_ptr(h, i), pty_ptr(h, jl)) > 0){
-      swap(h, i, jl);
+    if (h->cmp_pty(HEAPIFY_BUF, pty_ptr(h, jl)) > 0){
+      half_swap(h, i, jl);
+      i = jl;
     }
   }
+  memcpy(pty_ptr(h, i), HEAPIFY_BUF, h->pty_size + h->elt_size);
 }
 
 /**
