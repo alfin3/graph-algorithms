@@ -256,6 +256,7 @@ static void heapify_up(heap_t *h, size_t i){
     }
   }
   memcpy(pty_ptr(h, i), HEAPIFY_BUF, h->pty_size + h->elt_size);
+  h->ht->insert(HT, elt_ptr(h, i), &i);
 }
 
 /**
@@ -290,6 +291,7 @@ static void heapify_down(heap_t *h, size_t i){
     }
   }
   memcpy(pty_ptr(h, i), HEAPIFY_BUF, h->pty_size + h->elt_size);
+  h->ht->insert(HT, elt_ptr(h, i), &i);
 }
 
 /**
