@@ -12,13 +12,7 @@ In each directory with a Makefile, run:
 
 `make clean` or `make clean-all`
 
-**Design and implementation highlights:**
-
-`./algorithms-mthread/mergesort-mthread/`
-
-A merge sort algorithm with parallel sorting and parallel merging for sorting arrays of generic elements, providing \Theta(n/log^{2}n) theoretical parallelism within the dynamic multithreading model, and demonstrating a parametrization approach to optimizing the parallelism of a recursive algorithm.
-
-The implementation provides a set of parameters for setting the constant base case upper bounds for switching from parallel sorting to serial sorting and from parallel merging to serial merging during recursion, thereby enabling the optimization of the parallelism and concurrency-associated overhead across input ranges and hardware settings. On a 4-core machine, the optimization of the base case upper bound parameters, demonstrated in the accompanying tests, resulted in a speedup of approximately 2.6X in comparison to serial qsort (stdlib.h) on arrays of 10M random integer or double elements.
+**Highlights:**
 
 `./data-structures/heap/`
 
@@ -38,6 +32,11 @@ A hash table with generic hash keys and generic elements, where a hash key is an
 
 The implementation is based on a division method for hashing into upto > {2^31, 2^63} slots (largest provided prime number) and a chaining method for resolving collisions. Due to chaining, the number of keys and elements that can be inserted is not limited by the hash table implementation. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to element objects within contiguous and noncontiguous memory blocks.
 
+`./algorithms-mthread/mergesort-mthread/`
+
+A merge sort algorithm with parallel sorting and parallel merging for sorting arrays of generic elements, providing \Theta(n/log^{2}n) theoretical parallelism within the dynamic multithreading model, and demonstrating a parametrization approach to optimizing the parallelism of a recursive algorithm.
+
+The implementation provides a set of parameters for setting the constant base case upper bounds for switching from parallel sorting to serial sorting and from parallel merging to serial merging during recursion, thereby enabling the optimization of the parallelism and concurrency-associated overhead across input ranges and hardware settings. On a 4-core machine, the optimization of the base case upper bound parameters, demonstrated in the accompanying tests, resulted in a speedup of approximately 2.6X in comparison to serial qsort (stdlib.h) on arrays of 10M random integer or double elements.
 
 `./utilities/utilities-rand-mod/`
 
