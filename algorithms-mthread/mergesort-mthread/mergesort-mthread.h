@@ -54,12 +54,11 @@ void mergesort_mthread(void *elts,
 		       int (*cmp)(const void *, const void *));
 
 /**
-   Reduces the total number of threads by placing O(logn) recursive calls
-   of thread entry functions used in the implemention of mergesort_mthread
-   on a thread stack, with the tightness of the bound set by the macro,
-   providing an additional speedup if greater than 0. If equal to 0, then
-   each recursive call results in the creation of a new thread. The macro
-   is used as size_t.
+   A constant upper bound for the number of recursive calls of thread entry
+   functions placed on the stack of a thread. Reduces the total number of
+   threads and provides an additional speedup if greater than 0. If equal to
+   0, then each recursive call results in the creation of a new thread. The
+   macro is used as size_t.
 */
 #define MERGESORT_MTHREAD_MAX_ONTHREAD_REC (20)
 
