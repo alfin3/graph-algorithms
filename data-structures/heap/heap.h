@@ -29,9 +29,9 @@
 typedef void (*heap_ht_init)(void *,
 			     size_t,
 			     size_t,
-			     float,
 			     int (*)(const void *, const void *),
-			     void (*)(void *));
+			     void (*)(void *),
+			     void *); //pointer to context as last void *
 typedef void (*heap_ht_insert)(void *, const void *, const void *);
 typedef void *(*heap_ht_search)(const void *, const void *);
 typedef void (*heap_ht_remove)(void *, const void *, void *);
@@ -39,7 +39,7 @@ typedef void (*heap_ht_free)(void *);
 
 typedef struct{
   size_t size; //size of hash table struct
-  float alpha; //load factor upper bound
+  void *context; //initialization context
   heap_ht_init init;
   heap_ht_insert insert;
   heap_ht_search search;

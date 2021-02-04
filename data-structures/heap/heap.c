@@ -100,7 +100,7 @@ void heap_init(heap_t *h,
   //HT maps an elt_size block (hash key) to an array index
   HT_KEY_SIZE = elt_size;
   HT = malloc_perror(ht->size);
-  h->ht->init(HT, HT_KEY_SIZE, sizeof(size_t), ht->alpha, cmp_key, NULL);
+  h->ht->init(HT, HT_KEY_SIZE, sizeof(size_t), cmp_key, NULL, ht->context);
   SWAP_BUF = malloc_perror(pty_size + elt_size);
   HEAPIFY_BUF = malloc_perror(pty_size + elt_size);
 }
