@@ -26,10 +26,6 @@
 #include "utilities-mem.h"
 #include "utilities-rand-mod.h"
 
-static uint32_t hash(const ht_div_uint32_t *ht, const void *key);
-static void ht_grow(ht_div_uint32_t *ht);
-static void copy_reinsert(ht_div_uint32_t *ht, const dll_node_t *node);
-
 /**
    An array of primes in the increasing order, approximately doubling in 
    magnitude, that are not too close to the powers of 2 and 10 to avoid 
@@ -44,7 +40,12 @@ static const uint32_t PRIMES[22] = {1543, 3119, 6211,
 				    412653239, 785367311, 1611612763,
 				    3221225479};
 static const int PRIMES_COUNT = 22;
+static size_t CMP_KEY_SIZE;
 
+static uint32_t hash(const ht_div_uint32_t *ht, const void *key);
+static void ht_grow(ht_div_uint32_t *ht);
+static void copy_reinsert(ht_div_uint32_t *ht, const dll_node_t *node);
+static int cmp_key(const void *a, const void *b);
 
 /**
    Initializes a hash table. 
@@ -56,9 +57,6 @@ static const int PRIMES_COUNT = 22;
                  - size of a pointer to an element object, if the element
                  object is within a noncontiguous memory block
    alpha       : > 0.0, a load factor upper bound.
-   cmp_key     : comparison function which returns a zero integer value iff
-                 the two key objects pointed to by the first and second
-                 arguments are equal
    free_elt    : - if an element is within a contiguous memory block,
                  as reflected by elt_size, and a pointer to the element is 
                  passed as elt in ht_div_uint32_insert, then the element is
@@ -75,7 +73,6 @@ void ht_div_uint32_init(ht_div_uint32_t *ht,
                         size_t key_size,
 	                size_t elt_size,
 			float alpha,
-                        int (*cmp_key)(const void *, const void *),
 	                void (*free_elt)(void *)){
   ht->count_ix = 0;
   ht->key_size = key_size;
@@ -87,8 +84,8 @@ void ht_div_uint32_init(ht_div_uint32_t *ht,
   for (uint32_t i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
   }
-  ht->cmp_key = cmp_key;
   ht->free_elt = free_elt;
+  CMP_KEY_SIZE = key_size;
 }
 
 /**
@@ -108,7 +105,7 @@ void ht_div_uint32_insert(ht_div_uint32_t *ht,
   }
   ix = hash(ht, key);
   head = &ht->key_elts[ix];
-  node = dll_search_key(head, key, ht->cmp_key);
+  node = dll_search_key(head, key, cmp_key);
   if (node == NULL){
     dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
     ht->num_elts++;
@@ -125,7 +122,7 @@ void ht_div_uint32_insert(ht_div_uint32_t *ht,
 void *ht_div_uint32_search(const ht_div_uint32_t *ht, const void *key){
   dll_node_t *node = dll_search_key(&ht->key_elts[hash(ht, key)],
 				     key,
-				     ht->cmp_key);
+				     cmp_key);
   if (node == NULL){
     return NULL;
   }else{
@@ -141,7 +138,7 @@ void *ht_div_uint32_search(const ht_div_uint32_t *ht, const void *key){
 */
 void ht_div_uint32_remove(ht_div_uint32_t *ht, const void *key, void *elt){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
-  dll_node_t *node = dll_search_key(head, key, ht->cmp_key);
+  dll_node_t *node = dll_search_key(head, key, cmp_key);
   if (node != NULL){
     memcpy(elt, node->elt, ht->elt_size);
     //if an element is noncontiguous, only the pointer to it is deleted
@@ -156,7 +153,7 @@ void ht_div_uint32_remove(ht_div_uint32_t *ht, const void *key, void *elt){
 */
 void ht_div_uint32_delete(ht_div_uint32_t *ht, const void *key){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
-  dll_node_t *node = dll_search_key(head, key, ht->cmp_key);
+  dll_node_t *node = dll_search_key(head, key, cmp_key);
   if (node != NULL){
     dll_delete(head, node, ht->free_elt);
     ht->num_elts--;
@@ -228,4 +225,11 @@ static void copy_reinsert(ht_div_uint32_t *ht, const dll_node_t *node){
 	      ht->key_size,
 	      ht->elt_size);
   ht->num_elts++;   
+}
+
+/**
+   Compares two hash keys.
+*/
+static int cmp_key(const void *a, const void *b){
+  return memcmp(a, b, CMP_KEY_SIZE);
 }
