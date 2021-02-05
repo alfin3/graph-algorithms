@@ -33,10 +33,11 @@
 #include "utilities-mem.h"
 #include "utilities-rand-mod.h"
 
-static const size_t UINT64_SIZE = sizeof(uint64_t);
-static const size_t UINT64_BIT_COUNT = sizeof(uint64_t) * 8;
 static const uint64_t FIRST_PRIME = 15769474759331449193U; //2^63 < p < 2^64
 static const uint64_t SECOND_PRIME = 18292551137159601919U; //2^63 < p < 2^64
+static const size_t UINT64_SIZE = sizeof(uint64_t);
+static const size_t UINT64_BIT_COUNT = sizeof(uint64_t) * 8;
+static size_t CMP_KEY_SIZE;
 
 //placeholder object handling
 static void placeholder_init(dll_node_t *node, int elt_size);
@@ -55,6 +56,7 @@ static uint64_t probe_dbl_hash(const ht_mul_uint64_t *ht,
 static dll_node_t **search(const ht_mul_uint64_t *ht, const void *key);
 static uint64_t *first_val_ptr(const void *key_block, size_t key_size);
 static uint64_t *second_val_ptr(const void *key_block, size_t key_size);
+static int cmp_key(const void *a, const void *b);
 
 //hash table maintenance
 static void ht_grow(ht_mul_uint64_t *ht);
@@ -71,9 +73,6 @@ static void reinsert(ht_mul_uint64_t *ht, const dll_node_t *node);
                  - size of a pointer to an element object, if the element
                  object is within a noncontiguous memory block
    alpha       : a load factor upper bound that is > 0.0 and < 1.0
-   cmp_key     : comparison function which returns a zero integer value iff
-                 the two key objects pointed to by the first and second
-                 parameters are equal
    rdc_key     : - if key_size is less or equal to 8 bytes, then rdc_key
                  is NULL
                  - if key_size is greater than 8 bytes, then rdc_key
@@ -97,7 +96,6 @@ void ht_mul_uint64_init(ht_mul_uint64_t *ht,
                         size_t key_size,
 	                size_t elt_size,
 			float alpha,
-                        int (*cmp_key)(const void *, const void *),
                         void (*rdc_key)(void *, const void *),
 	                void (*free_elt)(void *)){
   ht->log_count = 10;
@@ -115,9 +113,9 @@ void ht_mul_uint64_init(ht_mul_uint64_t *ht,
   for (uint64_t i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
   }
-  ht->cmp_key = cmp_key;
   ht->rdc_key = rdc_key;
   ht->free_elt = free_elt;
+  CMP_KEY_SIZE = key_size;
 }
 
 /**
@@ -157,7 +155,7 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht,
   head = &ht->key_elts[ix];
   while (*head != NULL){
     if (!is_placeholder(*head) &&
-	dll_search_key(head, key, ht->cmp_key) != NULL){
+	dll_search_key(head, key, cmp_key) != NULL){
       dll_delete(head, *head, ht->free_elt);
       dll_prepend(head, key_block, elt, key_block_size, ht->elt_size);
       free(key_block);
@@ -339,7 +337,7 @@ static dll_node_t **search(const ht_mul_uint64_t *ht, const void *key){
   head = &ht->key_elts[ix];
   while (*head != NULL){
     if (!is_placeholder(*head) &&
-	dll_search_key(head, key, ht->cmp_key) != NULL){
+	dll_search_key(head, key, cmp_key) != NULL){
       return head;
     }else if (num_probes == ht->max_num_probes){
       break;
@@ -445,4 +443,11 @@ static uint64_t *first_val_ptr(const void* key_block, size_t key_size){
 
 static uint64_t *second_val_ptr(const void* key_block, size_t key_size){
   return (uint64_t *)((char *)key_block + key_size + UINT64_SIZE);
+}
+
+/**
+   Compares two hash keys.
+*/
+static int cmp_key(const void *a, const void *b){
+  return memcmp(a, b, CMP_KEY_SIZE);
 }

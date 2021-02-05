@@ -43,7 +43,6 @@ typedef struct{
   float alpha;
   dll_node_t *placeholder; //node with node->key == NULL
   dll_node_t **key_elts; //array of pointers to dlls, each with <= 1 node
-  int (*cmp_key)(const void *, const void *);
   void (*rdc_key)(void *, const void *);
   void (*free_elt)(void *);
 } ht_mul_uint64_t;
@@ -58,9 +57,6 @@ typedef struct{
                  - size of a pointer to an element object, if the element
                  object is within a noncontiguous memory block
    alpha       : a load factor upper bound that is > 0.0 and < 1.0
-   cmp_key     : comparison function which returns a zero integer value iff
-                 the two key objects pointed to by the first and second
-                 parameters are equal
    rdc_key     : - if key_size is less or equal to 8 bytes, then rdc_key
                  is NULL
                  - if key_size is greater than 8 bytes, then rdc_key
@@ -84,7 +80,6 @@ void ht_mul_uint64_init(ht_mul_uint64_t *ht,
                         size_t key_size,
 	                size_t elt_size,
 			float alpha,
-                        int (*cmp_key)(const void *, const void *),
                         void (*rdc_key)(void *, const void *),
 	                void (*free_elt)(void *));
 

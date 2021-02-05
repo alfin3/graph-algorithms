@@ -62,8 +62,7 @@ static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 
 /**
    Computes and copies the shortest distances from start to dist array and 
-   previous vertices to prev array, with nr in prev for unreached vertices.
-   Assumes immutability of an adjacency list during execution.
+   previous vertices to prev array, with NR in prev for unreached vertices.
 */
 void dijkstra(const adj_lst_t *a,
 	      size_t start,
