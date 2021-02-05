@@ -33,7 +33,6 @@ typedef struct{
   uint64_t num_elts;
   float alpha; 
   dll_node_t **key_elts; //array of pointers to nodes
-  int (*cmp_key)(const void *, const void *);
   void (*free_elt)(void *);
 } ht_div_uint64_t;
 
@@ -47,9 +46,6 @@ typedef struct{
                  - size of a pointer to an element object, if the element
                  object is within a noncontiguous memory block
    alpha       : > 0.0, a load factor upper bound.
-   cmp_key     : comparison function which returns a zero integer value iff
-                 the two key objects pointed to by the first and second
-                 arguments are equal
    free_elt    : - if an element is within a contiguous memory block,
                  as reflected by elt_size, and a pointer to the element is 
                  passed as elt in ht_div_uint64_insert, then the element is
@@ -66,7 +62,6 @@ void ht_div_uint64_init(ht_div_uint64_t *ht,
                         size_t key_size,
 	                size_t elt_size,
 			float alpha,
-                        int (*cmp_key)(const void *, const void *),
 	                void (*free_elt)(void *));
 
 /**
