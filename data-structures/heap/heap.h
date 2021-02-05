@@ -29,9 +29,8 @@
 typedef void (*heap_ht_init)(void *,
 			     size_t,
 			     size_t,
-			     int (*)(const void *, const void *),
-			     void (*)(void *),
-			     void *); //pointer to context as last void *
+			     void (*)(void *), //free_elt
+			     void *); //pointer to context
 typedef void (*heap_ht_insert)(void *, const void *, const void *);
 typedef void *(*heap_ht_search)(const void *, const void *);
 typedef void (*heap_ht_remove)(void *, const void *, void *);
@@ -73,8 +72,9 @@ typedef struct{
                  - size of a pointer to an element object, if the element
                  object is within a noncontiguous memory block
    ht          : a non-NULL pointer to a set of parameters specifying a
-                 hash table for in-heap search and modifications; the hash
-                 table takes a hash key of size elt_size as input
+                 hash table for in-heap search and modifications; a hash
+                 key has the size and bit pattern of the block of size
+                 elt_size pointed to by elt in heap_push
    cmp_pty     : comparison function which returns a negative integer value
                  if the priority value pointed to by the first argument is
                  less than the priority value pointed to by the second, a

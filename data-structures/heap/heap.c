@@ -28,7 +28,6 @@
 #include "heap.h"
 #include "utilities-mem.h"
 
-static size_t HT_KEY_SIZE; //== elt_size
 static void *HT = NULL; //points to a hash table
 static void *SWAP_BUF = NULL; //points to a pty_size + elt_size size block
 static void *HEAPIFY_BUF = NULL; //points to a pty_size + elt_size size block
@@ -38,7 +37,6 @@ static void half_swap(heap_t *h, size_t t, size_t s);
 static void heap_grow(heap_t *h);
 static void heapify_up(heap_t *h, size_t i);
 static void heapify_down(heap_t *h, size_t i);
-static int cmp_key(const void *a, const void *b);
 static void *pty_ptr(const heap_t *h, size_t i);
 static void *elt_ptr(const heap_t *h, size_t i);
 static void fprintf_stderr_exit(const char *s, int line);
@@ -57,8 +55,9 @@ static void fprintf_stderr_exit(const char *s, int line);
                  - size of a pointer to an element object, if the element
                  object is within a noncontiguous memory block
    ht          : a non-NULL pointer to a set of parameters specifying a
-                 hash table for in-heap search and modifications; the hash
-                 table takes a hash key of size elt_size as input
+                 hash table for in-heap search and modifications; a hash
+                 key has the size and bit pattern of the block of size
+                 elt_size pointed to by elt in heap_push
    cmp_pty     : comparison function which returns a negative integer value
                  if the priority value pointed to by the first argument is
                  less than the priority value pointed to by the second, a
@@ -98,9 +97,8 @@ void heap_init(heap_t *h,
   h->cmp_pty = cmp_pty;
   h->free_elt = free_elt;
   //HT maps an elt_size block (hash key) to an array index
-  HT_KEY_SIZE = elt_size;
   HT = malloc_perror(ht->size);
-  h->ht->init(HT, HT_KEY_SIZE, sizeof(size_t), cmp_key, NULL, ht->context);
+  h->ht->init(HT, elt_size, sizeof(size_t), NULL, ht->context);
   SWAP_BUF = malloc_perror(pty_size + elt_size);
   HEAPIFY_BUF = malloc_perror(pty_size + elt_size);
 }
@@ -307,13 +305,6 @@ static void *pty_ptr(const heap_t *h, size_t i){
 static void *elt_ptr(const heap_t *h, size_t i){
   return (void *)((char *)h->pty_elts +
 		  i * (h->pty_size + h->elt_size) + h->pty_size);
-}
-
-/**
-   Compares two hash keys in a hash table.
-*/
-static int cmp_key(const void *a, const void *b){
-  return memcmp(a, b, HT_KEY_SIZE);
 }
 
 /**

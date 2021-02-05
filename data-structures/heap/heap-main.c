@@ -107,7 +107,6 @@ typedef struct{
 void ht_div_uint64_init_helper(ht_div_uint64_t *ht,
 			       size_t key_size,
 			       size_t elt_size,
-			       int (*cmp_key)(const void *, const void *),
 			       void (*free_elt)(void *),
 			       void *context){
   ht_div_context_t *c = context;
@@ -115,14 +114,12 @@ void ht_div_uint64_init_helper(ht_div_uint64_t *ht,
 		     key_size,
 		     elt_size,
 		     c->alpha,
-		     cmp_key,
 		     free_elt);
 }
 
 void ht_mul_uint64_init_helper(ht_mul_uint64_t *ht,
 			       size_t key_size,
 			       size_t elt_size,
-			       int (*cmp_key)(const void *, const void *),
 			       void (*free_elt)(void *),
 			       void *context){
   ht_mul_context_t * c = context;
@@ -130,7 +127,6 @@ void ht_mul_uint64_init_helper(ht_mul_uint64_t *ht,
 		     key_size,
 		     elt_size,
 		     c->alpha,
-		     cmp_key,
 		     c->rdc_key,
 		     free_elt);
 }
