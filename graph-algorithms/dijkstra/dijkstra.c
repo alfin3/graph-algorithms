@@ -5,8 +5,8 @@
    a hash table parameter.
     
    Edge weights are of any basic type (e.g. char, int, long, float, double),
-   or a custom type within a contiguous block (e.g. pair of 64-bit blocks to
-   address the potential overflow due to addition).
+   or are custom weights within a contiguous block (e.g. pair of 64-bit
+   blocks to address the potential overflow due to addition).
 
    The hash table parameter specifies a hash table used for in-heap
    operations, and enables the optimization of space and time resources

@@ -28,6 +28,7 @@ static const size_t NR = SIZE_MAX; //not reached as index
 
 int cmp_uint64_arrs(const uint64_t *a, const uint64_t *b, uint64_t n);
 void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n);
+uint64_t pow_two(int k);
 void print_test_result(int res);
 
 /** 
@@ -463,19 +464,215 @@ void run_double_graph_test(){
   graph_free(&g);
 }
 
+/** 
+    Construct adjacency lists of random directed graphs with random 
+    weights.
+*/
+
+typedef struct{
+  double p;
+} bern_arg_t;
+
+int bern(void *arg){
+  bern_arg_t *b = arg;
+  if (b->p >= 1.000000) return 1;
+  if (b->p <= 0.000000) return 0;
+  if (b->p > DRAND48()) return 1;
+  return 0;
+}
+
+void add_dir_uint64_edge(adj_lst_t *a,
+			 uint64_t u,
+			 uint64_t v,
+			 uint64_t wt_l,
+			 uint64_t wt_h,
+			 int (*bern)(void *),
+			 void *arg){
+  uint64_t rand_val = wt_l + DRAND48() * (wt_h - wt_l);
+  adj_lst_add_dir_edge(a, u, v, &rand_val, bern, arg);
+}
+
+void add_dir_double_edge(adj_lst_t *a,
+			 uint64_t u,
+			 uint64_t v,
+			 uint64_t wt_l,
+			 uint64_t wt_h,
+			 int (*bern)(void *),
+			 void *arg){
+  double rand_val = wt_l + DRAND48() * (wt_h - wt_l);
+  adj_lst_add_dir_edge(a, u, v, &rand_val, bern, arg);
+}
+
+void adj_lst_rand_dir_wts(adj_lst_t *a,
+			  uint64_t n,
+			  int wt_size,
+			  uint64_t wt_l,
+			  uint64_t wt_h,
+			  int (*bern)(void *),
+			  void *arg,
+			  void (*add_dir_edge)(adj_lst_t *,
+					       uint64_t,
+					       uint64_t,
+					       uint64_t,
+					       uint64_t,
+					       int (*)(void *),
+					       void *)){
+  graph_t g;
+  graph_base_init(&g, n, wt_size);
+  adj_lst_init(a, &g);
+  for (uint64_t i = 0; i < n - 1; i++){
+    for (uint64_t j = i + 1; j < n; j++){
+      add_dir_edge(a, i, j, wt_l, wt_h, bern, arg);
+      add_dir_edge(a, j, i, wt_l, wt_h, bern, arg);
+    }
+  }
+  graph_free(&g);
+}
+
 /**
-   Returns O if two uint64_t arrays are equal.
+   Runs a test of distance equivalence of bfs and dijkstra on random
+   directed graphs with the same uint64_t weight across edges, across
+   default, division-based and multiplication-based hash tables.
+*/
+void run_bfs_dijkstra_graph_test(){
+  int pow_two_start = 0, pow_two_end = 14;
+  int iter = 5;
+  int res = 1;
+  int num_p = 7;
+  uint64_t n, rand_start[iter];
+  uint64_t *dist_bfs = NULL, *prev_bfs = NULL;
+  uint64_t *dist = NULL, *prev = NULL;
+  float alpha_div = 1.0, alpha_mul = 0.4;
+  double p[7] = {1.000000, 0.250000, 0.062500,
+		 0.015625, 0.003906, 0.000977,
+		 0.000000};
+  adj_lst_t a;
+  bern_arg_t b;
+  context_t context_div, context_mul;
+  heap_ht_t ht_div, ht_mul;
+  clock_t t_bfs, t_def, t_div, t_mul;
+  context_div.alpha = alpha_div;
+  ht_div.size = sizeof(ht_div_uint64_t);
+  ht_div.context = &context_div;
+  ht_div.init = (heap_ht_init)ht_div_uint64_init_helper;
+  ht_div.insert = (heap_ht_insert)ht_div_uint64_insert;
+  ht_div.search = (heap_ht_search)ht_div_uint64_search;
+  ht_div.remove = (heap_ht_remove)ht_div_uint64_remove;
+  ht_div.free = (heap_ht_free)ht_div_uint64_free;
+  context_mul.alpha = alpha_mul;
+  ht_mul.size = sizeof(ht_mul_uint64_t);
+  ht_mul.context = &context_mul;
+  ht_mul.init = (heap_ht_init)ht_mul_uint64_init_helper;
+  ht_mul.insert = (heap_ht_insert)ht_mul_uint64_insert;
+  ht_mul.search = (heap_ht_search)ht_mul_uint64_search;
+  ht_mul.remove = (heap_ht_remove)ht_mul_uint64_remove;
+  ht_mul.free = (heap_ht_free)ht_mul_uint64_free;
+  printf("Run a bfs and dijkstra test on random directed "
+	 "graphs with the same weight across edges\n");
+  fflush(stdout);
+  for (int pi = 0; pi < num_p; pi++){
+    b.p = p[pi];
+    printf("\tP[an edge is in a graph] = %.4f\n", p[pi]);
+    for (int i = pow_two_start; i <  pow_two_end; i++){
+      n = pow_two(i); //0 < n
+      dist_bfs = malloc_perror(n * sizeof(uint64_t));
+      prev_bfs = malloc_perror(n * sizeof(uint64_t));
+      dist = malloc_perror(n * sizeof(uint64_t));
+      prev = malloc_perror(n * sizeof(uint64_t));
+      adj_lst_rand_dir_wts(&a,
+			   n,
+			   sizeof(uint64_t),
+			   i + 1,
+			   i + 1,
+			   bern,
+			   &b,
+			   add_dir_uint64_edge);
+      for(int j = 0; j < iter; j++){
+	rand_start[j] = DRAND48() * (n - 1);
+      }
+      t_bfs = clock();
+      for(int j = 0; j < iter; j++){
+	bfs(&a, rand_start[j], dist_bfs, prev_bfs);
+      }
+      t_bfs = clock() - t_bfs;
+      t_def = clock();
+      for(int j = 0; j < iter; j++){
+	dijkstra(&a,
+		 rand_start[j],
+		 dist,
+		 prev,
+		 NULL,
+		 add_uint64,
+		 cmp_uint64);
+      }
+      t_def = clock() - t_def;
+      norm_uint64_arr(dist, i + 1, n);
+      res *= (cmp_uint64_arrs(dist_bfs, dist, n) == 0);
+      t_div = clock();
+      for(int j = 0; j < iter; j++){
+	dijkstra(&a,
+		 rand_start[j],
+		 dist,
+		 prev,
+		 &ht_div,
+		 add_uint64,
+		 cmp_uint64);
+      }
+      t_div = clock() - t_div;
+      norm_uint64_arr(dist, i + 1, n);
+      res *= (cmp_uint64_arrs(dist_bfs, dist, n) == 0);
+      t_mul = clock();
+      for(int j = 0; j < iter; j++){
+	dijkstra(&a,
+		 rand_start[j],
+		 dist,
+		 prev,
+		 &ht_mul,
+		 add_uint64,
+		 cmp_uint64);
+      }
+      t_mul = clock() - t_mul;
+      norm_uint64_arr(dist, i + 1, n);
+      res *= (cmp_uint64_arrs(dist_bfs, dist, n) == 0);
+      printf("\t\tvertices: %lu, # of directed edges: %lu\n",
+	     a.num_vts, a.num_es);
+      printf("\t\t\tbfs ave runtime:                     %.8f seconds\n"
+	     "\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
+	     "\t\t\tdijkstra ht_div_uint64 ave runtime:  %.8f seconds\n"
+	     "\t\t\tdijkstra ht_mul_uint64 ave runtime:  %.8f seconds\n",
+	     (float)t_bfs / iter / CLOCKS_PER_SEC,
+	     (float)t_def / iter / CLOCKS_PER_SEC,
+	     (float)t_div / iter / CLOCKS_PER_SEC,
+	     (float)t_mul / iter / CLOCKS_PER_SEC);
+      printf("\t\t\tcorrectness:                         ");
+      print_test_result(res);
+      adj_lst_free(&a);
+      free(dist_bfs);
+      free(prev_bfs);
+      free(dist);
+      free(prev);
+      dist_bfs = NULL;
+      prev_bfs = NULL;
+      dist = NULL;
+      prev = NULL;
+    }
+  }
+}
+
+/**
+   Returns zero integer value iff two uint64_t arrays are equal.
 */
 int cmp_uint64_arrs(const uint64_t *a, const uint64_t *b, uint64_t n){
   for (uint64_t i = 0; i < n; i++){
-    if (a[i] > b[i]){return 1;}
-    if (a[i] < b[i]){return -1;}
+    if (a[i] > b[i]) return 1;
+    if (a[i] < b[i]) return -1;
   }
   return 0;
 }
 
 /**
-   Normalizes a uint64_t array.
+   Normalizes a uint64_t array. The argument passed as norm is greater than
+   zero.
 */
 void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n){
   for (uint64_t i = 0; i < n; i++){
@@ -483,6 +680,17 @@ void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n){
   }
 }
 
+/**
+   Returns the kth power of 2, where 0 <= k <= 63.
+*/
+uint64_t pow_two(int k){
+  uint64_t ret = 1 << k;
+  return ret;
+}
+
+/**
+   Prints a test results.
+*/
 void print_test_result(int res){
   if (res){
     printf("SUCCESS\n");
@@ -494,7 +702,7 @@ void print_test_result(int res){
 int main(){
   run_uint64_graph_test();
   run_double_graph_test();
-  //run_bfs_dijkstra_graph_test();
+  run_bfs_dijkstra_graph_test();
   //run_rand_uint64_wts_graph_test();
   return 0;
 }
