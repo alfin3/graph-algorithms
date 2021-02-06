@@ -1,18 +1,23 @@
 /**
    dijkstra.c
 
-   Dijkstra's algorithm with a hash table parameter on graphs with generic
-   non-negative weights.
+   Dijkstra's algorithm on graphs with generic non-negative weights and 
+   a hash table parameter.
     
-   Edge weights are of any basic type (e.g. char, int, double).
+   Edge weights are of any basic type (e.g. char, int, long, float, double),
+   or a custom type within a contiguous block (e.g. pair of 64-bit blocks to
+   address the potential overflow due to addition).
 
    The hash table parameter specifies a hash table used for in-heap
    operations, and enables the optimization of space and time resources
    associated with heap operations in Dijkstra's algorithm by choice of a
-   hash table and its load factor upper bound. 
+   hash table and its load factor upper bound. If NULL is passed as the hash
+   table parameter, a default hash table is used, which contains an index
+   array with a count that is equal to the number of vertices in the graph.   
 
-   If E >> V, then passing NULL as the hash table parameter, 
-   Otherwise,
+   If E >> V, a default hash table may provide speed advantages by avoiding
+   the computation of hash values. If V is large and the graph is sparse,
+   a non-default hash table may provide space advantages.
 */
 
 #include <stdio.h>
@@ -25,44 +30,69 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
+typedef enum{
+  FALSE,
+  TRUE,
+} boolean_t;
+
 typedef struct{
-  size_t num_vts;
+  size_t count;
 } context_t;
 
 typedef struct{
   size_t key_size;
   size_t elt_size;
   size_t count;
-  size_t *keys; //array of vertices indexed from 0
+  boolean_t *key_present;
   void *elts;
-  int (*cmp_key)(const void *, const void *);
   void (*free_elt)(void *);
-} ht_default_t;
+} ht_def_t;
 
 static const size_t NR = SIZE_MAX; //not reached as index
 
-//default hash table operations, suitable if V << E
-static void ht_default_init(ht_default_t *ht,
-			    size_t key_size,
-			    size_t elt_size,
-			    int (*cmp_key)(const void *, const void *),
-			    void (*free_elt)(void *),
-			    void *context);
-static void ht_default_insert(ht_default_t *ht,
-			      const void *key,
-			      const void *elt);
-static void *ht_default_search(const ht_default_t *ht, const void *key);
-static void ht_default_remove(ht_default_t *ht, const void *key, void *elt);
-static void ht_default_free(ht_default_t *ht);
+//default hash table operations
+static void ht_def_init(ht_def_t *ht,
+			size_t key_size,
+			size_t elt_size,
+			void (*free_elt)(void *),
+			void *context);
+static void ht_def_insert(ht_def_t *ht, const size_t *key,const void *elt);
+static void *ht_def_search(const ht_def_t *ht, const size_t *key);
+static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt);
+static void ht_def_free(ht_def_t *ht);
 
-//auxiliary functions
+//functions for computing pointers
 static size_t *vt_ptr(const size_t *vts, size_t i);
 static void *wt_ptr(const void *wts, size_t i, size_t wt_size);
 static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 
 /**
-   Computes and copies the shortest distances from start to dist array and 
-   previous vertices to prev array, with NR in prev for unreached vertices.
+   Computes and copies the shortest distances from start to the array
+   pointed to by dist, and the previous vertices to the array pointed to by
+   prev, with NR in the prev array for unreached vertices.
+   a           : pointer to an adjacency list with at least one vertex
+   start       : start vertex for running the algorithm
+   dist        : pointer to a preallocated array where the count is equal
+                 to the number of vertices, and the size of an array entry
+                 is equal to the size of a weight in the adjacency list
+   prev        : pointer to a preallocated array with a count that is equal
+                 to the number of vertices in the adjacency list
+   ht          : - NULL pointer, if a default hash table is used for
+                 in-heap operations; a default hash table contains an index
+                 array with a count that is equal to the number of vertices
+                 - a pointer to a set of parameters specifying a hash table
+                 used for in-heap operations; a vertex is a hash key in 
+                 the hash table
+   add_wt      : addition function which copies the sum of the weight values
+                 pointed to by the second and third arguments to the
+                 preallocated weight block pointed to by the first argument
+   cmp_wt      : comparison function which returns a negative integer value
+                 if the weight value pointed to by the first argument is
+                 less than the weight value pointed to by the second, a
+                 positive integer value if the weight value pointed to by
+                 the first argument is greater than the weight value 
+                 pointed to by the second, and zero integer value if the two
+                 weight values are equal
 */
 void dijkstra(const adj_lst_t *a,
 	      size_t start,
@@ -71,28 +101,28 @@ void dijkstra(const adj_lst_t *a,
 	      const heap_ht_t *ht,
 	      void (*add_wt)(void *, const void *, const void *),
 	      int (*cmp_wt)(const void *, const void *)){
-  size_t vt_size = sizeof(uint64_t);
   size_t wt_size = a->wt_size;
+  size_t vt_size = sizeof(uint64_t);
   size_t init_count = 1;
   size_t u, v;
   void *u_wt = NULL, *v_wt = NULL, *sum_wt = NULL;
   context_t context;
-  heap_ht_t ht_default;
+  heap_ht_t ht_def;
   heap_t h;
   u_wt = malloc_perror(wt_size);
   sum_wt = malloc_perror(wt_size);
   memset(dist, 0, a->num_vts * wt_size);
   memset(prev, 0xff, a->num_vts * vt_size); //initialize to NR
   if (ht == NULL){
-    context.num_vts = a->num_vts;
-    ht_default.size = sizeof(ht_default_t);
-    ht_default.context = &context;
-    ht_default.init = (heap_ht_init)ht_default_init;
-    ht_default.insert = (heap_ht_insert)ht_default_insert;
-    ht_default.search = (heap_ht_search)ht_default_search;
-    ht_default.remove = (heap_ht_remove)ht_default_remove;
-    ht_default.free = (heap_ht_free)ht_default_free;
-    heap_init(&h, init_count, wt_size, vt_size, &ht_default, cmp_wt, NULL);
+    context.count = a->num_vts;
+    ht_def.size = sizeof(ht_def_t);
+    ht_def.context = &context;
+    ht_def.init = (heap_ht_init)ht_def_init;
+    ht_def.insert = (heap_ht_insert)ht_def_insert;
+    ht_def.search = (heap_ht_search)ht_def_search;
+    ht_def.remove = (heap_ht_remove)ht_def_remove;
+    ht_def.free = (heap_ht_free)ht_def_free;
+    heap_init(&h, init_count, wt_size, vt_size, &ht_def, cmp_wt, NULL);
   }else{
     heap_init(&h, init_count, wt_size, vt_size, ht, cmp_wt, NULL);
   }
@@ -123,60 +153,64 @@ void dijkstra(const adj_lst_t *a,
   sum_wt = NULL;
 }
 
-static void ht_default_init(ht_default_t *ht,
-			    size_t key_size,
-			    size_t elt_size,
-			    int (*cmp_key)(const void *, const void *),
-			    void (*free_elt)(void *),
-			    void *context){
+/**
+   Default hash table operations. In the main algorithm routine, the
+   elt_size block pointed to by elt in heap_push is a vertex (index).
+   Therefore, a vertex is a hash key in the hash table of the heap, as per
+   the specification of the hash table parameter of the heap.
+*/
+
+static void ht_def_init(ht_def_t *ht,
+			size_t key_size,
+			size_t elt_size,
+			void (*free_elt)(void *),
+			void *context){
   context_t *c = context;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
-  ht->count = c->num_vts;
-  ht->keys = malloc_perror(c->num_vts * key_size);
-  ht->elts = malloc_perror(c->num_vts * elt_size);
-  memset(ht->keys, 0xff, c->num_vts * key_size); //initialize to NR
-  ht->cmp_key = cmp_key;
+  ht->count = c->count;
+  ht->key_present = calloc_perror(c->count, sizeof(boolean_t));
+  ht->elts = malloc_perror(c->count * elt_size);
   ht->free_elt = free_elt;
 }
 
-static void ht_default_insert(ht_default_t *ht,
-			      const void *key,
-			      const void *elt){
-  ht->keys[*(size_t *)key] = *(size_t *)key;
-  memcpy(elt_ptr(ht->elts, *(size_t *)key, ht->elt_size),
+static void ht_def_insert(ht_def_t *ht, const size_t *key, const void *elt){
+  ht->key_present[*key] = TRUE;
+  memcpy(elt_ptr(ht->elts, *key, ht->elt_size),
 	 elt,
 	 ht->elt_size);
 }
 
-static void *ht_default_search(const ht_default_t *ht, const void *key){
-  if (ht->keys[*(size_t *)key] == NR){
-    return NULL;
+static void *ht_def_search(const ht_def_t *ht, const size_t *key){
+  if (ht->key_present[*key]){
+    return elt_ptr(ht->elts, *key, ht->elt_size);
   }else{
-    return elt_ptr(ht->elts, *(size_t *)key, ht->elt_size);
+    return NULL;
   }
 }
 
-static void ht_default_remove(ht_default_t *ht, const void *key, void *elt){
-  ht->keys[*(size_t *)key] = NR;
+static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt){
+  ht->key_present[*key] = FALSE;
   memcpy(elt,
-	 elt_ptr(ht->elts, *(size_t *)key, ht->elt_size),
+	 elt_ptr(ht->elts, *key, ht->elt_size),
 	 ht->elt_size);
 }
 
-static void ht_default_free(ht_default_t *ht){
-  for (size_t i = 0; i < ht->count; i++){
-    if (ht->keys[i] != NR){
-      ht->free_elt(elt_ptr(ht->elts, i, ht->elt_size));
+static void ht_def_free(ht_def_t *ht){
+  if (ht->free_elt != NULL){
+    for (size_t i = 0; i < ht->count; i++){
+      if (ht->key_present[i]){
+	ht->free_elt(elt_ptr(ht->elts, i, ht->elt_size));
+      }
     }
   }
-  free(ht->keys);
+  free(ht->key_present);
   free(ht->elts);
-  ht->keys = NULL;
+  ht->key_present = NULL;
   ht->elts = NULL;
 }
 
-/** Helper functions */
+/** Functions for computing pointers */
 
 /**
    Computes a pointer to an entry in an array of vertices.
@@ -193,7 +227,7 @@ static void *wt_ptr(const void *wts, size_t i, size_t wt_size){
 }
  
 /**
-   Computes a pointer to an entry in the element array of a default hash
+   Computes a pointer to an entry in the array of element in a default hash
    table.
 */
 static void *elt_ptr(const void *elts, size_t i, size_t elt_size){

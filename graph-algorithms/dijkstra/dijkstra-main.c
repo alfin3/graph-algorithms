@@ -1,8 +1,9 @@
 /**
    dijkstra-main.c
 
-   Examples of running Dijkstra's algorithm on a graph with generic 
-   non-negative weights.
+   Tests of Dijkstra's algorithm with a hash table parameter across
+   i) default, division-based and multiplication-based hash tables, and ii)
+   edge weight types.
 */
 
 #include <stdio.h>
@@ -133,7 +134,6 @@ typedef struct{
 void ht_div_uint64_init_helper(ht_div_uint64_t *ht,
 			       size_t key_size,
 			       size_t elt_size,
-			       int (*cmp_key)(const void *, const void *),
 			       void (*free_elt)(void *),
 			       void *context){
   context_t *c = context;
@@ -141,14 +141,12 @@ void ht_div_uint64_init_helper(ht_div_uint64_t *ht,
 		     key_size,
 		     elt_size,
 		     c->alpha,
-		     cmp_key,
 		     free_elt);
 }
 
 void ht_mul_uint64_init_helper(ht_mul_uint64_t *ht,
 			       size_t key_size,
 			       size_t elt_size,
-			       int (*cmp_key)(const void *, const void *),
 			       void (*free_elt)(void *),
 			       void *context){
   context_t * c = context;
@@ -156,7 +154,6 @@ void ht_mul_uint64_init_helper(ht_mul_uint64_t *ht,
 		     key_size,
 		     elt_size,
 		     c->alpha,
-		     cmp_key,
 		     NULL, //always NULL for dijkstra
 		     free_elt);
 }
