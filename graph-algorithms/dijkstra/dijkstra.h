@@ -4,9 +4,10 @@
    Declarations of accessible functions for running Dijkstra's algorithm on
    graphs with generic non-negative weights and a hash table parameter.
 
-   Edge weights are of any basic type (e.g. char, int, long, float, double),
-   or are custom weights within a contiguous block (e.g. pair of 64-bit
-   blocks to address the potential overflow due to addition).
+   Vertices are indexed from 0. Edge weights are of any basic type (e.g.
+   char, int, long, float, double), or are custom weights within a
+   contiguous block (e.g. pair of 64-bit segments to address the potential
+   overflow due to addition).
 
    The hash table parameter specifies a hash table used for in-heap
    operations, and enables the optimization of space and time resources
