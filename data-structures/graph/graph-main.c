@@ -457,8 +457,8 @@ uint64_t sum(const uint64_t *a, uint64_t num_elts){
    Returns the kth power of 2, where 0 <= k <= 63.
 */
 uint64_t pow_two(int k){
-  uint64_t ret = 1 << k;
-  return ret;
+  uint64_t ret = 1;
+  return ret << k;
 } 
 
 /**
