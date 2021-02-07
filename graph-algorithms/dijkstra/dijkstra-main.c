@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 #include "dijkstra.h"
 #include "bfs.h"
@@ -25,10 +26,7 @@
 
 static const size_t NR = SIZE_MAX; //not reached as index
 
-int cmp_uint64_arrs(const uint64_t *a, const uint64_t *b, uint64_t n);
-void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n);
 uint64_t pow_two(int k);
-
 void print_uint64_elts(const stack_t *s);
 void print_double_elts(const stack_t *s);
 void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *));
@@ -36,13 +34,10 @@ void print_uint64_arr(const uint64_t *arr, uint64_t n);
 void print_double_arr(const double *arr, uint64_t n);
 void print_test_result(int res);
 
-/** 
-    Graphs with uint64_t weights.
+/**
+   Initialize small graphs with uint64_t weights.
 */
 
-/**
-   Initialize graphs with uint64_t weights.
-*/
 void graph_uint64_wts_init(graph_t *g){
   uint64_t u[] = {0, 0, 0, 1};
   uint64_t v[] = {1, 2, 3, 3};
@@ -64,7 +59,7 @@ void graph_uint64_wts_no_edges_init(graph_t *g){
 }
 
 /**
-   Run a test on graphs with uint64_t weights.
+   Run a test on small graphs with uint64_t weights.
 */
 
 void add_uint64(void *sum, const void *wt_a, const void *wt_b){
@@ -108,11 +103,11 @@ void ht_mul_uint64_init_helper(ht_mul_uint64_t *ht,
 		     key_size,
 		     elt_size,
 		     c->alpha,
-		     NULL, //always NULL for dijkstra
+		     NULL, //vertex is hash key
 		     free_elt);
 }
 
-void run_default_uint64_dijkstra(adj_lst_t *a){
+void run_default_uint64_dijkstra(const adj_lst_t *a){
   uint64_t *dist = NULL;
   uint64_t *prev = NULL;
   dist = malloc_perror(a->num_vts * sizeof(uint64_t));
@@ -130,7 +125,7 @@ void run_default_uint64_dijkstra(adj_lst_t *a){
   prev = NULL;
 }
 
-void run_div_uint64_dijkstra(adj_lst_t *a){
+void run_div_uint64_dijkstra(const adj_lst_t *a){
   uint64_t *dist = NULL;
   uint64_t *prev = NULL;
   float alpha = 1.0;
@@ -159,7 +154,7 @@ void run_div_uint64_dijkstra(adj_lst_t *a){
   prev = NULL;
 }
 
-void run_mul_uint64_dijkstra(adj_lst_t *a){
+void run_mul_uint64_dijkstra(const adj_lst_t *a){
   uint64_t *dist = NULL;
   uint64_t *prev = NULL;
   float alpha = 0.4;
@@ -244,12 +239,9 @@ void run_uint64_graph_test(){
 }
 
 /**
-    Graphs with double weights.
+   Initialize small graphs with double weights.
 */
 
-/**
-   Initialize graphs with double weights.
-*/
 void graph_double_wts_init(graph_t *g){
   uint64_t u[] = {0, 0, 0, 1};
   uint64_t v[] = {1, 2, 3, 3};
@@ -271,8 +263,9 @@ void graph_double_wts_no_edges_init(graph_t *g){
 }
 
 /**
-   Run a test on graphs with double weights.
+   Run a test on small graphs with double weights.
 */
+
 void add_double(void *sum, const void *wt_a, const void *wt_b){
   *(double *)sum = *(double *)wt_a + *(double *)wt_b;
 }
@@ -287,7 +280,7 @@ int cmp_double(const void *a, const void *b){
   } 
 }
 
-void run_default_double_dijkstra(adj_lst_t *a){
+void run_default_double_dijkstra(const adj_lst_t *a){
   double *dist = NULL;
   uint64_t *prev = NULL;
   dist = malloc_perror(a->num_vts * sizeof(double));
@@ -305,7 +298,7 @@ void run_default_double_dijkstra(adj_lst_t *a){
   prev = NULL;
 }
 
-void run_div_double_dijkstra(adj_lst_t *a){
+void run_div_double_dijkstra(const adj_lst_t *a){
   double *dist = NULL;
   uint64_t *prev = NULL;
   float alpha = 1.0;
@@ -334,7 +327,7 @@ void run_div_double_dijkstra(adj_lst_t *a){
   prev = NULL;
 }
 
-void run_mul_double_dijkstra(adj_lst_t *a){
+void run_mul_double_dijkstra(const adj_lst_t *a){
   double *dist = NULL;
   uint64_t *prev = NULL;
   float alpha = 0.4;
@@ -483,10 +476,17 @@ void adj_lst_rand_dir_wts(adj_lst_t *a,
 }
 
 /**
-   Runs a test of distance equivalence of bfs and dijkstra on random
+   Run a test of distance equivalence of bfs and dijkstra on random
    directed graphs with the same uint64_t weight across edges, across
    default, division-based and multiplication-based hash tables.
 */
+
+void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n){
+  for (uint64_t i = 0; i < n; i++){
+    a[i] = a[i] / norm;
+  }
+}
+
 void run_bfs_dijkstra_test(){
   int pow_two_start = 0, pow_two_end = 14;
   int iter = 5;
@@ -535,7 +535,7 @@ void run_bfs_dijkstra_test(){
       adj_lst_rand_dir_wts(&a,
 			   n,
 			   sizeof(uint64_t),
-			   i + 1,
+			   i + 1, // > 0 for normalization
 			   i + 1,
 			   bern,
 			   &b,
@@ -560,7 +560,7 @@ void run_bfs_dijkstra_test(){
       }
       t_def = clock() - t_def;
       norm_uint64_arr(dist, i + 1, n);
-      res *= (cmp_uint64_arrs(dist_bfs, dist, n) == 0);
+      res *= (memcmp(dist_bfs, dist, n * sizeof(uint64_t)) == 0);
       t_div = clock();
       for(int j = 0; j < iter; j++){
 	dijkstra(&a,
@@ -573,7 +573,7 @@ void run_bfs_dijkstra_test(){
       }
       t_div = clock() - t_div;
       norm_uint64_arr(dist, i + 1, n);
-      res *= (cmp_uint64_arrs(dist_bfs, dist, n) == 0);
+      res *= (memcmp(dist_bfs, dist, n * sizeof(uint64_t)) == 0);
       t_mul = clock();
       for(int j = 0; j < iter; j++){
 	dijkstra(&a,
@@ -586,7 +586,7 @@ void run_bfs_dijkstra_test(){
       }
       t_mul = clock() - t_mul;
       norm_uint64_arr(dist, i + 1, n);
-      res *= (cmp_uint64_arrs(dist_bfs, dist, n) == 0);
+      res *= (memcmp(dist_bfs, dist, n * sizeof(uint64_t)) == 0);
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
 	     a.num_vts, a.num_es);
       printf("\t\t\tbfs ave runtime:                     %.8f seconds\n"
@@ -599,6 +599,7 @@ void run_bfs_dijkstra_test(){
 	     (float)t_mul / iter / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness:                         ");
       print_test_result(res);
+      res = 1;
       adj_lst_free(&a);
       free(dist_bfs);
       free(prev_bfs);
@@ -616,6 +617,20 @@ void run_bfs_dijkstra_test(){
    Runs a test on random directed graphs with random uint64_t weights,
    across default, division-based and multiplication-based hash tables.
 */
+
+void sum_paths(uint64_t *wt_paths,
+	       uint64_t *num_paths,
+	       uint64_t num_vts,
+	       const uint64_t *dist,
+	       const uint64_t *prev){
+  for(uint64_t i = 0; i < num_vts; i++){
+    if (prev[i] != NR){
+      *wt_paths += dist[i];
+      (*num_paths)++;
+    }
+  }
+}
+
 void run_rand_uint64_test(){
   int pow_two_start = 10, pow_two_end = 14;
   int iter = 5;
@@ -683,12 +698,7 @@ void run_rand_uint64_test(){
 		 cmp_uint64);
       }
       t_def = clock() - t_def;
-      for(uint64_t v = 0; v < a.num_vts; v++){
-	if (prev[v] != NR){
-	  wt_paths_def += dist[v];
-	  num_paths_def++;
-	}
-      }
+      sum_paths(&wt_paths_def, &num_paths_def, a.num_vts, dist, prev);
       t_div = clock();
       for(int j = 0; j < iter; j++){
 	dijkstra(&a,
@@ -700,12 +710,7 @@ void run_rand_uint64_test(){
 		 cmp_uint64);
       }
       t_div = clock() - t_div;
-      for(uint64_t v = 0; v < a.num_vts; v++){
-	if (prev[v] != NR){
-	  wt_paths_div += dist[v];
-	  num_paths_div++;
-	}
-      }
+      sum_paths(&wt_paths_div, &num_paths_div, a.num_vts, dist, prev);
       t_mul = clock();
       for(int j = 0; j < iter; j++){
 	dijkstra(&a,
@@ -717,12 +722,7 @@ void run_rand_uint64_test(){
 		 cmp_uint64);
       }
       t_mul = clock() - t_mul;
-      for(uint64_t v = 0; v < a.num_vts; v++){
-	if (prev[v] != NR){
-	  wt_paths_mul += dist[v];
-	  num_paths_mul++;
-	}
-      }
+      sum_paths(&wt_paths_mul, &num_paths_mul, a.num_vts, dist, prev);
       res *= (wt_paths_def == wt_paths_div &&
 	      wt_paths_div == wt_paths_mul);
       res *= (num_paths_def == num_paths_div &&
@@ -744,7 +744,8 @@ void run_rand_uint64_test(){
 	       (double)wt_paths_def / (num_paths_def - 1));
       }else{
 	printf("\t\t\tlast run ave path weight:            none\n");
-      }	      
+      }
+      res = 1;
       wt_paths_def = 0;
       wt_paths_div = 0;
       wt_paths_mul = 0;
@@ -761,27 +762,6 @@ void run_rand_uint64_test(){
 }
 
 /* Helper functions */
-
-/**
-   Returns zero integer value iff two uint64_t arrays are equal.
-*/
-int cmp_uint64_arrs(const uint64_t *a, const uint64_t *b, uint64_t n){
-  for (uint64_t i = 0; i < n; i++){
-    if (a[i] > b[i]) return 1;
-    if (a[i] < b[i]) return -1;
-  }
-  return 0;
-}
-
-/**
-   Normalizes a uint64_t array. The argument passed as norm is greater than
-   zero.
-*/
-void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n){
-  for (uint64_t i = 0; i < n; i++){
-    a[i] = a[i] / norm;
-  }
-}
 
 /**
    Returns the kth power of 2, where 0 <= k <= 63.

@@ -11,9 +11,10 @@
    The hash table parameter specifies a hash table used for in-heap
    operations, and enables the optimization of space and time resources
    associated with heap operations in Dijkstra's algorithm by choice of a
-   hash table and its load factor upper bound. If NULL is passed as the hash
-   table parameter, a default hash table is used, which contains an index
-   array with a count that is equal to the number of vertices in the graph.   
+   hash table and its load factor upper bound. If NULL is passed as a hash
+   table parameter value, a default hash table is used, which contains an
+   index array with a count that is equal to the number of vertices in the
+   graph.   
 
    If E >> V, a default hash table may provide speed advantages by avoiding
    the computation of hash values. If V is large and the graph is sparse,
