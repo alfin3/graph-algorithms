@@ -18,7 +18,6 @@
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
-#include "utilities-rand-mod.h"
 
 #define RGENS_SEED() do{srandom(time(0)); srand48(random());}while (0)
 #define RANDOM() (random())
@@ -29,6 +28,12 @@ static const size_t NR = SIZE_MAX; //not reached as index
 int cmp_uint64_arrs(const uint64_t *a, const uint64_t *b, uint64_t n);
 void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n);
 uint64_t pow_two(int k);
+
+void print_uint64_elts(const stack_t *s);
+void print_double_elts(const stack_t *s);
+void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *));
+void print_uint64_arr(const uint64_t *arr, uint64_t n);
+void print_double_arr(const double *arr, uint64_t n);
 void print_test_result(int res);
 
 /** 
@@ -56,58 +61,6 @@ void graph_uint64_wts_init(graph_t *g){
 
 void graph_uint64_wts_no_edges_init(graph_t *g){
   graph_base_init(g, 5, sizeof(uint64_t));
-}
-
-/**
-   Printing helper functions.
-*/
-void print_uint64_elts(stack_t *s){
-  for (uint64_t i = 0; i < s->num_elts; i++){
-    printf("%lu ", *((uint64_t *)s->elts + i));
-  }
-  printf("\n");
-}
-
-void print_double_elts(stack_t *s){
-  for (uint64_t i = 0; i < s->num_elts; i++){
-    printf("%.2lf ", *((double *)s->elts + i));
-  }
-  printf("\n");
-}
-  
-void print_adj_lst(adj_lst_t *a,
-		   void (*print_wts_fn)(stack_t *)){
-  printf("\tvertices: \n");
-  for (uint64_t i = 0; i < a->num_vts; i++){
-    printf("\t%lu : ", i);
-    print_uint64_elts(a->vts[i]);
-  }
-  if (print_wts_fn != NULL){
-    printf("\tweights: \n");
-    for (uint64_t i = 0; i < a->num_vts; i++){
-      printf("\t%lu : ", i);
-      print_wts_fn(a->wts[i]);
-    }
-  }
-  printf("\n");
-}
-
-void print_uint64_arr(uint64_t *arr, uint64_t n){
-  for (uint64_t i = 0; i < n; i++){
-    if (arr[i] == NR){
-      printf("NR ");
-    }else{
-      printf("%lu ", arr[i]);
-    }
-  }
-  printf("\n");
-} 
-
-void print_double_arr(double *arr, uint64_t n){
-  for (uint64_t i = 0; i < n; i++){
-    printf("%.2lf ", arr[i]);
-  }
-  printf("\n");
 }
 
 /**
@@ -534,7 +487,7 @@ void adj_lst_rand_dir_wts(adj_lst_t *a,
    directed graphs with the same uint64_t weight across edges, across
    default, division-based and multiplication-based hash tables.
 */
-void run_bfs_dijkstra_graph_test(){
+void run_bfs_dijkstra_test(){
   int pow_two_start = 0, pow_two_end = 14;
   int iter = 5;
   int res = 1;
@@ -660,6 +613,156 @@ void run_bfs_dijkstra_graph_test(){
 }
 
 /**
+   Runs a test on random directed graphs with random uint64_t weights,
+   across default, division-based and multiplication-based hash tables.
+*/
+void run_rand_uint64_test(){
+  int pow_two_start = 10, pow_two_end = 14;
+  int iter = 5;
+  int res = 1;
+  int num_p = 7;
+  uint64_t wt_paths_def = 0, wt_paths_div = 0, wt_paths_mul = 0;
+  uint64_t num_paths_def = 0, num_paths_div = 0, num_paths_mul = 0;
+  uint64_t n, rand_start[iter];
+  uint64_t wt_l = 0, wt_h = pow_two(32) - 1;
+  uint64_t *dist = NULL, *prev = NULL;
+  float alpha_div = 1.0, alpha_mul = 0.4;
+  double p[7] = {1.000000, 0.250000, 0.062500,
+		 0.015625, 0.003906, 0.000977,
+		 0.000000};
+  adj_lst_t a;
+  bern_arg_t b;
+  context_t context_div, context_mul;
+  heap_ht_t ht_div, ht_mul;
+  clock_t t_def, t_div, t_mul;
+  context_div.alpha = alpha_div;
+  ht_div.size = sizeof(ht_div_uint64_t);
+  ht_div.context = &context_div;
+  ht_div.init = (heap_ht_init)ht_div_uint64_init_helper;
+  ht_div.insert = (heap_ht_insert)ht_div_uint64_insert;
+  ht_div.search = (heap_ht_search)ht_div_uint64_search;
+  ht_div.remove = (heap_ht_remove)ht_div_uint64_remove;
+  ht_div.free = (heap_ht_free)ht_div_uint64_free;
+  context_mul.alpha = alpha_mul;
+  ht_mul.size = sizeof(ht_mul_uint64_t);
+  ht_mul.context = &context_mul;
+  ht_mul.init = (heap_ht_init)ht_mul_uint64_init_helper;
+  ht_mul.insert = (heap_ht_insert)ht_mul_uint64_insert;
+  ht_mul.search = (heap_ht_search)ht_mul_uint64_search;
+  ht_mul.remove = (heap_ht_remove)ht_mul_uint64_remove;
+  ht_mul.free = (heap_ht_free)ht_mul_uint64_free;
+  printf("Run a dijkstra test on random directed graphs with random "
+	 "uint64_t weights in [%lu, %lu]\n", wt_l, wt_h);
+  fflush(stdout);
+  for (int pi = 0; pi < num_p; pi++){
+    b.p = p[pi];
+    printf("\tP[an edge is in a graph] = %.4f\n", p[pi]);
+    for (int i = pow_two_start; i <  pow_two_end; i++){
+      n = pow_two(i); //0 < n
+      dist = malloc_perror(n * sizeof(uint64_t));
+      prev = malloc_perror(n * sizeof(uint64_t));
+      adj_lst_rand_dir_wts(&a,
+			   n,
+			   sizeof(uint64_t),
+			   wt_l,
+			   wt_h,
+			   bern,
+			   &b,
+			   add_dir_uint64_edge);
+      for(int j = 0; j < iter; j++){
+	rand_start[j] = DRAND48() * (n - 1);
+      }
+      t_def = clock();
+      for(int j = 0; j < iter; j++){
+	dijkstra(&a,
+		 rand_start[j],
+		 dist,
+		 prev,
+		 NULL,
+		 add_uint64,
+		 cmp_uint64);
+      }
+      t_def = clock() - t_def;
+      for(uint64_t v = 0; v < a.num_vts; v++){
+	if (prev[v] != NR){
+	  wt_paths_def += dist[v];
+	  num_paths_def++;
+	}
+      }
+      t_div = clock();
+      for(int j = 0; j < iter; j++){
+	dijkstra(&a,
+		 rand_start[j],
+		 dist,
+		 prev,
+		 &ht_div,
+		 add_uint64,
+		 cmp_uint64);
+      }
+      t_div = clock() - t_div;
+      for(uint64_t v = 0; v < a.num_vts; v++){
+	if (prev[v] != NR){
+	  wt_paths_div += dist[v];
+	  num_paths_div++;
+	}
+      }
+      t_mul = clock();
+      for(int j = 0; j < iter; j++){
+	dijkstra(&a,
+		 rand_start[j],
+		 dist,
+		 prev,
+		 &ht_mul,
+		 add_uint64,
+		 cmp_uint64);
+      }
+      t_mul = clock() - t_mul;
+      for(uint64_t v = 0; v < a.num_vts; v++){
+	if (prev[v] != NR){
+	  wt_paths_mul += dist[v];
+	  num_paths_mul++;
+	}
+      }
+      res *= (wt_paths_def == wt_paths_div &&
+	      wt_paths_div == wt_paths_mul);
+      res *= (num_paths_def == num_paths_div &&
+	      num_paths_div == num_paths_mul);
+      printf("\t\tvertices: %lu, # of directed edges: %lu\n",
+	     a.num_vts, a.num_es);
+      printf("\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
+	     "\t\t\tdijkstra ht_div_uint64 ave runtime:  %.8f seconds\n"
+	     "\t\t\tdijkstra ht_mul_uint64 ave runtime:  %.8f seconds\n",
+	     (float)t_def / iter / CLOCKS_PER_SEC,
+	     (float)t_div / iter / CLOCKS_PER_SEC,
+	     (float)t_mul / iter / CLOCKS_PER_SEC);
+      printf("\t\t\tcorrectness:                         ");
+      print_test_result(res);
+      printf("\t\t\tlast run # paths:                    %lu\n",
+	     num_paths_def - 1);
+      if (num_paths_def > 1){
+	printf("\t\t\tlast run ave path weight:            %.1lf\n",
+	       (double)wt_paths_def / (num_paths_def - 1));
+      }else{
+	printf("\t\t\tlast run ave path weight:            none\n");
+      }	      
+      wt_paths_def = 0;
+      wt_paths_div = 0;
+      wt_paths_mul = 0;
+      num_paths_def  = 0;
+      num_paths_div  = 0;
+      num_paths_mul  = 0;
+      adj_lst_free(&a);
+      free(dist);
+      free(prev);
+      dist = NULL;
+      prev = NULL;
+    }
+  }
+}
+
+/* Helper functions */
+
+/**
    Returns zero integer value iff two uint64_t arrays are equal.
 */
 int cmp_uint64_arrs(const uint64_t *a, const uint64_t *b, uint64_t n){
@@ -684,13 +787,62 @@ void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n){
    Returns the kth power of 2, where 0 <= k <= 63.
 */
 uint64_t pow_two(int k){
-  uint64_t ret = 1 << k;
-  return ret;
+  uint64_t ret = 1;
+  return ret << k;
 }
 
 /**
-   Prints a test results.
+   Printing functions.
 */
+
+void print_uint64_elts(const stack_t *s){
+  for (uint64_t i = 0; i < s->num_elts; i++){
+    printf("%lu ", *((uint64_t *)s->elts + i));
+  }
+  printf("\n");
+}
+
+void print_double_elts(const stack_t *s){
+  for (uint64_t i = 0; i < s->num_elts; i++){
+    printf("%.2lf ", *((double *)s->elts + i));
+  }
+  printf("\n");
+}
+  
+void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *)){
+  printf("\tvertices: \n");
+  for (uint64_t i = 0; i < a->num_vts; i++){
+    printf("\t%lu : ", i);
+    print_uint64_elts(a->vts[i]);
+  }
+  if (print_wts != NULL){
+    printf("\tweights: \n");
+    for (uint64_t i = 0; i < a->num_vts; i++){
+      printf("\t%lu : ", i);
+      print_wts(a->wts[i]);
+    }
+  }
+  printf("\n");
+}
+
+void print_uint64_arr(const uint64_t *arr, uint64_t n){
+  for (uint64_t i = 0; i < n; i++){
+    if (arr[i] == NR){
+      printf("NR ");
+    }else{
+      printf("%lu ", arr[i]);
+    }
+  }
+  printf("\n");
+} 
+
+void print_double_arr(const double *arr, uint64_t n){
+  for (uint64_t i = 0; i < n; i++){
+    printf("%.2lf ", arr[i]);
+  }
+  printf("\n");
+}
+
 void print_test_result(int res){
   if (res){
     printf("SUCCESS\n");
@@ -700,9 +852,10 @@ void print_test_result(int res){
 }
 
 int main(){
+  RGENS_SEED();
   run_uint64_graph_test();
   run_double_graph_test();
-  run_bfs_dijkstra_graph_test();
-  //run_rand_uint64_wts_graph_test();
+  run_bfs_dijkstra_test();
+  run_rand_uint64_test();
   return 0;
 }

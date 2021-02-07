@@ -41,10 +41,12 @@ dijkstra : $(OBJ)
 
 dijkstra-main.o                     : dijkstra.h                          \
                                       $(BFS_DIR)bfs.h                     \
+                                      $(HEAP_DIR)heap.h                   \
+                                      $(HT_DIV_UINT64_DIR)ht-div-uint64.h \
+                                      $(HT_MUL_UINT64_DIR)ht-mul-uint64.h \
                                       $(GRAPH_DIR)graph.h                 \
                                       $(STACK_DIR)stack.h                 \
-                                      $(UTILS_MEM_DIR)utilities-mem.h     \
-                                      $(UTILS_RM_DIR)utilities-rand-mod.h
+                                      $(UTILS_MEM_DIR)utilities-mem.h
 dijkstra.o                          : dijkstra.h                          \
                                       $(GRAPH_DIR)graph.h                 \
                                       $(HEAP_DIR)heap.h                   \
