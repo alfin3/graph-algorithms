@@ -316,8 +316,8 @@ int cmp_arr(const uint64_t *a, const uint64_t *b, uint64_t n){
    Returns the kth power of 2, where 0 <= k <= 63.
 */
 uint64_t pow_two(int k){
-  uint64_t ret = 1 << k;
-  return ret;
+  uint64_t ret = 1;
+  return ret << k;
 }
 
 void print_test_result(int res){
