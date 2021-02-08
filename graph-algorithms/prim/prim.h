@@ -7,8 +7,8 @@
    If there are vertices outside the connected component of start, an mst of 
    the connected component of start is computed.
 
-   Vertices are indexed from 0. Edge weights include negative weights, and
-   are of any basic type (e.g. char, int, long, float, double), or are
+   Vertices are indexed from 0. Edge weights may include negative weights,
+   and are of any basic type (e.g. char, int, long, float, double), or are
    custom weights within a contiguous block.
 
    The hash table parameter specifies a hash table used for in-heap
