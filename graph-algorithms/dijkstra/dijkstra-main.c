@@ -4,6 +4,9 @@
    Tests of Dijkstra's algorithm with a hash table parameter across
    i) default, division-based and multiplication-based hash tables, and ii)
    edge weight types.
+
+   Requirements for running tests: 
+   - UINT64_MAX must be defined
 */
 
 #include <stdio.h>
@@ -489,7 +492,7 @@ void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n){
 
 void run_bfs_dijkstra_test(){
   int pow_two_start = 0, pow_two_end = 14;
-  int iter = 5;
+  int iter = 10;
   int res = 1;
   int num_p = 7;
   uint64_t n, rand_start[iter];
@@ -623,6 +626,8 @@ void sum_paths(uint64_t *wt_paths,
 	       uint64_t num_vts,
 	       const uint64_t *dist,
 	       const uint64_t *prev){
+  *wt_paths = 0;
+  *num_paths = 0;
   for(uint64_t i = 0; i < num_vts; i++){
     if (prev[i] != NR){
       *wt_paths += dist[i];
@@ -633,11 +638,11 @@ void sum_paths(uint64_t *wt_paths,
 
 void run_rand_uint64_test(){
   int pow_two_start = 10, pow_two_end = 14;
-  int iter = 5;
+  int iter = 10;
   int res = 1;
   int num_p = 7;
-  uint64_t wt_paths_def = 0, wt_paths_div = 0, wt_paths_mul = 0;
-  uint64_t num_paths_def = 0, num_paths_div = 0, num_paths_mul = 0;
+  uint64_t wt_paths_def, wt_paths_div, wt_paths_mul;
+  uint64_t num_paths_def, num_paths_div, num_paths_mul;
   uint64_t n, rand_start[iter];
   uint64_t wt_l = 0, wt_h = pow_two(32) - 1;
   uint64_t *dist = NULL, *prev = NULL;
@@ -746,12 +751,6 @@ void run_rand_uint64_test(){
 	printf("\t\t\tlast run ave path weight:            none\n");
       }
       res = 1;
-      wt_paths_def = 0;
-      wt_paths_div = 0;
-      wt_paths_mul = 0;
-      num_paths_def  = 0;
-      num_paths_div  = 0;
-      num_paths_mul  = 0;
       adj_lst_free(&a);
       free(dist);
       free(prev);
