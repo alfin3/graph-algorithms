@@ -18,7 +18,7 @@ In each directory with a Makefile, run:
 
 Dijkstra's and Prim’s algorithms with a hash table parameter on graphs with generic weights.
 
-The hash table parameter specifies a hash table used for in-heap operations, and enables the optimization of space and time resources associated with heap operations in the algorithm routines by choice of a hash table and its load factor upper bound. If NULL is passed as a hash table parameter value, a default hash table is used, which contains an index array with a count that is equal to the number of vertices in the graph. If E >> V, a default hash table may provide speed advantages by avoiding the computation of hash values. If V is large and the graph is sparse, a non-default hash table may provide space advantages. Tests across i) default, division-based, and multiplication-based hash tables, as well as ii) edge weight types are provided.
+The hash table parameter specifies a hash table used for in-heap operations, and enables the optimization of space and time resources associated with heap operations in the algorithm routines by choice of a hash table and its load factor upper bound. If NULL is passed as a hash table parameter value, a default hash table is used, which contains an array with a count that is equal to the number of vertices in the graph. If E >> V, a default hash table may provide speed advantages by avoiding the computation of hash values. If V is large and the graph is sparse, a non-default hash table may provide space advantages. Tests across i) default, division-based, and multiplication-based hash tables, as well as ii) edge weight types are provided.
 
 `./data-structures/heap/`
 
