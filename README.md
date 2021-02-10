@@ -4,6 +4,8 @@ A set of generic hashing-based data structures and algorithms were implemented f
 
 Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
+Compilation was completed with gcc 7.5 at the -O3 optimization level. Vectorization and cache efficiency have not yet been profiled, which may result in additional implementation changes in the future.
+
 In each directory with a Makefile, run:
 
 `make`
