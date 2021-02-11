@@ -103,26 +103,25 @@ void dll_append(dll_node_t **head,
 
 /**
    Relative to a head pointer, returns a pointer to the first node with a
-   key that satisfies cmp_key, or NULL if such a node in not found.
+   key that has the same bit pattern as the block pointed to by key, or
+   NULL if such a node in not found.
    head        : pointer to a head pointer to an initialized list
    key         : pointer to a key object of size key_size within a contiguous
-                 memory block (e.g. basic type, array, struct)
-   cmp_key     : comparison function which returns a zero integer value iff
-                 the two key objects pointed to by the first and second
-                 arguments are equal
+                 memory block
+   key_size    : size of a key object in bytes
 */
 dll_node_t *dll_search_key(dll_node_t **head,
 			   const void *key,
-			   int (*cmp_key)(const void *, const void *)){
+			   size_t key_size){
   dll_node_t *node = *head;
   if (node == NULL){
     return NULL;
-  }else if (cmp_key(node->key, key) == 0){
+  }else if (memcmp(node->key, key, key_size) == 0){
     return node;
   }else{
     node = node->next;
     while(node != *head){
-      if (cmp_key(node->key, key) == 0){
+      if (memcmp(node->key, key, key_size) == 0){
 	return node;
       }
       node = node->next;

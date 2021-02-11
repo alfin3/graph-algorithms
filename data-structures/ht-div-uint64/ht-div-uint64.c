@@ -62,12 +62,10 @@ static const uint64_t PRIMES[54] = {1543, 3119,
 				    6884922145916737697, 15769474759331449193U};
 static const int PRIMES_UINT32_COUNT = 22;
 static const int PRIMES_COUNT = 54;
-static size_t CMP_KEY_SIZE;
 
 static uint64_t hash(const ht_div_uint64_t *ht, const void *key);
 static void ht_grow(ht_div_uint64_t *ht);
 static void copy_reinsert(ht_div_uint64_t *ht, const dll_node_t *node);
-static int cmp_key(const void *a, const void *b);
 
 /**
    Initializes a hash table. 
@@ -107,7 +105,6 @@ void ht_div_uint64_init(ht_div_uint64_t *ht,
     dll_init(&ht->key_elts[i]);
   }
   ht->free_elt = free_elt;
-  CMP_KEY_SIZE = key_size;
 }
 
 /**
@@ -127,7 +124,7 @@ void ht_div_uint64_insert(ht_div_uint64_t *ht,
   }
   ix = hash(ht, key);
   head = &ht->key_elts[ix];
-  node = dll_search_key(head, key, cmp_key);
+  node = dll_search_key(head, key, ht->key_size);
   if (node == NULL){
     dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
     ht->num_elts++;
@@ -144,7 +141,7 @@ void ht_div_uint64_insert(ht_div_uint64_t *ht,
 void *ht_div_uint64_search(const ht_div_uint64_t *ht, const void *key){
   dll_node_t *node = dll_search_key(&ht->key_elts[hash(ht, key)],
 				     key,
-				     cmp_key);
+				     ht->key_size);
   if (node == NULL){
     return NULL;
   }else{
@@ -160,7 +157,7 @@ void *ht_div_uint64_search(const ht_div_uint64_t *ht, const void *key){
 */
 void ht_div_uint64_remove(ht_div_uint64_t *ht, const void *key, void *elt){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
-  dll_node_t *node = dll_search_key(head, key, cmp_key);
+  dll_node_t *node = dll_search_key(head, key, ht->key_size);
   if (node != NULL){
     memcpy(elt, node->elt, ht->elt_size);
     //if an element is noncontiguous, only the pointer to it is deleted
@@ -175,7 +172,7 @@ void ht_div_uint64_remove(ht_div_uint64_t *ht, const void *key, void *elt){
 */
 void ht_div_uint64_delete(ht_div_uint64_t *ht, const void *key){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
-  dll_node_t *node = dll_search_key(head, key, cmp_key);
+  dll_node_t *node = dll_search_key(head, key, ht->key_size);
   if (node != NULL){
     dll_delete(head, node, ht->free_elt);
     ht->num_elts--;
@@ -255,11 +252,4 @@ static void copy_reinsert(ht_div_uint64_t *ht, const dll_node_t *node){
 	      ht->key_size,
 	      ht->elt_size);
   ht->num_elts++;   
-}
-
-/**
-   Compares two hash keys.
-*/
-static int cmp_key(const void *a, const void *b){
-  return memcmp(a, b, CMP_KEY_SIZE);
 }
