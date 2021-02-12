@@ -188,8 +188,9 @@ void heap_free(heap_t *h){
    to their new indices in the hash table.
 */
 static void swap(heap_t *h, size_t i, size_t j){
-  void *buf = malloc_perror(h->pty_size + h->elt_size);
+  void *buf = NULL;
   if (i == j) return;
+  buf = malloc_perror(h->pty_size + h->elt_size);
   memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
   memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pty_size + h->elt_size);
   memcpy(pty_ptr(h, j), buf, h->pty_size + h->elt_size);
