@@ -28,10 +28,6 @@
 #include "heap.h"
 #include "utilities-mem.h"
 
-static void *HT = NULL; //points to a hash table
-static void *SWAP_BUF = NULL; //points to a pty_size + elt_size size block
-static void *HEAPIFY_BUF = NULL; //points to a pty_size + elt_size size block
-
 static void swap(heap_t *h, size_t i, size_t j);
 static void half_swap(heap_t *h, size_t t, size_t s);
 static void heap_grow(heap_t *h);
@@ -96,11 +92,7 @@ void heap_init(heap_t *h,
   h->ht = (heap_ht_t *)ht;
   h->cmp_pty = cmp_pty;
   h->free_elt = free_elt;
-  //HT maps an elt_size block (hash key) to an array index
-  HT = malloc_perror(ht->size);
-  h->ht->init(HT, elt_size, sizeof(size_t), NULL, ht->context);
-  SWAP_BUF = malloc_perror(pty_size + elt_size);
-  HEAPIFY_BUF = malloc_perror(pty_size + elt_size);
+  h->ht->init(ht->ht, elt_size, sizeof(size_t), NULL, ht->context);
 }
 
 /**
@@ -121,7 +113,7 @@ void heap_push(heap_t *h, const void *pty, const void *elt){
   if (h->count == ix) heap_grow(h);
   memcpy(pty_ptr(h, ix), pty, h->pty_size);
   memcpy(elt_ptr(h, ix), elt, h->elt_size);
-  h->ht->insert(HT, elt, &ix);
+  h->ht->insert(h->ht->ht, elt, &ix);
   h->num_elts++;
   heapify_up(h, ix);
 }
@@ -135,7 +127,7 @@ void heap_push(heap_t *h, const void *pty, const void *elt){
    heap_push.
 */
 void *heap_search(const heap_t *h, const void *elt){
-  size_t *ix_ptr = h->ht->search(HT, elt);
+  size_t *ix_ptr = h->ht->search(h->ht->ht, elt);
   if (ix_ptr != NULL){
     return pty_ptr(h, *ix_ptr);
   }else{
@@ -151,7 +143,7 @@ void *heap_search(const heap_t *h, const void *elt){
    specification in heap_push.
 */
 void heap_update(heap_t *h, const void *pty, const void *elt){
-  size_t ix = *(size_t *)h->ht->search(HT, elt);
+  size_t ix = *(size_t *)h->ht->search(h->ht->ht, elt);
   memcpy(pty_ptr(h, ix), pty, h->pty_size);
   heapify_up(h, ix);
   heapify_down(h, ix);
@@ -169,7 +161,7 @@ void heap_pop(heap_t *h, void *pty, void *elt){
   memcpy(pty, pty_ptr(h, ix), h->pty_size);
   memcpy(elt, elt_ptr(h, ix), h->elt_size);
   swap(h, ix, h->num_elts - 1);
-  h->ht->remove(HT, elt, &ix_buf);
+  h->ht->remove(h->ht->ht, elt, &ix_buf);
   h->num_elts--;
   if (h->num_elts > 0) heapify_down(h, ix);
 }
@@ -185,14 +177,8 @@ void heap_free(heap_t *h){
     } 
   }
   free(h->pty_elts);
-  h->ht->free(HT);
-  free(HT);
-  free(SWAP_BUF);
-  free(HEAPIFY_BUF);
+  h->ht->free(h->ht->ht);
   h->pty_elts = NULL;
-  HT = NULL;
-  SWAP_BUF = NULL;
-  HEAPIFY_BUF = NULL;
 }
 
 /** Helper functions */
@@ -202,12 +188,15 @@ void heap_free(heap_t *h){
    to their new indices in the hash table.
 */
 static void swap(heap_t *h, size_t i, size_t j){
+  void *buf = malloc_perror(h->pty_size + h->elt_size);
   if (i == j) return;
-  memcpy(SWAP_BUF, pty_ptr(h, i), h->pty_size + h->elt_size);
+  memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
   memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pty_size + h->elt_size);
-  memcpy(pty_ptr(h, j), SWAP_BUF, h->pty_size + h->elt_size);
-  h->ht->insert(HT, elt_ptr(h, i), &i);
-  h->ht->insert(HT, elt_ptr(h, j), &j);
+  memcpy(pty_ptr(h, j), buf, h->pty_size + h->elt_size);
+  h->ht->insert(h->ht->ht, elt_ptr(h, i), &i);
+  h->ht->insert(h->ht->ht, elt_ptr(h, j), &j);
+  free(buf);
+  buf = NULL;
 }
 
 /**
@@ -217,7 +206,7 @@ static void swap(heap_t *h, size_t i, size_t j){
 static void half_swap(heap_t *h, size_t t, size_t s){
   if (s == t) return;
   memcpy(pty_ptr(h, t), pty_ptr(h, s), h->pty_size + h->elt_size);
-  h->ht->insert(HT, elt_ptr(h, t), &t);
+  h->ht->insert(h->ht->ht, elt_ptr(h, t), &t);
 }
 
 /**
@@ -243,18 +232,21 @@ static void heap_grow(heap_t *h){
 */
 static void heapify_up(heap_t *h, size_t i){
   size_t ju;
-  memcpy(HEAPIFY_BUF, pty_ptr(h, i), h->pty_size + h->elt_size);
+  void *buf = malloc_perror(h->pty_size + h->elt_size);
+  memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
   while(i > 0){
     ju = (i - 1) / 2;
-    if (h->cmp_pty(pty_ptr(h, ju), HEAPIFY_BUF) > 0){
+    if (h->cmp_pty(pty_ptr(h, ju), buf) > 0){
       half_swap(h, i, ju);
       i = ju;
     }else{
       break;
     }
   }
-  memcpy(pty_ptr(h, i), HEAPIFY_BUF, h->pty_size + h->elt_size);
-  h->ht->insert(HT, elt_ptr(h, i), &i);
+  memcpy(pty_ptr(h, i), buf, h->pty_size + h->elt_size);
+  h->ht->insert(h->ht->ht, elt_ptr(h, i), &i);
+  free(buf);
+  buf = NULL;
 }
 
 /**
@@ -263,17 +255,18 @@ static void heapify_up(heap_t *h, size_t i){
 */
 static void heapify_down(heap_t *h, size_t i){
   size_t jl, jr;
-  memcpy(HEAPIFY_BUF, pty_ptr(h, i), h->pty_size + h->elt_size);
+  void *buf = malloc_perror(h->pty_size + h->elt_size);
+  memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
   //0 <= i <= num_elts - 1 <= SIZE_MAX - 2
   while (i + 2 <= h->num_elts - 1 - i){
     //both next left and next right indices have elements
     jl = 2 * i + 1;
     jr = 2 * i + 2;
-    if (h->cmp_pty(HEAPIFY_BUF, pty_ptr(h, jl)) > 0 &&
+    if (h->cmp_pty(buf, pty_ptr(h, jl)) > 0 &&
 	h->cmp_pty(pty_ptr(h, jl), pty_ptr(h, jr)) <= 0){
       half_swap(h, i, jl);
       i = jl;
-    }else if (h->cmp_pty(HEAPIFY_BUF, pty_ptr(h, jr)) > 0){
+    }else if (h->cmp_pty(buf, pty_ptr(h, jr)) > 0){
       //jr has min priority relative to jl and the ith priority is greater
       half_swap(h, i, jr);
       i = jr;
@@ -283,13 +276,15 @@ static void heapify_down(heap_t *h, size_t i){
   }
   if (i + 1 == h->num_elts - 1 - i){
     jl = 2 * i + 1;
-    if (h->cmp_pty(HEAPIFY_BUF, pty_ptr(h, jl)) > 0){
+    if (h->cmp_pty(buf, pty_ptr(h, jl)) > 0){
       half_swap(h, i, jl);
       i = jl;
     }
   }
-  memcpy(pty_ptr(h, i), HEAPIFY_BUF, h->pty_size + h->elt_size);
-  h->ht->insert(HT, elt_ptr(h, i), &i);
+  memcpy(pty_ptr(h, i), buf, h->pty_size + h->elt_size);
+  h->ht->insert(h->ht->ht, elt_ptr(h, i), &i);
+  free(buf);
+  buf = NULL;
 }
 
 /**

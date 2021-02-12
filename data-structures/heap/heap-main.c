@@ -145,6 +145,7 @@ void run_push_pop_free_div_uint64_test(){
 		      sizeof(long double)};
   uint64_t n = 1000000;
   float alpha = 1.0;
+  ht_div_uint64_t ht_div;
   ht_div_context_t context;
   heap_ht_t ht;
   int (*cmp_pty_arr[3])(const void *, const void *) = {cmp_uint64,
@@ -154,7 +155,7 @@ void run_push_pop_free_div_uint64_test(){
 					      new_double,
 					      new_long_double};
   context.alpha = alpha;
-  ht.size = sizeof(ht_div_uint64_t);
+  ht.ht = &ht_div;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_div_uint64_init_helper;
   ht.insert = (heap_ht_insert)ht_div_uint64_insert;
@@ -192,6 +193,7 @@ void run_update_search_div_uint64_test(){
 		      sizeof(long double)};
   uint64_t n = 1000000;
   float alpha = 1.0;
+  ht_div_uint64_t ht_div;
   ht_div_context_t context;
   heap_ht_t ht;
   int (*cmp_pty_arr[3])(const void *, const void *) = {cmp_uint64,
@@ -201,7 +203,7 @@ void run_update_search_div_uint64_test(){
 					      new_double,
 					      new_long_double};
   context.alpha = alpha;
-  ht.size = sizeof(ht_div_uint64_t);
+  ht.ht = &ht_div;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_div_uint64_init_helper;
   ht.insert = (heap_ht_insert)ht_div_uint64_insert;
@@ -239,6 +241,7 @@ void run_push_pop_free_mul_uint64_test(){
 		      sizeof(long double)};
   uint64_t n = 1000000;
   float alpha = 0.4;
+  ht_mul_uint64_t ht_mul;
   ht_mul_context_t context;
   heap_ht_t ht;
   int (*cmp_pty_arr[3])(const void *, const void *) = {cmp_uint64,
@@ -249,7 +252,7 @@ void run_push_pop_free_mul_uint64_test(){
 					      new_long_double};
   context.alpha = alpha;
   context.rdc_key = NULL; //elt_size <= 8 bytes
-  ht.size = sizeof(ht_mul_uint64_t);
+  ht.ht = &ht_mul;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_mul_uint64_init_helper;
   ht.insert = (heap_ht_insert)ht_mul_uint64_insert;
@@ -287,6 +290,7 @@ void run_update_search_mul_uint64_test(){
 		      sizeof(long double)};
   uint64_t n = 1000000;
   float alpha = 0.4;
+  ht_mul_uint64_t ht_mul;
   ht_mul_context_t context;
   heap_ht_t ht;
   int (*cmp_pty_arr[3])(const void *, const void *) = {cmp_uint64,
@@ -297,7 +301,7 @@ void run_update_search_mul_uint64_test(){
 					      new_long_double};
   context.alpha = alpha;
   context.rdc_key = NULL; //elt_size <= 8 bytes
-  ht.size = sizeof(ht_mul_uint64_t);
+  ht.ht = &ht_mul;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_mul_uint64_init_helper;
   ht.insert = (heap_ht_insert)ht_mul_uint64_insert;
@@ -374,6 +378,7 @@ void run_push_pop_free_div_uint64_ptr_test(){
 		      sizeof(long double)};
   uint64_t n = 1000000;
   float alpha = 1.0;
+  ht_div_uint64_t ht_div;
   ht_div_context_t context;
   heap_ht_t ht;
   int (*cmp_pty_arr[3])(const void *, const void *) = {cmp_uint64,
@@ -383,7 +388,7 @@ void run_push_pop_free_div_uint64_ptr_test(){
 					      new_double,
 					      new_long_double};
   context.alpha = alpha;
-  ht.size = sizeof(ht_div_uint64_t);
+  ht.ht = &ht_div;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_div_uint64_init_helper;
   ht.insert = (heap_ht_insert)ht_div_uint64_insert;
@@ -421,6 +426,7 @@ void run_update_search_div_uint64_ptr_test(){
 		      sizeof(long double)};
   uint64_t n = 1000000;
   float alpha = 1.0;
+  ht_div_uint64_t ht_div;
   ht_div_context_t context;
   heap_ht_t ht;
   int (*cmp_pty_arr[3])(const void *, const void *) = {cmp_uint64,
@@ -430,7 +436,7 @@ void run_update_search_div_uint64_ptr_test(){
 					      new_double,
 					      new_long_double};
   context.alpha = alpha;
-  ht.size = sizeof(ht_div_uint64_t);
+  ht.ht = &ht_div;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_div_uint64_init_helper;
   ht.insert = (heap_ht_insert)ht_div_uint64_insert;
@@ -468,6 +474,7 @@ void run_push_pop_free_mul_uint64_ptr_test(){
 		      sizeof(long double)};
   uint64_t n = 1000000;
   float alpha = 0.4;
+  ht_mul_uint64_t ht_mul;
   ht_mul_context_t context;
   heap_ht_t ht;
   int (*cmp_pty_arr[3])(const void *, const void *) = {cmp_uint64,
@@ -478,7 +485,7 @@ void run_push_pop_free_mul_uint64_ptr_test(){
 					      new_long_double};
   context.alpha = alpha;
   context.rdc_key = NULL; //elt_size <= 8 bytes
-  ht.size = sizeof(ht_mul_uint64_t);
+  ht.ht = &ht_mul;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_mul_uint64_init_helper;
   ht.insert = (heap_ht_insert)ht_mul_uint64_insert;
@@ -516,6 +523,7 @@ void run_update_search_mul_uint64_ptr_test(){
 		      sizeof(long double)};
   uint64_t n = 1000000;
   float alpha = 0.4;
+  ht_mul_uint64_t ht_mul;
   ht_mul_context_t context;
   heap_ht_t ht;
   int (*cmp_pty_arr[3])(const void *, const void *) = {cmp_uint64,
@@ -526,7 +534,7 @@ void run_update_search_mul_uint64_ptr_test(){
 					      new_long_double};
   context.alpha = alpha;
   context.rdc_key = NULL; //elt_size <= 8 bytes
-  ht.size = sizeof(ht_mul_uint64_t);
+  ht.ht = &ht_mul;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_mul_uint64_init_helper;
   ht.insert = (heap_ht_insert)ht_mul_uint64_insert;

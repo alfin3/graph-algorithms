@@ -37,8 +37,8 @@ typedef void (*heap_ht_remove)(void *, const void *, void *);
 typedef void (*heap_ht_free)(void *);
 
 typedef struct{
-  size_t size; //size of hash table struct
-  void *context; //initialization context
+  void *ht; //points to a block of hash table struct size
+  void *context; //points to initialization context
   heap_ht_init init;
   heap_ht_insert insert;
   heap_ht_search search;
