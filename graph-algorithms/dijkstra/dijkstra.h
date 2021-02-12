@@ -40,7 +40,7 @@
                  is equal to the size of a weight in the adjacency list
    prev        : pointer to a preallocated array with a count that is equal
                  to the number of vertices in the adjacency list
-   ht          : - NULL pointer, if a default hash table is used for
+   hht         : - NULL pointer, if a default hash table is used for
                  in-heap operations; a default hash table contains an index
                  array with a count that is equal to the number of vertices
                  - a pointer to a set of parameters specifying a hash table
@@ -61,7 +61,7 @@ void dijkstra(const adj_lst_t *a,
 	      size_t start,
 	      void *dist,
 	      size_t *prev,
-	      const heap_ht_t *ht,
+	      const heap_ht_t *hht,
 	      void (*add_wt)(void *, const void *, const void *),
 	      int (*cmp_wt)(const void *, const void *));
 #endif
