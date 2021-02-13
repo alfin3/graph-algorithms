@@ -1,8 +1,8 @@
 /**
    tsp-main.c
 
-   Examples of running a dynamic programming version of an exact solution 
-   of TSP with generic weights, including negative weights.
+   Tests a dynamic programming version of an exact solution of TSP without
+   revisiting and with generic weights, including negative weights.
 */
 
 #include <stdio.h>
@@ -24,13 +24,10 @@ static const size_t NR = SIZE_MAX; //not reached as index
 uint64_t pow_two(int k);
 void print_test_result(int res);
 
-/** 
-    Graphs with uint64_t weights.
+/**
+   Initialize small graphs with uint64_t weights.
 */
 
-/**
-   Initialize graphs with uint64_t weights.
-*/
 void graph_uint64_wts_init(graph_t *g){
   uint64_t u[] = {0, 1, 2, 3, 1, 2, 3, 0, 0, 2, 1, 3};
   uint64_t v[] = {1, 2, 3, 0, 0, 1, 2, 3, 2, 0, 3, 1};
@@ -103,8 +100,9 @@ void print_double_arr(double *arr, uint64_t n){
 }
 
 /**
-   Run a test on graphs with uint64_t weights.
+   Run a test on small graphs with uint64_t weights.
 */
+
 void add_uint64(void *sum, const void *wt_a, const void *wt_b){
   *(uint64_t *)sum = *(uint64_t *)wt_a + *(uint64_t *)wt_b;
 }
@@ -152,7 +150,7 @@ void run_uint64_graph_test(){
 }
 
 /**
-    Graphs with double weights.
+   Initialize small graphs with double weights.
 */
 
 void graph_double_wts_init(graph_t *g){
@@ -177,7 +175,7 @@ void graph_double_single_vt_init(graph_t *g){
 }
 
 /**
-   Run a test on graphs with double weights.
+   Run a test on small graphs with double weights.
 */
 
 void add_double(void *sum, const void *wt_a, const void *wt_b){
@@ -288,7 +286,10 @@ void adj_lst_rand_dir_wts(adj_lst_t *a,
   arg_true.p = 2.0;
   for (uint64_t i = 0; i < n - 1; i++){
     for (uint64_t j = i + 1; j < n; j++){
-      if (j - i == 1){
+      if (n == 2){
+	add_dir_edge(a, i, j, 1, 1, bern, &arg_true);
+	add_dir_edge(a, j, i, 1, 1, bern, &arg_true);
+      }else if (j - i == 1){
 	add_dir_edge(a, i, j, 1, 1, bern, &arg_true);
 	add_dir_edge(a, j, i, wt_l, wt_h, bern, arg);
       }else if (i == 0 && j == n - 1){
@@ -308,9 +309,9 @@ void adj_lst_rand_dir_wts(adj_lst_t *a,
    weights and a known tour.
 */
 void run_rand_uint64_test(){
-  int pow_two_start = 2, pow_two_end = 5;
+  int num_vts_max = 21;
   int iter = 1;
-  int ret;
+  int res = 1, ret;
   int num_p = 7;
   uint64_t n, rand_start[iter];
   uint64_t wt_l = 0, wt_h = pow_two(32) - 1;
@@ -327,8 +328,8 @@ void run_rand_uint64_test(){
   for (int pi = 0; pi < num_p; pi++){
     b.p = p[pi];
     printf("\tP[an edge is in a graph] = %.4f\n", p[pi]);
-    for (int i = pow_two_start; i <  pow_two_end; i++){
-      n = pow_two(i); //0 < n
+    for (int i = 1; i < num_vts_max; i++){
+      n = i;
       adj_lst_rand_dir_wts(&a,
 			   n,
 			   sizeof(uint64_t),
@@ -349,12 +350,18 @@ void run_rand_uint64_test(){
 		  cmp_uint64);
       }
       t = clock() - t;
+      if (n == 1){
+	res *= (dist == 0 && ret == 0);
+      }else{
+	res *= (dist == n && ret == 0);
+      }
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
 	     a.num_vts, a.num_es);
       printf("\t\t\truntime:     %.6f seconds\n",
 	     (float)t / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness: ");
-      print_test_result((dist == n && ret == 0));
+      print_test_result(res);
+      res = 1;
       adj_lst_free(&a);
     }
   }

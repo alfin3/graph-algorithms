@@ -1,12 +1,14 @@
 /**
    tsp.c
 
-   Dynamic programming version of an exact solution of TSP with
-   generic weights, including negative weights, in O(2^n n^2) assymptotic
-   runtime, where n is the number of vertices in a tour.
+   Dynamic programming version of an exact solution of TSP without revisiting
+   and with generic weights, including negative weights, in O(2^n n^2)
+   assymptotic runtime, where n is the number of vertices in a tour.
+
+   A bit array representation provides time and space efficient set
+   operations.
 
    TODO
-   - bit array representation
    - hash table parameter
 */
 
@@ -21,11 +23,23 @@
 #include "utilities-mem.h"
 #include "utilities-rand-mod.h"
 
-static const size_t NR = SIZE_MAX; //not reached as index
+typedef struct{
+  size_t ix; //index of the set element with a single set bit
+  size_t bit; //set element with a single set bit
+} ibit_t;
 
+static const size_t NR = SIZE_MAX; //not reached as index
+static const size_t SET_ELT_SIZE = sizeof(size_t);
+static const size_t SET_ELT_BIT_COUNT = sizeof(size_t) * 8;
+
+//set operations based on a bit array representation
+static void set_init(ibit_t *ibit, size_t n);
+static size_t *set_member(const ibit_t *ibit, const size_t * set);
+static void set_union(const ibit_t *ibit, size_t * set);
+
+//auxiliary functions
 static void build_next(const adj_lst_t *a,
-		       const ht_mul_uint64_t *prev_ht,
-		       ht_mul_uint64_t *next_ht,
+		       ht_mul_uint64_t *ht,
 		       stack_t *prev_s,
 		       stack_t *next_s,
 		       void (*add_wt)(void *, const void *, const void *),
@@ -33,7 +47,6 @@ static void build_next(const adj_lst_t *a,
 static size_t *vt_ptr(const size_t *vts, size_t i);
 static void *wt_ptr(const void *wts, size_t i, size_t wt_size);
 static void rdc_key(void *t, const void *s);
-static int cmp_vt(const void *a, const void *b);
 
 /**
    Copies to the block pointed to by dist the shortest tour length from 
@@ -46,46 +59,37 @@ int tsp(const adj_lst_t *a,
 	void (*add_wt)(void *, const void *, const void *),
 	int (*cmp_wt)(const void *, const void *)){
   int final_dist_updated = 0;
-  size_t vt_size = sizeof(size_t);
   size_t wt_size = a->wt_size;
-  size_t set_count = 2; //including NR
+  size_t set_count, set_size;
   size_t u, v;
   size_t *prev_set = NULL;
   void *wt_buf = NULL;
   stack_t prev_s, next_s;
-  ht_mul_uint64_t prev_ht, next_ht;
-  prev_set = malloc_perror(set_count * vt_size);
+  ht_mul_uint64_t ht;
+  set_count = a->num_vts / SET_ELT_BIT_COUNT;
+  if (a->num_vts % SET_ELT_BIT_COUNT){
+    set_count++;
+  }
+  set_count += 2; //+ size_t representation of the last vertex and NR
+  set_size = set_count * SET_ELT_SIZE;
+  prev_set = calloc_perror(set_size, 1);
   wt_buf = malloc_perror(wt_size);
   prev_set[0] = start;
-  prev_set[1] = NR;
-  stack_init(&prev_s, 1, set_count * vt_size, NULL);
+  prev_set[set_count - 1] = NR;
+  stack_init(&prev_s, 1, set_size, NULL);
   stack_push(&prev_s, prev_set);
-  ht_mul_uint64_init(&prev_ht,
-		     set_count * vt_size,
-		     wt_size,
-		     0.2,
-		     rdc_key,
-		     NULL);
+  ht_mul_uint64_init(&ht, set_size, wt_size, 0.2, rdc_key, NULL);
   memset(dist, 0, wt_size);
-  ht_mul_uint64_insert(&prev_ht, prev_set, dist);
+  ht_mul_uint64_insert(&ht, prev_set, dist);
   for (size_t i = 0; i < a->num_vts - 1; i++){
-    set_count++;
-    stack_init(&next_s, 1, set_count * vt_size, NULL);
-    ht_mul_uint64_init(&next_ht,
-		       set_count * vt_size,
-		       wt_size,
-		       0.2,
-		       rdc_key,
-		       NULL);
-    build_next(a, &prev_ht, &next_ht, &prev_s, &next_s, add_wt, cmp_wt);
+    stack_init(&next_s, 1, set_size, NULL);
+    build_next(a, &ht, &prev_s, &next_s, add_wt, cmp_wt);
     stack_free(&prev_s);
-    ht_mul_uint64_free(&prev_ht);
     prev_s = next_s;
-    prev_ht = next_ht;
     if (prev_s.num_elts == 0){
       //no progress made
       stack_free(&prev_s);
-      ht_mul_uint64_free(&prev_ht);
+      ht_mul_uint64_free(&ht);
       free(prev_set);
       free(wt_buf);
       prev_set = NULL;
@@ -94,7 +98,6 @@ int tsp(const adj_lst_t *a,
     }
   }
   //compute the return to start
-  prev_set = realloc_perror(prev_set, (a->num_vts + 1) * vt_size);
   while (prev_s.num_elts > 0){
     stack_pop(&prev_s, prev_set);
     u = prev_set[0];
@@ -102,7 +105,7 @@ int tsp(const adj_lst_t *a,
       v = *vt_ptr(a->vts[u]->elts, i);
       if (v == start){
 	add_wt(wt_buf,
-	       ht_mul_uint64_search(&prev_ht, prev_set),
+	       ht_mul_uint64_search(&ht, prev_set),
 	       wt_ptr(a->wts[u]->elts, i, wt_size));
 	if (!final_dist_updated){
 	  memcpy(dist, wt_buf, wt_size);
@@ -114,7 +117,7 @@ int tsp(const adj_lst_t *a,
     }
   }
   stack_free(&prev_s);
-  ht_mul_uint64_free(&prev_ht);
+  ht_mul_uint64_free(&ht);
   free(prev_set);
   free(wt_buf);
   prev_set = NULL;
@@ -124,58 +127,78 @@ int tsp(const adj_lst_t *a,
 }
 
 /**
-   Builds reachable sets of count n + 1 from sets of count n. A set is an
-   array of size_t vertices, where the first element is the last reached 
-   vertex, and other elements are the previously reached sorted vertices. 
-   A hashtable, maps a set to a distance. 
+   Builds reachable sets from previous sets and updates a hash table
+   mapping a set to a distance. 
  */
 static void build_next(const adj_lst_t *a,
-		       const ht_mul_uint64_t *prev_ht,
-		       ht_mul_uint64_t *next_ht,
+		       ht_mul_uint64_t *ht,
 		       stack_t *prev_s,
 		       stack_t *next_s,
 		       void (*add_wt)(void *, const void *, const void *),
 		       int (*cmp_wt)(const void *, const void *)){
-  size_t vt_size = sizeof(size_t);
   size_t wt_size = a->wt_size;
-  size_t set_count = prev_ht->key_size / vt_size;
+  size_t set_size = ht->key_size;
   size_t u, v;
-  size_t *prev_set = NULL, *next_set = NULL;
-  void *wt_buf = NULL, *next_wt = NULL;
-  prev_set = malloc_perror(set_count * vt_size);
-  next_set = malloc_perror((set_count + 1) * vt_size);
-  wt_buf = malloc_perror(wt_size);
+  size_t *prev_set = NULL, *next_set = NULL, *set_elt = NULL;
+  void *prev_wt = NULL, *next_wt = NULL, *sum_wt = NULL;
+  ibit_t ibit;
+  prev_set = malloc_perror(set_size);
+  next_set = malloc_perror(set_size);
+  prev_wt = malloc_perror(wt_size);
+  sum_wt = malloc_perror(wt_size);
   while (prev_s->num_elts > 0){
     stack_pop(prev_s, prev_set);
+    ht_mul_uint64_remove(ht, prev_set, prev_wt);
     u = prev_set[0];
     for (size_t j = 0; j < a->vts[u]->num_elts; j++){
       v = *vt_ptr(a->vts[u]->elts, j);
-      if (bsearch(&v, prev_set, set_count, vt_size, cmp_vt) == NULL){
+      set_init(&ibit, v);
+      set_elt = set_member(&ibit, &prev_set[1]);
+      if (set_elt == NULL){
+	set_init(&ibit, u);
 	next_set[0] = v;
-	memcpy(&next_set[1], prev_set, set_count * vt_size);
-	qsort(&next_set[1], set_count, vt_size, cmp_vt);
-	add_wt(wt_buf,
-	       ht_mul_uint64_search(prev_ht, prev_set),
-	       wt_ptr(a->wts[u]->elts, j, wt_size));
-	next_wt = ht_mul_uint64_search(next_ht, next_set);
+	memcpy(&next_set[1], &prev_set[1], set_size - sizeof(size_t));
+	set_union(&ibit, &next_set[1]);
+	add_wt(sum_wt, prev_wt, wt_ptr(a->wts[u]->elts, j, wt_size));
+	next_wt = ht_mul_uint64_search(ht, next_set);
 	if (next_wt == NULL){
-	  ht_mul_uint64_insert(next_ht, next_set, wt_buf);
+	  ht_mul_uint64_insert(ht, next_set, sum_wt);
 	  stack_push(next_s, next_set);
-	}else if (cmp_wt(next_wt, wt_buf) > 0){
-	  ht_mul_uint64_insert(next_ht, next_set, wt_buf);
+	}else if (cmp_wt(next_wt, sum_wt) > 0){
+	  ht_mul_uint64_insert(ht, next_set, sum_wt);
 	}
       }
     }
   }
   free(prev_set);
   free(next_set);
-  free(wt_buf);
+  free(sum_wt);
+  free(prev_wt);
   prev_set = NULL;
   next_set = NULL;
-  wt_buf = NULL;
+  sum_wt = NULL;
+  prev_wt = NULL;
 }
 
 /** Helper functions */
+
+static void set_init(ibit_t *ibit, size_t n){
+  ibit->ix = n / (sizeof(size_t) * 8);
+  ibit->bit = 1;
+  ibit->bit <<= n % (sizeof(size_t) * 8);
+}
+
+static size_t *set_member(const ibit_t *ibit, const size_t * set){
+  if (set[ibit->ix] & ibit->bit){
+    return (size_t *)(&set[ibit->ix]);
+  }else{
+    return NULL;
+  }
+}
+
+static void set_union(const ibit_t *ibit, size_t * set){
+  set[ibit->ix] |= ibit->bit;
+}
 
 /**
    Computes a pointer to an entry in an array of vertices.
@@ -205,17 +228,4 @@ static void rdc_key(void *t, const void *s){
     i++;
   }
   *(size_t *)t = r;
-}
-
-/**
-   Compares two size_t vertices.
-*/
-static int cmp_vt(const void *a, const void *b){
-  if (*(size_t *)a > *(size_t *)b){
-    return 1;
-  }else if (*(size_t *)a < *(size_t *)b){
-    return -1;
-  }else{
-    return 0;
-  }
 }

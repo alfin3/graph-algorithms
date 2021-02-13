@@ -2,12 +2,14 @@
    tsp.h
 
    Declarations of accessible functions for running a dynamic programming
-   version of an exact solution of TSP with generic weights, including 
-   negative weights, in O(2^n n^2) assymptotic runtime, where n is the 
-   number of vertices in a tour.
+   version of an exact solution of TSP without revisiting
+   and with generic weights, including negative weights, in O(2^n n^2)
+   assymptotic runtime, where n is the number of vertices in a tour.
+
+   A bit array representation provides time and space efficient set
+   operations.
 
    TODO
-   - bit array representation
    - hash table parameter
 */
 

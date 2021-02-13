@@ -40,7 +40,7 @@ tsp.o                               : tsp.h                               \
 $(GRAPH_DIR)graph.o                 : $(GRAPH_DIR)graph.h                 \
                                       $(STACK_DIR)stack.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h
-$(HT_MUL_DIR)ht-mul-uint64.o : $(HT_MUL_DIR)ht-mul-uint64.h \
+$(HT_MUL_DIR)ht-mul-uint64.o        : $(HT_MUL_DIR)ht-mul-uint64.h \
                                       $(DLL_DIR)dll.h                     \
                                       $(UTILS_MEM_DIR)utilities-mem.h     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
