@@ -1,23 +1,26 @@
 CC = gcc
 DS_DIR = ../../data-structures/
-GRAPH_DIR      = $(DS_DIR)graph/
-HT_MUL_DIR     = $(DS_DIR)ht-mul-uint64/
-DLL_DIR        = $(DS_DIR)dll/
-STACK_DIR      = $(DS_DIR)stack/
-UTILS_MEM_DIR = ../../utilities/utilities-mem/
-UTILS_RM_DIR = ../../utilities/utilities-rand-mod/
-CFLAGS = -I$(GRAPH_DIR)     \
-         -I$(HT_MUL_DIR)    \
-         -I$(DLL_DIR)       \
-         -I$(STACK_DIR)     \
-         -I$(UTILS_MEM_DIR) \
-         -I$(UTILS_RM_DIR)  \
+GRAPH_DIR         = $(DS_DIR)graph/
+HT_DIV_UINT64_DIR = $(DS_DIR)ht-div-uint64/
+HT_MUL_UINT64_DIR = $(DS_DIR)ht-mul-uint64/
+DLL_DIR           = $(DS_DIR)dll/
+STACK_DIR         = $(DS_DIR)stack/
+UTILS_MEM_DIR     = ../../utilities/utilities-mem/
+UTILS_RM_DIR      = ../../utilities/utilities-rand-mod/
+CFLAGS = -I$(GRAPH_DIR)         \
+         -I$(HT_DIV_UINT64_DIR) \
+         -I$(HT_MUL_UINT64_DIR) \
+         -I$(DLL_DIR)           \
+         -I$(STACK_DIR)         \
+         -I$(UTILS_MEM_DIR)     \
+         -I$(UTILS_RM_DIR)      \
          -Wall -Wextra -O3
 
 OBJ = tsp-main.o                          \
       tsp.o                               \
       $(GRAPH_DIR)graph.o                 \
-      $(HT_MUL_DIR)ht-mul-uint64.o        \
+      $(HT_DIV_UINT64_DIR)ht-div-uint64.o \
+      $(HT_MUL_UINT64_DIR)ht-mul-uint64.o \
       $(DLL_DIR)dll.o                     \
       $(STACK_DIR)stack.o                 \
       $(UTILS_MEM_DIR)utilities-mem.o     \
@@ -28,19 +31,24 @@ tsp : $(OBJ)
 
 tsp-main.o                          : tsp.h                               \
                                       $(GRAPH_DIR)graph.h                 \
+                                      $(HT_DIV_UINT64_DIR)ht-div-uint64.h \
+                                      $(HT_MUL_UINT64_DIR)ht-mul-uint64.h \
                                       $(STACK_DIR)stack.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
 tsp.o                               : tsp.h                               \
                                       $(GRAPH_DIR)graph.h                 \
-                                      $(HT_MUL_DIR)ht-mul-uint64.h        \
                                       $(STACK_DIR)stack.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
 $(GRAPH_DIR)graph.o                 : $(GRAPH_DIR)graph.h                 \
                                       $(STACK_DIR)stack.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h
-$(HT_MUL_DIR)ht-mul-uint64.o        : $(HT_MUL_DIR)ht-mul-uint64.h \
+$(HT_DIV_UINT64_DIR)ht-div-uint64.o : $(HT_DIV_UINT64_DIR)ht-div-uint64.h \
+                                      $(DLL_DIR)dll.h                     \
+                                      $(UTILS_MEM_DIR)utilities-mem.h     \
+                                      $(UTILS_RM_DIR)utilities-rand-mod.h
+$(HT_MUL_UINT64_DIR)ht-mul-uint64.o : $(HT_MUL_UINT64_DIR)ht-mul-uint64.h \
                                       $(DLL_DIR)dll.h                     \
                                       $(UTILS_MEM_DIR)utilities-mem.h     \
                                       $(UTILS_RM_DIR)utilities-rand-mod.h
