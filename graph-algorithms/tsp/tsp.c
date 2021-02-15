@@ -31,7 +31,11 @@
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
-#include "utilities-rand-mod.h"
+
+typedef enum{
+  FALSE,
+  TRUE,
+} boolean_t;
 
 typedef struct{
   size_t ix; //index of the set element with a single set bit
@@ -67,12 +71,12 @@ int tsp(const adj_lst_t *a,
 	tsp_ht_t *tht,
 	void (*add_wt)(void *, const void *, const void *),
 	int (*cmp_wt)(const void *, const void *)){
-  int final_dist_updated = 0;
   size_t wt_size = a->wt_size;
   size_t set_count, set_size;
   size_t u, v;
   size_t *prev_set = NULL;
   void *sum_wt = NULL;
+  boolean_t final_dist_updated = FALSE;
   stack_t prev_s, next_s;
   set_count = a->num_vts / SET_ELT_BIT_COUNT;
   if (a->num_vts % SET_ELT_BIT_COUNT){
@@ -83,10 +87,10 @@ int tsp(const adj_lst_t *a,
   prev_set = calloc_perror(set_size, 1);
   sum_wt = malloc_perror(wt_size);
   prev_set[0] = start;
+  memset(dist, 0, wt_size);
   stack_init(&prev_s, 1, set_size, NULL);
   stack_push(&prev_s, prev_set);
   tht->init(tht->ht, set_size, wt_size, NULL, tht->context);
-  memset(dist, 0, wt_size);
   tht->insert(tht->ht, prev_set, dist);
   for (size_t i = 0; i < a->num_vts - 1; i++){
     stack_init(&next_s, 1, set_size, NULL);
@@ -116,7 +120,7 @@ int tsp(const adj_lst_t *a,
 	       wt_ptr(a->wts[u]->elts, i, wt_size));
 	if (!final_dist_updated){
 	  memcpy(dist, sum_wt, wt_size);
-	  final_dist_updated = 1;
+	  final_dist_updated = TRUE;
 	}else if (cmp_wt(dist, sum_wt) > 0){
 	  memcpy(dist, sum_wt, wt_size);
 	}
@@ -191,7 +195,9 @@ static void build_next(const adj_lst_t *a,
   prev_wt = NULL;
 }
 
-/** Helper functions */
+/**
+   Set operations based on a bit array representation.
+*/
 
 static void set_init(ibit_t *ibit, size_t n){
   ibit->ix = n / SET_ELT_BIT_COUNT;
