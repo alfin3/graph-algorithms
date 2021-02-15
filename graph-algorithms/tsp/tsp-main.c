@@ -83,6 +83,15 @@ static void rdc_key_2blocks(void *t, const void *s){
   *(size_t *)t = r;
 }
 
+static void rdc_key_3blocks(void *t, const void *s){
+  size_t r = 0;
+  size_t *s_arr = (size_t *)s;
+  for(size_t i = 0; i < 3; i++){
+    r = sum_mod_uint64(r, s_arr[i], SIZE_MAX);
+  }
+  *(size_t *)t = r;
+}
+
 typedef struct{
   float alpha;
 } context_div_t;
@@ -526,7 +535,7 @@ void run_sparse_rand_uint64_test(){
   tht_div.remove = (tsp_ht_remove)ht_div_uint64_remove;
   tht_div.free = (tsp_ht_free)ht_div_uint64_free;
   context_mul.alpha = alpha_mul;
-  context_mul.rdc_key = rdc_key_2blocks;
+  context_mul.rdc_key = rdc_key_3blocks;
   tht_mul.ht = &ht_mul;
   tht_mul.context = &context_mul;
   tht_mul.init = (tsp_ht_init)ht_mul_uint64_init_helper;
