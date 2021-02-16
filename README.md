@@ -16,6 +16,14 @@ In each directory with a Makefile, run:
 
 **Highlights:**
 
+`./graph-algorithms/tsp`
+
+An exact solution of TSP without vertex revisiting on graphs with generic weights with a hash table parameter.
+
+The algorithm provides O(2^n n^2) asymptotic run time, where n is the number of vertices in a tour, as well as tour existence detection. A bit array representation enables time and space efficient set membership and union operations over O(2^n) sets.
+   
+The hash table parameter specifies a hash table used for set hashing operations, and enables the optimization of the associated space and time resources by choice of a hash table and its load factor upper bound. If NULL is passed as a hash table parameter value, a default hash table is used, which contains an array with a count that is equal to n * 2^n, where n is the number of vertices in a graph. If E >> V and V is < sizeof(size_t) * 8, a default hash table may provide speed advantages by avoiding the computation of hash values. If V is larger and the graph is sparse, a non-default hash table may provide space advantages. Tests across i) default, division-based, and multiplication-based hash tables, as well as ii) edge weight types are provided.
+
 `./graph-algorithms/{dijkstra, prim}`
 
 Dijkstra's and Prim’s algorithms on graphs with generic weights with a hash table parameter.
