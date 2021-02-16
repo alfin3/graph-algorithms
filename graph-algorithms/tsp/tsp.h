@@ -19,9 +19,14 @@
    The hash table parameter specifies a hash table used for set hashing
    operations, and enables the optimization of the associated space and time
    resources by choice of a hash table and its load factor upper bound.
+   If NULL is passed as a hash table parameter value, a default hash table
+   is used, which contains an array with a count that is equal to n * 2^n,
+   where n is the number of vertices in the graph.  
 
-   TODO
-   - default hash table for dense graphs with a small # vertices
+   If E >> V and V is < sizeof(size_t) * 8, a default hash table may provide
+   speed advantages by avoiding the computation of hash values. If V is
+   larger and the graph is sparse, a non-default hash table may provide space
+   advantages.
 */
 
 #ifndef TSP_H  
@@ -56,8 +61,8 @@ typedef struct{
    Returns 0 if a tour exists, otherwise returns 1.
 
    tht:  size of hash key is sizeof(size_t) * 
-         (1 + smallest # sizeof(size_t) size blocks s.t. 
-         # bits >= number of vertices)
+         (1 + smallest # sizeof(size_t) size blocks s.t.
+         # bits >= # vertices)
 */
 int tsp(const adj_lst_t *a,
 	uint64_t start,

@@ -18,9 +18,14 @@
    The hash table parameter specifies a hash table used for set hashing
    operations, and enables the optimization of the associated space and time
    resources by choice of a hash table and its load factor upper bound.
+   If NULL is passed as a hash table parameter value, a default hash table
+   is used, which contains an array with a count that is equal to n * 2^n,
+   where n is the number of vertices in the graph.   
 
-   TODO
-   - default hash table for dense graphs with a small # vertices
+   If E >> V and V is < sizeof(size_t) * 8, a default hash table may provide
+   speed advantages by avoiding the computation of hash values. If V is
+   larger and the graph is sparse, a non-default hash table may provide space
+   advantages.
 */
 
 #include <stdio.h>
@@ -38,6 +43,19 @@ typedef enum{
 } boolean_t;
 
 typedef struct{
+  size_t num_vts;
+} context_t;
+
+typedef struct{
+  size_t key_size;
+  size_t elt_size;
+  size_t num_vts;
+  boolean_t *key_present;
+  void *elts;
+  void (*free_elt)(void *);
+} ht_def_t;
+
+typedef struct{
   size_t ix; //index of the set element with a single set bit
   size_t bit; //set element with a single set bit
 } ibit_t;
@@ -50,6 +68,17 @@ static void set_init(ibit_t *ibit, size_t n);
 static size_t *set_member(const ibit_t *ibit, const size_t * set);
 static void set_union(const ibit_t *ibit, size_t * set);
 
+//default hash table operations
+static void ht_def_init(ht_def_t *ht,
+			size_t key_size,
+			size_t elt_size,
+			void (*free_elt)(void *),
+			void *context);
+static void ht_def_insert(ht_def_t *ht, const size_t *key,const void *elt);
+static void *ht_def_search(const ht_def_t *ht, const size_t *key);
+static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt);
+static void ht_def_free(ht_def_t *ht);
+
 //auxiliary functions
 static void build_next(const adj_lst_t *a,
 		       stack_t *prev_s,
@@ -57,8 +86,12 @@ static void build_next(const adj_lst_t *a,
 		       tsp_ht_t *tht,
 		       void (*add_wt)(void *, const void *, const void *),
 		       int (*cmp_wt)(const void *, const void *));
+static size_t pow_two(size_t k);
+
+//functions for computing pointers
 static size_t *vt_ptr(const size_t *vts, size_t i);
 static void *wt_ptr(const void *wts, size_t i, size_t wt_size);
+static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 
 /**
    Copies to the block pointed to by dist the shortest tour length from 
@@ -78,6 +111,9 @@ int tsp(const adj_lst_t *a,
   void *sum_wt = NULL;
   boolean_t final_dist_updated = FALSE;
   stack_t prev_s, next_s;
+  ht_def_t ht_def;
+  context_t context;
+  tsp_ht_t tht_def, *thtp = tht;
   set_count = a->num_vts / SET_ELT_BIT_COUNT;
   if (a->num_vts % SET_ELT_BIT_COUNT){
     set_count++;
@@ -90,17 +126,28 @@ int tsp(const adj_lst_t *a,
   memset(dist, 0, wt_size);
   stack_init(&prev_s, 1, set_size, NULL);
   stack_push(&prev_s, prev_set);
-  tht->init(tht->ht, set_size, wt_size, NULL, tht->context);
-  tht->insert(tht->ht, prev_set, dist);
+  if (thtp == NULL){
+    context.num_vts = a->num_vts;
+    tht_def.ht = &ht_def;
+    tht_def.context = &context;
+    tht_def.init = (tsp_ht_init)ht_def_init;
+    tht_def.insert = (tsp_ht_insert)ht_def_insert;
+    tht_def.search = (tsp_ht_search)ht_def_search;
+    tht_def.remove = (tsp_ht_remove)ht_def_remove;
+    tht_def.free = (tsp_ht_free)ht_def_free;
+    thtp = &tht_def;
+  }
+  thtp->init(thtp->ht, set_size, wt_size, NULL, thtp->context);
+  thtp->insert(thtp->ht, prev_set, dist);
   for (size_t i = 0; i < a->num_vts - 1; i++){
     stack_init(&next_s, 1, set_size, NULL);
-    build_next(a, &prev_s, &next_s, tht, add_wt, cmp_wt);
+    build_next(a, &prev_s, &next_s, thtp, add_wt, cmp_wt);
     stack_free(&prev_s);
     prev_s = next_s;
     if (prev_s.num_elts == 0){
       //no progress made
       stack_free(&prev_s);
-      tht->free(tht->ht);
+      thtp->free(thtp->ht);
       free(prev_set);
       free(sum_wt);
       prev_set = NULL;
@@ -116,7 +163,7 @@ int tsp(const adj_lst_t *a,
       v = *vt_ptr(a->vts[u]->elts, i);
       if (v == start){
 	add_wt(sum_wt,
-	       tht->search(tht->ht, prev_set),
+	       thtp->search(thtp->ht, prev_set),
 	       wt_ptr(a->wts[u]->elts, i, wt_size));
 	if (!final_dist_updated){
 	  memcpy(dist, sum_wt, wt_size);
@@ -128,9 +175,10 @@ int tsp(const adj_lst_t *a,
     }
   }
   stack_free(&prev_s);
-  tht->free(tht->ht);
+  thtp->free(thtp->ht);
   free(prev_set);
   free(sum_wt);
+  thtp = NULL;
   prev_set = NULL;
   sum_wt = NULL;
   if (!final_dist_updated && a->num_vts > 1) return 1;
@@ -218,6 +266,73 @@ static void set_union(const ibit_t *ibit, size_t * set){
 }
 
 /**
+   Default hash table operations. The number of vertices in a graph must
+   be less than SET_ELT_BIT_COUNT.
+*/
+
+static void ht_def_init(ht_def_t *ht,
+			size_t key_size,
+			size_t elt_size,
+			void (*free_elt)(void *),
+			void *context){
+  context_t *c = context;
+  ht->key_size = key_size;
+  ht->elt_size = elt_size;
+  ht->num_vts = c->num_vts;
+  ht->key_present = calloc_perror(c->num_vts * pow_two(c->num_vts),
+				  sizeof(boolean_t));
+  ht->elts = malloc_perror(c->num_vts * pow_two(c->num_vts) * elt_size);
+  ht->free_elt = free_elt;
+}
+
+static void ht_def_insert(ht_def_t *ht, const size_t *key, const void *elt){
+  size_t ix = key[0] + ht->num_vts * key[1];
+  ht->key_present[ix] = TRUE;
+  memcpy(elt_ptr(ht->elts, ix, ht->elt_size),
+	 elt,
+	 ht->elt_size);
+}
+
+static void *ht_def_search(const ht_def_t *ht, const size_t *key){
+  size_t ix = key[0] + ht->num_vts * key[1];
+  if (ht->key_present[ix]){
+    return elt_ptr(ht->elts, ix, ht->elt_size);
+  }else{
+    return NULL;
+  }
+}
+
+static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt){
+  size_t ix = key[0] + ht->num_vts * key[1];
+  ht->key_present[ix] = FALSE;
+  memcpy(elt,
+	 elt_ptr(ht->elts, ix, ht->elt_size),
+	 ht->elt_size);
+}
+
+static void ht_def_free(ht_def_t *ht){
+  if (ht->free_elt != NULL){
+    for (size_t i = 0; i < ht->num_vts * pow_two(ht->num_vts); i++){
+      if (ht->key_present[i]){
+	ht->free_elt(elt_ptr(ht->elts, i, ht->elt_size));
+      }
+    }
+  }
+  free(ht->key_present);
+  free(ht->elts);
+  ht->key_present = NULL;
+  ht->elts = NULL;
+}
+
+/**
+   Returns the kth power of 2, where 0 <= k < SET_ELT_BIT_COUNT.
+*/
+static size_t pow_two(size_t k){
+  size_t ret = 1;
+  return ret << k;
+}
+
+/**
    Computes a pointer to an entry in an array of vertices.
 */
 static size_t *vt_ptr(const size_t *vts, size_t i){
@@ -229,4 +344,12 @@ static size_t *vt_ptr(const size_t *vts, size_t i){
 */
 static void *wt_ptr(const void *wts, size_t i, size_t wt_size){
   return (void *)((char *)wts + i * wt_size);
+}
+
+/**
+   Computes a pointer to an entry in the array of elements in a default hash
+   table.
+*/
+static void *elt_ptr(const void *elts, size_t i, size_t elt_size){
+  return (void *)((char *)elts + i * elt_size);
 }

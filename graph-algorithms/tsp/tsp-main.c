@@ -74,7 +74,7 @@ int cmp_uint64(const void *a, const void *b){
   }
 }
 
-static void rdc_key_2blocks(void *t, const void *s){
+void rdc_key_2blocks(void *t, const void *s){
   size_t r = 0;
   size_t *s_arr = (size_t *)s;
   for(size_t i = 0; i < 2; i++){
@@ -83,7 +83,7 @@ static void rdc_key_2blocks(void *t, const void *s){
   *(size_t *)t = r;
 }
 
-static void rdc_key_3blocks(void *t, const void *s){
+void rdc_key_3blocks(void *t, const void *s){
   size_t r = 0;
   size_t *s_arr = (size_t *)s;
   for(size_t i = 0; i < 3; i++){
@@ -126,6 +126,17 @@ void ht_mul_uint64_init_helper(ht_mul_uint64_t *ht,
 		     c->alpha,
 		     c->rdc_key,
 		     free_elt);
+}
+
+void run_def_uint64_tsp(const adj_lst_t *a){
+  int ret = -1;
+  uint64_t dist;
+  for (uint64_t i = 0; i < a->num_vts; i++){
+    ret = tsp(a, i, &dist, NULL, add_uint64, cmp_uint64);
+    printf("tsp ret: %d, tour length with %lu as start: ", ret, i);
+    print_uint64_arr(&dist, 1);
+  }
+  printf("\n");
 }
 
 void run_div_uint64_tsp(const adj_lst_t *a){
@@ -187,6 +198,7 @@ void run_uint64_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_uint64_elts);
+  run_def_uint64_tsp(&a);
   run_div_uint64_tsp(&a);
   run_mul_uint64_tsp(&a);
   adj_lst_free(&a);
@@ -199,6 +211,7 @@ void run_uint64_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_uint64_elts);
+  run_def_uint64_tsp(&a);
   run_div_uint64_tsp(&a);
   run_mul_uint64_tsp(&a);
   adj_lst_free(&a);
@@ -246,6 +259,17 @@ int cmp_double(const void *a, const void *b){
   }else{
     return 0;
   } 
+}
+
+void run_def_double_tsp(const adj_lst_t *a){
+  int ret = -1;
+  double dist;
+  for (uint64_t i = 0; i < a->num_vts; i++){
+    ret = tsp(a, i, &dist, NULL, add_double, cmp_double);
+    printf("tsp ret: %d, tour length with %lu as start: ", ret, i);
+    print_double_arr(&dist, 1);
+  }
+  printf("\n");
 }
 
 void run_div_double_tsp(const adj_lst_t *a){
@@ -307,6 +331,7 @@ void run_double_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_double_elts);
+  run_def_double_tsp(&a);
   run_div_double_tsp(&a);
   run_mul_double_tsp(&a);
   adj_lst_free(&a);
@@ -319,6 +344,7 @@ void run_double_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_double_elts);
+  run_def_double_tsp(&a);
   run_div_double_tsp(&a);
   run_mul_double_tsp(&a);
   adj_lst_free(&a);
@@ -411,13 +437,13 @@ void run_rand_uint64_test(){
   int num_vts_max = 21;
   int iter = 3;
   int res = 1;
-  int ret_div = -1, ret_mul = -1;
-  int num_p = 5;
+  int ret_def = -1, ret_div = -1, ret_mul = -1;
+  int num_p = 4;
   uint64_t n, rand_start[iter];
   uint64_t wt_l = 0, wt_h = pow_two(32) - 1;
-  uint64_t dist_div, dist_mul;
+  uint64_t dist_def, dist_div, dist_mul;
   float alpha_div = 1.0, alpha_mul = 0.4;
-  double p[5] = {1.000000, 0.250000, 0.062500, 0.015625, 0.000000};
+  double p[4] = {1.000000, 0.250000, 0.062500, 0.000000};
   adj_lst_t a;
   bern_arg_t b;
   ht_div_uint64_t ht_div;
@@ -425,7 +451,7 @@ void run_rand_uint64_test(){
   context_div_t context_div;
   context_mul_t context_mul;
   tsp_ht_t tht_div, tht_mul;
-  clock_t t_div, t_mul;
+  clock_t t_def, t_div, t_mul;
   context_div.alpha = alpha_div;
   tht_div.ht = &ht_div;
   tht_div.context = &context_div;
@@ -462,6 +488,16 @@ void run_rand_uint64_test(){
       for(int j = 0; j < iter; j++){
 	rand_start[j] = DRAND48() * (n - 1);
       }
+      t_def = clock();
+      for(int j = 0; j < iter; j++){
+	ret_def = tsp(&a,
+		      rand_start[j],
+		      &dist_def,
+		      NULL,
+		      add_uint64,
+		      cmp_uint64);
+      }
+      t_def = clock() - t_def;
       t_div = clock();
       for(int j = 0; j < iter; j++){
 	ret_div = tsp(&a,
@@ -483,18 +519,86 @@ void run_rand_uint64_test(){
       }
       t_mul = clock() - t_mul;
       if (n == 1){
+	res *= (dist_def == 0 && ret_def == 0);
 	res *= (dist_div == 0 && ret_div == 0);
 	res *= (dist_mul == 0 && ret_mul == 0);
       }else{
+	res *= (dist_def == n && ret_def == 0);
 	res *= (dist_div == n && ret_div == 0);
 	res *= (dist_mul == n && ret_mul == 0);
       }
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
 	     a.num_vts, a.num_es);
-      printf("\t\t\ttsp ht_div_uint64 ave runtime:  %.8f seconds\n"
+      printf("\t\t\ttsp default ht ave runtime:     %.8f seconds\n"
+	     "\t\t\ttsp ht_div_uint64 ave runtime:  %.8f seconds\n"
 	     "\t\t\ttsp ht_mul_uint64 ave runtime:  %.8f seconds\n",
+	     (float)t_def / iter / CLOCKS_PER_SEC,
 	     (float)t_div / iter / CLOCKS_PER_SEC,
 	     (float)t_mul / iter / CLOCKS_PER_SEC);
+      printf("\t\t\tcorrectness:                    ");
+      print_test_result(res);
+      res = 1;
+      adj_lst_free(&a);
+    }
+  }
+}
+
+/**
+   Test tsp with a default hash table on directed graphs with >= 20
+   vertices and random uint64_t non-tour weights and a known tour.
+*/
+void run_def_rand_uint64_test(){
+  int num_vts_start = 20, num_vts_end = 25;
+  int iter = 3;
+  int res = 1;
+  int ret_def = -1;
+  int num_p = 1;
+  uint64_t n, rand_start[iter];
+  uint64_t wt_l = 0, wt_h = pow_two(32) - 1;
+  uint64_t dist_def;
+  double p[1] = {1.000000};
+  adj_lst_t a;
+  bern_arg_t b;
+  clock_t t_def;
+  printf("Run a tsp test on directed graphs with >= %d vertices and "
+	 "random uint64_t non-tour weights in [%lu, %lu]\n",
+	 num_vts_start, wt_l, wt_h);
+  fflush(stdout);
+  for (int pi = 0; pi < num_p; pi++){
+    b.p = p[pi];
+    printf("\tP[an edge is in a graph] = %.4f\n", p[pi]);
+    for (int i = num_vts_start; i < num_vts_end; i++){
+      n = i;
+      adj_lst_rand_dir_wts(&a,
+			   n,
+			   sizeof(uint64_t),
+			   wt_l,
+			   wt_h,
+			   bern,
+			   &b,
+			   add_dir_uint64_edge);
+      for(int j = 0; j < iter; j++){
+	rand_start[j] = DRAND48() * (n - 1);
+      }
+      t_def = clock();
+      for(int j = 0; j < iter; j++){
+	ret_def = tsp(&a,
+		      rand_start[j],
+		      &dist_def,
+		      NULL,
+		      add_uint64,
+		      cmp_uint64);
+      }
+      t_def = clock() - t_def;
+      if (n == 1){
+	res *= (dist_def == 0 && ret_def == 0);
+      }else{
+	res *= (dist_def == n && ret_def == 0);
+      }
+      printf("\t\tvertices: %lu, # of directed edges: %lu\n",
+	     a.num_vts, a.num_es);
+      printf("\t\t\ttsp default ht ave runtime:     %.8f seconds\n",
+	     (float)t_def / iter / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness:                    ");
       print_test_result(res);
       res = 1;
@@ -678,6 +782,7 @@ int main(){
   run_uint64_graph_test();
   run_double_graph_test();
   run_rand_uint64_test();
+  run_def_rand_uint64_test();
   run_sparse_rand_uint64_test();
   return 0;
 }
