@@ -1,7 +1,7 @@
 /**
    tsp-main.c
 
-   Tests of a an exact solution of TSP without vertex revisiting
+   Tests of an exact solution of TSP without vertex revisiting
    across i) division and multiplication-based hash tables, and ii)
    weight types.
 */
@@ -21,8 +21,6 @@
 #define RGENS_SEED() do{srandom(time(0)); srand48(random());}while (0)
 #define RANDOM() (random())
 #define DRAND48() (drand48())
-
-static const size_t NR = SIZE_MAX; //not reached as index
 
 uint64_t pow_two(int k);
 void print_uint64_elts(const stack_t *s);
@@ -192,7 +190,7 @@ void run_uint64_graph_test(){
   adj_lst_t a;
   graph_uint64_wts_init(&g);
   printf("Running a test on a uint64_t graph with a \n"
-	 "i) default hash table (index array) \n"
+	 "i) default hash table \n"
 	 "ii) ht_div_uint64_t hash table \n"
 	 "iii) ht_mul_uint64_t hash table \n\n");
   adj_lst_init(&a, &g);
@@ -205,7 +203,7 @@ void run_uint64_graph_test(){
   graph_free(&g);
   graph_uint64_single_vt_init(&g);
   printf("Running a test on a uint64_t graph with a single vertex, with a \n"
-	 "i) default hash table (index array) \n"
+	 "i) default hash table \n"
 	 "ii) ht_div_uint64_t hash table \n"
 	 "iii) ht_mul_uint64_t hash table \n\n");
   adj_lst_init(&a, &g);
@@ -325,7 +323,7 @@ void run_double_graph_test(){
   adj_lst_t a;
   graph_double_wts_init(&g);
   printf("Running a test on a double graph with a \n"
-	 "i) default hash table (index array) \n"
+	 "i) default hash table \n"
 	 "ii) ht_div_uint64_t hash table \n"
 	 "iii) ht_mul_uint64_t hash table \n\n");
   adj_lst_init(&a, &g);
@@ -338,7 +336,7 @@ void run_double_graph_test(){
   graph_free(&g);
   graph_double_single_vt_init(&g);
   printf("Running a test on a double graph with a single vertex, with a \n"
-	 "i) default hash table (index array) \n"
+	 "i) default hash table \n"
 	 "ii) ht_div_uint64_t hash table \n"
 	 "iii) ht_mul_uint64_t hash table \n\n");
   adj_lst_init(&a, &g);
@@ -707,8 +705,6 @@ void run_sparse_rand_uint64_test(){
   }
 }
 
-/* Helper functions */
-
 /**
    Returns the kth power of 2, where 0 <= k <= 63.
 */
@@ -753,11 +749,7 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *)){
 
 void print_uint64_arr(const uint64_t *arr, uint64_t n){
   for (uint64_t i = 0; i < n; i++){
-    if (arr[i] == NR){
-      printf("NR ");
-    }else{
-      printf("%lu ", arr[i]);
-    }
+    printf("%lu ", arr[i]);
   }
   printf("\n");
 } 
