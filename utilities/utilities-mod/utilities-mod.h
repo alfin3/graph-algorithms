@@ -1,8 +1,7 @@
 /**
    utilities-mod.h
 
-   Declarations of accessible utility functions in the area of
-   modular arithmetic.
+   Declarations of accessible utility functions in modular arithmetic.
 */
 
 #ifndef UTILITIES_MOD_H  

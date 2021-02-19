@@ -1,7 +1,7 @@
 /**
    utilities-mod.c
 
-   Utility functions across in the area of modular arithmetic.
+   Utility functions in modular arithmetic.
 */
 
 #include <stdio.h>
