@@ -181,7 +181,7 @@ void run_mem_mod_test(){
   print_test_result(res);
   res = 1;
   printf("Run mem_mod on large memory blocks \n");
-  n = DRAND48() * upper;
+  n = 1 + DRAND48() * upper;
   for (int i = 10; i <= 20; i += 10){
     size = pow_two(i); //KB, MB
     printf("\tmemory block size: %lu bytes \n", size);
@@ -198,6 +198,82 @@ void run_mem_mod_test(){
     free(block);
     block = NULL;
   } 
+}
+
+/**
+   Tests fast_mem_mod. A little-endian machine is assumed for test purposes.
+*/
+void run_fast_mem_mod_test(){
+  int res = 1;
+  unsigned char *block = NULL;
+  uint64_t trials = 10000;
+  uint64_t upper = (pow_two(63) - 1) + pow_two(63);
+  uint64_t num, n, mod_n;
+  uint64_t size;
+  clock_t t;
+  size = sizeof(uint64_t);
+  printf("Run fast_mem_mod in a random test, size = %lu bytes  --> ", size);
+  for (uint64_t i = 0; i < trials; i++){
+    num = DRAND48() * upper;
+    n = 1 + DRAND48() * upper;
+    res *= (num % n == fast_mem_mod(&num, size, n));
+  }
+  print_test_result(res);
+  res = 1;
+  printf("Run fast_mem_mod on large memory blocks, n <= 2^32 - 1 \n");
+  upper = pow_two(32) - 1;
+  n = 1 + DRAND48() * upper;
+  for (int i = 10; i <= 30; i += 10){
+    size = pow_two(i); //KB, MB, GB
+    printf("\tmemory block size: %lu bytes \n", size);
+    block = calloc_perror(size, 1);
+    block[size - 1] = (unsigned char)pow_two(7);
+    t = clock();
+    mod_n = fast_mem_mod(block, size, n);
+    t = clock() - t;
+    printf("\truntime: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
+    res = (mod_n == pow_mod(2, pow_two(i) * 8 - 1, n));
+    printf("\tcorrectness: block = %lu (mod %lu)  --> ", mod_n, n);
+    print_test_result(res);
+    res = 1;
+    free(block);
+    block = NULL;
+  }
+  printf("Run fast_mem_mod on large memory blocks, "
+	 "2^32 - 1 < n <= 2^64 - 1 \n");
+  upper = (pow_two(63) - 1) + pow_two(63);
+  n = pow_two(32) + DRAND48() * ((upper - pow_two(32)) + 1);
+  for (int i = 10; i <= 30; i += 10){
+    size = pow_two(i); //KB, MB, GB
+    printf("\tmemory block size: %lu bytes \n", size);
+    block = calloc_perror(size, 1);
+    block[size - 1] = (unsigned char)pow_two(7);
+    t = clock();
+    mod_n = fast_mem_mod(block, size, n);
+    t = clock() - t;
+    printf("\truntime: %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
+    res = (mod_n == pow_mod(2, pow_two(i) * 8 - 1, n));
+    printf("\tcorrectness: block = %lu (mod %lu)  --> ", mod_n, n);
+    print_test_result(res);
+    res = 1;
+    free(block);
+    block = NULL;
+  } 
+  printf("Run fast_mem_mod and mem_mod comparison on random blocks "
+	 "of random size --> ");
+  fflush(stdout);
+  for (uint64_t i = 0; i < trials; i++){
+    size = 1 + DRAND48() * pow_two(10);
+    block = calloc_perror(size, 1);
+    n = 1 + DRAND48() * upper;
+    for (uint64_t i = 0; i < size; i++){
+      block[i] = DRAND48() * pow_two(8);
+    }  
+    res *= (fast_mem_mod(block, size, n) == mem_mod(block, size, n));
+    free(block);
+    block = NULL;
+  }
+  print_test_result(res);
 }
 
 /**
@@ -373,6 +449,7 @@ int main(){
   run_mul_mod_test();
   run_sum_mod_test();
   run_mem_mod_test();
+  run_fast_mem_mod_test();
   run_mul_mod_pow_two_test();
   run_mul_ext_test();
   run_represent_uint_test();

@@ -99,13 +99,48 @@ size_t mem_mod(const void *s, size_t size, size_t n){
   size_t ptwo = 1, ptwo_inc;
   size_t ret = 0;
   if (n == 1) return 0;
-  ptwo_inc = pow_two(BYTE_BIT_COUNT) % n;
+  ptwo_inc = mul_mod(pow_two(BYTE_BIT_COUNT - 1), 2, n);
   for (size_t i = 0; i < size; i++){
     prod = mul_mod(ptwo, *ptr, n);
     ret = sum_mod(ret, prod, n);
     ptwo = mul_mod(ptwo, ptwo_inc, n);
     ptr++;
   }
+  return ret;
+}
+
+/**
+   Computes mod n of a memory block, treating the block in sizeof(size_t)-
+   byte increments in the little-endian order and inductively applying the
+   following relations:
+   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
+   a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
+   Given a little-endian machine, the return value is equal to the return
+   value of mem_mod.
+*/
+size_t fast_mem_mod(const void *s, size_t size, size_t n){
+  size_t *ptr = (size_t *)s;
+  size_t step_size = sizeof(size_t);
+  size_t res_size = 0;
+  size_t prod;
+  size_t ptwo = 1, ptwo_inc = 1;
+  size_t ret = 0;
+  if (n == 1) return 0;
+  if (size != step_size){
+    res_size = size % step_size;
+  }
+  if (size > step_size){
+    ptwo_inc = mul_mod(pow_two(FULL_BIT_COUNT - 1), 2, n);
+  } 
+  for (size_t i = 0; i < size - res_size; i += step_size){
+    prod = mul_mod(ptwo, *ptr, n);
+    ret = sum_mod(ret, prod, n);
+    ptwo = mul_mod(ptwo, ptwo_inc, n);
+    ptr++;
+  }
+  ptr = (size_t *)((char *)s + size - res_size);
+  prod = mul_mod(ptwo, mem_mod(ptr, res_size, n), n);
+  ret = sum_mod(ret, prod, n);
   return ret;
 }
 
