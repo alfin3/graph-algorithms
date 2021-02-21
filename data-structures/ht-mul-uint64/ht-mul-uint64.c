@@ -31,7 +31,7 @@
 #include "ht-mul-uint64.h"
 #include "dll.h"
 #include "utilities-mem.h"
-#include "utilities-rand-mod.h"
+#include "utilities-mod.h"
 
 static const uint64_t FIRST_PRIME = 15769474759331449193U; //2^63 < p < 2^64
 static const uint64_t SECOND_PRIME = 18292551137159601919U; //2^63 < p < 2^64
@@ -99,8 +99,8 @@ void ht_mul_uint64_init(ht_mul_uint64_t *ht,
   ht->log_count = 10;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
-  ht->count = pow_two_uint64(ht->log_count);
-  ht->max_count = pow_two_uint64(63);
+  ht->count = pow_two(ht->log_count);
+  ht->max_count = pow_two(63);
   ht->max_num_probes = 1; //at least one probe
   ht->num_elts = 0;
   ht->num_placeholders = 0;
@@ -291,7 +291,7 @@ static uint64_t convert_std_key(const ht_mul_uint64_t *ht, const void *key){
    a probe distance.
 */
 static uint64_t hash(uint64_t prime, uint64_t std_key){
-  return mul_mod_pow_two_64(prime, std_key);
+  return mul_mod_pow_two(prime, std_key);
 }
 
 /**
@@ -315,7 +315,7 @@ static uint64_t adjust_hash_dist(uint64_t dist){
 static uint64_t probe_dbl_hash(const ht_mul_uint64_t *ht,
 			       uint64_t dist,
 			       uint64_t ix){
-  return sum_mod_uint64(dist, ix, ht->count);
+  return sum_mod(dist, ix, ht->count);
 }
 
 /**

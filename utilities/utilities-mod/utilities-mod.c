@@ -95,13 +95,16 @@ size_t sum_mod(size_t a, size_t b, size_t n){
 */
 size_t mem_mod(const void *s, size_t size, size_t n){
   unsigned char *ptr = (unsigned char *)s;
-  size_t prod;
+  size_t val, prod;
   size_t ptwo = 1, ptwo_inc;
   size_t ret = 0;
   if (n == 1) return 0;
   ptwo_inc = mul_mod(pow_two(BYTE_BIT_COUNT - 1), 2, n);
   for (size_t i = 0; i < size; i++){
-    prod = mul_mod(ptwo, *ptr, n);
+    val = *ptr;
+    //comparison for speed up across a large memory block
+    if (val >= n) val = val % n;
+    prod = mul_mod(ptwo, val, n);
     ret = sum_mod(ret, prod, n);
     ptwo = mul_mod(ptwo, ptwo_inc, n);
     ptr++;
@@ -122,7 +125,7 @@ size_t fast_mem_mod(const void *s, size_t size, size_t n){
   size_t *ptr = (size_t *)s;
   size_t step_size = sizeof(size_t);
   size_t res_size = 0;
-  size_t prod;
+  size_t val, prod;
   size_t ptwo = 1, ptwo_inc = 1;
   size_t ret = 0;
   if (n == 1) return 0;
@@ -133,7 +136,10 @@ size_t fast_mem_mod(const void *s, size_t size, size_t n){
     ptwo_inc = mul_mod(pow_two(FULL_BIT_COUNT - 1), 2, n);
   } 
   for (size_t i = 0; i < size - res_size; i += step_size){
-    prod = mul_mod(ptwo, *ptr, n);
+    val = *ptr;
+    //comparison for speed across a large memory block
+    if (val >= n) val = val % n;
+    prod = mul_mod(ptwo, val, n);
     ret = sum_mod(ret, prod, n);
     ptwo = mul_mod(ptwo, ptwo_inc, n);
     ptr++;

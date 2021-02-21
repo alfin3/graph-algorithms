@@ -18,7 +18,7 @@
 #include "ht-mul-uint64.h"
 #include "dll.h"
 #include "utilities-mem.h"
-#include "utilities-rand-mod.h"
+#include "utilities-mod.h"
 
 #define RGENS_SEED() do{srandom(time(0)); srand48(random());}while (0)
 #define RANDOM() (random())
@@ -56,7 +56,7 @@ void rdc_32(void *t, const void *s){
   uint64_t r = 0;
   uint64_t n = 17858760364399553281U;
   for (int i = 0; i < 32; i += 8){
-    r = sum_mod_uint64(r, *(uint64_t *)((char *)s + i), n);
+    r = sum_mod(r, *(uint64_t *)((char *)s + i), n);
   }
   *(uint64_t *)t = r;
 }
@@ -65,7 +65,7 @@ void rdc_256(void *t, const void *s){
   uint64_t r = 0;
   uint64_t n = 17069408534778722687U;
   for (int i = 0; i < 256; i += 8){
-    r = sum_mod_uint64(r, *(uint64_t *)((char *)s + i), n);
+    r = sum_mod(r, *(uint64_t *)((char *)s + i), n);
   }
   *(uint64_t *)t = r;
 }
@@ -531,7 +531,7 @@ void run_corner_cases_test(){
   uint8_t key_a, key_b;
   uint64_t elt;
   uint64_t num_inserts = 100;
-  uint64_t ht_count = pow_two_uint64(10);
+  uint64_t ht_count = pow_two(10);
   float alpha = 0.001;
   ht_mul_uint64_t ht;
   ht_mul_uint64_init(&ht,

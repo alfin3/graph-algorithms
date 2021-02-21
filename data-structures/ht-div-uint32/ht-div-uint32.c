@@ -24,7 +24,7 @@
 #include "ht-div-uint32.h"
 #include "dll.h"
 #include "utilities-mem.h"
-#include "utilities-rand-mod.h"
+#include "utilities-mod.h"
 
 /**
    An array of primes in the increasing order, approximately doubling in 
@@ -175,8 +175,7 @@ void ht_div_uint32_free(ht_div_uint32_t *ht){
    Maps a hash key to a slot index in a hash table with a division method. 
 */
 static uint32_t hash(const ht_div_uint32_t *ht, const void *key){
-  //TODO: change fast_mem_mod to work on 32bit systems
-  return fast_mem_mod_uint32(key, (uint64_t)ht->key_size, ht->count);
+  return fast_mem_mod(key, ht->key_size, ht->count);
 }
 
 /**

@@ -25,7 +25,7 @@
 #include "ht-div-uint64.h"
 #include "dll.h"
 #include "utilities-mem.h"
-#include "utilities-rand-mod.h"
+#include "utilities-mod.h"
 
 /**
    An array of primes in the increasing order, approximately doubling in 
@@ -60,7 +60,6 @@ static const uint64_t PRIMES[54] = {1543, 3119,
 				    431794910914467367, 841413987972987841,
 				    1755714234418853843, 3358355678469146183,
 				    6884922145916737697, 15769474759331449193U};
-static const int PRIMES_UINT32_COUNT = 22;
 static const int PRIMES_COUNT = 54;
 
 static uint64_t hash(const ht_div_uint64_t *ht, const void *key);
@@ -197,16 +196,7 @@ void ht_div_uint64_free(ht_div_uint64_t *ht){
    Maps a hash key to a slot index in a hash table with a division method. 
 */
 static uint64_t hash(const ht_div_uint64_t *ht, const void *key){
-  if (ht->count_ix < PRIMES_UINT32_COUNT){
-    //fast_mem_mod_uint32 is faster than fast_mem_mod_uint64
-    return (uint64_t)fast_mem_mod_uint32(key,
-					 (uint64_t)ht->key_size,
-					 (uint32_t)ht->count);
-  }else{
-    return fast_mem_mod_uint64(key,
-			       (uint64_t)ht->key_size,
-			       ht->count);
-  } 
+  return fast_mem_mod(key, ht->key_size, ht->count); 
 }
 
 /**

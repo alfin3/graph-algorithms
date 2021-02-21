@@ -22,6 +22,7 @@
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
+#include "utilities-mod.h"
 
 #define RGENS_SEED() do{srandom(time(0)); srand48(random());}while (0)
 #define RANDOM() (random())
@@ -29,7 +30,6 @@
 
 static const size_t NR = SIZE_MAX; //not reached as index
 
-uint64_t pow_two(int k);
 void print_uint64_elts(const stack_t *s);
 void print_double_elts(const stack_t *s);
 void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *));
@@ -766,16 +766,6 @@ void run_rand_uint64_test(){
       prev = NULL;
     }
   }
-}
-
-/* Helper functions */
-
-/**
-   Returns the kth power of 2, where 0 <= k <= 63.
-*/
-uint64_t pow_two(int k){
-  uint64_t ret = 1;
-  return ret << k;
 }
 
 /**

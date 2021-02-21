@@ -16,13 +16,12 @@
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
-#include "utilities-rand-mod.h"
+#include "utilities-mod.h"
 
 #define RGENS_SEED() do{srandom(time(0)); srand48(random());}while (0)
 #define RANDOM() (random())
 #define DRAND48() (drand48())
 
-uint64_t pow_two(int k);
 void print_uint64_elts(const stack_t *s);
 void print_double_elts(const stack_t *s);
 void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *));
@@ -76,7 +75,7 @@ void rdc_key_2blocks(void *t, const void *s){
   size_t r = 0;
   size_t *s_arr = (size_t *)s;
   for(size_t i = 0; i < 2; i++){
-    r = sum_mod_uint64(r, s_arr[i], SIZE_MAX);
+    r = sum_mod(r, s_arr[i], SIZE_MAX);
   }
   *(size_t *)t = r;
 }
@@ -85,7 +84,7 @@ void rdc_key_3blocks(void *t, const void *s){
   size_t r = 0;
   size_t *s_arr = (size_t *)s;
   for(size_t i = 0; i < 3; i++){
-    r = sum_mod_uint64(r, s_arr[i], SIZE_MAX);
+    r = sum_mod(r, s_arr[i], SIZE_MAX);
   }
   *(size_t *)t = r;
 }
@@ -703,14 +702,6 @@ void run_sparse_rand_uint64_test(){
       adj_lst_free(&a);
     }
   }
-}
-
-/**
-   Returns the kth power of 2, where 0 <= k <= 63.
-*/
-uint64_t pow_two(int k){
-  uint64_t ret = 1;
-  return ret << k;
 }
 
 /**
