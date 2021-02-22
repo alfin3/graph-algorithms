@@ -56,4 +56,4 @@ The implementation provides i) a set of parameters for setting the constant base
 
 `./utilities/utilities-mod/`
 
-Utility functions in the area of modular arithmetic generalized to size_t. mem_mod computes the modulo operation on a memory block by treating each byte of the block in the little-endian order and inductively applying modular arithmetic relations, without requiring a little-endian machine. fast_mem_mod treats a memory block in sizeof(size_t)-byte increments in the little-endian order. Given a little-endian machine, the result is equal to the return value of mem_mod.
+Utility functions in the area of modular arithmetic generalized to size_t. mem_mod computes the modulo operation on a memory block by treating each byte of the block in the little-endian order and inductively applying modular arithmetic relations, without requiring a little-endian machine. fast_mem_mod treats a memory block in sizeof(size_t)-byte increments. Given a little-endian machine, the result is equal to the return value of mem_mod.
