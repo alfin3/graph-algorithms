@@ -54,8 +54,6 @@ A merge sort algorithm with parallel sorting and parallel merging for sorting ar
 
 The implementation provides i) a set of parameters for setting the constant base case upper bounds for switching from parallel sorting to serial sorting and from parallel merging to serial merging during recursion, and ii) a macro for setting the constant upper bound for the number of recursive calls placed on the stack of a thread across sorting and merging operations, thereby enabling the optimization of the parallelism and concurrency-associated overhead across input ranges and hardware settings. On a 4-core machine, the optimization of the base case upper bound parameters, demonstrated in the accompanying tests, resulted in a speedup of approximately 2.6X in comparison to serial qsort (stdlib.h) on arrays of 10M random integer or double elements.
 
-`./utilities/utilities-rand-mod/`
+`./utilities/utilities-mod/`
 
-random_range_{uint32, uint64} demonstrates the construction of uniformly random numbers exceeding the range of a random number generator by conditioning the construction process with a Bernoulli random variable on the lowest bit in the high bits outside the range of the generator.
-
-mem_mod_{uint32, uint64} computes the modulo operation on a memory block by treating each byte of the block in the little-endian order and inductively applying modular arithmetic relations, without requiring a little-endian machine. fast_mem_mod_{uint32, uint64} treats a memory block in 8-byte increments in the little-endian order. Given a little-endian machine, the result is equal to the return value of mem_mod_{uint32, uint64}.
+Utility functions in the area of modular arithmetic generalized to size_t. mem_mod computes the modulo operation on a memory block by treating each byte of the block in the little-endian order and inductively applying modular arithmetic relations, without requiring a little-endian machine. fast_mem_mod treats a memory block in sizeof(size_t)-byte increments in the little-endian order. Given a little-endian machine, the result is equal to the return value of mem_mod.
