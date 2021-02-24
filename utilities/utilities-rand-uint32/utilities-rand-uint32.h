@@ -3,6 +3,10 @@
 
    Declarations of accessible randomness utility functions.
 
+   A randomized approach is used to generate random numbers by exponentially
+   decreasing the probability of not finding a number in an iteration under
+   the assumption of generator uniformity.
+
    The implementation is based on random() that returns a random number from
    0 to RAND_MAX, where RAND_MAX is 2^31 - 1, with a large period of approx.
    16 * (2^31 - 1). The provided functions are seeded by seeding random() 

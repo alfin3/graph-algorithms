@@ -101,7 +101,6 @@ void run_random_uint32_test(){
   for (uint32_t i = 0; i < FULL_BIT_COUNT; i++){
     bit_masks[i] = 1 << i;
   }
-  
   printf("Run random_uint32 test\n");
   for (uint32_t ti = 0; ti < trials_count; ti++){
     printf("\t# trials = %u\n", trials[ti]);
