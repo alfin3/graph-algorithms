@@ -6,7 +6,8 @@
    A randomized approach is used to generate random numbers in a given range
    by exponentially decreasing the probability of not finding a number
    bounded by 0.5^n under the assumption of generator uniformity, where n is
-   the number of iterations.
+   the number of generated candidate numbers that is less or equal to 2 in
+   expectation.
 
    The implementation is based on random() that returns a random number from
    0 to RAND_MAX, where RAND_MAX is 2^31 - 1, with a large period of approx.

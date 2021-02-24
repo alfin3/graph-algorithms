@@ -26,13 +26,14 @@ void print_test_result(int res);
 */
 void run_random_range_uint32_test(){
   uint32_t trials = 10000000;
+  uint32_t mask = 1;
   uint32_t n, upper;
   uint32_t *bit_counts = NULL, *bit_masks = NULL;
   clock_t t, t_randr;
   bit_counts = calloc_perror(FULL_BIT_COUNT, sizeof(uint32_t));
   bit_masks = calloc_perror(FULL_BIT_COUNT, sizeof(uint32_t));
   for (uint32_t i = 0; i < FULL_BIT_COUNT; i++){
-    bit_masks[i] = 1 << i;
+    bit_masks[i] = mask << i;
   }
   printf("Run random_range_uint32 test, # trials = %u\n", trials);
   for (uint32_t i = 0; i < FULL_BIT_COUNT + 1; i++){
@@ -93,13 +94,14 @@ void run_random_uint32_test(){
 		       1000000,
 		       10000000,
 		       100000000};
+  uint32_t mask = 1;
   uint32_t n;
   uint32_t *bit_counts = NULL, *bit_masks = NULL;
   clock_t t, t_rand;
   bit_counts = calloc_perror(FULL_BIT_COUNT, sizeof(uint32_t));
   bit_masks = calloc_perror(FULL_BIT_COUNT, sizeof(uint32_t));
   for (uint32_t i = 0; i < FULL_BIT_COUNT; i++){
-    bit_masks[i] = 1 << i;
+    bit_masks[i] = mask << i;
   }
   printf("Run random_uint32 test\n");
   for (uint32_t ti = 0; ti < trials_count; ti++){

@@ -6,7 +6,8 @@
    A randomized approach is used to generate random numbers in a given range
    by exponentially decreasing the probability of not finding a number
    bounded by 0.5^n under the assumption of generator uniformity, where n is
-   the number of iterations.
+   the number of generated candidate numbers that is less or equal to 2 in
+   expectation.
 
    The implementation is based on random() that returns a random number from
    0 to RAND_MAX, where RAND_MAX is 2^31 - 1, with a large period of approx.
@@ -38,6 +39,9 @@ static void fprintf_stderr_exit(const char *s, int line);
 */
 uint32_t random_range_uint32(uint32_t n){
   uint32_t ret;
+  if (RAND_MAX_UINT32 != RAND_MAX_UINT32_TEST){
+    fprintf_stderr_exit("RAND_MAX value error", __LINE__);
+  }
   if (n <= RAND_MAX_UINT32 + 1){
     ret = random_gen_range(n);
   }else{
@@ -53,6 +57,9 @@ uint32_t random_range_uint32(uint32_t n){
    Returns a generator-uniform random uint32_t. 
 */
 uint32_t random_uint32(){
+  if (RAND_MAX_UINT32 != RAND_MAX_UINT32_TEST){
+    fprintf_stderr_exit("RAND_MAX value error", __LINE__);
+  }
   return random_mod_pow_two(FULL_BIT_COUNT);
 }
 
@@ -61,9 +68,6 @@ uint32_t random_uint32(){
 */
 static uint32_t random_mod_pow_two(uint32_t k){
   uint32_t n, ret;
-  if (RAND_MAX_UINT32 != RAND_MAX_UINT32_TEST){
-    fprintf_stderr_exit("RAND_MAX value error", __LINE__);
-  }
   ret = random();
   if (k < FULL_BIT_COUNT){
     ret = ret >> (FULL_BIT_COUNT - k - 1);
@@ -83,9 +87,6 @@ static uint32_t random_mod_pow_two(uint32_t k){
 */
 static uint32_t random_gen_range(uint32_t n){
   uint32_t rem, ret;
-  if (RAND_MAX_UINT32 != RAND_MAX_UINT32_TEST){
-    fprintf_stderr_exit("RAND_MAX value error", __LINE__);
-  }
   rem = RAND_MAX_UINT32 % n;
   ret =  random();
   if (rem < n - 1){
