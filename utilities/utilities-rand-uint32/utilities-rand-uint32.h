@@ -4,8 +4,9 @@
    Declarations of accessible randomness utility functions.
 
    A randomized approach is used to generate random numbers by exponentially
-   decreasing the probability of not finding a number in an iteration under
-   the assumption of generator uniformity.
+   decreasing the probability of not finding a number bounded by 0.5^n under
+   the assumption of generator uniformity, where n is the number of
+   iterations.
 
    The implementation is based on random() that returns a random number from
    0 to RAND_MAX, where RAND_MAX is 2^31 - 1, with a large period of approx.
