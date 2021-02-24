@@ -10,12 +10,13 @@
 #include <string.h>
 #include <time.h>
 #include "utilities-rand-uint32.h"
+#include "utilities-mem.h"
 #include "utilities-mod.h"
 
-#define RGENS_SEED() do{srandom(time(0)); srand48(random());}while (0)
+#define RGENS_SEED() do{srandom(time(0));}while (0)
 #define RANDOM() (random())
-#define DRAND48() (drand48())
 
+static const uint32_t BYTE_BIT_COUNT = 8;
 static const uint32_t FULL_BIT_COUNT = 8 * sizeof(uint32_t);
 
 void print_test_result(int res);
@@ -24,25 +25,30 @@ void print_test_result(int res);
    Tests random_range_uint32.
 */
 void run_random_range_uint32_test(){
-  int res = 1;
-  uint32_t ptwo_start = 1, ptwo_end = FULL_BIT_COUNT + 1;
-  uint32_t precision = 1000;
   uint32_t trials = 10000000;
-  uint32_t n, upper, threshold, counts[2];
-  clock_t t_rand, t_randr;
+  uint32_t n, upper;
+  uint32_t *bit_counts = NULL, *bit_masks = NULL;
+  clock_t t, t_randr;
+  bit_counts = calloc_perror(FULL_BIT_COUNT, sizeof(uint32_t));
+  bit_masks = calloc_perror(FULL_BIT_COUNT, sizeof(uint32_t));
+  for (uint32_t i = 0; i < FULL_BIT_COUNT; i++){
+    bit_masks[i] = 1 << i;
+  }
   printf("Run random_range_uint32 test, # trials = %u\n", trials);
-  for (uint32_t i = ptwo_start; i < ptwo_end; i++){
-    upper = (i == FULL_BIT_COUNT) ? 0xffffffff : pow_two(i);
-    threshold = pow_two(i - 1);
-    counts[0] = 0;
-    counts[1] = 0;
-    printf("\t[0, %u)\n", upper);
-    fflush(stdout);
-    t_rand = clock();
-    for (uint32_t i = 0; i < trials; i++){
-      n = random();
+  for (uint32_t i = 0; i < FULL_BIT_COUNT + 1; i++){
+    if (i == FULL_BIT_COUNT){
+      upper = 0xffffffff;
+      printf("\t[0, 2^%u - 1)\n", i);
+    }else{
+      upper = pow_two(i);
+      printf("\t[0, 2^%u)\n", i);
     }
-    t_rand = clock() - t_rand;
+    fflush(stdout);
+    t = clock();
+    for (uint32_t i = 0; i < trials; i++){
+      n = RANDOM();
+    }
+    t = clock() - t;
     t_randr = clock();
     for (uint32_t i = 0; i < trials; i++){
       n = random_range_uint32(upper);
@@ -50,32 +56,90 @@ void run_random_range_uint32_test(){
     t_randr = clock() - t_randr;
     for (uint32_t i = 0; i < trials; i++){
       n = random_range_uint32(upper);
-      if (n < threshold) counts[0]++;
-      if (n >= threshold && n < upper) counts[1]++;
+      for (uint32_t i = 0; i < FULL_BIT_COUNT; i++){
+	if (n & bit_masks[i]) bit_counts[i]++;
+      }
     }
-    res = (abs(counts[0] - counts[1]) < trials / precision &&
-	   counts[0] + counts[1] == trials);
     printf("\t\trandom:               %.8f seconds\n"
 	   "\t\trandom_range_uint32:  %.8f seconds\n",
-	   (float)t_rand / CLOCKS_PER_SEC,
+	   (float)t / CLOCKS_PER_SEC,
 	   (float)t_randr / CLOCKS_PER_SEC);
-    printf("\t\tcorrectness:          ");
-    print_test_result(res);
-    res = 1;
+    for (uint32_t i = 0; i < FULL_BIT_COUNT; i++){
+      if (i == 0){
+	printf("\t\tP[bit is set]:        ");
+      }else if (!(i % BYTE_BIT_COUNT)){
+	printf("\n\t\t                      ");
+      }	
+      printf("%.4f ", (float)bit_counts[i] / trials);
+    }
+    printf("\n");
+    memset(bit_counts, 0, FULL_BIT_COUNT * sizeof(uint32_t));
   }
-  printf("Run random_range_uint32 corner case test\n");
-  upper = pow_two(0);
-  threshold = 0;
-  counts[0] = 0;
-  counts[1] = 0;
-  printf("\t[0, %u) --> ", upper);
-  for (uint32_t i = 0; i < trials; i++){
-    n = random_range_uint32(upper);
-    if (n < threshold) counts[0]++;
-    if (n >= threshold && n < upper) counts[1]++;
+  free(bit_counts);
+  free(bit_masks);
+  bit_counts = NULL;
+  bit_masks = NULL;
+}
+
+/**
+   Tests random_uint32.
+*/
+void run_random_uint32_test(){
+  uint32_t trials_count = 7;
+  uint32_t trials[7]= {100,
+		       1000,
+		       10000,
+		       100000,
+		       1000000,
+		       10000000,
+		       100000000};
+  uint32_t n;
+  uint32_t *bit_counts = NULL, *bit_masks = NULL;
+  clock_t t, t_rand;
+  bit_counts = calloc_perror(FULL_BIT_COUNT, sizeof(uint32_t));
+  bit_masks = calloc_perror(FULL_BIT_COUNT, sizeof(uint32_t));
+  for (uint32_t i = 0; i < FULL_BIT_COUNT; i++){
+    bit_masks[i] = 1 << i;
   }
-  res = (counts[1] == trials);
-  print_test_result(res);
+  
+  printf("Run random_uint32 test\n");
+  for (uint32_t ti = 0; ti < trials_count; ti++){
+    printf("\t# trials = %u\n", trials[ti]);
+    t = clock();
+    for (uint32_t i = 0; i < trials[ti]; i++){
+      n = RANDOM();
+    }
+    t = clock() - t;
+    t_rand = clock();
+    for (uint32_t i = 0; i < trials[ti]; i++){
+      n = random_uint32();
+    }
+    t_rand = clock() - t_rand;
+    for (uint32_t i = 0; i < trials[ti]; i++){
+      n = random_uint32();
+      for (uint32_t i = 0; i < FULL_BIT_COUNT; i++){
+	if (n & bit_masks[i]) bit_counts[i]++;
+      }
+    }
+    printf("\t\trandom:               %.8f seconds\n"
+	   "\t\trandom_uint32:        %.8f seconds\n",
+	   (float)t / CLOCKS_PER_SEC,
+	   (float)t_rand / CLOCKS_PER_SEC);
+    for (uint32_t i = 0; i < FULL_BIT_COUNT; i++){
+      if (i == 0){
+	printf("\t\tP[bit is set]:        ");
+      }else if (!(i % BYTE_BIT_COUNT)){
+	printf("\n\t\t                      ");
+      }	
+      printf("%.4f ", (float)bit_counts[i] / trials[ti]);
+    }
+    printf("\n");
+    memset(bit_counts, 0, FULL_BIT_COUNT * sizeof(uint32_t));
+  }
+  free(bit_counts);
+  free(bit_masks);
+  bit_counts = NULL;
+  bit_masks = NULL;
 }
 
 /**
@@ -92,6 +156,6 @@ void print_test_result(int res){
 int main(){
   RGENS_SEED();
   run_random_range_uint32_test();
-  //run_random_uint32_test();
+  run_random_uint32_test();
   return 0;
 }
