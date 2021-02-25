@@ -3,11 +3,11 @@
 
    Randomness utility functions.
 
-   A randomized approach is used to generate random numbers in a given range
-   by exponentially decreasing the probability of not finding a number
-   bounded by 0.5^n under the assumption of generator uniformity, where n is
-   the number of generated candidate numbers. n is less or equal to 2 in
-   expectation.
+   The generation of random numbers in a given range is achieved in a
+   randomized approach by exponentially decreasing the probability of not
+   finding a number bounded by 0.5^N under the assumption of random number
+   generator uniformity, where N is the number of generated number
+   candidates. N is less or equal to 2 in expectation.
 
    The implementation is based on random() that returns a random number from
    0 to RAND_MAX, where RAND_MAX is 2^31 - 1, with a large period of approx.
@@ -24,12 +24,11 @@
 
 static const uint64_t FULL_BIT_COUNT = 8 * sizeof(uint64_t);
 static const uint64_t HALF_BIT_COUNT = 4 * sizeof(uint64_t);
-static const uint64_t HALF_MASK = 0xffffffff;
 static const uint64_t RAND_MAX_UINT64_TEST = 2147483647;
 static const uint64_t RAND_MAX_UINT64 = RAND_MAX; //associate with a type
 
 static uint64_t random_mod_pow_two(uint64_t k);
-static uint32_t random_gen_range(uint32_t n); //faster on uint32_t
+static uint32_t random_gen_range(uint32_t n); //faster with uint32_t
 static void fprintf_stderr_exit(const char *s, int line);
 
 /**
@@ -42,17 +41,20 @@ static void fprintf_stderr_exit(const char *s, int line);
 uint64_t random_range_uint64(uint64_t n){
   uint64_t n_shift = n;
   uint64_t k, ret;
+  if (RAND_MAX_UINT64 != RAND_MAX_UINT64_TEST){
+    fprintf_stderr_exit("RAND_MAX value error", __LINE__);
+  }
   if (n <= RAND_MAX_UINT64 + 1){
     ret = random_gen_range(n);
   }else{
     k = HALF_BIT_COUNT;
-    n_shift >>= HALF_BIT_COUNT;
-    while(n_shift & HALF_MASK){
+    n_shift >>= HALF_BIT_COUNT; //~2X speedup
+    while (n_shift >>= 1){ //~2X speedup by assigning in the condition
       k++;
-      n_shift >>= 1;
     }
+    if (n > pow_two(FULL_BIT_COUNT - 1)) k++;
     ret = random_mod_pow_two(k);
-    while(ret > n - 1){
+    while (ret > n - 1){
       ret = random_mod_pow_two(k);
     }
   }
@@ -63,6 +65,9 @@ uint64_t random_range_uint64(uint64_t n){
    Returns a generator-uniform random uint64_t. 
 */
 uint64_t random_uint64(){
+  if (RAND_MAX_UINT64 != RAND_MAX_UINT64_TEST){
+    fprintf_stderr_exit("RAND_MAX value error", __LINE__);
+  }
   return random_mod_pow_two(FULL_BIT_COUNT);
 }
 
@@ -71,9 +76,6 @@ uint64_t random_uint64(){
 */
 static uint64_t random_mod_pow_two(uint64_t k){
   uint64_t n, ret;
-  if (RAND_MAX_UINT64 != RAND_MAX_UINT64_TEST){
-    fprintf_stderr_exit("RAND_MAX value error", __LINE__);
-  }
   ret = random();
   if (k < HALF_BIT_COUNT){
     ret = ret >> (HALF_BIT_COUNT - k - 1);
@@ -81,15 +83,15 @@ static uint64_t random_mod_pow_two(uint64_t k){
     n = random();
     n >>= (FULL_BIT_COUNT - k - 2);
     n <<= (HALF_BIT_COUNT - 1);
-    ret = ret | n;
+    ret |= n;
   }else{
     n = random();
     n <<= (HALF_BIT_COUNT - 1);
-    ret = ret | n;
+    ret |= n;
     n = random();
     n >>= (FULL_BIT_COUNT + HALF_BIT_COUNT - k - 3);
     n <<= (FULL_BIT_COUNT - 2);
-    ret = ret | n;
+    ret |= n;
   }
   return ret;
 }
@@ -103,13 +105,10 @@ static uint64_t random_mod_pow_two(uint64_t k){
 */
 static uint32_t random_gen_range(uint32_t n){
   uint32_t rem, ret;
-  if (RAND_MAX_UINT64 != RAND_MAX_UINT64_TEST){
-    fprintf_stderr_exit("RAND_MAX value error", __LINE__);
-  }
   rem = (uint32_t)RAND_MAX_UINT64 % n;
   ret =  random();
   if (rem < n - 1){
-    while(ret > (uint32_t)RAND_MAX_UINT64 - rem - 1){
+    while (ret > (uint32_t)RAND_MAX_UINT64 - rem - 1){
       ret = random();
     }
   }
