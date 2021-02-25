@@ -24,7 +24,7 @@
 
 static const uint64_t FULL_BIT_COUNT = 8 * sizeof(uint64_t);
 static const uint64_t HALF_BIT_COUNT = 4 * sizeof(uint64_t);
-static const uint64_t FULL_MASK = 0xffffffffffffffff;
+static const uint64_t HALF_MASK = 0xffffffff;
 static const uint64_t RAND_MAX_UINT64_TEST = 2147483647;
 static const uint64_t RAND_MAX_UINT64 = RAND_MAX; //associate with a type
 
@@ -40,13 +40,14 @@ static void fprintf_stderr_exit(const char *s, int line);
    n <= RAND_MAX + 1, and the number of random_uint64() calls otherwise.
 */
 uint64_t random_range_uint64(uint64_t n){
-  uint64_t k = 1;
   uint64_t n_shift = n;
-  uint64_t ret;
+  uint64_t k, ret;
   if (n <= RAND_MAX_UINT64 + 1){
     ret = random_gen_range(n);
   }else{
-    while(n_shift & FULL_MASK){
+    k = HALF_BIT_COUNT;
+    n_shift >>= HALF_BIT_COUNT;
+    while(n_shift & HALF_MASK){
       k++;
       n_shift >>= 1;
     }
