@@ -60,4 +60,4 @@ Utility functions in the area of modular arithmetic generalized to size_t. mem_m
 
 `./utilities/utilities-rand-{uint32, uint64}/`
 
-Randomness utility functions. A randomized approach is used to generate random numbers in a given range by exponentially decreasing the probability of not finding a number bounded by 0.5^n under the assumption of random generator uniformity, where n is the number of generated number candidates. n is less or equal to 2 in expectation. 
+Randomness utility functions. The generation of random numbers in a given range is achieved in a randomized approach by exponentially decreasing the probability of not finding a number bounded by 0.5^N under the assumption of random generator uniformity, where N is the number of generated number candidates. N is less or equal to 2 in expectation.
