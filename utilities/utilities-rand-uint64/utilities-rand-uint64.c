@@ -24,7 +24,9 @@
 
 static const uint64_t FULL_BIT_COUNT = 8 * sizeof(uint64_t);
 static const uint64_t HALF_BIT_COUNT = 4 * sizeof(uint64_t);
-static const uint64_t RAND_MAX_UINT64_TEST = 2147483647;
+static const uint64_t HIGH_MASK = 13835058055282163712U; //2^62 + 2^63;
+static const uint64_t MID_MASK = 4611686016279904256U; //2^62 - 2^31;
+static const uint64_t RAND_MAX_UINT64_TEST = 2147483647U;
 static const uint64_t RAND_MAX_UINT64 = RAND_MAX; //associate with a type
 
 static uint64_t random_mod_pow_two(uint64_t k);
@@ -81,16 +83,16 @@ static uint64_t random_mod_pow_two(uint64_t k){
     ret >>= HALF_BIT_COUNT - k - 1;
   }else if (k < FULL_BIT_COUNT - 1){
     n = random();
-    n >>= FULL_BIT_COUNT - k - 2;
-    n <<= HALF_BIT_COUNT - 1;
+    n <<= k - (HALF_BIT_COUNT - 1);
+    n &= MID_MASK;
     ret |= n;
   }else{
     n = random();
     n <<= HALF_BIT_COUNT - 1;
     ret |= n;
     n = random();
-    n >>= FULL_BIT_COUNT + HALF_BIT_COUNT - k - 3;
-    n <<= FULL_BIT_COUNT - 2;
+    n <<= k - (HALF_BIT_COUNT - 1);
+    n &= HIGH_MASK;
     ret |= n;
   }
   return ret;
