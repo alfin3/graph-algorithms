@@ -39,20 +39,20 @@ static void fprintf_stderr_exit(const char *s, int line);
    n <= RAND_MAX + 1, and the number of random_uint64() calls otherwise.
 */
 uint64_t random_range_uint64(uint64_t n){
-  uint64_t n_shift = n;
-  uint64_t k, ret;
+  uint64_t n_max, k, ret;
   if (RAND_MAX_UINT64 != RAND_MAX_UINT64_TEST){
     fprintf_stderr_exit("RAND_MAX value error", __LINE__);
   }
   if (n <= RAND_MAX_UINT64 + 1){
     ret = random_gen_range(n);
   }else{
+    n_max = n - 1;
+    n_max >>= HALF_BIT_COUNT;
     k = HALF_BIT_COUNT;
-    n_shift >>= HALF_BIT_COUNT; //~2X speedup
-    while (n_shift >>= 1){ //~2X speedup by assigning in the condition
+    while (n_max){
+      n_max >>= 1;
       k++;
     }
-    if (n > pow_two(FULL_BIT_COUNT - 1)) k++;
     ret = random_mod_pow_two(k);
     while (ret > n - 1){
       ret = random_mod_pow_two(k);
@@ -78,19 +78,19 @@ static uint64_t random_mod_pow_two(uint64_t k){
   uint64_t n, ret;
   ret = random();
   if (k < HALF_BIT_COUNT){
-    ret = ret >> (HALF_BIT_COUNT - k - 1);
+    ret >>= HALF_BIT_COUNT - k - 1;
   }else if (k < FULL_BIT_COUNT - 1){
     n = random();
-    n >>= (FULL_BIT_COUNT - k - 2);
-    n <<= (HALF_BIT_COUNT - 1);
+    n >>= FULL_BIT_COUNT - k - 2;
+    n <<= HALF_BIT_COUNT - 1;
     ret |= n;
   }else{
     n = random();
-    n <<= (HALF_BIT_COUNT - 1);
+    n <<= HALF_BIT_COUNT - 1;
     ret |= n;
     n = random();
-    n >>= (FULL_BIT_COUNT + HALF_BIT_COUNT - k - 3);
-    n <<= (FULL_BIT_COUNT - 2);
+    n >>= FULL_BIT_COUNT + HALF_BIT_COUNT - k - 3;
+    n <<= FULL_BIT_COUNT - 2;
     ret |= n;
   }
   return ret;
