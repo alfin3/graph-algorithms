@@ -13,9 +13,6 @@
 #include "utilities-mem.h"
 #include "utilities-mod.h"
 
-#define RGENS_SEED() do{srandom(time(0));}while (0)
-#define RANDOM() (random())
-
 static const uint64_t BYTE_BIT_COUNT = 8;
 static const uint64_t FULL_BIT_COUNT = 8 * sizeof(uint64_t);
 static const uint64_t HALF_BIT_COUNT = 4 * sizeof(uint64_t);
@@ -71,7 +68,7 @@ void run_random_range_uint64_test(){
     fflush(stdout);
     t = clock();
     for (uint64_t i = 0; i < trials; i++){
-      RANDOM();
+      UTILITIES_RAND_UINT64_RANDOM();
     }
     t = clock() - t;
     t_low = clock();
@@ -99,7 +96,7 @@ void run_random_range_uint64_test(){
 	if (n_high & masks[i]) counts_high[i]++;
       }
     }
-    printf("\t\trandom:                    %.8f seconds\n"
+    printf("\t\tgenerator:                 %.8f seconds\n"
 	   "\t\trandom_range_uint64 low:   %.8f seconds\n"
 	   "\t\trandom_range_uint64 mid:   %.8f seconds\n"
 	   "\t\trandom_range_uint64 high:  %.8f seconds\n",
@@ -153,7 +150,7 @@ void run_random_uint64_test(){
     printf("\t# trials = %lu\n", trials[ti]);
     t = clock();
     for (uint64_t i = 0; i < trials[ti]; i++){
-      RANDOM();
+      UTILITIES_RAND_UINT64_RANDOM();
     }
     t = clock() - t;
     t_rand = clock();
@@ -167,7 +164,7 @@ void run_random_uint64_test(){
 	if (n & masks[i]) counts[i]++;
       }
     }
-    printf("\t\trandom:                    %.8f seconds\n"
+    printf("\t\tgenerator:                 %.8f seconds\n"
 	   "\t\trandom_uint64:             %.8f seconds\n",
 	   (float)t / CLOCKS_PER_SEC,
 	   (float)t_rand / CLOCKS_PER_SEC);
@@ -266,8 +263,8 @@ void run_prime_scan_test(){
   uint64_t low, high;
   uint64_t *starts = NULL, *nums = NULL;
   clock_t t;
-  printf("Run a miller_rabin_uint64 test on finding a prime "
-	 "with %lu trials per range \n", trials);
+  printf("Run a miller_rabin_uint64 test on finding %lu primes "
+	 "in a range \n", trials);
   fflush(stdout);
   starts = calloc_perror(trials, sizeof(uint64_t));
   nums = calloc_perror(trials, sizeof(uint64_t));
@@ -329,7 +326,7 @@ void print_test_result(int res){
 }
 
 int main(){
-  RGENS_SEED();
+  UTILITIES_RAND_UINT64_SEED();
   run_random_range_uint64_test();
   run_random_uint64_test();
   run_primality_test();
