@@ -2,9 +2,9 @@
 
 A set of generic hashing-based data structures and algorithms were implemented from first principles in straight C, providing i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) parameters for hashing and parallelism optimization across input ranges and hardware settings.
 
-A two-step approach was used to minimize the memory space occupied and used by a program: generic programming and hashing parametrization. The provided implementations further reflect the view of the author that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing approach.
+A two-step approach was used to minimize the memory space occupied and used by a program: generic programming and hashing parametrization. The approach reflects the view of the author that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method.
 
-Compilation was completed with gcc 7.5 at the -O3 optimization level on a 64-bit system. It is anticipated that the provided implementations will be compiled on lower bit systems in the near future. Vectorization and cache efficiency have not yet been profiled, which may result in additional implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
+Compilation was completed with gcc 7.5 at the -O3 optimization level on a 64-bit system. It is anticipated that the provided implementations will be compiled on lower bit systems in the near future. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
 In each directory with a Makefile, run:
 
