@@ -32,4 +32,9 @@ uint64_t random_range_uint64(uint64_t n);
 */
 uint64_t random_uint64();
 
+/**
+   Runs a randomized primality test.
+*/
+int miller_rabin_uint64(uint64_t n);
+
 #endif
