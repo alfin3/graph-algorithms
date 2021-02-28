@@ -15,7 +15,8 @@
    The implementation is based on a generator that returns a number
    from 0 to RAND_MAX, where RAND_MAX is 2^31 - 1, as set by 
    UTILITIES_RAND_UINT64_RANDOM() and seeded by UTILITIES_RAND_UINT64_SEED().
-   The implementation is not suitable for cryptographic use. 
+   Other generators may be accomodated in the future. The implementation is
+   not suitable for cryptographic use. 
 */
 
 #ifndef UTILITIES_RAND_UINT64_H  

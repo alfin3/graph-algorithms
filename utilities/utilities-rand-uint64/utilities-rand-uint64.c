@@ -15,7 +15,8 @@
    The implementation is based on a generator that returns a number
    from 0 to RAND_MAX, where RAND_MAX is 2^31 - 1, as set by 
    UTILITIES_RAND_UINT64_RANDOM() and seeded by UTILITIES_RAND_UINT64_SEED().
-   The implementation is not suitable for cryptographic use. 
+   Other generators may be accomodated in the future. The implementation is
+   not suitable for cryptographic use. 
 */
 
 #include <stdio.h>
@@ -39,6 +40,7 @@ static uint32_t random_gen_range(uint32_t n); //faster with uint32_t
 //primality testing
 static int composite(uint64_t n, int trials);
 static int witness(uint64_t a, uint64_t n);
+static void represent_uint64(uint64_t n, uint64_t *k, uint64_t *u);
 
 //auxiliary functions
 static void fprintf_stderr_exit(const char *s, int line);
@@ -169,7 +171,7 @@ static int composite(uint64_t n, int trials){
 */
 static int witness(uint64_t a, uint64_t n){
   uint64_t t, u, x[2];
-  represent_uint(n - 1, &t, &u);
+  represent_uint64(n - 1, &t, &u);
   x[0] = pow_mod(a, u, n);
   x[1] = pow_mod(x[0], 2, n); //t > 0
   for (uint64_t i = 0; i < t; i++){
@@ -183,6 +185,20 @@ static int witness(uint64_t a, uint64_t n){
   }
   if (x[1] != 1) return 1; //composite based on Fermat's little theorem
   return 0;
+}
+
+/**
+   Represents n as u * 2^k, where u is odd.
+*/
+static void represent_uint64(uint64_t n, uint64_t *k, uint64_t *u){
+  uint64_t c = 0;
+  uint64_t shift_n = n;
+  while (shift_n){
+    c++;
+    shift_n <<= 1;
+  }
+  *k = FULL_BIT_COUNT - c;
+  *u = n >> *k;
 }
 
 /**
