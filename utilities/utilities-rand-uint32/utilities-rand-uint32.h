@@ -3,33 +3,52 @@
 
    Declarations of accessible randomness utility functions.
 
-   A randomized approach is used to generate random numbers in a given range
-   by exponentially decreasing the probability of not finding a number
-   bounded by 0.5^n under the assumption of generator uniformity, where n is
-   the number of generated candidate numbers that is less or equal to 2 in
-   expectation.
+   The generation of (pseudo-)random numbers in a given range is achieved
+   in a randomized approach by exponentially decreasing the probability of
+   not finding a number bounded by 0.5^N under the assumption of generator
+   uniformity, where N is the number of generated number candidates. N is
+   less or equal to 2 in expectation.
 
-   The implementation is based on random() that returns a random number from
-   0 to RAND_MAX, where RAND_MAX is 2^31 - 1, with a large period of approx.
-   16 * (2^31 - 1). The provided functions are seeded by seeding random() 
-   outside the provided functions. The implementation is not suitable for
-   cryptographic use. (https://man7.org/linux/man-pages/man3/random.3.html)
+   Primality testing is performed in a randomized approach according to
+   Miller and Rabin.
 
+   The implementation is based on a generator that returns a number
+   from 0 to RAND_MAX, where RAND_MAX is 2^31 - 1, as set by 
+   UTILITIES_RAND_UINT32_RANDOM() and seeded by UTILITIES_RAND_UINT32_SEED().
+   Other generators may be accomodated in the future. The implementation is
+   not suitable for cryptographic use. 
 */
 
 #ifndef UTILITIES_RAND_UINT32_H  
 #define UTILITIES_RAND_UINT32_H
 
 #include <stdint.h>
+#include <time.h>
 
 /**
-   Returns a generator-uniform random uint32_t in [0 , n).
+   Returns a generator-uniform uint32_t in [0 , n).
 */
 uint32_t random_range_uint32(uint32_t n);
 
 /**
-   Returns a generator-uniform random uint32_t. 
+   Returns a generator-uniform uint32_t. 
 */
 uint32_t random_uint32();
+
+/**
+   Runs a randomized primality test. Returns 1 if n is prime and 0
+   otherwise.
+*/
+int miller_rabin_uint32(uint32_t n);
+
+/**
+   Macro for setting the random number generator that returns a number
+   from 0 to RAND_MAX, where RAND_MAX is 2^31 - 1. By default, the
+   generator is set to random() that returns a pseudo-random number
+   with a large period of approximately 16 * (2^31 - 1). 
+   (https://man7.org/linux/man-pages/man3/random.3.html)
+*/
+#define UTILITIES_RAND_UINT32_SEED() do{srandom(time(0));}while (0)
+#define UTILITIES_RAND_UINT32_RANDOM() (random())
 
 #endif
