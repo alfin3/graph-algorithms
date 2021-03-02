@@ -82,7 +82,7 @@ static void ht_def_free(ht_def_t *ht);
 static void build_next(const adj_lst_t *a,
 		       stack_t *prev_s,
 		       stack_t *next_s,
-		       tsp_ht_t *tht,
+		       const tsp_ht_t *tht,
 		       void (*add_wt)(void *, const void *, const void *),
 		       int (*cmp_wt)(const void *, const void *));
 static size_t pow_two(size_t k);
@@ -126,7 +126,7 @@ static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 int tsp(const adj_lst_t *a,
 	size_t start,
 	void *dist,
-	tsp_ht_t *tht,
+	const tsp_ht_t *tht,
 	void (*add_wt)(void *, const void *, const void *),
 	int (*cmp_wt)(const void *, const void *)){
   size_t wt_size = a->wt_size;
@@ -138,7 +138,8 @@ int tsp(const adj_lst_t *a,
   stack_t prev_s, next_s;
   ht_def_t ht_def;
   context_t context;
-  tsp_ht_t tht_def, *thtp = tht;
+  tsp_ht_t tht_def;
+  const tsp_ht_t *thtp = tht;
   set_count = a->num_vts / SET_ELT_BIT_COUNT;
   if (a->num_vts % SET_ELT_BIT_COUNT){
     set_count++;
@@ -218,7 +219,7 @@ int tsp(const adj_lst_t *a,
 static void build_next(const adj_lst_t *a,
 		       stack_t *prev_s,
 		       stack_t *next_s,
-		       tsp_ht_t *tht,
+		       const tsp_ht_t *tht,
 		       void (*add_wt)(void *, const void *, const void *),
 		       int (*cmp_wt)(const void *, const void *)){
   size_t wt_size = a->wt_size;

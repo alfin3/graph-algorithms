@@ -53,7 +53,7 @@ typedef struct{
   size_t pty_size;
   size_t elt_size;
   void *pty_elts;
-  heap_ht_t *ht;
+  const heap_ht_t *ht;
   int (*cmp_pty)(const void *, const void *);
   void (*free_elt)(void *);
 } heap_t;

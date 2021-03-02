@@ -87,7 +87,7 @@ typedef struct{
 int tsp(const adj_lst_t *a,
 	size_t start,
 	void *dist,
-	tsp_ht_t *tht,
+	const tsp_ht_t *tht,
 	void (*add_wt)(void *, const void *, const void *),
 	int (*cmp_wt)(const void *, const void *));
 #endif

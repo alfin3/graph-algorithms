@@ -89,7 +89,7 @@ void heap_init(heap_t *h,
   h->pty_size = pty_size;
   h->elt_size = elt_size;
   h->pty_elts = malloc_perror(init_count * (pty_size + elt_size));
-  h->ht = (heap_ht_t *)ht;
+  h->ht = ht;
   h->cmp_pty = cmp_pty;
   h->free_elt = free_elt;
   h->ht->init(ht->ht, elt_size, sizeof(size_t), NULL, ht->context);
