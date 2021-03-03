@@ -136,7 +136,7 @@ void ht_mul_uint64_init_helper(ht_mul_uint64_t *ht,
    uint64_t elements across priority types.
 */
 void run_push_pop_free_div_uint64_test(){
-  int pty_types_count = 3;
+  int i, pty_types_count = 3;
   const char *pty_types[3] = {"uint64_t",
 			      "double",
 			      "long double"};
@@ -144,7 +144,6 @@ void run_push_pop_free_div_uint64_test(){
 		      sizeof(double),
 		      sizeof(long double)};
   uint64_t n = 1000000;
-  int i;
   float alpha = 1.0;
   ht_div_uint64_t ht_div;
   ht_div_context_t context;
@@ -185,7 +184,7 @@ void run_push_pop_free_div_uint64_test(){
    uint64_t elements across priority types.
 */
 void run_update_search_div_uint64_test(){
-  int pty_types_count = 3;
+  int i, pty_types_count = 3;
   const char *pty_types[3] = {"uint64_t",
 			      "double",
 			      "long double"};
@@ -193,7 +192,6 @@ void run_update_search_div_uint64_test(){
 		      sizeof(double),
 		      sizeof(long double)};
   uint64_t n = 1000000;
-  int i;
   float alpha = 1.0;
   ht_div_uint64_t ht_div;
   ht_div_context_t context;
@@ -234,14 +232,13 @@ void run_update_search_div_uint64_test(){
    uint64_t elements across priority types.
 */
 void run_push_pop_free_mul_uint64_test(){
-  int pty_types_count = 3;
+  int i, pty_types_count = 3;
   const char *pty_types[3] = {"uint64_t",
 			      "double",
 			      "long double"};
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int i;
   uint64_t n = 1000000;
   float alpha = 0.4;
   ht_mul_uint64_t ht_mul;
@@ -284,14 +281,13 @@ void run_push_pop_free_mul_uint64_test(){
    uint64_t elements across priority types.
 */
 void run_update_search_mul_uint64_test(){
-  int pty_types_count = 3;
+  int i, pty_types_count = 3;
   const char *pty_types[3] = {"uint64_t",
 			      "double",
 			      "long double"};
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int i;
   uint64_t n = 1000000;
   float alpha = 0.4;
   ht_mul_uint64_t ht_mul;
@@ -373,14 +369,13 @@ void free_uint64_ptr(void *a){
    noncontiguous uint64_ptr_t elements across priority types.
 */
 void run_push_pop_free_div_uint64_ptr_test(){
-  int pty_types_count = 3;
+  int i, pty_types_count = 3;
   const char *pty_types[3] = {"uint64_t",
 			      "double",
 			      "long double"};
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int i;
   uint64_t n = 1000000;
   float alpha = 1.0;
   ht_div_uint64_t ht_div;
@@ -422,14 +417,13 @@ void run_push_pop_free_div_uint64_ptr_test(){
    noncontiguous uint64_ptr_t elements across priority types.
 */
 void run_update_search_div_uint64_ptr_test(){
-  int pty_types_count = 3;
+  int i, pty_types_count = 3;
   const char *pty_types[3] = {"uint64_t",
 			      "double",
 			      "long double"};
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int i;
   uint64_t n = 1000000;
   float alpha = 1.0;
   ht_div_uint64_t ht_div;
@@ -471,14 +465,13 @@ void run_update_search_div_uint64_ptr_test(){
    noncontiguous uint64_ptr_t elements across priority types.
 */
 void run_push_pop_free_mul_uint64_ptr_test(){
-  int pty_types_count = 3;
+  int i, pty_types_count = 3;
   const char *pty_types[3] = {"uint64_t",
 			      "double",
 			      "long double"};
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int i;
   uint64_t n = 1000000;
   float alpha = 0.4;
   ht_mul_uint64_t ht_mul;
@@ -521,14 +514,13 @@ void run_push_pop_free_mul_uint64_ptr_test(){
    noncontiguous uint64_ptr_t elements across priority types.
 */
 void run_update_search_mul_uint64_ptr_test(){
-  int pty_types_count = 3;
+  int i, pty_types_count = 3;
   const char *pty_types[3] = {"uint64_t",
 			      "double",
 			      "long double"};
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
-  int i;
   uint64_t n = 1000000;
   float alpha = 0.4;
   ht_mul_uint64_t ht_mul;
@@ -576,9 +568,8 @@ void push_incr_ptys_elts(heap_t *h,
 			 void **elts,
 			 uint64_t count,
 			 void (*new_pty)(void *, uint64_t)){
-  uint64_t first_half_count = count / 2;
+  uint64_t i, first_half_count = count / 2;
   uint64_t n = h->num_elts;
-  uint64_t i;
   void *pty = NULL;
   clock_t t;
   pty = malloc_perror(pty_size);
@@ -610,9 +601,8 @@ void push_decr_ptys_elts(heap_t *h,
 			 void **elts,
 			 uint64_t count,
 			 void (*new_pty)(void *, uint64_t)){
-  uint64_t first_half_count = count / 2;
+  uint64_t i, first_half_count = count / 2;
   uint64_t n = h->num_elts;
-  uint64_t i;
   void *pty = NULL;
   clock_t t;
   pty = malloc_perror(pty_size);
@@ -646,9 +636,8 @@ void pop_ptys_elts(heap_t *h,
 		   uint64_t count,
 		   int (*cmp_pty)(const void *, const void *),
 		   int (*cmp_elt)(const void *, const void *)){
-  uint64_t first_half_count = count / 2;
+  uint64_t i, first_half_count = count / 2;
   uint64_t n = h->num_elts;
-  uint64_t i;
   void *pty_prev = NULL, *pty_cur = NULL, *elt = NULL;
   clock_t t;
   pty_prev = malloc_perror(pty_size);
@@ -748,9 +737,8 @@ void push_rev_incr_ptys_elts(heap_t *h,
 			     void **elts,
 			     uint64_t count,
 			     void (*new_pty)(void *, uint64_t)){
-  uint64_t first_half_count = count / 2;
+  uint64_t i, first_half_count = count / 2;
   uint64_t n = h->num_elts;
-  uint64_t i;
   void *pty = NULL;
   clock_t t;
   pty = malloc_perror(pty_size);
@@ -782,9 +770,8 @@ void update_rev_ptys_elts(heap_t *h,
 			  void **elts,
 			  uint64_t count,
 			  void (*new_pty)(void *, uint64_t)){
-  uint64_t first_half_count = count / 2;
+  uint64_t i, first_half_count = count / 2;
   uint64_t n = h->num_elts;
-  uint64_t i;
   void *pty = malloc_perror(pty_size);
   clock_t t;
   t = clock();
