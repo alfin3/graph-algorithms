@@ -207,8 +207,7 @@ static uint64_t hash(const ht_div_uint64_t *ht, const void *key){
    prime number in the PRIMES array was reached.
 */
 static void ht_grow(ht_div_uint64_t *ht){
-  uint64_t prev_count = ht->count;
-  uint64_t i;
+  uint64_t i, prev_count = ht->count;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL;
   /* if the largest size is reached, alpha is not a bound for expectation */
