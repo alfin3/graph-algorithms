@@ -48,7 +48,7 @@ void stack_init(stack_t *s,
 		size_t elt_size,
 		void (*free_elt)(void *)){
   s->count = init_count;
-  s->count_max = STACK_COUNT_MAX; //the only use of the macro in the file
+  s->count_max = STACK_COUNT_MAX; /* the only use of the macro in the file */
   if (s->count > s->count_max){
     fprintf_stderr_exit("initial count > count maximum", __LINE__);
   }
@@ -97,8 +97,9 @@ void *stack_first(const stack_t *s){
    the s parameter.
 */
 void stack_free(stack_t *s){
+  size_t i;
   if (s->free_elt != NULL){
-    for (size_t i = 0; i < s->num_elts; i++){
+    for (i = 0; i < s->num_elts; i++){
       s->free_elt(elt_ptr(s->elts, i, s->elt_size));
     } 
   }

@@ -192,7 +192,7 @@ void dll_delete(dll_node_t **head,
     free(node);
     node = NULL;
   }else{
-    //at least two nodes
+    /* at least two nodes */
     dll_free_key_elt(node, free_elt);
     node->next->prev = node->prev;
     node->prev->next = node->next;

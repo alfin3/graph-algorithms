@@ -49,7 +49,7 @@ int cmp_int(const void *a, const void *b){
 void run_prepend_append_free_int_test(){
   int count = 10000000;
   int start_val = 0;
-  dll_node_t *head_prep, *head_app; //uninitialized pointers
+  dll_node_t *head_prep, *head_app; /* uninitialized pointers */
   dll_init(&head_prep);
   dll_init(&head_app);
   printf("Run dll_{prepend, append, free} test on int keys and int "
@@ -139,7 +139,7 @@ void free_int_ptr(void *a){
 void run_prepend_append_free_int_ptr_test(){
   int count = 10000000;
   int start_val = 0;
-  dll_node_t *head_prep, *head_app; //uninitialized pointers
+  dll_node_t *head_prep, *head_app; /* uninitialized pointers */
   dll_init(&head_prep);
   dll_init(&head_app);
   printf("Run dll_{prepend, append, free} test on int keys and noncontiguous "
@@ -192,12 +192,13 @@ void run_corner_cases_test(){
   dll_node_t *head_two_prep, *head_two_app;
   int res = 1;
   int key, elt;
+  int i;
   dll_init(&head_none);
   dll_init(&head_one_prep);
   dll_init(&head_one_app);
   dll_init(&head_two_prep);
   dll_init(&head_two_app);
-  for (int i = 0; i < 2; i++){
+  for (i = 0; i < 2; i++){
     if (i < 1){
       dll_prepend(&head_one_prep, &i, &i, sizeof(int), sizeof(int));
       dll_append(&head_one_app, &i, &i, sizeof(int), sizeof(int));
@@ -205,7 +206,7 @@ void run_corner_cases_test(){
   dll_prepend(&head_two_prep, &i, &i, sizeof(int), sizeof(int));
   dll_append(&head_two_app, &i, &i, sizeof(int), sizeof(int));
   }
-  //search
+  /* search */
   key = 0;
   elt = 0;
   res *= (NULL == dll_search_key(&head_none, &key, sizeof(int)));
@@ -242,7 +243,7 @@ void run_corner_cases_test(){
   res *= (NULL == dll_search_elt(&head_two_prep, &elt, cmp_int));
   res *= (NULL == dll_search_key(&head_two_app, &key, sizeof(int)));
   res *= (NULL == dll_search_elt(&head_two_app, &elt, cmp_int));
-  //delete
+  /* delete */
   dll_delete(&head_none, NULL, NULL);
   dll_delete(&head_one_prep, NULL, NULL);
   dll_delete(&head_one_app, NULL, NULL);
@@ -290,6 +291,7 @@ void prepend_append_free(dll_node_t **head_prep,
 			 void (*free_elt)(void *)){
   int res = 1;
   int sum_val = 2 * start_val + count - 1;
+  int i;
   int *keys = NULL;
   void *elts_prep = NULL, *elts_app = NULL;
   dll_node_t *node_prep = NULL, *node_app = NULL;
@@ -297,13 +299,13 @@ void prepend_append_free(dll_node_t **head_prep,
   keys = malloc_perror(count * sizeof(int));
   elts_prep = malloc_perror(count * elt_size);
   elts_app = malloc_perror(count * elt_size);
-  for (int i = 0; i < count; i++){
+  for (i = 0; i < count; i++){
     keys[i] = start_val + i;
     new_elt(elt_ptr(elts_prep, i, elt_size), start_val + i);
     new_elt(elt_ptr(elts_app, i, elt_size), start_val + i);
   }  
   t_prep = clock();
-  for (int i = 0; i < count; i++){
+  for (i = 0; i < count; i++){
     dll_prepend(head_prep,
 		&keys[i],
 		elt_ptr(elts_prep, i, elt_size),
@@ -312,7 +314,7 @@ void prepend_append_free(dll_node_t **head_prep,
   }
   t_prep = clock() - t_prep;
   t_app = clock();
-  for (int i = 0; i < count; i++){
+  for (i = 0; i < count; i++){
     dll_append(head_app,
 	       &keys[i],
 	       elt_ptr(elts_app, i, elt_size),
@@ -322,7 +324,7 @@ void prepend_append_free(dll_node_t **head_prep,
   t_app = clock() - t_app;
   node_prep = *head_prep;
   node_app = *head_app;
-  for (int i = 0; i < count; i++){
+  for (i = 0; i < count; i++){
     res = (*(int *)node_prep->key + *(int *)node_app->key == sum_val);
     res = (val_elt(node_prep->elt) + val_elt(node_app->elt) == sum_val);
     node_prep = node_prep->next;

@@ -29,8 +29,8 @@
 typedef struct dll_node{
   size_t key_size;
   size_t elt_size;
-  void *key; //can be NULL
-  void *elt; //non-NULL
+  void *key; /* can be NULL */
+  void *elt; /* non-NULL */
   struct dll_node *next;
   struct dll_node *prev;
 } dll_node_t;

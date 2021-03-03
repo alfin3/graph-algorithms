@@ -55,25 +55,26 @@ void uint64_push_pop_helper(stack_t *s,
 			    uint64_t num_elts){
   int res = 1;
   uint64_t *pushed = NULL, *popped = NULL;
+  uint64_t i;
   clock_t t_push, t_pop;
   pushed = malloc_perror(num_elts * sizeof(uint64_t));
   popped = malloc_perror(num_elts * sizeof(uint64_t));
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     pushed[i] = init_val + i;
   }
   t_push = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     stack_push(s, &pushed[i]);
   }
   t_push = clock() - t_push;
   t_pop = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     stack_pop(s, &popped[i]);
   }
   t_pop = clock() - t_pop;
   res *= (s->num_elts == 0);
   res *= (s->count >= num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     res *= (popped[i] == num_elts - 1 + init_val - i);
   }
   printf("\t\tpush time:   %.4f seconds\n", (float)t_push / CLOCKS_PER_SEC);
@@ -92,13 +93,14 @@ void run_uint64_first_test(){
   uint64_t init_count = 1;
   uint64_t init_val = 1;
   uint64_t pushed, popped;
+  uint64_t i;
   stack_t s;
   stack_init(&s, init_count, sizeof(uint64_t), NULL);
   printf("Run a stack_first test on uint64_t elements \n");
   printf("\tinit stack count: %lu\n"
 	 "\t#elements:        %lu\n",
 	 init_count,  num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     if (s.num_elts == 0){
       res *= (stack_first(&s) == NULL);
     }else{
@@ -108,7 +110,7 @@ void run_uint64_first_test(){
     stack_push(&s, &pushed);
     res *= (*(uint64_t *)stack_first(&s) == init_val + i);
   }
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     res *= (*(uint64_t *)stack_first(&s) == num_elts - 1 + init_val - i);
     stack_pop(&s, &popped);
     if (s.num_elts == 0){
@@ -127,12 +129,13 @@ void run_uint64_first_test(){
 void run_uint64_free_test(){
   uint64_t num_elts = 50000000;
   uint64_t init_count = 1;
+  uint64_t i;
   stack_t s;
   clock_t t;
   stack_init(&s, init_count, sizeof(uint64_t), NULL);
   printf("Run a stack_free test on uint64_t elements\n");
   printf("\t# elements:       %lu\n", num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     stack_push(&s, &i);
   }
   t = clock();
@@ -195,29 +198,30 @@ void uint64_ptr_push_pop_helper(stack_t *s,
 				uint64_t init_val,
 				uint64_t num_elts){
   int res = 1;
+  uint64_t i;
   uint64_ptr_t **pushed = NULL, **popped = NULL;
   clock_t t_push, t_pop;
   pushed = calloc_perror(num_elts, sizeof(uint64_ptr_t *));
   popped = calloc_perror(num_elts, sizeof(uint64_ptr_t *));
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     pushed[i] = malloc_perror(sizeof(uint64_ptr_t));
     pushed[i]->val = malloc_perror(sizeof(uint64_t));
     *(pushed[i]->val) = init_val + i;
   }
   t_push = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     stack_push(s, &pushed[i]);
   }
   t_push = clock() - t_push;
   memset(pushed, 0, num_elts * sizeof(uint64_ptr_t *));
   t_pop = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     stack_pop(s, &popped[i]);
   }
   t_pop = clock() - t_pop;
   res *= (s->num_elts == 0);
   res *= (s->count >= num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     res *= (*(popped[i]->val) == num_elts - 1 + init_val - i);
     free_uint64_ptr_fn(&popped[i]);
   }
@@ -236,6 +240,7 @@ void run_uint64_ptr_first_test(){
   uint64_t num_elts = 50000000;
   uint64_t init_count = 1;
   uint64_t init_val = 1;
+  uint64_t i;
   uint64_ptr_t *pushed = NULL, *popped = NULL;
   stack_t s;
   stack_init(&s, init_count, sizeof(uint64_ptr_t *), free_uint64_ptr_fn);
@@ -243,7 +248,7 @@ void run_uint64_ptr_first_test(){
   printf("\tinit stack count: %lu\n"
 	 "\t#elements:        %lu\n",
 	 init_count, num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     if (s.num_elts == 0){
       res *= (stack_first(&s) == NULL);
     }else{
@@ -256,7 +261,7 @@ void run_uint64_ptr_first_test(){
     res *= (*(*(uint64_ptr_t **)stack_first(&s))->val == init_val + i);
     pushed = NULL;
   }
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     res *= (*(*(uint64_ptr_t **)stack_first(&s))->val ==
 	    num_elts - 1 + init_val - i);
     stack_pop(&s, &popped);
@@ -279,13 +284,14 @@ void run_uint64_ptr_first_test(){
 void run_uint64_ptr_free_test(){
   uint64_t num_elts = 50000000;
   uint64_t init_count = 1;
+  uint64_t i;
   uint64_ptr_t *pushed = NULL;
   stack_t s;
   clock_t t;
   stack_init(&s, init_count, sizeof(uint64_ptr_t *), free_uint64_ptr_fn);
   printf("Run a stack_free test on noncontiguous uint64_ptr_t elements \n");
   printf("\t# elements:       %lu\n", num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     pushed = malloc_perror(sizeof(uint64_ptr_t));
     pushed->val = malloc_perror(sizeof(uint64_t));
     *(pushed->val) = i;
@@ -302,21 +308,22 @@ void run_uint64_ptr_free_test(){
    Runs a test of a stack of 5 billion char elements.
 */
 void run_large_stack_test(){
-  char c = 0xff;
+  unsigned char c = 0xff;
   uint64_t num_elts = 5000000000;
   uint64_t init_count = 1;
+  uint64_t i;
   stack_t s;
   clock_t t_push, t_pop;
-  stack_init(&s, init_count, sizeof(char), NULL);
+  stack_init(&s, init_count, sizeof(unsigned char), NULL);
   printf("Run a stack_{push, pop} test on %lu char elements; "
 	 "requires sufficient memory \n", num_elts);
   t_push = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     stack_push(&s, &c);
   }
   t_push = clock() - t_push;
   t_pop = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     stack_pop(&s, &c);
   }
   t_pop = clock() - t_pop;

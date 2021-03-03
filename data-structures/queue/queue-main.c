@@ -54,26 +54,27 @@ void uint64_push_pop_helper(queue_t *q,
 			    uint64_t init_val,
 			    uint64_t num_elts){
   int res = 1;
+  uint64_t i;
   uint64_t *pushed = NULL, *popped = NULL;
   clock_t t_push, t_pop;
   pushed = malloc_perror(num_elts * sizeof(uint64_t));
   popped = malloc_perror(num_elts * sizeof(uint64_t));
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     pushed[i] = init_val + i;
   }
   t_push = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     queue_push(q, &pushed[i]);
   }
   t_push = clock() - t_push;
   t_pop = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     queue_pop(q, &popped[i]);
   }
   t_pop = clock() - t_pop;
   res *= (q->num_elts == 0);
   res *= (q->count >= num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     res *= (popped[i] == init_val + i);
   }
   printf("\t\tpush time:   %.4f seconds\n", (float)t_push / CLOCKS_PER_SEC);
@@ -92,13 +93,14 @@ void run_uint64_first_test(){
   uint64_t init_count = 1;
   uint64_t init_val = 1;
   uint64_t pushed, popped;
+  uint64_t i;
   queue_t q;
   queue_init(&q, init_count, sizeof(uint64_t), NULL);
   printf("Run a queue_first test on uint64_t elements \n");
   printf("\tinit queue count: %lu\n"
 	 "\t#elements:        %lu\n",
 	 init_count,  num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     if (q.num_elts == 0){
       res *= (queue_first(&q) == NULL);
     }else{
@@ -108,7 +110,7 @@ void run_uint64_first_test(){
     queue_push(&q, &pushed);
     res *= (*(uint64_t *)queue_first(&q) == init_val);
   }
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     res *= (*(uint64_t *)queue_first(&q) == init_val + i);
     queue_pop(&q, &popped);
     if (q.num_elts == 0){
@@ -127,12 +129,13 @@ void run_uint64_first_test(){
 void run_uint64_free_test(){
   uint64_t num_elts = 50000000;
   uint64_t init_count = 1;
+  uint64_t i;
   queue_t q;
   clock_t t;
   queue_init(&q, init_count, sizeof(uint64_t), NULL);
   printf("Run a queue_free test on uint64_t elements\n");
   printf("\t# elements:       %lu\n", num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     queue_push(&q, &i);
   }
   t = clock();
@@ -195,29 +198,30 @@ void uint64_ptr_push_pop_helper(queue_t *q,
 				uint64_t init_val,
 				uint64_t num_elts){
   int res = 1;
+  uint64_t i;
   uint64_ptr_t **pushed = NULL, **popped = NULL;
   clock_t t_push, t_pop;
   pushed = calloc_perror(num_elts, sizeof(uint64_ptr_t *));
   popped = calloc_perror(num_elts, sizeof(uint64_ptr_t *));
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     pushed[i] = malloc_perror(sizeof(uint64_ptr_t));
     pushed[i]->val = malloc_perror(sizeof(uint64_t));
     *(pushed[i]->val) = init_val + i;
   }
   t_push = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     queue_push(q, &pushed[i]);
   }
   t_push = clock() - t_push;
   memset(pushed, 0, num_elts * sizeof(uint64_ptr_t *));
   t_pop = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     queue_pop(q, &popped[i]);
   }
   t_pop = clock() - t_pop;
   res *= (q->num_elts == 0);
   res *= (q->count >= num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     res *= (*(popped[i]->val) == init_val + i);
     free_uint64_ptr_fn(&popped[i]);
   }
@@ -236,6 +240,7 @@ void run_uint64_ptr_first_test(){
   uint64_t num_elts = 50000000;
   uint64_t init_count = 1;
   uint64_t init_val = 1;
+  uint64_t i;
   uint64_ptr_t *pushed = NULL, *popped = NULL;
   queue_t q;
   queue_init(&q, init_count, sizeof(uint64_ptr_t *), free_uint64_ptr_fn);
@@ -243,7 +248,7 @@ void run_uint64_ptr_first_test(){
   printf("\tinit queue count: %lu\n"
 	 "\t#elements:        %lu\n",
 	 init_count, num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     if (q.num_elts == 0){
       res *= (queue_first(&q) == NULL);
     }else{
@@ -256,7 +261,7 @@ void run_uint64_ptr_first_test(){
     res *= (*(*(uint64_ptr_t **)queue_first(&q))->val == init_val);
     pushed = NULL;
   }
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     res *= (*(*(uint64_ptr_t **)queue_first(&q))->val == init_val + i);
     queue_pop(&q, &popped);
     if (q.num_elts == 0){
@@ -277,13 +282,14 @@ void run_uint64_ptr_first_test(){
 void run_uint64_ptr_free_test(){
   uint64_t num_elts = 50000000;
   uint64_t init_count = 1;
+  uint64_t i;
   uint64_ptr_t *pushed = NULL;
   queue_t q;
   clock_t t;
   queue_init(&q, init_count, sizeof(uint64_ptr_t *), free_uint64_ptr_fn);
   printf("Run a queue_free test on noncontiguous uint64_ptr_t elements \n");
   printf("\t# elements:       %lu\n", num_elts);
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     pushed = malloc_perror(sizeof(uint64_ptr_t));
     pushed->val = malloc_perror(sizeof(uint64_t));
     *(pushed->val) = i;
@@ -300,21 +306,22 @@ void run_uint64_ptr_free_test(){
    Runs a test of a queue of 5 billion char elements.
 */
 void run_large_queue_test(){
-  char c = 0xff;
+  unsigned char c = 0xff;
   uint64_t num_elts = 5000000000;
   uint64_t init_count = 1;
+  uint64_t i;
   queue_t q;
   clock_t t_push, t_pop;
-  queue_init(&q, init_count, sizeof(char), NULL);
+  queue_init(&q, init_count, sizeof(unsigned char), NULL);
   printf("Run a queue_{push, pop} test on %lu char elements; "
 	 "requires sufficient memory \n", num_elts);
   t_push = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     queue_push(&q, &c);
   }
   t_push = clock() - t_push;
   t_pop = clock();
-  for (uint64_t i = 0; i < num_elts; i++){
+  for (i = 0; i < num_elts; i++){
     queue_pop(&q, &c);
   }
   t_pop = clock() - t_pop;

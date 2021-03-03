@@ -45,7 +45,7 @@ void queue_init(queue_t *q,
 		size_t elt_size,
 		void (*free_elt)(void *)){
   q->count = init_count;
-  q->count_max = QUEUE_COUNT_MAX; //the only use of the macro in the file
+  q->count_max = QUEUE_COUNT_MAX; /* the only use of the macro in the file */
   if (q->count > q->count_max){
     fprintf_stderr_exit("init_count > count maximum", __LINE__);
   }
@@ -99,8 +99,9 @@ void *queue_first(const queue_t *q){
    to by the q parameter.
 */
 void queue_free(queue_t *q){
+  size_t i;
   if (q->free_elt != NULL){
-    for (size_t i = 0; i < q->num_elts; i++){
+    for (i = 0; i < q->num_elts; i++){
       q->free_elt(elt_ptr(q->elts, q->num_popped_elts + i, q->elt_size));
     }
   }

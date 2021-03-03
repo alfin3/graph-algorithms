@@ -1,6 +1,6 @@
 CC = gcc
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
-CFLAGS = -I$(UTILS_MEM_DIR) -Wall -Wextra -O3
+CFLAGS = -std=c90 -I$(UTILS_MEM_DIR) -Wall -Wextra -Wpedantic -O3
 OBJ = queue-main.o queue.o $(UTILS_MEM_DIR)utilities-mem.o
 
 queue : $(OBJ)
