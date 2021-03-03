@@ -28,9 +28,9 @@ size_t pow_mod(size_t a, size_t k, size_t n){
   ret = 1;
   while (k_shift){
     if (k_shift & 1){
-      ret = mul_mod(ret, a, n); //update for each set bit
+      ret = mul_mod(ret, a, n); /* update for each set bit */
     }
-    a = mul_mod(a, a, n); //repetitive squaring between updates
+    a = mul_mod(a, a, n); /* repetitive squaring between updates */
     k_shift >>= 1;
   }
   return ret;
@@ -43,7 +43,8 @@ size_t pow_mod(size_t a, size_t k, size_t n){
 size_t mul_mod(size_t a, size_t b, size_t n){
   size_t al, bl, ah, bh, ah_bh;
   size_t ret;
-  //comparisons for speed up
+  size_t i;
+  /* comparisons for speed up */
   if (n == 1) return 0;
   if (a == 0 || b == 0) return 0;
   if (a < pow_two(HALF_BIT_COUNT) && b < pow_two(HALF_BIT_COUNT)){
@@ -54,12 +55,12 @@ size_t mul_mod(size_t a, size_t b, size_t n){
   ah = a >> HALF_BIT_COUNT;
   bh = b >> HALF_BIT_COUNT;
   ah_bh = ah * bh;
-  for (size_t i = 0; i < HALF_BIT_COUNT; i++){
+  for (i = 0; i < HALF_BIT_COUNT; i++){
     ah_bh = sum_mod(ah_bh, ah_bh, n);
   }
   ret = sum_mod(ah_bh, ah * bl, n);
   ret = sum_mod(ret, al * bh, n);
-  for (size_t i = 0; i < HALF_BIT_COUNT; i++){
+  for (i = 0; i < HALF_BIT_COUNT; i++){
     ret = sum_mod(ret, ret, n);
   }
   ret = sum_mod(ret, al * bl, n);
@@ -77,8 +78,8 @@ size_t sum_mod(size_t a, size_t b, size_t n){
   if (b == 0) return a % n;
   if (a >= n) a = a % n;
   if (b >= n) b = b % n;
-  //a, b < n, can subtract at most one n from a + b
-  rem = n - a; //>= 1
+  /* a, b < n, can subtract at most one n from a + b */
+  rem = n - a; /* >= 1 */
   if (rem <= b){
     return b - rem;
   }else{
@@ -98,11 +99,12 @@ size_t mem_mod(const void *s, size_t size, size_t n){
   size_t val, prod;
   size_t ptwo = 1, ptwo_inc;
   size_t ret = 0;
+  size_t i;
   if (n == 1) return 0;
   ptwo_inc = mul_mod(pow_two(BYTE_BIT_COUNT - 1), 2, n);
-  for (size_t i = 0; i < size; i++){
+  for (i = 0; i < size; i++){
     val = *ptr;
-    //comparison for speed up across a large memory block
+    /* comparison for speed up across a large memory block */
     if (val >= n) val = val % n;
     prod = mul_mod(ptwo, val, n);
     ret = sum_mod(ret, prod, n);
@@ -128,6 +130,7 @@ size_t fast_mem_mod(const void *s, size_t size, size_t n){
   size_t val, prod;
   size_t ptwo = 1, ptwo_inc = 1;
   size_t ret = 0;
+  size_t i;
   if (n == 1) return 0;
   if (size != step_size){
     res_size = size % step_size;
@@ -135,9 +138,9 @@ size_t fast_mem_mod(const void *s, size_t size, size_t n){
   if (size > step_size){
     ptwo_inc = mul_mod(pow_two(FULL_BIT_COUNT - 1), 2, n);
   } 
-  for (size_t i = 0; i < size - res_size; i += step_size){
+  for (i = 0; i < size - res_size; i += step_size){
     val = *ptr;
-    //comparison for speed across a large memory block
+    /* comparison for speed across a large memory block */
     if (val >= n) val = val % n;
     prod = mul_mod(ptwo, val, n);
     ret = sum_mod(ret, prod, n);

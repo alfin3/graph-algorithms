@@ -171,8 +171,9 @@ void heap_pop(heap_t *h, void *pty, void *elt){
    an argument passed as the h parameter.
 */
 void heap_free(heap_t *h){
+  size_t i;
   if (h->free_elt != NULL){
-    for (size_t i = 0; i < h->num_elts; i++){
+    for (i = 0; i < h->num_elts; i++){
       h->free_elt(elt_ptr(h, i));
     } 
   }
@@ -258,9 +259,9 @@ static void heapify_down(heap_t *h, size_t i){
   size_t jl, jr;
   void *buf = malloc_perror(h->pty_size + h->elt_size);
   memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
-  //0 <= i <= num_elts - 1 <= SIZE_MAX - 2
+  /* 0 <= i <= num_elts - 1 <= SIZE_MAX - 2 */
   while (i + 2 <= h->num_elts - 1 - i){
-    //both next left and next right indices have elements
+    /* both next left and next right indices have elements */
     jl = 2 * i + 1;
     jr = 2 * i + 2;
     if (h->cmp_pty(buf, pty_ptr(h, jl)) > 0 &&
@@ -268,7 +269,7 @@ static void heapify_down(heap_t *h, size_t i){
       half_swap(h, i, jl);
       i = jl;
     }else if (h->cmp_pty(buf, pty_ptr(h, jr)) > 0){
-      //jr has min priority relative to jl and the ith priority is greater
+      /* jr has min pty relative to jl and the ith pty is greater */
       half_swap(h, i, jr);
       i = jr;
     }else{

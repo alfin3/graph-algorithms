@@ -41,8 +41,8 @@ typedef struct{
   uint64_t num_elts;
   uint64_t num_placeholders;
   float alpha;
-  dll_node_t *placeholder; //node with node->key == NULL
-  dll_node_t **key_elts; //array of pointers to dlls, each with <= 1 node
+  dll_node_t *placeholder; /* node with node->key == NULL */
+  dll_node_t **key_elts; /* array of pointers to dlls, each with <= 1 node */
   void (*rdc_key)(void *, const void *);
   void (*free_elt)(void *);
 } ht_mul_uint64_t;

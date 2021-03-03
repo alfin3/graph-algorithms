@@ -93,6 +93,7 @@ void ht_div_uint64_init(ht_div_uint64_t *ht,
 	                size_t elt_size,
 			float alpha,
 	                void (*free_elt)(void *)){
+  uint64_t i;
   ht->count_ix = 0;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
@@ -100,7 +101,7 @@ void ht_div_uint64_init(ht_div_uint64_t *ht,
   ht->num_elts = 0;
   ht->alpha = alpha;
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
-  for (uint64_t i = 0; i < ht->count; i++){
+  for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
   }
   ht->free_elt = free_elt;
@@ -116,7 +117,7 @@ void ht_div_uint64_insert(ht_div_uint64_t *ht,
 			  const void *elt){
   uint64_t ix;
   dll_node_t **head = NULL, *node = NULL;
-  //grow hash table if E[# keys in a slot] > alpha
+  /* grow hash table if E[# keys in a slot] > alpha */
   while ((float)ht->num_elts / ht->count > ht->alpha &&
 	 ht->count_ix < PRIMES_COUNT - 1){
     ht_grow(ht);
@@ -159,7 +160,7 @@ void ht_div_uint64_remove(ht_div_uint64_t *ht, const void *key, void *elt){
   dll_node_t *node = dll_search_key(head, key, ht->key_size);
   if (node != NULL){
     memcpy(elt, node->elt, ht->elt_size);
-    //if an element is noncontiguous, only the pointer to it is deleted
+    /* if an element is noncontiguous, only the pointer to it is deleted */
     dll_delete(head, node, NULL);
     ht->num_elts--;
   }
@@ -183,7 +184,8 @@ void ht_div_uint64_delete(ht_div_uint64_t *ht, const void *key){
    pointed to by the ht parameter.
 */
 void ht_div_uint64_free(ht_div_uint64_t *ht){
-  for (uint64_t i = 0; i < ht->count; i++){
+  uint64_t i;
+  for (i = 0; i < ht->count; i++){
     dll_free(&ht->key_elts[i], ht->free_elt);
   }
   free(ht->key_elts);
@@ -206,23 +208,24 @@ static uint64_t hash(const ht_div_uint64_t *ht, const void *key){
 */
 static void ht_grow(ht_div_uint64_t *ht){
   uint64_t prev_count = ht->count;
+  uint64_t i;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL;
-  //if the largest size is reached, alpha is not a bound for expectation
+  /* if the largest size is reached, alpha is not a bound for expectation */
   if (ht->count_ix == PRIMES_COUNT - 1) return;
   ht->count_ix++;
   ht->count = PRIMES[ht->count_ix];
   ht->num_elts = 0;
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
-  for (uint64_t i = 0; i < ht->count; i++){
+  for (i = 0; i < ht->count; i++){
     head = &ht->key_elts[i];
     dll_init(head);
   }
-  for (uint64_t i = 0; i < prev_count; i++){
+  for (i = 0; i < prev_count; i++){
     head = &prev_key_elts[i];
     while (*head != NULL){
       copy_reinsert(ht, *head);
-      //if an element is noncontiguous, only the pointer to it is deleted
+      /* if an element is noncontiguous, only the pointer to it is deleted */
       dll_delete(head, *head, NULL);
     }
   }

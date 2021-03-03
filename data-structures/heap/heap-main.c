@@ -144,6 +144,7 @@ void run_push_pop_free_div_uint64_test(){
 		      sizeof(double),
 		      sizeof(long double)};
   uint64_t n = 1000000;
+  int i;
   float alpha = 1.0;
   ht_div_uint64_t ht_div;
   ht_div_context_t context;
@@ -164,7 +165,7 @@ void run_push_pop_free_div_uint64_test(){
   ht.free = (heap_ht_free)ht_div_uint64_free;
   printf("Run a heap_{push, pop, free} test with a ht_div_uint64_t "
 	 "hash table on uint64_t elements\n");
-  for (int i = 0; i < pty_types_count; i++){
+  for (i = 0; i < pty_types_count; i++){
     printf("\tnumber of elements: %lu, priority type: %s\n",
 	   n, pty_types[i]);
     push_pop_free_pty_types(n,
@@ -192,6 +193,7 @@ void run_update_search_div_uint64_test(){
 		      sizeof(double),
 		      sizeof(long double)};
   uint64_t n = 1000000;
+  int i;
   float alpha = 1.0;
   ht_div_uint64_t ht_div;
   ht_div_context_t context;
@@ -212,7 +214,7 @@ void run_update_search_div_uint64_test(){
   ht.free = (heap_ht_free)ht_div_uint64_free;
   printf("Run a heap_{update, search} test with a ht_div_uint64_t "
 	 "hash table on uint64_t elements\n");
-  for (int i = 0; i < pty_types_count; i++){
+  for (i = 0; i < pty_types_count; i++){
     printf("\tnumber of elements: %lu, priority type: %s\n",
 	   n, pty_types[i]);
     update_search_pty_types(n,
@@ -239,6 +241,7 @@ void run_push_pop_free_mul_uint64_test(){
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
+  int i;
   uint64_t n = 1000000;
   float alpha = 0.4;
   ht_mul_uint64_t ht_mul;
@@ -251,7 +254,7 @@ void run_push_pop_free_mul_uint64_test(){
 					      new_double,
 					      new_long_double};
   context.alpha = alpha;
-  context.rdc_key = NULL; //elt_size <= 8 bytes
+  context.rdc_key = NULL; /* elt_size <= 8 bytes */
   ht.ht = &ht_mul;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_mul_uint64_init_helper;
@@ -261,7 +264,7 @@ void run_push_pop_free_mul_uint64_test(){
   ht.free = (heap_ht_free)ht_mul_uint64_free;
   printf("Run a heap_{push, pop, free} test with a ht_mul_uint64_t "
 	 "hash table on uint64_t elements\n");
-  for (int i = 0; i < pty_types_count; i++){
+  for (i = 0; i < pty_types_count; i++){
     printf("\tnumber of elements: %lu, priority type: %s\n",
 	   n, pty_types[i]);
     push_pop_free_pty_types(n,
@@ -288,6 +291,7 @@ void run_update_search_mul_uint64_test(){
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
+  int i;
   uint64_t n = 1000000;
   float alpha = 0.4;
   ht_mul_uint64_t ht_mul;
@@ -300,7 +304,7 @@ void run_update_search_mul_uint64_test(){
 					      new_double,
 					      new_long_double};
   context.alpha = alpha;
-  context.rdc_key = NULL; //elt_size <= 8 bytes
+  context.rdc_key = NULL; /* elt_size <= 8 bytes */
   ht.ht = &ht_mul;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_mul_uint64_init_helper;
@@ -310,7 +314,7 @@ void run_update_search_mul_uint64_test(){
   ht.free = (heap_ht_free)ht_mul_uint64_free;
   printf("Run a heap_{update, search} test with a ht_mul_uint64_t "
 	 "hash table on uint64_t elements\n");
-  for (int i = 0; i < pty_types_count; i++){
+  for (i = 0; i < pty_types_count; i++){
     printf("\tnumber of elements: %lu, priority type: %s\n",
 	   n, pty_types[i]);
     update_search_pty_types(n,
@@ -376,6 +380,7 @@ void run_push_pop_free_div_uint64_ptr_test(){
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
+  int i;
   uint64_t n = 1000000;
   float alpha = 1.0;
   ht_div_uint64_t ht_div;
@@ -397,7 +402,7 @@ void run_push_pop_free_div_uint64_ptr_test(){
   ht.free = (heap_ht_free)ht_div_uint64_free;
   printf("Run a heap_{push, pop, free} test with a ht_div_uint64_t "
 	 "hash table on noncontiguous uint64_ptr_t elements\n");
-  for (int i = 0; i < pty_types_count; i++){
+  for (i = 0; i < pty_types_count; i++){
     printf("\tnumber of elements: %lu, priority type: %s\n",
 	   n, pty_types[i]);
     push_pop_free_pty_types(n,
@@ -424,6 +429,7 @@ void run_update_search_div_uint64_ptr_test(){
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
+  int i;
   uint64_t n = 1000000;
   float alpha = 1.0;
   ht_div_uint64_t ht_div;
@@ -445,7 +451,7 @@ void run_update_search_div_uint64_ptr_test(){
   ht.free = (heap_ht_free)ht_div_uint64_free;
   printf("Run a heap_{update, search} test with a ht_div_uint64_t "
 	 "hash table on noncontiguous uint64_ptr_t elements\n");
-  for (int i = 0; i < pty_types_count; i++){
+  for (i = 0; i < pty_types_count; i++){
     printf("\tnumber of elements: %lu, priority type: %s\n",
 	   n, pty_types[i]);
     update_search_pty_types(n,
@@ -472,6 +478,7 @@ void run_push_pop_free_mul_uint64_ptr_test(){
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
+  int i;
   uint64_t n = 1000000;
   float alpha = 0.4;
   ht_mul_uint64_t ht_mul;
@@ -484,7 +491,7 @@ void run_push_pop_free_mul_uint64_ptr_test(){
 					      new_double,
 					      new_long_double};
   context.alpha = alpha;
-  context.rdc_key = NULL; //elt_size <= 8 bytes
+  context.rdc_key = NULL; /* elt_size <= 8 bytes */
   ht.ht = &ht_mul;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_mul_uint64_init_helper;
@@ -494,7 +501,7 @@ void run_push_pop_free_mul_uint64_ptr_test(){
   ht.free = (heap_ht_free)ht_mul_uint64_free;
   printf("Run a heap_{push, pop, free} test with a ht_mul_uint64_t "
 	 "hash table on noncontiguous uint64_ptr_t elements\n");
-  for (int i = 0; i < pty_types_count; i++){
+  for (i = 0; i < pty_types_count; i++){
     printf("\tnumber of elements: %lu, priority type: %s\n",
 	   n, pty_types[i]);
     push_pop_free_pty_types(n,
@@ -521,6 +528,7 @@ void run_update_search_mul_uint64_ptr_test(){
   int pty_sizes[3] = {sizeof(uint64_t),
 		      sizeof(double),
 		      sizeof(long double)};
+  int i;
   uint64_t n = 1000000;
   float alpha = 0.4;
   ht_mul_uint64_t ht_mul;
@@ -533,7 +541,7 @@ void run_update_search_mul_uint64_ptr_test(){
 					      new_double,
 					      new_long_double};
   context.alpha = alpha;
-  context.rdc_key = NULL; //elt_size <= 8 bytes
+  context.rdc_key = NULL; /* elt_size <= 8 bytes */
   ht.ht = &ht_mul;
   ht.context = &context;
   ht.init = (heap_ht_init)ht_mul_uint64_init_helper;
@@ -543,7 +551,7 @@ void run_update_search_mul_uint64_ptr_test(){
   ht.free = (heap_ht_free)ht_mul_uint64_free;
   printf("Run a heap_{update, search} test with a ht_mul_uint64_t "
 	 "hash table on noncontiguous uint64_ptr_t elements\n");
-  for (int i = 0; i < pty_types_count; i++){
+  for (i = 0; i < pty_types_count; i++){
     printf("\tnumber of elements: %lu, priority type: %s\n",
 	   n, pty_types[i]);
     update_search_pty_types(n,
@@ -570,11 +578,12 @@ void push_incr_ptys_elts(heap_t *h,
 			 void (*new_pty)(void *, uint64_t)){
   uint64_t first_half_count = count / 2;
   uint64_t n = h->num_elts;
+  uint64_t i;
   void *pty = NULL;
   clock_t t;
   pty = malloc_perror(pty_size);
   t = clock();
-  for (uint64_t i = 0; i < first_half_count; i++){
+  for (i = 0; i < first_half_count; i++){
     new_pty(pty, i);
     heap_push(h, pty, elts[i]);
   }
@@ -583,7 +592,7 @@ void push_incr_ptys_elts(heap_t *h,
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
   *res *= (h->num_elts == n + first_half_count);
   t = clock();
-  for (uint64_t i = first_half_count; i < count; i++){
+  for (i = first_half_count; i < count; i++){
     new_pty(pty, i);
     heap_push(h, pty, elts[i]);
   }
@@ -603,11 +612,12 @@ void push_decr_ptys_elts(heap_t *h,
 			 void (*new_pty)(void *, uint64_t)){
   uint64_t first_half_count = count / 2;
   uint64_t n = h->num_elts;
+  uint64_t i;
   void *pty = NULL;
   clock_t t;
   pty = malloc_perror(pty_size);
   t = clock();
-  for (uint64_t i = 0; i < first_half_count; i++){
+  for (i = 0; i < first_half_count; i++){
     new_pty(pty, count - i - 1);
     heap_push(h, pty, elts[count - i - 1]);
   }
@@ -616,7 +626,7 @@ void push_decr_ptys_elts(heap_t *h,
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
   *res *= (h->num_elts == n + first_half_count);
   t = clock();
-  for (uint64_t i = first_half_count; i < count; i++){
+  for (i = first_half_count; i < count; i++){
     new_pty(pty, count - i - 1);
     heap_push(h, pty, elts[count - i - 1]);
   }
@@ -638,13 +648,14 @@ void pop_ptys_elts(heap_t *h,
 		   int (*cmp_elt)(const void *, const void *)){
   uint64_t first_half_count = count / 2;
   uint64_t n = h->num_elts;
+  uint64_t i;
   void *pty_prev = NULL, *pty_cur = NULL, *elt = NULL;
+  clock_t t;
   pty_prev = malloc_perror(pty_size);
   pty_cur = malloc_perror(pty_size);
   elt = malloc_perror(elt_size);
-  clock_t t;
   t = clock();
-  for (uint64_t i = 0; i < first_half_count; i++){
+  for (i = 0; i < first_half_count; i++){
     if (i == 0){
       heap_pop(h, pty_cur, elt);
       *res *= (cmp_elt(elt, elts[i]) == 0);
@@ -660,7 +671,7 @@ void pop_ptys_elts(heap_t *h,
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
   *res *= (h->num_elts == n - first_half_count);
   t = clock();
-  for (uint64_t i = first_half_count; i < count; i++){
+  for (i = first_half_count; i < count; i++){
     if (i == 0){
       heap_pop(h, pty_cur, elt);
       *res *= (cmp_elt(elt, elts[i]) == 0);
@@ -703,10 +714,11 @@ void push_pop_free_pty_types(uint64_t n,
 			     void (*free_elt)(void *)){
   int res = 1;
   uint64_t init_count = 1;
+  uint64_t i;
   void **elts = NULL;
   heap_t h;
   elts = malloc_perror(n * sizeof(void *));
-  for (uint64_t i = 0; i < n; i++){
+  for (i = 0; i < n; i++){
     elts[i] = malloc_perror(elt_size);
     new_elt(elts[i], i);
   }
@@ -719,7 +731,7 @@ void push_pop_free_pty_types(uint64_t n,
   free_heap(&h);
   printf("\t\torder correctness:                             ");
   print_test_result(res);
-  for (uint64_t i = 0; i < n; i++){
+  for (i = 0; i < n; i++){
     free(elts[i]);
   }
   free(elts);
@@ -738,11 +750,12 @@ void push_rev_incr_ptys_elts(heap_t *h,
 			     void (*new_pty)(void *, uint64_t)){
   uint64_t first_half_count = count / 2;
   uint64_t n = h->num_elts;
+  uint64_t i;
   void *pty = NULL;
   clock_t t;
   pty = malloc_perror(pty_size);
   t = clock();
-  for (uint64_t i = 0; i < first_half_count; i++){
+  for (i = 0; i < first_half_count; i++){
     new_pty(pty, i);
     heap_push(h, pty, elts[count - i - 1]);
   }
@@ -751,7 +764,7 @@ void push_rev_incr_ptys_elts(heap_t *h,
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
   *res *= (h->num_elts == n + first_half_count);
   t = clock();
-  for (uint64_t i = first_half_count; i < count; i++){
+  for (i = first_half_count; i < count; i++){
     new_pty(pty, i);
     heap_push(h, pty, elts[count - i - 1]);
   }
@@ -771,10 +784,11 @@ void update_rev_ptys_elts(heap_t *h,
 			  void (*new_pty)(void *, uint64_t)){
   uint64_t first_half_count = count / 2;
   uint64_t n = h->num_elts;
+  uint64_t i;
   void *pty = malloc_perror(pty_size);
   clock_t t;
   t = clock();
-  for (uint64_t i = 0; i < first_half_count; i++){
+  for (i = 0; i < first_half_count; i++){
     new_pty(pty, i);
     heap_update(h, pty, elts[i]);
   }
@@ -783,7 +797,7 @@ void update_rev_ptys_elts(heap_t *h,
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
   *res *= (h->num_elts == n);
   t = clock();
-  for (uint64_t i = first_half_count; i < count; i++){
+  for (i = first_half_count; i < count; i++){
     new_pty(pty, i);
     heap_update(h, pty, elts[i]);
   }
@@ -802,12 +816,13 @@ void search_ptys_elts(heap_t *h,
 		      void **elts,
 		      uint64_t count){
   uint64_t n = h->num_elts;
+  uint64_t i;
   void *pty = NULL, *elt = NULL, *ptr = NULL;
+  clock_t t;
   pty = malloc_perror(pty_size);
   elt = malloc_perror(elt_size);
-  clock_t t;
   t = clock();
-  for (uint64_t i = 0; i < count; i++){
+  for (i = 0; i < count; i++){
     ptr = heap_search(h, elts[i]);
     *res *= (ptr != NULL);
   }
@@ -817,7 +832,7 @@ void search_ptys_elts(heap_t *h,
   *res *= (h->num_elts == n);
   heap_pop(h, pty, elt);
   t = clock();
-  for (uint64_t i = 0; i < count; i++){
+  for (i = 0; i < count; i++){
     ptr = heap_search(h, elt);
     *res *= (ptr == NULL);
   }
@@ -844,10 +859,11 @@ void update_search_pty_types(uint64_t n,
 			     void (*free_elt)(void *)){
   int res = 1;
   uint64_t init_count = 1;
+  uint64_t i;
   void **elts = NULL;
   heap_t h;
   elts = malloc_perror(n * sizeof(void *));
-  for (uint64_t i = 0; i < n; i++){
+  for (i = 0; i < n; i++){
     elts[i] = malloc_perror(elt_size);
     new_elt(elts[i], i);
   }
@@ -859,7 +875,7 @@ void update_search_pty_types(uint64_t n,
   free_heap(&h);
   printf("\t\torder correctness:                             ");
   print_test_result(res);
-  for (uint64_t i = 0; i < n; i++){
+  for (i = 0; i < n; i++){
     free(elts[i]);
   }
   free(elts);
@@ -878,13 +894,13 @@ void print_test_result(int res){
 }
 
 int main(){
-  //ht_div_uint64_t hash table
+  /* ht_div_uint64_t hash table */
   run_push_pop_free_div_uint64_test();
   run_push_pop_free_div_uint64_ptr_test();
   run_update_search_div_uint64_test();
   run_update_search_div_uint64_ptr_test();
   
-  //ht_mul_uint64_t hash table
+  /* ht_mul_uint64_t hash table */
   run_push_pop_free_mul_uint64_test();
   run_push_pop_free_mul_uint64_ptr_test();
   run_update_search_mul_uint64_test();

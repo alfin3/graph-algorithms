@@ -29,16 +29,16 @@
 typedef void (*heap_ht_init)(void *,
 			     size_t,
 			     size_t,
-			     void (*)(void *), //free_elt
-			     void *); //pointer to context
+			     void (*)(void *), /* free_elt */
+			     void *); /* pointer to context */
 typedef void (*heap_ht_insert)(void *, const void *, const void *);
 typedef void *(*heap_ht_search)(const void *, const void *);
 typedef void (*heap_ht_remove)(void *, const void *, void *);
 typedef void (*heap_ht_free)(void *);
 
 typedef struct{
-  void *ht; //points to a block of hash table struct size
-  void *context; //points to initialization context
+  void *ht; /* points to a block of hash table struct size */
+  void *context; /* points to initialization context */
   heap_ht_init init;
   heap_ht_insert insert;
   heap_ht_search search;

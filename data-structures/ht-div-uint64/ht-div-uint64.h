@@ -32,7 +32,7 @@ typedef struct{
   uint64_t count;
   uint64_t num_elts;
   float alpha; 
-  dll_node_t **key_elts; //array of pointers to nodes
+  dll_node_t **key_elts; /* array of pointers to nodes */
   void (*free_elt)(void *);
 } ht_div_uint64_t;
 

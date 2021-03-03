@@ -9,7 +9,7 @@ CFLAGS = -I$(HT_DIV_UINT64_DIR) \
          -I$(DLL_DIR)           \
          -I$(UTILS_MEM_DIR)     \
          -I$(UTILS_MOD_DIR)      \
-         -Wall -Wextra -O3
+         -std=c90 -Wall -Wextra -Wpedantic -O3
 
 OBJ = heap-main.o                         \
       heap.o                              \

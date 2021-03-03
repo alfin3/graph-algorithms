@@ -33,17 +33,17 @@
 #include "utilities-mem.h"
 #include "utilities-mod.h"
 
-static const uint64_t FIRST_PRIME = 15769474759331449193U; //2^63 < p < 2^64
-static const uint64_t SECOND_PRIME = 18292551137159601919U; //2^63 < p < 2^64
+static const uint64_t FIRST_PRIME = 15769474759331449193U; /* >2^63, <2^64 */
+static const uint64_t SECOND_PRIME = 18292551137159601919U; /* >2^63, <2^64 */
 static const size_t UINT64_SIZE = sizeof(uint64_t);
 static const size_t UINT64_BIT_COUNT = sizeof(uint64_t) * 8;
 
-//placeholder object handling
+/* placeholder object handling */
 static void placeholder_init(dll_node_t *node, int elt_size);
 static int is_placeholder(const dll_node_t *node);
 static void placeholder_free(dll_node_t *node);
 
-//hashing
+/* hashing */
 static uint64_t convert_std_key(const ht_mul_uint64_t *ht, const void *key);
 static uint64_t hash(uint64_t prime, uint64_t std_key);
 static uint64_t adjust_hash_dist(uint64_t dist);
@@ -51,12 +51,12 @@ static uint64_t probe_dbl_hash(const ht_mul_uint64_t *ht,
 			       uint64_t dist,
 			       uint64_t ix);
 
-//hash table operations
+/* hash table operations */
 static dll_node_t **search(const ht_mul_uint64_t *ht, const void *key);
 static uint64_t *first_val_ptr(const void *key_block, size_t key_size);
 static uint64_t *second_val_ptr(const void *key_block, size_t key_size);
 
-//hash table maintenance
+/* hash table maintenance */
 static void ht_grow(ht_mul_uint64_t *ht);
 static void ht_clean(ht_mul_uint64_t *ht);
 static void reinsert(ht_mul_uint64_t *ht, const dll_node_t *node);
@@ -96,19 +96,20 @@ void ht_mul_uint64_init(ht_mul_uint64_t *ht,
 			float alpha,
                         void (*rdc_key)(void *, const void *),
 	                void (*free_elt)(void *)){
+  uint64_t i;
   ht->log_count = 10;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
   ht->count = pow_two(ht->log_count);
   ht->max_count = pow_two(63);
-  ht->max_num_probes = 1; //at least one probe
+  ht->max_num_probes = 1; /* at least one probe */
   ht->num_elts = 0;
   ht->num_placeholders = 0;
   ht->alpha = alpha;
   ht->placeholder = malloc_perror(sizeof(dll_node_t));
   placeholder_init(ht->placeholder, elt_size);
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
-  for (uint64_t i = 0; i < ht->count; i++){
+  for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
   }
   ht->rdc_key = rdc_key;
@@ -130,7 +131,7 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht,
   dll_node_t **head = NULL;
   while ((float)(ht->num_elts + ht->num_placeholders) / ht->count >
 	 ht->alpha){
-    //clean or grow if E[# keys in a slot] > alpha
+    /* clean or grow if E[# keys in a slot] > alpha */
     if (ht->num_elts < ht->num_placeholders){
       ht_clean(ht);
     }else if (ht->count < ht->max_count){
@@ -142,7 +143,7 @@ void ht_mul_uint64_insert(ht_mul_uint64_t *ht,
   std_key = convert_std_key(ht, key);
   first_val = hash(FIRST_PRIME, std_key); 
   second_val = hash(SECOND_PRIME, std_key);
-  //prepare a hash key and two hash values for storage as a block
+  /* prepare a hash key and two hash values for storage as a block */
   key_block = malloc_perror(key_block_size);
   memcpy(key_block, key, ht->key_size);
   *first_val_ptr(key_block, ht->key_size) = first_val;
@@ -195,7 +196,7 @@ void ht_mul_uint64_remove(ht_mul_uint64_t *ht, const void *key, void *elt){
   dll_node_t **head = search(ht, key);
   if (head != NULL){
     memcpy(elt, (*head)->elt, ht->elt_size);
-    //if an element is noncontiguous, only the pointer to it is deleted
+    /* if an element is noncontiguous, only the pointer to it is deleted */
     dll_delete(head, *head, NULL);
     *head = ht->placeholder;
     ht->num_elts--;
@@ -222,8 +223,9 @@ void ht_mul_uint64_delete(ht_mul_uint64_t *ht, const void *key){
    pointed to by the ht parameter.
 */
 void ht_mul_uint64_free(ht_mul_uint64_t *ht){
+  uint64_t i;
   dll_node_t **head = NULL;
-  for (uint64_t i = 0; i < ht->count; i++){
+  for (i = 0; i < ht->count; i++){
     head = &ht->key_elts[i];
     if (*head != NULL && !is_placeholder(*head)){
       dll_free(head, ht->free_elt);
@@ -246,8 +248,8 @@ void ht_mul_uint64_free(ht_mul_uint64_t *ht){
 static void placeholder_init(dll_node_t *node, int elt_size){
   node->key_size = 0;
   node->elt_size = elt_size;
-  node->key = NULL; //no element in a hash table can have node->key == NULL
-  node->elt = calloc_perror(1, elt_size); //element for consistency purposes
+  node->key = NULL; /* element in ht cannot have node->key == NULL */
+  node->elt = calloc_perror(1, elt_size); /* for consistency purposes */
   node->next = node;
   node->prev = node;
 }
@@ -276,7 +278,7 @@ static void placeholder_free(dll_node_t *node){
    Converts a key to a key of the standard size of 8 bytes.
 */
 static uint64_t convert_std_key(const ht_mul_uint64_t *ht, const void *key){
-  uint64_t std_key = 0; //initialize all bits
+  uint64_t std_key = 0; /* initialize all bits */
   if (ht->key_size > sizeof(uint64_t)){
     ht->rdc_key(&std_key, key);
   }else{ 
@@ -353,6 +355,7 @@ static dll_node_t **search(const ht_mul_uint64_t *ht, const void *key){
 */
 static void ht_grow(ht_mul_uint64_t *ht){
   uint64_t prev_count = ht->count;
+  uint64_t i;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL;
   if (ht->count == ht->max_count) return;
@@ -362,11 +365,11 @@ static void ht_grow(ht_mul_uint64_t *ht){
   ht->num_elts = 0;
   ht->num_placeholders = 0;
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
-  for (uint64_t i = 0; i < ht->count; i++){
+  for (i = 0; i < ht->count; i++){
     head = &ht->key_elts[i];
     dll_init(head);
   }
-  for (uint64_t i = 0; i < prev_count; i++){
+  for (i = 0; i < prev_count; i++){
     head = &prev_key_elts[i];
     if (*head != NULL && !is_placeholder(*head)){
       reinsert(ht, *head);
@@ -384,17 +387,18 @@ static void ht_grow(ht_mul_uint64_t *ht){
    constant overhead of at most one rehashing per delete/remove operation.
 */
 static void ht_clean(ht_mul_uint64_t *ht){
+  uint64_t i;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL;
   ht->max_num_probes = 1;
   ht->num_elts = 0;
   ht->num_placeholders = 0;
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
-  for (uint64_t i = 0; i < ht->count; i++){
+  for (i = 0; i < ht->count; i++){
     head = &ht->key_elts[i];
     dll_init(head);
   }
-  for (uint64_t i = 0; i < ht->count; i++){
+  for (i = 0; i < ht->count; i++){
     head = &prev_key_elts[i];
     if (*head != NULL && !is_placeholder(*head)){
       reinsert(ht, *head);
