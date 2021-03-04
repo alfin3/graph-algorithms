@@ -354,8 +354,7 @@ static dll_node_t **search(const ht_mul_uint64_t *ht, const void *key){
    has been reached.
 */
 static void ht_grow(ht_mul_uint64_t *ht){
-  uint64_t prev_count = ht->count;
-  uint64_t i;
+  uint64_t i, prev_count = ht->count;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL;
   if (ht->count == ht->max_count) return;
