@@ -4,11 +4,11 @@ GRAPH_DIR = $(DS_DIR)graph/
 QUEUE_DIR = $(DS_DIR)queue/
 STACK_DIR = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
-CFLAGS = -I$(GRAPH_DIR)     \
-         -I$(QUEUE_DIR)     \
-         -I$(STACK_DIR)     \
-         -I$(UTILS_MEM_DIR) \
-         -Wall -Wextra -O3
+CFLAGS = -I$(GRAPH_DIR)                        \
+         -I$(QUEUE_DIR)                        \
+         -I$(STACK_DIR)                        \
+         -I$(UTILS_MEM_DIR)                    \
+         -std=c90 -Wall -Wextra -Wpedantic -O3
 
 OBJ = bfs-main.o                      \
       bfs.o                           \
