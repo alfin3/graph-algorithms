@@ -42,7 +42,7 @@ void graph_base_init(graph_t *g, size_t n, size_t wt_size){
    the g parameter.
 */
 void graph_free(graph_t *g){
-  free(g->u); //free(NULL) performs no operation
+  free(g->u); /* free(NULL) performs no operation */
   free(g->v);
   free(g->wts);
   g->u = NULL;
@@ -57,6 +57,7 @@ void graph_free(graph_t *g){
                  graph_base_init
 */
 void adj_lst_init(adj_lst_t *a, const graph_t *g){
+  size_t i;
   a->num_vts = g->num_vts;
   a->num_es = 0; 
   a->wt_size = g->wt_size;
@@ -68,8 +69,8 @@ void adj_lst_init(adj_lst_t *a, const graph_t *g){
       a->wts = malloc_perror(a->num_vts * sizeof(stack_t *));
     }
   }
-  //initialize stacks
-  for (size_t i = 0; i < a->num_vts; i++){
+  /* initialize stacks */
+  for (i = 0; i < a->num_vts; i++){
     a->vts[i] = malloc_perror(sizeof(stack_t));
     stack_init(a->vts[i], STACK_INIT_COUNT, sizeof(size_t), NULL);
     if (a->wt_size > 0){
@@ -84,7 +85,8 @@ void adj_lst_init(adj_lst_t *a, const graph_t *g){
    pointed to by the a parameter.
 */
 void adj_lst_free(adj_lst_t *a){
-  for (size_t i = 0; i < a->num_vts; i++){
+  size_t i;
+  for (i = 0; i < a->num_vts; i++){
     stack_free(a->vts[i]);
     free(a->vts[i]);
     a->vts[i] = NULL;
@@ -94,7 +96,7 @@ void adj_lst_free(adj_lst_t *a){
       a->wts[i] = NULL;
     }
   }
-  free(a->vts); //free(NULL) performs no operation
+  free(a->vts); /* free(NULL) performs no operation */
   free(a->wts);
   a->vts = NULL;
   a->wts = NULL;
@@ -104,7 +106,8 @@ void adj_lst_free(adj_lst_t *a){
    Builds the adjacency list of a directed graph.
 */
 void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
-  for (size_t i = 0; i < g->num_es; i++){
+  size_t i;
+  for (i = 0; i < g->num_es; i++){
     stack_push(a->vts[*u_ptr(g, i)], v_ptr(g, i));
     if (a->wt_size > 0){
       stack_push(a->wts[*u_ptr(g, i)], wt_ptr(g, i));
@@ -117,7 +120,8 @@ void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
    Builds the adjacency list of an undirected graph.
 */
 void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
-  for (size_t i = 0; i < g->num_es; i++){
+  size_t i;
+  for (i = 0; i < g->num_es; i++){
     stack_push(a->vts[*u_ptr(g, i)], v_ptr(g, i));
     stack_push(a->vts[*v_ptr(g, i)], u_ptr(g, i));
     if (a->wt_size > 0){
@@ -182,12 +186,13 @@ void adj_lst_rand_dir(adj_lst_t *a,
 		      size_t n,
 		      int (*bern)(void *),
 		      void *arg){
+  size_t i, j;
   graph_t g;
   graph_base_init(&g, n, 0);
   adj_lst_init(a, &g);
   if (n > 0){
-    for (size_t i = 0; i < n - 1; i++){
-      for (size_t j = i + 1; j < n; j++){
+    for (i = 0; i < n - 1; i++){
+      for (j = i + 1; j < n; j++){
 	adj_lst_add_dir_edge(a, i, j, NULL, bern, arg);
 	adj_lst_add_dir_edge(a, j, i, NULL, bern, arg);
       }
@@ -205,12 +210,13 @@ void adj_lst_rand_undir(adj_lst_t *a,
 			size_t n,
 			int (*bern)(void *),
 			void *arg){
+  size_t i, j;
   graph_t g;
   graph_base_init(&g, n, 0);
   adj_lst_init(a, &g);
   if (n > 0){
-    for (size_t i = 0; i < n - 1; i++){
-      for (size_t j = i + 1; j < n; j++){
+    for (i = 0; i < n - 1; i++){
+      for (j = i + 1; j < n; j++){
 	adj_lst_add_undir_edge(a, i, j, NULL, bern, arg);
       }
     }

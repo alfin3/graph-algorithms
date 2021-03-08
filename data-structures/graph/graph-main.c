@@ -15,7 +15,15 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
-#define DRAND48() (drand48())
+/**
+   Generate random numbers in a portable way for test purposes only; rand()
+   in the Linux C Library uses the same generator as random(), which may not
+   be the case on older rand() implementations, and on current
+   implementations on different systems.
+*/
+#define RGENS_SEED() do{srand(time(NULL));}while (0)
+#define RANDOM() (rand()) /* [0, RAND_MAX] */
+#define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
 
 uint64_t sum(const uint64_t *a, uint64_t num_elts);
 uint64_t pow_two(int k);
@@ -34,12 +42,13 @@ void uint64_graph_init(graph_t *g){
   uint64_t v[] = {1, 2, 3, 3};
   uint64_t wts[] = {4, 3, 2, 1};
   uint64_t num_vts = 5;
+  uint64_t i;
   graph_base_init(g, num_vts, sizeof(uint64_t));
   g->num_es = 4;
   g->u = malloc_perror(g->num_es * sizeof(uint64_t));
   g->v = malloc_perror(g->num_es * sizeof(uint64_t));
   g->wts = malloc_perror(g->num_es * g->wt_size);
-  for (uint64_t i = 0; i < g->num_es; i++){
+  for (i = 0; i < g->num_es; i++){
     g->u[i] = u[i];
     g->v[i] = v[i];
     *((uint64_t *)g->wts + i) = wts[i];
@@ -53,13 +62,14 @@ void double_graph_init(graph_t *g){
   uint64_t u[] = {0, 0, 0, 1};
   uint64_t v[] = {1, 2, 3, 3};
   uint64_t num_vts = 5;
+  uint64_t i;
   double wts[] = {4.0, 3.0, 2.0, 1.0};
   graph_base_init(g, num_vts, sizeof(double));
   g->num_es = 4;
   g->u = malloc_perror(g->num_es * sizeof(uint64_t));
   g->v = malloc_perror(g->num_es * sizeof(uint64_t));
   g->wts = malloc_perror(g->num_es * g->wt_size);
-  for (uint64_t i = 0; i < g->num_es; i++){
+  for (i = 0; i < g->num_es; i++){
     g->u[i] = u[i];
     g->v[i] = v[i];
     *((double *)g->wts + i) = wts[i];
@@ -71,29 +81,32 @@ void double_graph_init(graph_t *g){
 */
 
 void print_uint64_elts(const stack_t *s){
-  for (uint64_t i = 0; i < s->num_elts; i++){
+  uint64_t i;
+  for (i = 0; i < s->num_elts; i++){
     printf("%lu ", *((uint64_t *)s->elts + i));
   }
   printf("\n");
 }
 
 void print_double_elts(const stack_t *s){
-  for (uint64_t i = 0; i < s->num_elts; i++){
-    printf("%0.2lf ", *((double *)s->elts + i));
+  uint64_t i;
+  for (i = 0; i < s->num_elts; i++){
+    printf("%0.2f ", *((double *)s->elts + i));
   }
   printf("\n");
 }
   
 void print_adj_lst(const adj_lst_t *a,
 		   void (*print_wts)(const stack_t *)){
+  uint64_t i;
   printf("\tvertices: \n");
-  for (uint64_t i = 0; i < a->num_vts; i++){
+  for (i = 0; i < a->num_vts; i++){
     printf("\t%lu : ", i);
     print_uint64_elts(a->vts[i]);
   }
   if (print_wts != NULL){
     printf("\tweights: \n");
-    for (uint64_t i = 0; i < a->num_vts; i++){
+    for (i = 0; i < a->num_vts; i++){
       printf("\t%lu : ", i);
       print_wts(a->wts[i]);
     }
@@ -144,9 +157,10 @@ void uint64_graph_helper(const adj_lst_t *a,
 			 uint64_t wts[]){
   int res = 1;
   uint64_t ix = 0;
-  for (uint64_t i = 0; i < a->num_vts; i++){
+  uint64_t i, j;
+  for (i = 0; i < a->num_vts; i++){
     res *= (split[i] == a->vts[i]->num_elts);
-    for (uint64_t j = 0; j < split[i]; j++){
+    for (j = 0; j < split[i]; j++){
       res *= (*((uint64_t *)a->vts[i]->elts + j) == vts[ix]);
       res *= (*((uint64_t *)a->wts[i]->elts + j) == wts[ix]);
       ix++;
@@ -198,11 +212,12 @@ void double_graph_helper(const adj_lst_t *a,
 			 double wts[]){
   int res = 1;
   uint64_t ix = 0;
-  for (uint64_t i = 0; i < a->num_vts; i++){
+  uint64_t i, j;
+  for (i = 0; i < a->num_vts; i++){
     res *= (split[i] == a->vts[i]->num_elts);
-    for (uint64_t j = 0; j < split[i]; j++){
+    for (j = 0; j < split[i]; j++){
       res *= (*((uint64_t *)a->vts[i]->elts + j) == vts[ix]);
-      //== because of the same bit pattern
+      /* == because of the same bit pattern */
       res *= (*((double *)a->wts[i]->elts + j) == wts[ix]);
       ix++;
     }
@@ -220,9 +235,10 @@ void corner_cases_helper(const adj_lst_t *a, uint64_t num_vts, int *res);
 void run_corner_cases_test(){
   int res = 1;
   uint64_t max_num_vts = 100;
+  uint64_t i;
   graph_t g;
   adj_lst_t a;
-  for (uint64_t i = 0; i < max_num_vts; i++){
+  for (i = 0; i < max_num_vts; i++){
     graph_base_init(&g, i, 0);
     adj_lst_init(&a, &g);
     adj_lst_dir_build(&a, &g);
@@ -248,9 +264,10 @@ void run_corner_cases_test(){
 }
 
 void corner_cases_helper(const adj_lst_t *a, uint64_t num_vts, int *res){
+  uint64_t i;
   if(num_vts){
     *res *= (a->vts != NULL);
-    for(uint64_t i = 0; i < num_vts; i++){
+    for(i = 0; i < num_vts; i++){
       *res *= (a->vts[i]->num_elts == 0);
     }
   }else{
@@ -268,14 +285,15 @@ void corner_cases_helper(const adj_lst_t *a, uint64_t num_vts, int *res){
    undirected form. n is greater than 1.
 */
 void complete_graph_init(graph_t *g, uint64_t n){
-  uint64_t num_es = (n * (n - 1)) / 2; //n * (n - 1) is even
+  uint64_t num_es = (n * (n - 1)) / 2; /* n * (n - 1) is even */
   uint64_t ix = 0;
+  uint64_t i, j;
   graph_base_init(g, n, 0);
   g->num_es = num_es;
   g->u = malloc_perror(g->num_es * sizeof(uint64_t));
   g->v = malloc_perror(g->num_es * sizeof(uint64_t));
-  for (uint64_t i = 0; i < n - 1; i++){
-    for (uint64_t j = i + 1; j < n; j++){
+  for (i = 0; i < n - 1; i++){
+    for (j = i + 1; j < n; j++){
       g->u[ix] = i;
       g->v[ix] = j;
       ix++;
@@ -287,15 +305,15 @@ void complete_graph_init(graph_t *g, uint64_t n){
    Runs a adj_lst_undir_build test on complete unweighted graphs.
 */
 void run_adj_lst_undir_build_test(){
-  int pow_end = 15;
+  int p, pow_end = 15;
   graph_t g;
   adj_lst_t a;
   clock_t t;
   printf("Test adj_lst_undir_build on complete unweighted graphs \n");
   printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) "
 	 "directed edges \n");
-  for (int i = 0; i < pow_end; i++){
-    complete_graph_init(&g, pow_two(i));
+  for (p = 0; p < pow_end; p++){
+    complete_graph_init(&g, pow_two(p));
     adj_lst_init(&a, &g);
     t = clock();
     adj_lst_undir_build(&a, &g);
@@ -322,7 +340,7 @@ int bern_fn(void *arg){
   bern_arg_t *b = arg;
   if (b->p >= 1.0) return 1;
   if (b->p <= 0.0) return 0;
-  if (b->p > DRAND48()) return 1;
+  if (b->p > DRAND()) return 1;
   return 0;
 }
 
@@ -356,15 +374,16 @@ void add_edge_helper(void (*build)(adj_lst_t *,
 				      const void *,
 				      int (*)(void *),
 				      void *)){
-  int res = 1, pow_end = 15;
-  uint64_t n;
+  int res = 1;
+  int p, pow_end = 15;
+  uint64_t i, j, n;
   bern_arg_t b;
   graph_t g_blt, g_bld;
   adj_lst_t a_blt, a_bld;
   clock_t t;
   b.p = 1.0;
-  for (int i = 0; i < pow_end; i++){
-    n = pow_two(i);
+  for (p = 0; p < pow_end; p++){
+    n = pow_two(p);
     complete_graph_init(&g_blt, n);
     graph_base_init(&g_bld, n, 0);
     adj_lst_init(&a_blt, &g_blt);
@@ -372,8 +391,8 @@ void add_edge_helper(void (*build)(adj_lst_t *,
     build(&a_blt, &g_blt);
     build(&a_bld, &g_bld);
     t = clock();
-    for (uint64_t i = 0; i < n - 1; i++){
-      for (uint64_t j = i + 1; j < n; j++){
+    for (i = 0; i < n - 1; i++){
+      for (j = i + 1; j < n; j++){
 	add_edge(&a_bld, i, j, NULL, bern_fn, &b);
       }
     }
@@ -383,8 +402,8 @@ void add_edge_helper(void (*build)(adj_lst_t *,
 	   "build time: %.6f seconds\n",
 	   a_bld.num_vts, a_bld.num_es, (float)t / CLOCKS_PER_SEC);
     fflush(stdout);
-    //sum test
-    for (uint64_t i = 0; i < n; i++){
+    /* sum test */
+    for (i = 0; i < n; i++){
       res *= (a_blt.vts[i]->num_elts == a_bld.vts[i]->num_elts);
       res *= (sum(a_blt.vts[i]->elts, a_blt.vts[i]->num_elts) ==
 	      sum(a_bld.vts[i]->elts, a_bld.vts[i]->num_elts));
@@ -427,12 +446,12 @@ void rand_build_helper(void (*rand_build)(adj_lst_t *,
 					  uint64_t,
 					  int (*)(void *),
 					  void *)){
-  int pow_end = 15;
+  int p, pow_end = 15;
   bern_arg_t b;
   adj_lst_t a;
   b.p = 0.5;
-  for (int i = 0; i < pow_end; i++){
-    rand_build(&a, pow_two(i), bern_fn, &b);
+  for (p = 0; p < pow_end; p++){
+    rand_build(&a, pow_two(p), bern_fn, &b);
     printf("\t\tvertices: %lu, "
 	   "expected directed edges: %.1f, "
 	   "directed edges: %lu\n",
@@ -447,7 +466,8 @@ void rand_build_helper(void (*rand_build)(adj_lst_t *,
 */
 uint64_t sum(const uint64_t *a, uint64_t num_elts){
   uint64_t ret = 0;
-  for (uint64_t i = 0; i < num_elts; i++){
+  uint64_t i;
+  for (i = 0; i < num_elts; i++){
     ret += a[i];
   }
   return ret;
@@ -473,6 +493,7 @@ void print_test_result(int res){
 }
 
 int main(){
+  RGENS_SEED();
   run_uint64_graph_test();
   run_double_graph_test();
   run_corner_cases_test();

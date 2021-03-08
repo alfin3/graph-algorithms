@@ -2,7 +2,10 @@ CC = gcc
 STACK_DIR = ../stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_RM_DIR = ../../utilities/utilities-rand-mod/
-CFLAGS = -I$(STACK_DIR) -I$(UTILS_MEM_DIR) -I$(UTILS_RM_DIR) -Wall -Wextra -O3
+CFLAGS = -I$(STACK_DIR)                        \
+         -I$(UTILS_MEM_DIR)                    \
+         -I$(UTILS_RM_DIR)                     \
+         -std=c90 -Wall -Wextra -Wpedantic -O3
 OBJ = graph-main.o                    \
       graph.o                         \
       $(STACK_DIR)stack.o             \

@@ -18,18 +18,18 @@
 typedef struct{
   size_t num_vts; 
   size_t num_es;
-  size_t wt_size; //0 if a graph is unweighted
-  size_t *u;      //u of (u, v) edges, NULL if no edges
-  size_t *v;      //v of (u, v) edges, NULL if no edges
-  void *wts;      //NULL if no edges or wt_size is 0
+  size_t wt_size; /* 0 if a graph is unweighted */
+  size_t *u;      /* u of (u, v) edges, NULL if no edges */
+  size_t *v;      /* v of (u, v) edges, NULL if no edges */
+  void *wts;      /* NULL if no edges or wt_size is 0 */
 } graph_t;
 
 typedef struct{
   size_t num_vts;
   size_t num_es;
   size_t wt_size;
-  stack_t **vts;  //NULL if no vertices
-  stack_t **wts;  //NULL if no vertices or wt_size is 0
+  stack_t **vts;  /* NULL if no vertices */
+  stack_t **wts;  /* NULL if no vertices or wt_size is 0 */
 } adj_lst_t;
 
 /**
