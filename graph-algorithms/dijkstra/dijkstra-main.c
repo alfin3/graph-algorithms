@@ -509,7 +509,7 @@ void norm_uint64_arr(uint64_t *a, uint64_t norm, uint64_t n){
 }
 
 void run_bfs_dijkstra_test(){
-  int pi, num_p = 7;
+  int p, num_probs = 7;
   int i, pow_two_start = 0, pow_two_end = 14;
   int j, iter = 10;
   int res = 1;
@@ -517,9 +517,9 @@ void run_bfs_dijkstra_test(){
   uint64_t *dist_bfs = NULL, *prev_bfs = NULL;
   uint64_t *dist = NULL, *prev = NULL;
   float alpha_div = 1.0, alpha_mul = 0.4;
-  double p[7] = {1.000000, 0.250000, 0.062500,
-		 0.015625, 0.003906, 0.000977,
-		 0.000000};
+  double probs[7] = {1.000000, 0.250000, 0.062500,
+		     0.015625, 0.003906, 0.000977,
+		     0.000000};
   adj_lst_t a;
   bern_arg_t b;
   ht_div_uint64_t ht_div;
@@ -546,9 +546,9 @@ void run_bfs_dijkstra_test(){
   printf("Run a bfs and dijkstra test on random directed "
 	 "graphs with the same weight across edges\n");
   fflush(stdout);
-  for (pi = 0; pi < num_p; pi++){
-    b.p = p[pi];
-    printf("\tP[an edge is in a graph] = %.4f\n", p[pi]);
+  for (p = 0; p < num_probs; p++){
+    b.p = probs[p];
+    printf("\tP[an edge is in a graph] = %.4f\n", probs[p]);
     for (i = pow_two_start; i <  pow_two_end; i++){
       n = pow_two(i); /* 0 < n */
       dist_bfs = malloc_perror(n * sizeof(uint64_t));
@@ -658,7 +658,7 @@ void sum_paths(uint64_t *wt_paths,
 }
 
 void run_rand_uint64_test(){
-  int pi, num_p = 7;
+  int p, num_probs = 7;
   int i, pow_two_start = 10, pow_two_end = 14;
   int j, iter = 10;
   int res = 1;
@@ -668,9 +668,9 @@ void run_rand_uint64_test(){
   uint64_t wt_l = 0, wt_h = pow_two(32) - 1;
   uint64_t *dist = NULL, *prev = NULL;
   float alpha_div = 1.0, alpha_mul = 0.4;
-  double p[7] = {1.000000, 0.250000, 0.062500,
-		 0.015625, 0.003906, 0.000977,
-		 0.000000};
+  double probs[7] = {1.000000, 0.250000, 0.062500,
+		     0.015625, 0.003906, 0.000977,
+		     0.000000};
   adj_lst_t a;
   bern_arg_t b;
   ht_div_uint64_t ht_div;
@@ -697,9 +697,9 @@ void run_rand_uint64_test(){
   printf("Run a dijkstra test on random directed graphs with random "
 	 "uint64_t weights in [%lu, %lu]\n", wt_l, wt_h);
   fflush(stdout);
-  for (pi = 0; pi < num_p; pi++){
-    b.p = p[pi];
-    printf("\tP[an edge is in a graph] = %.4f\n", p[pi]);
+  for (p = 0; p < num_probs; p++){
+    b.p = probs[p];
+    printf("\tP[an edge is in a graph] = %.4f\n", probs[p]);
     for (i = pow_two_start; i <  pow_two_end; i++){
       n = pow_two(i); /* 0 < n */
       dist = malloc_perror(n * sizeof(uint64_t));
