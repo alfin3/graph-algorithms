@@ -4,7 +4,7 @@ A set of generic hashing-based data structures and algorithms were implemented f
 
 A two-step approach was used to minimize the memory space occupied and used by a program: generic programming and hashing parametrization. The approach reflects the perspective of the author that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method.
 
-Compilation was completed with gcc 7.5 at the -O3 optimization level on a 64-bit system. It is anticipated that the provided implementations will be compiled on lower bit systems in the near future. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
+Compilation was completed with gcc 7.5 at the -O3 optimization level under -std=c90 (and -std=c99) on a 64-bit system. It is anticipated that the provided implementations will be compiled on lower bit systems in the near future. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
 In each directory with a Makefile, run:
 
