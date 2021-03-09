@@ -37,16 +37,16 @@
 typedef void (*tsp_ht_init)(void *,
 			    size_t,
 			    size_t,
-			    void (*)(void *), //free_elt
-			    void *); //pointer to context
+			    void (*)(void *), /* free_elt */
+			    void *); /* pointer to context */
 typedef void (*tsp_ht_insert)(void *, const void *, const void *);
 typedef void *(*tsp_ht_search)(const void *, const void *);
 typedef void (*tsp_ht_remove)(void *, const void *, void *);
 typedef void (*tsp_ht_free)(void *);
 
 typedef struct{
-  void *ht; //points to a block of hash table struct size
-  void *context; //points to initialization context
+  void *ht; /* points to a block of hash table struct size */
+  void *context; /* points to initialization context */
   tsp_ht_init init;
   tsp_ht_insert insert;
   tsp_ht_search search;

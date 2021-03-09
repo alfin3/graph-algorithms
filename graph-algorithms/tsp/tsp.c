@@ -36,10 +36,7 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
-typedef enum{
-  FALSE,
-  TRUE,
-} boolean_t;
+typedef enum{FALSE, TRUE} boolean_t;
 
 typedef struct{
   size_t num_vts;
@@ -55,19 +52,19 @@ typedef struct{
 } ht_def_t;
 
 typedef struct{
-  size_t ix; //index of the set element with a single set bit
-  size_t bit; //set element with a single set bit
+  size_t ix; /* index of the set element with a single set bit */
+  size_t bit; /* set element with a single set bit */
 } ibit_t;
 
 static const size_t SET_ELT_SIZE = sizeof(size_t);
 static const size_t SET_ELT_BIT_COUNT = sizeof(size_t) * 8;
 
-//set operations based on a bit array representation
+/* set operations based on a bit array representation */
 static void set_init(ibit_t *ibit, size_t n);
 static size_t *set_member(const ibit_t *ibit, const size_t *set);
 static void set_union(const ibit_t *ibit, size_t *set);
 
-//default hash table operations
+/* default hash table operations */
 static void ht_def_init(ht_def_t *ht,
 			size_t key_size,
 			size_t elt_size,
@@ -78,7 +75,7 @@ static void *ht_def_search(const ht_def_t *ht, const size_t *key);
 static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt);
 static void ht_def_free(ht_def_t *ht);
 
-//auxiliary functions
+/* auxiliary functions */
 static void build_next(const adj_lst_t *a,
 		       stack_t *prev_s,
 		       stack_t *next_s,
@@ -88,7 +85,7 @@ static void build_next(const adj_lst_t *a,
 static size_t pow_two(size_t k);
 static void fprintf_stderr_exit(const char *s, int line);
 
-//functions for computing pointers
+/* functions for computing pointers */
 static size_t *vt_ptr(const size_t *vts, size_t i);
 static void *wt_ptr(const void *wts, size_t i, size_t wt_size);
 static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
@@ -132,6 +129,7 @@ int tsp(const adj_lst_t *a,
   size_t wt_size = a->wt_size;
   size_t set_count, set_size;
   size_t u, v;
+  size_t i;
   size_t *prev_set = NULL;
   void *sum_wt = NULL;
   boolean_t final_dist_updated = FALSE;
@@ -144,7 +142,7 @@ int tsp(const adj_lst_t *a,
   if (a->num_vts % SET_ELT_BIT_COUNT){
     set_count++;
   }
-  set_count++; //+ last reached vertex representation
+  set_count++; /* + last reached vertex representation */
   set_size = set_count * SET_ELT_SIZE;
   prev_set = calloc_perror(set_size, 1);
   sum_wt = malloc_perror(wt_size);
@@ -165,13 +163,13 @@ int tsp(const adj_lst_t *a,
   }
   thtp->init(thtp->ht, set_size, wt_size, NULL, thtp->context);
   thtp->insert(thtp->ht, prev_set, dist);
-  for (size_t i = 0; i < a->num_vts - 1; i++){
+  for (i = 0; i < a->num_vts - 1; i++){
     stack_init(&next_s, 1, set_size, NULL);
     build_next(a, &prev_s, &next_s, thtp, add_wt, cmp_wt);
     stack_free(&prev_s);
     prev_s = next_s;
     if (prev_s.num_elts == 0){
-      //no progress made
+      /* no progress made */
       stack_free(&prev_s);
       thtp->free(thtp->ht);
       free(prev_set);
@@ -182,11 +180,11 @@ int tsp(const adj_lst_t *a,
       return 1;
     }
   }
-  //compute the return to start
+  /* compute the return to start */
   while (prev_s.num_elts > 0){
     stack_pop(&prev_s, prev_set);
     u = prev_set[0];
-    for (size_t i = 0; i < a->vts[u]->num_elts; i++){
+    for (i = 0; i < a->vts[u]->num_elts; i++){
       v = *vt_ptr(a->vts[u]->elts, i);
       if (v == start){
 	add_wt(sum_wt,
@@ -225,6 +223,7 @@ static void build_next(const adj_lst_t *a,
   size_t wt_size = a->wt_size;
   size_t set_size = prev_s->elt_size;
   size_t u, v;
+  size_t i;
   size_t *prev_set = NULL, *next_set = NULL;
   void *prev_wt = NULL, *next_wt = NULL, *sum_wt = NULL;
   ibit_t ibit;
@@ -236,7 +235,7 @@ static void build_next(const adj_lst_t *a,
     stack_pop(prev_s, prev_set);
     tht->remove(tht->ht, prev_set, prev_wt);
     u = prev_set[0];
-    for (size_t i = 0; i < a->vts[u]->num_elts; i++){
+    for (i = 0; i < a->vts[u]->num_elts; i++){
       v = *vt_ptr(a->vts[u]->elts, i);
       set_init(&ibit, v);
       if (set_member(&ibit, &prev_set[1]) == NULL){
@@ -338,8 +337,9 @@ static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt){
 }
 
 static void ht_def_free(ht_def_t *ht){
+  size_t i;
   if (ht->free_elt != NULL){
-    for (size_t i = 0; i < ht->num_vts * pow_two(ht->num_vts); i++){
+    for (i = 0; i < ht->num_vts * pow_two(ht->num_vts); i++){
       if (ht->key_present[i]){
 	ht->free_elt(elt_ptr(ht->elts, i, ht->elt_size));
       }
