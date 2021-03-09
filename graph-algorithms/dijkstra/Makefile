@@ -11,17 +11,17 @@ QUEUE_DIR = $(DS_DIR)queue/
 STACK_DIR = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
-CFLAGS = -I$(BFS_DIR)           \
-         -I$(GRAPH_DIR)         \
-         -I$(HEAP_DIR)          \
-         -I$(HT_DIV_UINT64_DIR) \
-         -I$(HT_MUL_UINT64_DIR) \
-         -I$(DLL_DIR)           \
-         -I$(QUEUE_DIR)         \
-         -I$(STACK_DIR)         \
-         -I$(UTILS_MEM_DIR)     \
-         -I$(UTILS_MOD_DIR)     \
-         -Wall -Wextra -O3
+CFLAGS = -I$(BFS_DIR)                          \
+         -I$(GRAPH_DIR)                        \
+         -I$(HEAP_DIR)                         \
+         -I$(HT_DIV_UINT64_DIR)                \
+         -I$(HT_MUL_UINT64_DIR)                \
+         -I$(DLL_DIR)                          \
+         -I$(QUEUE_DIR)                        \
+         -I$(STACK_DIR)                        \
+         -I$(UTILS_MEM_DIR)                    \
+         -I$(UTILS_MOD_DIR)                    \
+         -std=c90 -Wall -Wextra -Wpedantic -O3
 
 OBJ = dijkstra-main.o                     \
       dijkstra.o                          \

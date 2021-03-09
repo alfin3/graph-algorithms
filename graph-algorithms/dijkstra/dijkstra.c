@@ -32,10 +32,7 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
-typedef enum{
-  FALSE,
-  TRUE,
-} boolean_t;
+typedef enum{FALSE, TRUE} boolean_t;
 
 typedef struct{
   size_t count;
@@ -50,9 +47,9 @@ typedef struct{
   void (*free_elt)(void *);
 } ht_def_t;
 
-static const size_t NR = SIZE_MAX; //not reached as index
+static const size_t NR = SIZE_MAX; /* not reached as index */
 
-//default hash table operations
+/* default hash table operations */
 static void ht_def_init(ht_def_t *ht,
 			size_t key_size,
 			size_t elt_size,
@@ -63,7 +60,7 @@ static void *ht_def_search(const ht_def_t *ht, const size_t *key);
 static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt);
 static void ht_def_free(ht_def_t *ht);
 
-//functions for computing pointers
+/* functions for computing pointers */
 static size_t *vt_ptr(const size_t *vts, size_t i);
 static void *wt_ptr(const void *wts, size_t i, size_t wt_size);
 static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
@@ -107,6 +104,7 @@ void dijkstra(const adj_lst_t *a,
   size_t vt_size = sizeof(uint64_t);
   size_t init_count = 1;
   size_t u, v;
+  size_t i;
   void *u_wt = NULL, *v_wt = NULL, *sum_wt = NULL;
   ht_def_t ht_def;
   context_t context;
@@ -115,7 +113,7 @@ void dijkstra(const adj_lst_t *a,
   u_wt = malloc_perror(wt_size);
   sum_wt = malloc_perror(wt_size);
   memset(dist, 0, a->num_vts * wt_size);
-  memset(prev, 0xff, a->num_vts * vt_size); //initialize to NR
+  memset(prev, 0xff, a->num_vts * vt_size); /* initialize to NR */
   if (hht == NULL){
     context.count = a->num_vts;
     hht_def.ht = &ht_def;
@@ -133,7 +131,7 @@ void dijkstra(const adj_lst_t *a,
   prev[start] = start;
   while (h.num_elts > 0){
     heap_pop(&h, u_wt, &u);
-    for (size_t i = 0; i < a->vts[u]->num_elts; i++){
+    for (i = 0; i < a->vts[u]->num_elts; i++){
       v = *vt_ptr(a->vts[u]->elts, i);
       v_wt = wt_ptr(dist, v, wt_size);
       add_wt(sum_wt, u_wt, wt_ptr(a->wts[u]->elts, i, wt_size));
@@ -142,7 +140,7 @@ void dijkstra(const adj_lst_t *a,
 	heap_push(&h, v_wt, &v);
 	prev[v] = u;
       }else if (cmp_wt(v_wt, sum_wt) > 0){
-	//must be in the heap
+	/* must be in the heap */
 	memcpy(v_wt, sum_wt, wt_size);
 	heap_update(&h, v_wt, &v);
 	prev[v] = u;
@@ -200,8 +198,9 @@ static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt){
 }
 
 static void ht_def_free(ht_def_t *ht){
+  size_t i;
   if (ht->free_elt != NULL){
-    for (size_t i = 0; i < ht->count; i++){
+    for (i = 0; i < ht->count; i++){
       if (ht->key_present[i]){
 	ht->free_elt(elt_ptr(ht->elts, i, ht->elt_size));
       }
