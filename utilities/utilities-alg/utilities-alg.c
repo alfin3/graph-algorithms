@@ -33,17 +33,17 @@ size_t geq_bsearch(const void *key,
   if (cmp(key, elt_ptr(elts, prev_low, elt_size)) <= 0) return 0;
   if (cmp(key, elt_ptr(elts, prev_high, elt_size)) > 0) return count;
   while (true){
-    //a. A[0] < key element <= A[count - 1], A's count > 1
+    /* a. A[0] < key element <= A[count - 1], A's count > 1 */
     if (cmp(key, elt_ptr(elts, cur, elt_size)) < 0){
       prev_high = cur;
-      //b. must decrease each time, since cur is not prev_low
+      /* b. must decrease each time, since cur is not prev_low */
       cur = (cur + prev_low) / 2;
     }else if (cmp(key, elt_ptr(elts, cur + 1, elt_size)) > 0){
       prev_low = cur;
-      //c. must increase each time, since cur + 1 is not prev_high
-      cur = (cur + prev_high) / 2; //< count - 1
+      /* c. must increase each time, since cur + 1 is not prev_high */
+      cur = (cur + prev_high) / 2; /* < count - 1 */
     }else{
-      //must enter due to a, b, and c, at the latest after step size is 1
+      /* must enter due to a, b, and c, at the latest after step size is 1 */
       break;
     }
   }
@@ -69,12 +69,12 @@ size_t leq_bsearch(const void *key,
 		   int (*cmp)(const void *, const void *)){
   size_t cur;
   if (cmp(key, elt_ptr(elts, 0, elt_size)) < 0){
-    //key element < A[0], thus no element in A <= key element
+    /* key element < A[0], thus no element in A <= key element */
     return count;
   }
   cur = geq_bsearch(key, elts, count, elt_size, cmp);
   if (cur == 0){
-    //key element == A[0]
+    /* key element == A[0] */
     return 0;
   }else{
     return cur - 1;

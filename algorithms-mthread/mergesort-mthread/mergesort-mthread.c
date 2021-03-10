@@ -19,12 +19,13 @@
    of 10M random integer or double elements.
 */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <pthread.h>
 #include "mergesort-mthread.h"
 #include "utilities-alg.h"
@@ -33,25 +34,25 @@
 
 typedef struct{
   size_t p, r;
-  size_t sbase_count; //>0, count of sort base case bound
-  size_t mbase_count; //>1, count of merge base case bound
+  size_t sbase_count; /* >0, count of sort base case bound */
+  size_t mbase_count; /* >1, count of merge base case bound */
   size_t elt_size;
   size_t num_onthread_rec;
-  void *elts; //pointer to an input array
+  void *elts; /* pointer to an input array */
   int (*cmp)(const void *, const void *);
 } mergesort_arg_t;
 
 typedef struct{
   size_t ap, ar, bp, br, cs;
-  size_t mbase_count; //>1, count of merge base case bound
+  size_t mbase_count; /* >1, count of merge base case bound */
   size_t elt_size;
   size_t num_onthread_rec;
   void *cat_elts; 
-  void *elts; //pointer to an input array
+  void *elts; /* pointer to an input array */
   int (*cmp)(const void *, const void *);
 } merge_arg_t;
 
-const size_t NR = SIZE_MAX; //cannot be reached as array index
+const size_t NR = SIZE_MAX; /* cannot be reached as array index */
 
 static void *mergesort_thread(void *arg);
 static void *merge_thread(void *arg);
@@ -117,8 +118,8 @@ static void *mergesort_thread(void *arg){
 	  msa->cmp);
   }else{
     
-    //sort recursion
-    q = (msa->p + msa->r) / 2; //rounds down
+    /* sort recursion */
+    q = (msa->p + msa->r) / 2; /* rounds down */
     child_msas[0].p = msa->p;
     child_msas[0].r = q;
     child_msas[0].sbase_count = msa->sbase_count;
@@ -136,7 +137,7 @@ static void *mergesort_thread(void *arg){
     child_msas[1].cmp = msa->cmp;
     thread_create_perror(&child_ids[0], mergesort_thread, &child_msas[0]);
     if (msa->num_onthread_rec < MERGESORT_MTHREAD_MAX_ONTHREAD_REC){
-      //keep putting mergesort_thread calls on the current thread stack
+      /* keep putting mergesort_thread calls on the current thread stack */
       child_msas[1].num_onthread_rec = msa->num_onthread_rec + 1;
       mergesort_thread(&child_msas[1]);
     }else{
@@ -146,7 +147,7 @@ static void *mergesort_thread(void *arg){
     }
     thread_join_perror(child_ids[0], NULL);
 
-    //merge recursiom
+    /* merge recursion */
     ma.ap = msa->p;
     ma.ar = q;
     ma.bp = q + 1;
@@ -159,7 +160,7 @@ static void *mergesort_thread(void *arg){
     ma.elts = msa->elts;
     ma.cmp = msa->cmp;
     merge_thread(&ma);
-    //copy the merged result into the input array
+    /* copy the merged result into the input array */
     memcpy(elt_ptr(msa->elts, msa->p, msa->elt_size),
 	   elt_ptr(ma.cat_elts, 0, msa->elt_size),
 	   (msa->r - msa->p + 1) * msa->elt_size);
@@ -184,7 +185,7 @@ static void *merge_thread(void *arg){
     return NULL;
   }
   
-  //recursion parameters with <= 3/4 problem size for the larger subproblem
+  /* rec. parameters with <= 3/4 problem size for the larger subproblem */
   if (ma->ar - ma->ap > ma->br - ma->bp){
     aq = (ma->ap + ma->ar) / 2;
     child_mas[0].ap = ma->ap;
@@ -194,7 +195,7 @@ static void *merge_thread(void *arg){
     child_mas[1].ar = ma->ar;
     ix = leq_bsearch(elt_ptr(ma->elts, aq, ma->elt_size),
 		     elt_ptr(ma->elts, ma->bp, ma->elt_size),
-		     ma->br - ma->bp + 1, //at least 1 element
+		     ma->br - ma->bp + 1, /* at least 1 element */
 		     ma->elt_size,
 		     ma->cmp);
     if (ix == ma->br - ma->bp + 1){
@@ -225,7 +226,7 @@ static void *merge_thread(void *arg){
     child_mas[1].br = ma->br;
     ix = leq_bsearch(elt_ptr(ma->elts, bq, ma->elt_size),
 		     elt_ptr(ma->elts, ma->ap, ma->elt_size),
-		     ma->ar - ma->ap + 1, //at least 1 element
+		     ma->ar - ma->ap + 1, /* at least 1 element */
 		     ma->elt_size,
 		     ma->cmp);
     if (ix == ma->ar - ma->ap + 1){
@@ -261,10 +262,10 @@ static void *merge_thread(void *arg){
   child_mas[1].elts = ma->elts;
   child_mas[1].cmp = ma->cmp;
 
-  //recursion
+  /* recursion */
   thread_create_perror(&child_ids[0], merge_thread, &child_mas[0]);
   if (ma->num_onthread_rec < MERGESORT_MTHREAD_MAX_ONTHREAD_REC){
-    //keep putting merge_thread calls on the current thread stack
+    /* keep putting merge_thread calls on the current thread stack */
     child_mas[1].num_onthread_rec = ma->num_onthread_rec + 1;
     merge_thread(&child_mas[1]);
   }else{
@@ -284,17 +285,17 @@ static void merge(merge_arg_t *ma){
   size_t first_ix, second_ix, cat_ix;
   size_t elt_size = ma->elt_size;
   if (ma->ap == NR && ma->ar == NR){
-    //a is empty
+    /* a is empty */
     memcpy(elt_ptr(ma->cat_elts, ma->cs, elt_size),
 	   elt_ptr(ma->elts, ma->bp, elt_size),
 	   (ma->br - ma->bp + 1) * elt_size);
   }else if (ma->bp == NR && ma->br == NR){
-    //b is empty
+    /* b is empty */
     memcpy(elt_ptr(ma->cat_elts, ma->cs, elt_size),
 	   elt_ptr(ma->elts, ma->ap, elt_size),
 	   (ma->ar - ma->ap + 1) * elt_size);
   }else{
-    //a and b are each not empty
+    /* a and b are each not empty */
     first_ix = ma->ap;
     second_ix = ma->bp;
     cat_ix = ma->cs;

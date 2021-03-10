@@ -2,10 +2,10 @@ CC = gcc
 UTILS_ALG_DIR = ../../utilities/utilities-alg/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_CONCUR_DIR = ../../utilities/utilities-concur/
-CFLAGS = -I$(UTILS_ALG_DIR)    \
-         -I$(UTILS_MEM_DIR)    \
-         -I$(UTILS_CONCUR_DIR) \
-         -pthread -Wall -Wextra -O3
+CFLAGS = -I$(UTILS_ALG_DIR)                             \
+         -I$(UTILS_MEM_DIR)                             \
+         -I$(UTILS_CONCUR_DIR)                          \
+         -std=c90 -pthread -Wall -Wextra -Wpedantic -O3
 
 OBJ = mergesort-mthread-main.o              \
       mergesort-mthread.o                   \

@@ -9,20 +9,27 @@
 
 */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <stdbool.h>
+#include <time.h>
 #include <sys/time.h>
 #include "mergesort-mthread.h"
 #include "utilities-mem.h"
 
-#define RGENS_SEED() \
-  do{srandom((unsigned int)timer()); srand48(random());}while (0)
-#define RANDOM() (random())
-#define DRAND48() (drand48())
+/**
+   Generate random numbers in a portable way for test purposes only; rand()
+   in the Linux C Library uses the same generator as random(), which may not
+   be the case on older rand() implementations, and on current
+   implementations on different systems.
+*/
+#define RGENS_SEED() do{srand(time(NULL));}while (0)
+#define RANDOM() (rand()) /* [0, RAND_MAX] */
+#define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
 
 double timer();
 void print_uint64_elts(const uint64_t *a, size_t count);
@@ -53,11 +60,11 @@ int cmp_double_fn(const void *a, const void *b){
 */
 void run_int_corner_test(){
   int res = 1;
-  int num_iter = 100;
-  int num_counts = 7;
-  int num_sbase_counts = 3;
-  int num_mbase_counts = 3;
-  uint64_t count_arr[7] = {1, 2, 3, 4, 16, 64, 100};
+  int ci, num_counts = 7;
+  int si, num_sbase_counts = 3;
+  int mi, num_mbase_counts = 3;
+  int i, num_iter = 100;
+  uint64_t j, count_arr[7] = {1, 2, 3, 4, 16, 64, 100};
   uint64_t max_count = count_arr[6];
   uint64_t sbase_count_arr[3] = {1, 2, 3};
   uint64_t mbase_count_arr[3] = {2, 3, 4};
@@ -71,13 +78,13 @@ void run_int_corner_test(){
   print_uint64_elts(sbase_count_arr, num_sbase_counts);
   printf("\tmerge base counts: ");
   print_uint64_elts(mbase_count_arr, num_mbase_counts);
-  for (int ci = 0; ci < num_counts; ci++){
-    for (int si = 0; si < num_sbase_counts; si++){
-      for (int mi = 0; mi < num_mbase_counts; mi++){
-	for(int i = 0; i < num_iter; i++){
-	  for (uint64_t j = 0; j < count_arr[ci]; j++){
+  for (ci = 0; ci < num_counts; ci++){
+    for (si = 0; si < num_sbase_counts; si++){
+      for (mi = 0; mi < num_mbase_counts; mi++){
+	for(i = 0; i < num_iter; i++){
+	  for (j = 0; j < count_arr[ci]; j++){
 	    arr_a[j] = (RANDOM() % count_arr[ci] -
-			RANDOM() % count_arr[ci]); //% to repeat vals
+			RANDOM() % count_arr[ci]); /* % to repeat vals */
 	  }
 	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(int));
 	  mergesort_mthread(arr_a,
@@ -87,7 +94,7 @@ void run_int_corner_test(){
 			    mbase_count_arr[mi],
 			    cmp_int_fn);
 	  qsort(arr_b, count_arr[ci], sizeof(int), cmp_int_fn);
-	  for (uint64_t j = 0; j < count_arr[ci]; j++){
+	  for (j = 0; j < count_arr[ci]; j++){
 	    res *= (cmp_int_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
@@ -108,11 +115,11 @@ void run_int_corner_test(){
 */
 void run_int_opt_test(){
   int res = 1;
-  int num_iter = 5;
-  int num_counts = 1;
-  int num_sbase_counts = 4;
-  int num_mbase_counts = 5;
-  uint64_t count_arr[1] = {10000000};
+  int ci, num_counts = 1;
+  int si, num_sbase_counts = 4;
+  int mi, num_mbase_counts = 5;
+  int i, num_iter = 5;
+  uint64_t j, count_arr[1] = {10000000};
   uint64_t max_count = count_arr[0];
   uint64_t sbase_count_arr[4] = {10000, 100000, 1000000, 10000000};
   uint64_t mbase_count_arr[5] = {1000000,
@@ -124,18 +131,18 @@ void run_int_opt_test(){
   int *arr_b =  malloc_perror(max_count * sizeof(int));
   double tot_m, tot_q, t_m, t_q;
   printf("Test mergesort_mthread performance on random integer arrays\n");
-  for (int ci = 0; ci < num_counts; ci++){
+  for (ci = 0; ci < num_counts; ci++){
     printf("\t# trials: %d, array count: %lu\n", num_iter, count_arr[ci]);
-    for (int si = 0; si < num_sbase_counts; si++){
+    for (si = 0; si < num_sbase_counts; si++){
       printf("\t\tsort base count: %lu\n", sbase_count_arr[si]);
-      for (int mi = 0; mi < num_mbase_counts; mi++){
+      for (mi = 0; mi < num_mbase_counts; mi++){
 	printf("\t\t\tmerge base count: %lu\n", mbase_count_arr[mi]);
 	tot_m = 0.0;
 	tot_q = 0.0;
-	for(int i = 0; i < num_iter; i++){
-	  for (uint64_t j = 0; j < count_arr[ci]; j++){
+	for(i = 0; i < num_iter; i++){
+	  for (j = 0; j < count_arr[ci]; j++){
 	    arr_a[j] = (RANDOM() % count_arr[ci] -
-			RANDOM() % count_arr[ci]); //% to repeat vals
+			RANDOM() % count_arr[ci]); /* % to repeat vals */
 	  }
 	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(int));
 	  t_m = timer();
@@ -151,7 +158,7 @@ void run_int_opt_test(){
 	  t_q = timer() - t_q;
 	  tot_m += t_m;
 	  tot_q += t_q;
-	  for (uint64_t j = 0; j < count_arr[ci]; j++){
+	  for (j = 0; j < count_arr[ci]; j++){
 	    res *= (cmp_int_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
@@ -171,11 +178,11 @@ void run_int_opt_test(){
 */
 void run_double_corner_test(){
   int res = 1;
-  int num_iter = 100;
-  int num_counts = 7;
-  int num_sbase_counts = 3;
-  int num_mbase_counts = 3;
-  uint64_t count_arr[7] = {1, 2, 3, 4, 16, 64, 100};
+  int ci, num_counts = 7;
+  int si, num_sbase_counts = 3;
+  int mi, num_mbase_counts = 3;
+  int i, num_iter = 100;
+  uint64_t j, count_arr[7] = {1, 2, 3, 4, 16, 64, 100};
   uint64_t max_count = count_arr[6];
   uint64_t sbase_count_arr[3] = {1, 2, 3};
   uint64_t mbase_count_arr[3] = {2, 3, 4};
@@ -189,12 +196,12 @@ void run_double_corner_test(){
   print_uint64_elts(sbase_count_arr, num_sbase_counts);
   printf("\tmerge base counts: ");
   print_uint64_elts(mbase_count_arr, num_mbase_counts);
-  for (int ci = 0; ci < num_counts; ci++){
-    for (int si = 0; si < num_sbase_counts; si++){
-      for (int mi = 0; mi < num_mbase_counts; mi++){
-	for(int i = 0; i < num_iter; i++){
-	  for (uint64_t j = 0; j < count_arr[ci]; j++){
-	    arr_a[j] = DRAND48() - DRAND48();
+  for (ci = 0; ci < num_counts; ci++){
+    for (si = 0; si < num_sbase_counts; si++){
+      for (mi = 0; mi < num_mbase_counts; mi++){
+	for(i = 0; i < num_iter; i++){
+	  for (j = 0; j < count_arr[ci]; j++){
+	    arr_a[j] = DRAND() - DRAND();
 	  }
 	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(double));
 	  mergesort_mthread(arr_a,
@@ -204,8 +211,8 @@ void run_double_corner_test(){
 			    mbase_count_arr[mi],
 			    cmp_double_fn);
 	  qsort(arr_b, count_arr[ci], sizeof(double), cmp_double_fn);
-	  for (uint64_t j = 0; j < count_arr[ci]; j++){
-	    //== 0 because of the same bit patterns
+	  for (j = 0; j < count_arr[ci]; j++){
+	    /* == 0 because of the same bit patterns */
 	    res *= (cmp_double_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
@@ -226,11 +233,11 @@ void run_double_corner_test(){
 */
 void run_double_opt_test(){
   int res = 1;
-  int num_iter = 5;
-  int num_counts = 1;
-  int num_sbase_counts = 4;
-  int num_mbase_counts = 5;
-  uint64_t count_arr[1] = {10000000};
+  int ci, num_counts = 1;
+  int si, num_sbase_counts = 4;
+  int mi, num_mbase_counts = 5;
+  int i, num_iter = 5;
+  uint64_t j, count_arr[1] = {10000000};
   uint64_t max_count = count_arr[0];
   uint64_t sbase_count_arr[4] = {10000, 100000, 1000000, 10000000};
   uint64_t mbase_count_arr[5] = {1000000,
@@ -242,17 +249,17 @@ void run_double_opt_test(){
   double *arr_b =  malloc_perror(max_count * sizeof(double));
   double tot_m, tot_q, t_m, t_q;
   printf("Test mergesort_mthread performance on random double arrays\n");
-  for (int ci = 0; ci < num_counts; ci++){
+  for (ci = 0; ci < num_counts; ci++){
     printf("\t# trials: %d, array count: %lu\n", num_iter, count_arr[ci]);
-    for (int si = 0; si < num_sbase_counts; si++){
+    for (si = 0; si < num_sbase_counts; si++){
       printf("\t\tsort base count: %lu\n", sbase_count_arr[si]);
-      for (int mi = 0; mi < num_mbase_counts; mi++){
+      for (mi = 0; mi < num_mbase_counts; mi++){
 	printf("\t\t\tmerge base count: %lu\n", mbase_count_arr[mi]);
 	tot_m = 0.0;
 	tot_q = 0.0;
-	for(int i = 0; i < num_iter; i++){
-	  for (uint64_t j = 0; j < count_arr[ci]; j++){
-	    arr_a[j] = DRAND48() - DRAND48();
+	for(i = 0; i < num_iter; i++){
+	  for (j = 0; j < count_arr[ci]; j++){
+	    arr_a[j] = DRAND() - DRAND();
 	  }
 	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(double));
 	  t_m = timer();
@@ -268,8 +275,8 @@ void run_double_opt_test(){
 	  t_q = timer() - t_q;
 	  tot_m += t_m;
 	  tot_q += t_q;
-	  for (uint64_t j = 0; j < count_arr[ci]; j++){
-	    //== 0 because of the same bit patterns
+	  for (j = 0; j < count_arr[ci]; j++){
+	    /* == 0 because of the same bit patterns */
 	    res *= (cmp_double_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
@@ -302,7 +309,8 @@ double timer(){
 */
 
 void print_uint64_elts(const uint64_t *a, size_t count){
-  for (size_t i = 0; i < count; i++){
+  size_t i;
+  for (i = 0; i < count; i++){
     printf("%lu ", a[i]);
   }
   printf("\n");

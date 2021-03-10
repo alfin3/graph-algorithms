@@ -16,9 +16,9 @@
 typedef struct{
   int value;
   unsigned int num_wakeups;
-  pthread_mutex_t mutex; //the result of referring to a copy is undefined
-  pthread_cond_t cond; //the result of referring to a copy is undefined
-} sema_t; //the result of referring to a copy of an instance is undefined
+  pthread_mutex_t mutex; /* the result of referring to a copy is undefined */
+  pthread_cond_t cond; /* the result of referring to a copy is undefined */
+} sema_t; /* the result of referring to a copy of an instance is undefined */
 
 
 /**
