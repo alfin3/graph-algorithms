@@ -29,8 +29,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
+#include <limits.h>
 #include "tsp.h"
 #include "graph.h"
 #include "stack.h"
@@ -56,8 +56,9 @@ typedef struct{
   size_t bit; /* set element with a single set bit */
 } ibit_t;
 
-static const size_t SET_ELT_SIZE = sizeof(size_t);
-static const size_t SET_ELT_BIT_COUNT = sizeof(size_t) * 8;
+static const size_t CONST_SET_ELT_SIZE = sizeof(size_t);
+static const size_t CONST_SET_ELT_BIT = CHAR_BIT * sizeof(size_t);
+static const size_t CONST_SIZE_MAX = (size_t)-1;
 
 /* set operations based on a bit array representation */
 static void set_init(ibit_t *ibit, size_t n);
@@ -138,12 +139,12 @@ int tsp(const adj_lst_t *a,
   context_t context;
   tsp_ht_t tht_def;
   const tsp_ht_t *thtp = tht;
-  set_count = a->num_vts / SET_ELT_BIT_COUNT;
-  if (a->num_vts % SET_ELT_BIT_COUNT){
+  set_count = a->num_vts / CONST_SET_ELT_BIT;
+  if (a->num_vts % CONST_SET_ELT_BIT){
     set_count++;
   }
   set_count++; /* + last reached vertex representation */
-  set_size = set_count * SET_ELT_SIZE;
+  set_size = set_count * CONST_SET_ELT_SIZE;
   prev_set = calloc_perror(set_size, 1);
   sum_wt = malloc_perror(wt_size);
   prev_set[0] = start;
@@ -271,9 +272,9 @@ static void build_next(const adj_lst_t *a,
 */
 
 static void set_init(ibit_t *ibit, size_t n){
-  ibit->ix = n / SET_ELT_BIT_COUNT;
+  ibit->ix = n / CONST_SET_ELT_BIT;
   ibit->bit = 1;
-  ibit->bit <<= n % SET_ELT_BIT_COUNT;
+  ibit->bit <<= n % CONST_SET_ELT_BIT;
 }
 
 static size_t *set_member(const ibit_t *ibit, const size_t *set){
@@ -298,8 +299,8 @@ static void ht_def_init(ht_def_t *ht,
 			void (*free_elt)(void *),
 			void *context){
   context_t *c = context;
-  if (c->num_vts >= SET_ELT_BIT_COUNT ||
-      pow_two(c->num_vts) > SIZE_MAX / c->num_vts / elt_size){
+  if (c->num_vts >= CONST_SET_ELT_BIT ||
+      pow_two(c->num_vts) > CONST_SIZE_MAX / c->num_vts / elt_size){
     fprintf_stderr_exit("default hash table allocation failed", __LINE__);
   }
   ht->key_size = key_size;
@@ -352,7 +353,7 @@ static void ht_def_free(ht_def_t *ht){
 }
 
 /**
-   Returns the kth power of 2, where 0 <= k < SET_ELT_BIT_COUNT.
+   Returns the kth power of 2, where 0 <= k < CONST_SET_ELT_BIT.
 */
 static size_t pow_two(size_t k){
   size_t ret = 1;

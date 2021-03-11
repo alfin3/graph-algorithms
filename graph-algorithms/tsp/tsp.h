@@ -31,7 +31,7 @@
 #ifndef TSP_H  
 #define TSP_H
 
-#include <stdint.h>
+#include <stddef.h>
 #include "graph.h"
 
 typedef void (*tsp_ht_init)(void *,
