@@ -14,8 +14,15 @@
 #include "utilities-alg.h"
 #include "utilities-mem.h"
 
-#define RANDOM() (random())
-#define DRAND48() (drand48())
+/**
+   Generate random numbers in a portable way for test purposes only; rand()
+   in the Linux C Library uses the same generator as random(), which may not
+   be the case on older rand() implementations, and on current
+   implementations on different systems.
+*/
+#define RGENS_SEED() do{srand(time(NULL));}while (0)
+#define RANDOM() (rand()) /* [0, RAND_MAX] */
+#define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
 
 void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 void print_test_result(int result);
@@ -48,31 +55,30 @@ int test_geq_leq_indices(const void *key,
 
 void run_geq_leq_bsearch_int_test(){
   int res = 1;
-  int num_iter = 100000;
+  int i, num_iter = 100000;
   int key, *elts = NULL;
   int elt_size = sizeof(int);
-  int num_counts = 5;
-  int num_corner_counts = 3;
+  int ci, num_counts = 5, num_corner_counts = 3;
   uint64_t counts[5] = {10000, 100000, 1000000, 10000000, 100000000};
   uint64_t corner_counts[3] = {1, 2, 3};
-  uint64_t count, max_count = counts[4];
+  uint64_t ei, count; 
+  uint64_t max_count = counts[4];
   uint64_t geq_ix, leq_ix;
   double tot_geq, tot_leq, tot;
   clock_t t_geq, t_leq, t;
   elts =  malloc_perror(max_count * sizeof(int));
-  srandom(time(0));
   printf("Test geq_bsearch and leq_bsearch on random int arrays\n");
-  for (int ci = 0; ci < num_counts; ci++){
+  for (ci = 0; ci < num_counts; ci++){
     count = counts[ci];
     printf("\tarray count: %lu, # trials: %d\n", count, num_iter);
-    for (uint64_t ei = 0; ei < count; ei++){
-      elts[ei] = RANDOM() % count - RANDOM() % count; //% to repeat values
+    for (ei = 0; ei < count; ei++){
+      elts[ei] = RANDOM() % count - RANDOM() % count; /* % to repeat */
     }
     qsort(elts, count, elt_size, cmp_int_fn);
     tot_geq = 0.0;
     tot_leq = 0.0;
     tot = 0.0;
-    for(int i = 0; i < num_iter; i++){
+    for(i = 0; i < num_iter; i++){
       key = RANDOM() % count - RANDOM() % count;
       t_geq = clock();
       geq_ix = geq_bsearch(&key, elts, count, elt_size, cmp_int_fn);
@@ -101,13 +107,13 @@ void run_geq_leq_bsearch_int_test(){
     print_test_result(res);
   }
 
-  //corner cases
+  /* corner cases */
   printf("\tcorner cases\n");
-  for (int ci = 0; ci < num_corner_counts; ci++){
+  for (ci = 0; ci < num_corner_counts; ci++){
     count = corner_counts[ci];
-    for(int i = 0; i < num_iter; i++){
-      for (uint64_t ei = 0; ei < count; ei++){
-	elts[ei] = RANDOM() % count - RANDOM() % count; //% to repeat values
+    for(i = 0; i < num_iter; i++){
+      for (ei = 0; ei < count; ei++){
+	elts[ei] = RANDOM() % count - RANDOM() % count; /* % to repeat */
       }
       qsort(elts, count, elt_size, cmp_int_fn);
       key = RANDOM() % count - RANDOM() % count;
@@ -130,32 +136,31 @@ void run_geq_leq_bsearch_int_test(){
 
 void run_geq_leq_bsearch_double_test(){
   int res = 1;
-  int num_iter = 100000;
+  int i, num_iter = 100000;
   int elt_size = sizeof(double);
-  int num_counts = 5;
-  int num_corner_counts = 3;
+  int ci, num_counts = 5, num_corner_counts = 3;
   uint64_t counts[5] = {10000, 100000, 1000000, 10000000, 100000000};
   uint64_t corner_counts[3] = {1, 2, 3};
-  uint64_t count, max_count = counts[4];
+  uint64_t ei, count; 
+  uint64_t max_count = counts[4];
   uint64_t geq_ix, leq_ix;
   double key, *elts = NULL;
   double tot_geq, tot_leq, tot;
   clock_t t_geq, t_leq, t;
   elts =  malloc_perror(max_count * sizeof(double));
-  srand48(time(0));
   printf("Test geq_bsearch and leq_bsearch on random double arrays\n");
-  for (int ci = 0; ci < num_counts; ci++){
+  for (ci = 0; ci < num_counts; ci++){
     count = counts[ci];
     printf("\tarray count: %lu, # trials: %d\n", count, num_iter);
-    for (uint64_t ei = 0; ei < count; ei++){
-      elts[ei] = DRAND48();
+    for (ei = 0; ei < count; ei++){
+      elts[ei] = DRAND();
     }
     qsort(elts, count, elt_size, cmp_double_fn);
     tot_geq = 0.0;
     tot_leq = 0.0;
     tot = 0.0;
-    for(int i = 0; i < num_iter; i++){
-      key = DRAND48();
+    for(i = 0; i < num_iter; i++){
+      key = DRAND();
       t_geq = clock();
       geq_ix = geq_bsearch(&key, elts, count, elt_size, cmp_double_fn);
       t_geq = clock() - t_geq;
@@ -183,16 +188,16 @@ void run_geq_leq_bsearch_double_test(){
     print_test_result(res);
   }
 
-  //corner cases
+  /* corner cases */
   printf("\tcorner cases\n");
-  for (int ci = 0; ci < num_corner_counts; ci++){
+  for (ci = 0; ci < num_corner_counts; ci++){
     count = corner_counts[ci];
-    for(int i = 0; i < num_iter; i++){
-      for (uint64_t ei = 0; ei < count; ei++){
-	elts[ei] = DRAND48();
+    for(i = 0; i < num_iter; i++){
+      for (ei = 0; ei < count; ei++){
+	elts[ei] = DRAND();
       }
       qsort(elts, count, elt_size, cmp_double_fn);
-      key = DRAND48(); 
+      key = DRAND(); 
       geq_ix = geq_bsearch(&key, elts, count, elt_size, cmp_double_fn);
       leq_ix = leq_bsearch(&key, elts, count, elt_size, cmp_double_fn);
       res *= test_geq_leq_indices(&key,
@@ -256,6 +261,7 @@ void print_test_result(int result){
 }
 
 int main(){
+  RGENS_SEED();
   run_geq_leq_bsearch_int_test();
   run_geq_leq_bsearch_double_test();
   return 0;

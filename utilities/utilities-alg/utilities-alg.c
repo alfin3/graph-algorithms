@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include "utilities-mem.h"
 
 static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
@@ -32,7 +31,7 @@ size_t geq_bsearch(const void *key,
   size_t  prev_low = 0, prev_high = count - 1;
   if (cmp(key, elt_ptr(elts, prev_low, elt_size)) <= 0) return 0;
   if (cmp(key, elt_ptr(elts, prev_high, elt_size)) > 0) return count;
-  while (true){
+  while (1){
     /* a. A[0] < key element <= A[count - 1], A's count > 1 */
     if (cmp(key, elt_ptr(elts, cur, elt_size)) < 0){
       prev_high = cur;

@@ -1,19 +1,19 @@
 CC = gcc
 UTILS_MEM_DIR = ../utilities-mem/
 UTILS_RM_DIR = ../utilities-rand-mod/
-CFLAGS = -I$(UTILS_MEM_DIR) \
-         -Wall -Wextra -Wno-unused-result  -O3
+CFLAGS = -I$(UTILS_MEM_DIR)                                       \
+         -std=c90 -Wall -Wextra -Wno-unused-result -Wpedantic -O3
 
-OBJ = utilities-alg-main.o                      \
-      utilities-alg.o                           \
+OBJ = utilities-alg-main.o            \
+      utilities-alg.o                 \
       $(UTILS_MEM_DIR)utilities-mem.o
 
 utilities-alg : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
-utilities-alg-main.o                : utilities-alg.h                     \
+utilities-alg-main.o                : utilities-alg.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h
-utilities-alg.o                     : utilities-alg.h                     \
+utilities-alg.o                     : utilities-alg.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o     : $(UTILS_MEM_DIR)utilities-mem.h
 

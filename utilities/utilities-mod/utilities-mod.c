@@ -1,18 +1,19 @@
 /**
    utilities-mod.c
 
-   Utility functions in modular arithmetic.
+   Utility functions in modular arithmetic. The provided implementations
+   assume that CHAR_BIT * sizeof(size_t) is even.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
+#include <limits.h>
 #include "utilities-mod.h"
 
-static const size_t BYTE_BIT_COUNT = 8;
-static const size_t FULL_BIT_COUNT = 8 * sizeof(size_t);
-static const size_t HALF_BIT_COUNT = 4 * sizeof(size_t);
-static const size_t LOW_MASK = SIZE_MAX >> 4 * sizeof(size_t);
+static const size_t BYTE_BIT_COUNT = CHAR_BIT;
+static const size_t FULL_BIT_COUNT = CHAR_BIT * sizeof(size_t);
+static const size_t HALF_BIT_COUNT = CHAR_BIT * sizeof(size_t) / 2;
+static const size_t LOW_MASK = (size_t)-1 >> (CHAR_BIT * sizeof(size_t) / 2);
 
 /**
    Computes overflow-safe mod n of the kth power in O(logk) time,
@@ -212,6 +213,5 @@ void represent_uint(size_t n, size_t *k, size_t *u){
    Returns the kth power of 2, where 0 <= k < 8 * sizeof(size_t).
 */
 size_t pow_two(size_t k){
-  size_t ret = 1;
-  return ret << k;
+  return (size_t)1 << k;
 } 

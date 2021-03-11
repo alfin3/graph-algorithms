@@ -7,7 +7,7 @@
 #ifndef UTILITIES_ALG_H
 #define UTILITIES_ALG_H
 
-#include <stdlib.h>
+#include <stddef.h>
 
 /**
    Performs "greater or equal" binary search on an array with count

@@ -1,7 +1,7 @@
 CC = gcc
 UTILS_MEM_DIR = ../utilities-mem/
-CFLAGS = -I$(UTILS_MEM_DIR) \
-         -Wall -Wextra -O3
+CFLAGS = -I$(UTILS_MEM_DIR)                    \
+         -std=c90 -Wall -Wextra -Wpedantic -O3
 
 OBJ = utilities-mod-main.o            \
       utilities-mod.o                 \

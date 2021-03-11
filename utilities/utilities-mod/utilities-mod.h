@@ -7,8 +7,7 @@
 #ifndef UTILITIES_MOD_H  
 #define UTILITIES_MOD_H
 
-#include <stdint.h>
-
+#include <stddef.h>
 
 /**
    Computes overflow-safe mod n of the kth power.
