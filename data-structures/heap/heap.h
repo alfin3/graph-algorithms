@@ -24,7 +24,7 @@
 #ifndef HEAP_H  
 #define HEAP_H
 
-#include <stdint.h>
+#include <stddef.h>
 
 typedef void (*heap_ht_init)(void *,
 			     size_t,
@@ -159,8 +159,8 @@ void heap_free(heap_t *h);
    The program exits with an error message, if a) the value of the init_count
    parameter in heap_init is greater than HEAP_COUNT_MAX, or b) if a heap
    growth step is attempted after HEAP_COUNT_MAX was reached. The macro is
-   set to SIZE_MAX by default and is used as size_t.
+   set to the maximal value of size_t by default and is used as size_t.
 */
-#define HEAP_COUNT_MAX (SIZE_MAX)
+#define HEAP_COUNT_MAX ((size_t)-1)
 
 #endif
