@@ -26,7 +26,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include "prim.h"
 #include "graph.h"
@@ -49,7 +48,7 @@ typedef struct{
   void (*free_elt)(void *);
 } ht_def_t;
 
-static const size_t NR = SIZE_MAX; /* not reached as index */
+static const size_t NR = (size_t)-1; /* not reached as index */
 
 /* default hash table operations */
 static void ht_def_init(ht_def_t *ht,
@@ -70,8 +69,8 @@ static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 /**
    Computes and copies the edge weights of an mst of the connected component
    of a start vertex to the array pointed to by dist, and the previous
-   vertices to the array pointed to by prev, with SIZE_MAX in the prev array
-   for unreached vertices.
+   vertices to the array pointed to by prev, with the maximal value of size_t
+   in the prev array for unreached vertices.
    a           : pointer to an adjacency list with at least one vertex
    start       : start vertex
    dist        : pointer to a preallocated array where the count is equal

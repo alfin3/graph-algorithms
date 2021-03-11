@@ -8,14 +8,15 @@
 #ifndef BFS_H  
 #define BFS_H
 
-#include <stdlib.h>
+#include <stddef.h>
 #include "graph.h"
 
 /**
    Computes and copies to an array pointed to by dist the lowest # of edges
    from start to each reached vertex, and provides the previous vertex in the
-   array pointed to by prev, with SIZE_MAX in the prev array for unreached
-   vertices. Assumes start is valid and there is at least one vertex.
+   array pointed to by prev, with the maximal value of size_t in the prev
+   array for unreached vertices. Assumes start is valid and there is at least
+   one vertex.
    a           : pointer to an adjacency list with at least one vertex
    start       : a start vertex for running bfs
    dist        : pointer to a preallocated array with the count equal to the

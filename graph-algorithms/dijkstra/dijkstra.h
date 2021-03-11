@@ -25,14 +25,15 @@
 #ifndef DIJKSTRA_H  
 #define DIJKSTRA_H
 
-#include <stdint.h>
+#include <stddef.h>
 #include "graph.h"
 #include "heap.h"
 
 /**
    Computes and copies the shortest distances from start to the array
    pointed to by dist, and the previous vertices to the array pointed to by
-   prev, with SIZE_MAX in the prev array for unreached vertices.
+   prev, with the maximal value of size_t in the prev array for unreached
+   vertices.
    a           : pointer to an adjacency list with at least one vertex
    start       : start vertex for running the algorithm
    dist        : pointer to a preallocated array where the count is equal

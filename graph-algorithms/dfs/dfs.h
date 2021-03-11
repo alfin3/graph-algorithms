@@ -11,7 +11,7 @@
 #ifndef DFS_H  
 #define DFS_H
 
-#include <stdlib.h>
+#include <stddef.h>
 #include "graph.h"
 
 /**

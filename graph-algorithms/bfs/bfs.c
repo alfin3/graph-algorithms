@@ -8,21 +8,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include "bfs.h"
 #include "graph.h"
 #include "queue.h"
 #include "stack.h"
 #include "utilities-mem.h"
 
-static const size_t NR = SIZE_MAX; /* not reached as index */
+static const size_t NR = (size_t)-1; /* not reached as index */
 static const size_t QUEUE_INIT_COUNT = 1;
 
 /**
    Computes and copies to an array pointed to by dist the lowest # of edges
    from start to each reached vertex, and provides the previous vertex in the
-   array pointed to by prev, with SIZE_MAX in the prev array for unreached
-   vertices. Assumes start is valid and there is at least one vertex.
+   array pointed to by prev, with the maximal value of size_t in the prev
+   array for unreached vertices. Assumes start is valid and there is at least
+   one vertex.
    a           : pointer to an adjacency list with at least one vertex
    start       : a start vertex for running bfs
    dist        : pointer to a preallocated array with the count equal to the

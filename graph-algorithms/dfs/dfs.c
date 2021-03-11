@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include "dfs.h"
 #include "graph.h"
 #include "stack.h"
@@ -29,7 +28,7 @@ static void search(const adj_lst_t *a,
 		   size_t *post);
 static void next_uvi(const adj_lst_t *a, uvi_t *uvi, const size_t *pre);
 
-static const size_t NR = SIZE_MAX; /* not reached as index */
+static const size_t NR = (size_t)-1; /* not reached as index */
 static const size_t STACK_INIT_COUNT = 1;
 
 /**
