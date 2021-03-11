@@ -15,7 +15,7 @@
 #ifndef STACK_H  
 #define STACK_H
 
-#include <stdlib.h>
+#include <stddef.h>
 
 typedef struct{
   size_t count;
@@ -86,8 +86,8 @@ void stack_free(stack_t *s);
    The program exits with an error message, if a) the value of the init_count
    parameter in stack_init is greater than STACK_COUNT_MAX, or b) if a stack
    growth step is attempted after STACK_COUNT_MAX was reached. The macro is
-   set to SIZE_MAX by default and is used as size_t.
+   set to the maximal value of size_t by default and is used as size_t.
 */
-#define STACK_COUNT_MAX (SIZE_MAX)
+#define STACK_COUNT_MAX ((size_t)-1)
 
 #endif

@@ -11,7 +11,7 @@
 #ifndef QUEUE_H  
 #define QUEUE_H
 
-#include <stdlib.h>
+#include <stddef.h>
 
 typedef struct{
   size_t count;
@@ -83,8 +83,8 @@ void queue_free(queue_t *q);
    The program exits with an error message, if a) the value of the init_count
    parameter in queue_init is greater than QUEUE_COUNT_MAX, or b) if a queue
    growth step is attempted after QUEUE_COUNT_MAX was reached. The macro is
-   set to SIZE_MAX by default and is used as size_t.
+   set to the maximal value of size_t by default and is used as size_t.
 */
-#define QUEUE_COUNT_MAX (SIZE_MAX)
+#define QUEUE_COUNT_MAX ((size_t)-1)
 
 #endif
