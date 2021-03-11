@@ -10,10 +10,11 @@
 #include <limits.h>
 #include "utilities-mod.h"
 
-static const size_t BYTE_BIT_COUNT = CHAR_BIT;
-static const size_t FULL_BIT_COUNT = CHAR_BIT * sizeof(size_t);
-static const size_t HALF_BIT_COUNT = CHAR_BIT * sizeof(size_t) / 2;
-static const size_t LOW_MASK = (size_t)-1 >> (CHAR_BIT * sizeof(size_t) / 2);
+static const size_t CONST_BYTE_BIT = CHAR_BIT;
+static const size_t CONST_FULL_BIT = CHAR_BIT * sizeof(size_t);
+static const size_t CONST_HALF_BIT = CHAR_BIT * sizeof(size_t) / 2;
+static const size_t CONST_LOW_MASK = ((size_t)-1 >>
+				      (CHAR_BIT * sizeof(size_t) / 2));
 
 /**
    Computes overflow-safe mod n of the kth power in O(logk) time,
@@ -48,20 +49,20 @@ size_t mul_mod(size_t a, size_t b, size_t n){
   /* comparisons for speed up */
   if (n == 1) return 0;
   if (a == 0 || b == 0) return 0;
-  if (a < pow_two(HALF_BIT_COUNT) && b < pow_two(HALF_BIT_COUNT)){
+  if (a < pow_two(CONST_HALF_BIT) && b < pow_two(CONST_HALF_BIT)){
     return (a * b) % n;
   }
-  al = a & LOW_MASK;
-  bl = b & LOW_MASK;
-  ah = a >> HALF_BIT_COUNT;
-  bh = b >> HALF_BIT_COUNT;
+  al = a & CONST_LOW_MASK;
+  bl = b & CONST_LOW_MASK;
+  ah = a >> CONST_HALF_BIT;
+  bh = b >> CONST_HALF_BIT;
   ah_bh = ah * bh;
-  for (i = 0; i < HALF_BIT_COUNT; i++){
+  for (i = 0; i < CONST_HALF_BIT; i++){
     ah_bh = sum_mod(ah_bh, ah_bh, n);
   }
   ret = sum_mod(ah_bh, ah * bl, n);
   ret = sum_mod(ret, al * bh, n);
-  for (i = 0; i < HALF_BIT_COUNT; i++){
+  for (i = 0; i < CONST_HALF_BIT; i++){
     ret = sum_mod(ret, ret, n);
   }
   ret = sum_mod(ret, al * bl, n);
@@ -102,7 +103,7 @@ size_t mem_mod(const void *s, size_t size, size_t n){
   size_t ret = 0;
   size_t i;
   if (n == 1) return 0;
-  ptwo_inc = mul_mod(pow_two(BYTE_BIT_COUNT - 1), 2, n);
+  ptwo_inc = mul_mod(pow_two(CONST_BYTE_BIT - 1), 2, n);
   for (i = 0; i < size; i++){
     val = *ptr;
     /* comparison for speed up across a large memory block */
@@ -137,7 +138,7 @@ size_t fast_mem_mod(const void *s, size_t size, size_t n){
     res_size = size % step_size;
   }
   if (size > step_size){
-    ptwo_inc = mul_mod(pow_two(FULL_BIT_COUNT - 1), 2, n);
+    ptwo_inc = mul_mod(pow_two(CONST_FULL_BIT - 1), 2, n);
   } 
   for (i = 0; i < size - res_size; i += step_size){
     val = *ptr;
@@ -163,13 +164,13 @@ size_t fast_mem_mod(const void *s, size_t size, size_t n){
 size_t mul_mod_pow_two(size_t a, size_t b){
   size_t al, bl, al_bl;
   size_t overlap;
-  al = a & LOW_MASK;
-  bl = b & LOW_MASK;
+  al = a & CONST_LOW_MASK;
+  bl = b & CONST_LOW_MASK;
   al_bl = al * bl;
-  overlap = ((bl * (a >> HALF_BIT_COUNT) & LOW_MASK) +
-	     (al * (b >> HALF_BIT_COUNT) & LOW_MASK) +
-	     (al_bl >> HALF_BIT_COUNT));
-  return (overlap << HALF_BIT_COUNT) + (al_bl & LOW_MASK);
+  overlap = ((bl * (a >> CONST_HALF_BIT) & CONST_LOW_MASK) +
+	     (al * (b >> CONST_HALF_BIT) & CONST_LOW_MASK) +
+	     (al_bl >> CONST_HALF_BIT));
+  return (overlap << CONST_HALF_BIT) + (al_bl & CONST_LOW_MASK);
 }
 
 /**
@@ -179,20 +180,20 @@ size_t mul_mod_pow_two(size_t a, size_t b){
 void mul_ext(size_t a, size_t b, size_t *h, size_t *l){
   size_t al, bl, ah, bh, al_bl, al_bh;
   size_t overlap;
-  al = a & LOW_MASK;
-  bl = b & LOW_MASK;
-  ah = a >> HALF_BIT_COUNT;
-  bh = b >> HALF_BIT_COUNT;
+  al = a & CONST_LOW_MASK;
+  bl = b & CONST_LOW_MASK;
+  ah = a >> CONST_HALF_BIT;
+  bh = b >> CONST_HALF_BIT;
   al_bl = al * bl;
   al_bh = al * bh;
-  overlap = ((bl * ah & LOW_MASK) +
-	     (al_bh & LOW_MASK) +
-	     (al_bl >> HALF_BIT_COUNT));
-  *h = ((overlap >> HALF_BIT_COUNT) +
+  overlap = ((bl * ah & CONST_LOW_MASK) +
+	     (al_bh & CONST_LOW_MASK) +
+	     (al_bl >> CONST_HALF_BIT));
+  *h = ((overlap >> CONST_HALF_BIT) +
 	ah * bh +
-	(ah * bl >> HALF_BIT_COUNT) +
-	(al_bh >> HALF_BIT_COUNT));
-  *l = (overlap << HALF_BIT_COUNT) + (al_bl & LOW_MASK);
+	(ah * bl >> CONST_HALF_BIT) +
+	(al_bh >> CONST_HALF_BIT));
+  *l = (overlap << CONST_HALF_BIT) + (al_bl & CONST_LOW_MASK);
 }
 
 /**
@@ -205,7 +206,7 @@ void represent_uint(size_t n, size_t *k, size_t *u){
     c++;
     shift_n <<= 1;
   }
-  *k = FULL_BIT_COUNT - c;
+  *k = CONST_FULL_BIT - c;
   *u = n >> *k;
 }
 
