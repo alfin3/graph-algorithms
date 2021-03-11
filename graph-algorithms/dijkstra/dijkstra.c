@@ -101,7 +101,7 @@ void dijkstra(const adj_lst_t *a,
 	      void (*add_wt)(void *, const void *, const void *),
 	      int (*cmp_wt)(const void *, const void *)){
   size_t wt_size = a->wt_size;
-  size_t vt_size = sizeof(uint64_t);
+  size_t vt_size = sizeof(size_t);
   size_t init_count = 1;
   size_t u, v;
   size_t i;
