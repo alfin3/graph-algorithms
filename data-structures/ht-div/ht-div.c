@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "ht-div.h"
 #include "dll.h"
 #include "utilities-mem.h"
@@ -35,70 +36,78 @@
    magnitude, that are not too close to the powers of 2 and 10 to avoid 
    hashing regularities due to the structure of data.
 */
-static const size_t C_PRIMES[6 * 1 + 16 * 2 + 16 * 3 + 16 * 4] =
-  {0x0607,                            /* 1543 */
-   0x0c2f,                            /* 3119 */
-   0x1843,                            /* 6211 */
-   0x3037,                            /* 12343 */
-   0x5dad,                            /* 23981 */
-   0xbe21,                            /* 48673 */
-   0x5b0b, 0x0001,                    /* 88843 */
-   0xd8d5, 0x0002,                    /* 186581 */
-   0xc219, 0x0005,                    /* 377369 */
-   0x0077, 0x000c,                    /* 786551 */
-   0xa243, 0x0016,                    /* 1483331 */
-   0x2029, 0x0031,                    /* 3219497 */
-   0xcc21, 0x005f,                    /* 6278177 */
-   0x5427, 0x00bf,                    /* 12538919 */
-   0x037f, 0x0180,                    /* 25166719 */
-   0x42bb, 0x030f,                    /* 51331771 */
-   0x1c75, 0x06b7,                    /* 112663669 */
-   0x96ad, 0x0c98,                    /* 211326637 */
-   0x96b7, 0x1898,                    /* 412653239 */
-   0xc10f, 0x2ecf,                    /* 785367311 */
-   0x425b, 0x600f,                    /* 1611612763 */
-   0x0007, 0xc000,                    /* 3221225479 */
-   0x016f, 0x8000, 0x0001,            /* 6442451311 */
-   0x9345, 0xffc8, 0x0002,            /* 12881269573 */
-   0x5523, 0xf272, 0x0005,            /* 25542415651 */
-   0x1575, 0x0a63, 0x000c,            /* 51713873269 */
-   0x22fb, 0xca07, 0x001b,            /* 119353582331 */
-   0xc513, 0x4d6b, 0x0031,            /* 211752305939 */
-   0xa6cd, 0x50f3, 0x0061,            /* 417969972941 */
-   0xa021, 0x5460, 0x00be,            /* 817459404833 */
-   0xea29, 0x7882, 0x0179,            /* 1621224516137 */
-   0xeaaf, 0x7c3d, 0x02f5,            /* 3253374675631 */
-   0xab5f, 0x5a69, 0x05ff,            /* 6594291673951 */
-   0x6b1f, 0x29ef, 0x0c24,            /* 13349461912351 */
-   0xc81b, 0x35a7, 0x17fe,            /* 26380589320219 */
-   0x57b7, 0xccbe, 0x2ffb,            /* 52758518323127 */
-   0xc8fb, 0x1da8, 0x6bf3,            /* 118691918825723 */
-   0x82c3, 0x2c9f, 0xc2cc,            /* 214182177768131 */
-   0x3233, 0x1c54, 0x7d40, 0x0001,    /* 419189283369523 */
-   0x60ad, 0x46a1, 0xf55e, 0x0002,    /* 832735214133421 */
-   0x6bab, 0x40c4, 0xf12a, 0x0005,    /* 1672538661088171 */
-   0xb24d, 0x6765, 0x38b5, 0x000b,    /* 3158576518771277 */
-   0x789f, 0xfd94, 0xc6b2, 0x0017,    /* 6692396525189279 */
-   0x0d35, 0x5443, 0xff54, 0x0030,    /* 13791536538127669 */
-   0x2465, 0x74f9, 0x42d1, 0x005e,    /* 26532115188884581 */
-   0xd017, 0x90c7, 0x37b3, 0x00c6,    /* 55793289756397591 */
-   0x5055, 0x5a82, 0x64df, 0x0193,    /* 113545326073368661 */
-   0x6f8f, 0x423b, 0x8949, 0x0304,    /* 217449629757435791 */
-   0xd627, 0x08e0, 0x0b2f, 0x05fe,    /* 431794910914467367 */
-   0xbbc1, 0x662c, 0x4d90, 0x0bad,    /* 841413987972987841 */
-   0xf7d3, 0x45a1, 0x8ccb, 0x185d,    /* 1755714234418853843 */
-   0xc647, 0x3c91, 0x46b2, 0x2e9b,    /* 3358355678469146183 */
-   0x58a1, 0xbd96, 0x2836, 0x5f8c,    /* 6884922145916737697 */
-   0x8969, 0x4c70, 0x6dbe, 0xdad8};   /* 15769474759331449193 */
+static const size_t C_PRIME_PARTS[6 * 1 + 16 * (2 + 3 + 4)] =
+  {0x0607u,                               /* 1543 */
+   0x0c2fu,                               /* 3119 */
+   0x1843u,                               /* 6211 */
+   0x3037u,                               /* 12343 */
+   0x5dadu,                               /* 23981 */
+   0xbe21u,                               /* 48673 */
+   0x5b0bu, 0x0001u,                      /* 88843 */
+   0xd8d5u, 0x0002u,                      /* 186581 */
+   0xc219u, 0x0005u,                      /* 377369 */
+   0x0077u, 0x000cu,                      /* 786551 */
+   0xa243u, 0x0016u,                      /* 1483331 */
+   0x2029u, 0x0031u,                      /* 3219497 */
+   0xcc21u, 0x005fu,                      /* 6278177 */
+   0x5427u, 0x00bfu,                      /* 12538919 */
+   0x037fu, 0x0180u,                      /* 25166719 */
+   0x42bbu, 0x030fu,                      /* 51331771 */
+   0x1c75u, 0x06b7u,                      /* 112663669 */
+   0x96adu, 0x0c98u,                      /* 211326637 */
+   0x96b7u, 0x1898u,                      /* 412653239 */
+   0xc10fu, 0x2ecfu,                      /* 785367311 */
+   0x425bu, 0x600fu,                      /* 1611612763 */
+   0x0007u, 0xc000u,                      /* 3221225479 */
+   0x016fu, 0x8000u, 0x0001u,             /* 6442451311 */
+   0x9345u, 0xffc8u, 0x0002u,             /* 12881269573 */
+   0x5523u, 0xf272u, 0x0005u,             /* 25542415651 */
+   0x1575u, 0x0a63u, 0x000cu,             /* 51713873269 */
+   0x22fbu, 0xca07u, 0x001bu,             /* 119353582331 */
+   0xc513u, 0x4d6bu, 0x0031u,             /* 211752305939 */
+   0xa6cdu, 0x50f3u, 0x0061u,             /* 417969972941 */
+   0xa021u, 0x5460u, 0x00beu,             /* 817459404833 */
+   0xea29u, 0x7882u, 0x0179u,             /* 1621224516137 */
+   0xeaafu, 0x7c3du, 0x02f5u,             /* 3253374675631 */
+   0xab5fu, 0x5a69u, 0x05ffu,             /* 6594291673951 */
+   0x6b1fu, 0x29efu, 0x0c24u,             /* 13349461912351 */
+   0xc81bu, 0x35a7u, 0x17feu,             /* 26380589320219 */
+   0x57b7u, 0xccbeu, 0x2ffbu,             /* 52758518323127 */
+   0xc8fbu, 0x1da8u, 0x6bf3u,             /* 118691918825723 */
+   0x82c3u, 0x2c9fu, 0xc2ccu,             /* 214182177768131 */
+   0x3233u, 0x1c54u, 0x7d40u, 0x0001u,    /* 419189283369523 */
+   0x60adu, 0x46a1u, 0xf55eu, 0x0002u,    /* 832735214133421 */
+   0x6babu, 0x40c4u, 0xf12au, 0x0005u,    /* 1672538661088171 */
+   0xb24du, 0x6765u, 0x38b5u, 0x000bu,    /* 3158576518771277 */
+   0x789fu, 0xfd94u, 0xc6b2u, 0x0017u,    /* 6692396525189279 */
+   0x0d35u, 0x5443u, 0xff54u, 0x0030u,    /* 13791536538127669 */
+   0x2465u, 0x74f9u, 0x42d1u, 0x005eu,    /* 26532115188884581 */
+   0xd017u, 0x90c7u, 0x37b3u, 0x00c6u,    /* 55793289756397591 */
+   0x5055u, 0x5a82u, 0x64dfu, 0x0193u,    /* 113545326073368661 */
+   0x6f8fu, 0x423bu, 0x8949u, 0x0304u,    /* 217449629757435791 */
+   0xd627u, 0x08e0u, 0x0b2fu, 0x05feu,    /* 431794910914467367 */
+   0xbbc1u, 0x662cu, 0x4d90u, 0x0badu,    /* 841413987972987841 */
+   0xf7d3u, 0x45a1u, 0x8ccbu, 0x185du,    /* 1755714234418853843 */
+   0xc647u, 0x3c91u, 0x46b2u, 0x2e9bu,    /* 3358355678469146183 */
+   0x58a1u, 0xbd96u, 0x2836u, 0x5f8cu,    /* 6884922145916737697 */
+   0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u};   /* 15769474759331449193 */
 
-static const size_t C_PRIME_ONE_COUNT = 6;
-static const size_t C_PRIME_TWO_COUNT = 6 * 1 + 16 * 2;
-static const size_t C_PRIME_THREE_COUNT = 6 * 1 + 16 * 2 + 16 * 3;
-static const size_t C_PRIME_FOUR_COUNT = 6 * 1 + 16 * 2 + 16 * 3 + 16 * 4;
+static const size_t C_LAST_PRIME_IX = 6 + 16 * (2 + 3 + 4) - 4;
+static const size_t C_PARTS_PER_PRIME = {1, 2, 3, 4};
+static const size_t C_PARTS_ACC_COUNTS = {6,
+					  6 + 16 * 2,
+					  6 + 16 * (2 + 3),
+					  6 + 16 * (2 + 3 + 4)};
+static const size_t C_BUILD_SHIFT = 16;
+static const size_t C_BYTE_BIT = CHAR_BIT;
+static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+static const size_t C_SIZE_MAX = (size_t)-1;
 
 static size_t hash(const ht_div_t *ht, const void *key);
 static void ht_grow(ht_div_t *ht);
 static void copy_reinsert(ht_div_t *ht, const dll_node_t *node);
+static int overflow(size_t start, size_t count);
+static size_t build_prime(size_t start, size_t count);
 
 /**
    Initializes a hash table. 
@@ -129,8 +138,9 @@ void ht_div_init(ht_div_t *ht,
   size_t i;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
+  ht->group_ix = 0;
   ht->count_ix = 0;
-  ht->count = C_PRIMES[ht->count_ix];
+  ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
   ht->num_elts = 0;
   ht->alpha = alpha;
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
@@ -150,7 +160,7 @@ void ht_div_insert(ht_div_t *ht, const void *key, const void *elt){
   dll_node_t **head = NULL, *node = NULL;
   /* grow hash table if E[# keys in a slot] > alpha */
   while ((float)ht->num_elts / ht->count > ht->alpha &&
-	 ht->count_ix < PRIMES_COUNT - 1){
+	 ht->count_ix != C_SIZE_MAX){
     ht_grow(ht);
   }
   ix = hash(ht, key);
@@ -234,17 +244,23 @@ static size_t hash(const ht_div_t *ht, const void *key){
 
 /**
    Increases the size of a hash table by the difference between the ith and 
-   (i + 1)th prime numbers in the C_PRIMES array. Makes no changes if the
+   (i + 1)th prime numbers in the C_PARTS array. Makes no changes if the
    last prime number representable as size_t on a given system was reached.
 */
 static void ht_grow(ht_div_t *ht){
   size_t i, prev_count = ht->count;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL;
-  /* if the largest size is reached, alpha is not a bound for expectation */
-  if (ht->count_ix == PRIMES_COUNT - 1) return;
-  ht->count_ix++;
-  ht->count = PRIMES[ht->count_ix];
+  if (ht->count_ix == C_SIZE_MAX ||
+      ht->count_ix == C_LAST_PRIME_IX) return; /* alpha is not a bound */
+  ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
+  if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix] - 1) ht->group_ix++;
+  if (overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
+    /* last representable prime reached */
+    ht->count_ix == C_SIZE_MAX;
+    return;
+  }
+  ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
   ht->num_elts = 0;
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
@@ -275,4 +291,34 @@ static void copy_reinsert(ht_div_t *ht, const dll_node_t *node){
 	      ht->key_size,
 	      ht->elt_size);
   ht->num_elts++;   
+}
+
+/**
+   Test if the next prime number results in an overflow of size_t
+   on a given system. Returns 0 if no overflow, otherwise returns 1.
+*/
+static int overflow(size_t start, size_t count){
+  size_t c = 0;
+  size_t n_shift;
+  n_shift = C_PRIME_PARTS[start + (count - 1)];
+  while (n_shift){
+    n >>= 1;
+    c++;
+  }
+  return (c + (count - 1) * C_BYTE_BIT > C_FULL_BIT);
+}
+
+/**
+   Build a prime number from parts in the C_PARTS array.
+*/
+static size_t build_prime(size_t start, size_t count){
+  size_t p = 0;
+  size_t n_shift;
+  size_t i;
+  for (i = 0; i < count; i++){
+    n_shift = C_PRIME_PARTS[start + i];
+    n_shift <<= (i * C_BUILD_SHIFT);
+    p |= n_shift;
+  }
+  return p;
 }

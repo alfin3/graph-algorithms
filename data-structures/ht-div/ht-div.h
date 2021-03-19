@@ -32,7 +32,8 @@
 typedef struct{
   size_t key_size;
   size_t elt_size;
-  size_t count_ix;
+  size_t group_ix;
+  size_t count_ix; /* max size_t value if last representable prime reached */
   size_t count;
   size_t num_elts;
   float alpha; 
