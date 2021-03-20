@@ -93,11 +93,11 @@ static const size_t C_PRIME_PARTS[6 * 1 + 16 * (2 + 3 + 4)] =
    0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u};   /* 15769474759331449193 */
 
 static const size_t C_LAST_PRIME_IX = 6 + 16 * (2 + 3 + 4) - 4;
-static const size_t C_PARTS_PER_PRIME = {1, 2, 3, 4};
-static const size_t C_PARTS_ACC_COUNTS = {6,
-					  6 + 16 * 2,
-					  6 + 16 * (2 + 3),
-					  6 + 16 * (2 + 3 + 4)};
+static const size_t C_PARTS_PER_PRIME[4] = {1, 2, 3, 4};
+static const size_t C_PARTS_ACC_COUNTS[4] = {6,
+					     6 + 16 * 2,
+					     6 + 16 * (2 + 3),
+					     6 + 16 * (2 + 3 + 4)};
 static const size_t C_BUILD_SHIFT = 16;
 static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
@@ -158,9 +158,10 @@ void ht_div_init(ht_div_t *ht,
 void ht_div_insert(ht_div_t *ht, const void *key, const void *elt){
   size_t ix;
   dll_node_t **head = NULL, *node = NULL;
-  /* grow hash table if E[# keys in a slot] > alpha */
+  /* grow if load factor > alpha and the next representable prime exists */
   while ((float)ht->num_elts / ht->count > ht->alpha &&
-	 ht->count_ix != C_SIZE_MAX){
+	 ht->count_ix != C_SIZE_MAX &&
+	 ht->count_ix != C_LAST_PRIME_IX){
     ht_grow(ht);
   }
   ix = hash(ht, key);
@@ -244,20 +245,20 @@ static size_t hash(const ht_div_t *ht, const void *key){
 
 /**
    Increases the size of a hash table by the difference between the ith and 
-   (i + 1)th prime numbers in the C_PARTS array. Makes no changes if the
-   last prime number representable as size_t on a given system was reached.
+   (i + 1)th prime numbers in the C_PRIME_PARTS array. Assumes that the
+   (i + 1)th prime number in the C_PRIME_PARTS array exists. Makes no changes
+   if the (i + 1)th prime number in the C_PRIME_PARTS array is not
+   representable as size_t on a given system.
 */
 static void ht_grow(ht_div_t *ht){
   size_t i, prev_count = ht->count;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL;
-  if (ht->count_ix == C_SIZE_MAX ||
-      ht->count_ix == C_LAST_PRIME_IX) return; /* alpha is not a bound */
   ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
-  if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix] - 1) ht->group_ix++;
+  if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
   if (overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-    /* last representable prime reached */
-    ht->count_ix == C_SIZE_MAX;
+    /* last prime representable as size_t on a system reached */
+    ht->count_ix = C_SIZE_MAX;
     return;
   }
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
@@ -294,7 +295,7 @@ static void copy_reinsert(ht_div_t *ht, const dll_node_t *node){
 }
 
 /**
-   Test if the next prime number results in an overflow of size_t
+   Tests if the next prime number results in an overflow of size_t
    on a given system. Returns 0 if no overflow, otherwise returns 1.
 */
 static int overflow(size_t start, size_t count){
@@ -302,14 +303,14 @@ static int overflow(size_t start, size_t count){
   size_t n_shift;
   n_shift = C_PRIME_PARTS[start + (count - 1)];
   while (n_shift){
-    n >>= 1;
+    n_shift >>= 1;
     c++;
   }
   return (c + (count - 1) * C_BYTE_BIT > C_FULL_BIT);
 }
 
 /**
-   Build a prime number from parts in the C_PARTS array.
+   Builds a prime number from parts in the C_PRIME_PARTS array.
 */
 static size_t build_prime(size_t start, size_t count){
   size_t p = 0;
