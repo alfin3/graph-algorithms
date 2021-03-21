@@ -2,12 +2,13 @@
    ht-div.h
 
    Struct declarations and declarations of accessible functions of a hash 
-   table with generic hash keys and generic elements.  The 
+   table with generic hash keys and generic elements. The 
    implementation is based on a division method for hashing into upto  
-   the number of slots determined by the largest number in the C_PRIMES array
-   that can be represented as size_t on a given system, and a chaining method
-   for resolving collisions. Due to chaining, the number of keys and elements
-   that can be inserted is not limited by the hash table implementation.
+   the number of slots determined by the largest prime number in the
+   C_PRIME_PARTS array, representable as size_t on a given system, and a
+   chaining method for resolving collisions. Due to chaining, the number
+   of keys and elements that can be inserted is not limited by the hash
+   table implementation.
    
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by the 
