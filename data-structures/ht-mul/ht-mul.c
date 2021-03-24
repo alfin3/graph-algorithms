@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "ht-mul.h"
 #include "dll.h"
 #include "utilities-mem.h"
@@ -102,7 +103,6 @@ static const size_t C_BUILD_SHIFT = 16;
 static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_FULL_SIZE = sizeof(size_t);
-static const size_t C_SIZE_MAX = (size_t)-1;
 static const size_t C_INIT_LOG_COUNT = 8;
 
 /* placeholder object handling */
@@ -378,12 +378,15 @@ static size_t build_prime(const size_t *parts, size_t start, size_t count){
 */
 static size_t find_build_prime(const size_t *parts){
   size_t p;
-  size_t pi = 0, gi = 0;
-  while (pi <= C_LAST_PRIME_IX &&
-	 !is_overflow(parts, pi, C_PARTS_PER_PRIME[gi])){
-    p = build_prime(parts, pi, C_PARTS_PER_PRIME[gi]);
-    pi += C_PARTS_PER_PRIME[gi];
-    if (pi == C_PARTS_ACC_COUNTS[gi]) gi++;
+  size_t pti = 0, gpi = 0;
+  p = build_prime(parts, pti, C_PARTS_PER_PRIME[gpi]);
+  pti += C_PARTS_PER_PRIME[gpi];
+  if (pti == C_PARTS_ACC_COUNTS[gpi]) gpi++;
+  while (pti <= C_LAST_PRIME_IX &&
+	 !is_overflow(parts, pti, C_PARTS_PER_PRIME[gpi])){
+    p = build_prime(parts, pti, C_PARTS_PER_PRIME[gpi]);
+    pti += C_PARTS_PER_PRIME[gpi];
+    if (pti == C_PARTS_ACC_COUNTS[gpi]) gpi++;
   }
   return p;
 }
