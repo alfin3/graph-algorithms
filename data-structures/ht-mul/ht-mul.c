@@ -36,75 +36,74 @@
 #include "utilities-mem.h"
 #include "utilities-mod.h"
 
-/**
-   An array of primes in the increasing order, approximately doubling in 
-   magnitude.
-   TODO: pair of primes for each even bit setting >= 16 -> 
-         two hash functions for each bit setting via a bit shift
-*/
-static const size_t C_PRIME_PARTS[6 * 1 + 16 * (2 + 3 + 4)] =
-  {0xbe21u,                               /* 48673 */
-   0x5b0bu, 0x0001u,                      /* 88843 */
-   0xd8d5u, 0x0002u,                      /* 186581 */
-   0xc219u, 0x0005u,                      /* 377369 */
-   0x0077u, 0x000cu,                      /* 786551 */
-   0xa243u, 0x0016u,                      /* 1483331 */
-   0x2029u, 0x0031u,                      /* 3219497 */
-   0xcc21u, 0x005fu,                      /* 6278177 */
-   0x5427u, 0x00bfu,                      /* 12538919 */
-   0x037fu, 0x0180u,                      /* 25166719 */
-   0x42bbu, 0x030fu,                      /* 51331771 */
-   0x1c75u, 0x06b7u,                      /* 112663669 */
-   0x96adu, 0x0c98u,                      /* 211326637 */
-   0x96b7u, 0x1898u,                      /* 412653239 */
-   0xc10fu, 0x2ecfu,                      /* 785367311 */
-   0x425bu, 0x600fu,                      /* 1611612763 */
-   0x0007u, 0xc000u,                      /* 3221225479 */
-   0x016fu, 0x8000u, 0x0001u,             /* 6442451311 */
-   0x9345u, 0xffc8u, 0x0002u,             /* 12881269573 */
-   0x5523u, 0xf272u, 0x0005u,             /* 25542415651 */
-   0x1575u, 0x0a63u, 0x000cu,             /* 51713873269 */
-   0x22fbu, 0xca07u, 0x001bu,             /* 119353582331 */
-   0xc513u, 0x4d6bu, 0x0031u,             /* 211752305939 */
-   0xa6cdu, 0x50f3u, 0x0061u,             /* 417969972941 */
-   0xa021u, 0x5460u, 0x00beu,             /* 817459404833 */
-   0xea29u, 0x7882u, 0x0179u,             /* 1621224516137 */
-   0xeaafu, 0x7c3du, 0x02f5u,             /* 3253374675631 */
-   0xab5fu, 0x5a69u, 0x05ffu,             /* 6594291673951 */
-   0x6b1fu, 0x29efu, 0x0c24u,             /* 13349461912351 */
-   0xc81bu, 0x35a7u, 0x17feu,             /* 26380589320219 */
-   0x57b7u, 0xccbeu, 0x2ffbu,             /* 52758518323127 */
-   0xc8fbu, 0x1da8u, 0x6bf3u,             /* 118691918825723 */
-   0x82c3u, 0x2c9fu, 0xc2ccu,             /* 214182177768131 */
-   0x3233u, 0x1c54u, 0x7d40u, 0x0001u,    /* 419189283369523 */
-   0x60adu, 0x46a1u, 0xf55eu, 0x0002u,    /* 832735214133421 */
-   0x6babu, 0x40c4u, 0xf12au, 0x0005u,    /* 1672538661088171 */
-   0xb24du, 0x6765u, 0x38b5u, 0x000bu,    /* 3158576518771277 */
-   0x789fu, 0xfd94u, 0xc6b2u, 0x0017u,    /* 6692396525189279 */
-   0x0d35u, 0x5443u, 0xff54u, 0x0030u,    /* 13791536538127669 */
-   0x2465u, 0x74f9u, 0x42d1u, 0x005eu,    /* 26532115188884581 */
-   0xd017u, 0x90c7u, 0x37b3u, 0x00c6u,    /* 55793289756397591 */
-   0x5055u, 0x5a82u, 0x64dfu, 0x0193u,    /* 113545326073368661 */
-   0x6f8fu, 0x423bu, 0x8949u, 0x0304u,    /* 217449629757435791 */
-   0xd627u, 0x08e0u, 0x0b2fu, 0x05feu,    /* 431794910914467367 */
-   0xbbc1u, 0x662cu, 0x4d90u, 0x0badu,    /* 841413987972987841 */
-   0xf7d3u, 0x45a1u, 0x8ccbu, 0x185du,    /* 1755714234418853843 */
-   0xc647u, 0x3c91u, 0x46b2u, 0x2e9bu,    /* 3358355678469146183 */
-   0x58a1u, 0xbd96u, 0x2836u, 0x5f8cu,    /* 6884922145916737697 */
-   0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u};   /* 15769474759331449193 */
+static const size_t C_FIRST_PRIME_PARTS[1 + 8 * (2 + 3 + 4)] =
+  {0xbe21u,                            /* 2^15 < 48673 < 2^16 */
+   0xd8d5u, 0x0002u,                   /* 2^17 < 186581 < 2^18 */
+   0x0077u, 0x000cu,                   /* 2^19 < 786551 < 2^20 */
+   0x2029u, 0x0031u,                   /* 2^21 < 3219497 < 2^22 */
+   0x5427u, 0x00bfu,                   /* 2^23 < 12538919 < 2^24 */
+   0x42bbu, 0x030fu,                   /* 2^25 < 51331771 < 2^26 */
+   0x96adu, 0x0c98u,                   /* 2^27 < 211326637 < 2^28 */
+   0xc10fu, 0x2ecfu,                   /* 2^29 < 785367311 < 2^30 */
+   0x0007u, 0xc000u,                   /* 2^31 < 3221225479 < 2^32 */
+   0x9345u, 0xffc8u, 0x0002u,          /* 2^33 < 12881269573 < 2^34 */
+   0x1575u, 0x0a63u, 0x000cu,          /* 2^35 < 51713873269 < 2^36 */
+   0xc513u, 0x4d6bu, 0x0031u,          /* 2^37 < 211752305939 < 2^38 */
+   0xa021u, 0x5460u, 0x00beu,          /* 2^39 < 817459404833 < 2^40 */
+   0xeaafu, 0x7c3du, 0x02f5u,          /* 2^41 < 3253374675631 < 2^42 */
+   0x6b1fu, 0x29efu, 0x0c24u,          /* 2^43 < 13349461912351 < 2^44 */
+   0x57b7u, 0xccbeu, 0x2ffbu,          /* 2^45 < 52758518323127 < 2^46 */
+   0x82c3u, 0x2c9fu, 0xc2ccu,          /* 2^47 < 214182177768131 < 2^48 */
+   0x60adu, 0x46a1u, 0xf55eu, 0x0002u, /* 2^49 < 832735214133421 < 2^50 */
+   0xb24du, 0x6765u, 0x38b5u, 0x000bu, /* 2^51 < 3158576518771277 < 2^52 */
+   0x0d35u, 0x5443u, 0xff54u, 0x0030u, /* 2^53 < 13791536538127669 < 2^54 */
+   0xd017u, 0x90c7u, 0x37b3u, 0x00c6u, /* 2^55 < 55793289756397591 < 2^56 */
+   0x6f8fu, 0x423bu, 0x8949u, 0x0304u, /* 2^57 < 217449629757435791 < 2^58 */
+   0xbbc1u, 0x662cu, 0x4d90u, 0x0badu, /* 2^59 < 841413987972987841 < 2^60 */
+   0xc647u, 0x3c91u, 0x46b2u, 0x2e9bu, /* 2^61 < 3358355678469146183 < 2^62 */
+   0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u  /* 2^63 < 15769474759331449193 < 2^64 */
+  }; 
 
-static const size_t C_LAST_PRIME_IX = 6 + 16 * (2 + 3 + 4) - 4;
+static const size_t C_SECOND_PRIME_PARTS[1 + 8 * (2 + 3 + 4)] =
+  {0xc221u,                            /* 2^15 < 49697 < 2^16 */
+   0xe04bu, 0x0002u,                   /* 2^17 < 188491 < 2^18 */
+   0xf6a7u, 0x000bu,                   /* 2^19 < 784039 < 2^20 */
+   0x1b4fu, 0x0030u,                   /* 2^21 < 3152719 < 2^22 */
+   0x4761u, 0x00beu,                   /* 2^23 < 12470113 < 2^24 */
+   0x3eadu, 0x0312u,                   /* 2^25 < 51527341 < 2^26 */
+   0x08e9u, 0x0ca5u,                   /* 2^27 < 212142313 < 2^28 */
+   0x06b9u, 0x2eecu,                   /* 2^29 < 787220153 < 2^30 */
+   0xbe7du, 0xc073u,                   /* 2^31 < 3228810877 < 2^32 */
+   0x3739u, 0xf7fdu, 0x0002u,          /* 2^33 < 12750501689 < 2^34 */
+   0x852bu, 0x07f8u, 0x000cu,          /* 2^35 < 51673335083 < 2^36 */
+   0xa61bu, 0x457au, 0x0031u,          /* 2^37 < 211619063323 < 2^38 */
+   0xb041u, 0xbf9eu, 0x00bdu,          /* 2^39 < 814963667009 < 2^40 */
+   0x4515u, 0x3eafu, 0x0308u,          /* 2^41 < 3333946295573 < 2^42 */
+   0x6f4fu, 0xc0d9u, 0x0c3cu,          /* 2^43 < 13455073046351 < 2^44 */
+   0x0da1u, 0x6600u, 0x3025u,          /* 2^45 < 52937183202721 < 2^46 */
+   0xb229u, 0x8facu, 0xc1e5u,          /* 2^47 < 213191702131241 < 2^48 */
+   0x58f1u, 0x94e9u, 0xff18u, 0x0002u, /* 2^49 < 843430996039921 < 2^50 */
+   0x73abu, 0xda62u, 0x9da8u, 0x000bu, /* 2^51 < 3269573287769003 < 2^52 */
+   0x37f1u, 0xd800u, 0x135bu, 0x0031u, /* 2^53 < 13813559045666801 < 2^54 */
+   0xd909u, 0xa518u, 0xebc1u, 0x00c4u, /* 2^55 < 55428312366373129 < 2^56 */
+   0x03a7u, 0x5cb0u, 0xba89u, 0x0302u, /* 2^57 < 216940831195530151 < 2^58 */
+   0x12adu, 0x7477u, 0xb251u, 0x0c10u, /* 2^59 < 869390790998561453 < 2^60 */
+   0xe411u, 0x4bacu, 0x9c82u, 0x2f17u, /* 2^61 < 3393352927676261393 < 2^62 */
+   0xd047u, 0x33a5u, 0x5cb7u, 0xbd8fu  /* 2^63 < 13659238136753279047 < 2^64 */
+  };
+
+static const size_t C_LAST_PRIME_IX = 1 + 8 * (2 + 3 + 4) - 4;
 static const size_t C_PARTS_PER_PRIME[4] = {1, 2, 3, 4};
-static const size_t C_PARTS_ACC_COUNTS[4] = {6,
-					     6 + 16 * 2,
-					     6 + 16 * (2 + 3),
-					     6 + 16 * (2 + 3 + 4)};
+static const size_t C_PARTS_ACC_COUNTS[4] = {1,
+					     1 + 8 * 2,
+					     1 + 8 * (2 + 3),
+					     1 + 8 * (2 + 3 + 4)};
 static const size_t C_BUILD_SHIFT = 16;
 static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_FULL_SIZE = sizeof(size_t);
 static const size_t C_SIZE_MAX = (size_t)-1;
-static const size_t C_INIT_LOG_COUNT = 10;
+static const size_t C_INIT_LOG_COUNT = 8;
 
 /* placeholder object handling */
 static void placeholder_init(dll_node_t *node, int elt_size);
@@ -112,8 +111,7 @@ static int is_placeholder(const dll_node_t *node);
 static void placeholder_free(dll_node_t *node);
 
 /* hashing */
-static int overflow(size_t start, size_t count);
-static size_t build_prime(size_t start, size_t count);
+static size_t find_build_prime(const size_t *parts);
 static size_t convert_std_key(const ht_mul_t *ht, const void *key);
 static size_t hash(size_t prime, size_t std_key);
 static size_t adjust_hash_dist(size_t dist);
@@ -175,8 +173,8 @@ void ht_mul_init(ht_mul_t *ht,
   ht->alpha = alpha;
   ht->placeholder = malloc_perror(sizeof(dll_node_t));
   placeholder_init(ht->placeholder, elt_size);
-  ht->first_prime = ;
-  ht->second_prime = ;
+  ht->first_prime = find_build_prime(C_FIRST_PRIME_PARTS);
+  ht->second_prime = find_build_prime(C_SECOND_PRIME_PARTS);
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
@@ -342,14 +340,14 @@ static void placeholder_free(dll_node_t *node){
 }
 
 /**
-   Tests if the a prime number in the C_PRIME_PARTS array results in
-   an overflow of size_t on a given system. Returns 0 if no overflow,
-   otherwise returns 1.
+   Tests if a prime number in the C_FIRST_PRIME_PARTS or C_SECOND_PRIME_PARTS
+   array results in an overflow of size_t on a given system. Returns 0 if no
+   overflow, otherwise returns 1.
 */
-static int overflow(size_t start, size_t count){
+static int is_overflow(const size_t *parts, size_t start, size_t count){
   size_t c = 0;
   size_t n_shift;
-  n_shift = C_PRIME_PARTS[start + (count - 1)];
+  n_shift = parts[start + (count - 1)];
   while (n_shift){
     n_shift >>= 1;
     c++;
@@ -358,16 +356,34 @@ static int overflow(size_t start, size_t count){
 }
 
 /**
-   Builds a prime number from parts in the C_PRIME_PARTS array.
+   Builds a prime number from parts in the C_FIRST_PRIME_PARTS or
+   C_SECOND_PRIME_PARTS array.
 */
-static size_t build_prime(size_t start, size_t count){
+static size_t build_prime(const size_t *parts, size_t start, size_t count){
   size_t p = 0;
   size_t n_shift;
   size_t i;
   for (i = 0; i < count; i++){
-    n_shift = C_PRIME_PARTS[start + i];
+    n_shift = parts[start + i];
     n_shift <<= (i * C_BUILD_SHIFT);
     p |= n_shift;
+  }
+  return p;
+}
+
+/**
+   Finds a and builds a prime number p, s.t. 2^{n - 1} < p < 2^n where
+   n = CHAR_BIT * sizeof(size_t), from parts in the C_FIRST_PRIME_PARTS or
+   C_SECOND_PRIME_PARTS array.
+*/
+static size_t find_build_prime(const size_t *parts){
+  size_t p;
+  size_t pi = 0, gi = 0;
+  while (pi <= C_LAST_PRIME_IX &&
+	 !is_overflow(parts, pi, C_PARTS_PER_PRIME[gi])){
+    p = build_prime(parts, pi, C_PARTS_PER_PRIME[gi]);
+    pi += C_PARTS_PER_PRIME[gi];
+    if (pi == C_PARTS_ACC_COUNTS[gi]) gi++;
   }
   return p;
 }
