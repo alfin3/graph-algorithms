@@ -21,10 +21,10 @@
    is used, which contains an array with a count that is equal to n * 2^n,
    where n is the number of vertices in the graph.   
 
-   If E >> V and V < sizeof(size_t) * 8, a default hash table may provide
-   speed advantages by avoiding the computation of hash values. If V is
-   larger and the graph is sparse, a non-default hash table may provide space
-   advantages.
+   If E >> V and V < sizeof(size_t) * CHAR_BIT, a default hash table may
+   provide speed advantages by avoiding the computation of hash values. If V
+   is larger and the graph is sparse, a non-default hash table may provide
+   space advantages.
 */
 
 #include <stdio.h>
@@ -56,9 +56,9 @@ typedef struct{
   size_t bit; /* set element with a single set bit */
 } ibit_t;
 
-static const size_t CONST_SET_ELT_SIZE = sizeof(size_t);
-static const size_t CONST_SET_ELT_BIT = CHAR_BIT * sizeof(size_t);
-static const size_t CONST_SIZE_MAX = (size_t)-1;
+static const size_t C_SET_ELT_SIZE = sizeof(size_t);
+static const size_t C_SET_ELT_BIT = CHAR_BIT * sizeof(size_t);
+static const size_t C_SIZE_MAX = (size_t)-1;
 
 /* set operations based on a bit array representation */
 static void set_init(ibit_t *ibit, size_t n);
@@ -104,8 +104,9 @@ static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
                  array with a count that is equal to n * 2^n, where n is the
                  number of vertices in the adjacency list; the maximal n
                  in a default hash table is system-dependent and is less
-                 than sizeof(size_t) * 8; if the allocation of a default hash
-                 table fails, the program terminates with an error message
+                 than sizeof(size_t) * CHAR_BIT; if the allocation of a
+                 default hash table fails, the program terminates with an
+                 error message
                  - a pointer to a set of parameters specifying a hash table
                  used for set hashing operations; the size of a hash key is 
                  k * (1 + lowest # k-sized blocks s.t. # bits >= # vertices),
@@ -139,12 +140,12 @@ int tsp(const adj_lst_t *a,
   context_t context;
   tsp_ht_t tht_def;
   const tsp_ht_t *thtp = tht;
-  set_count = a->num_vts / CONST_SET_ELT_BIT;
-  if (a->num_vts % CONST_SET_ELT_BIT){
+  set_count = a->num_vts / C_SET_ELT_BIT;
+  if (a->num_vts % C_SET_ELT_BIT){
     set_count++;
   }
   set_count++; /* + last reached vertex representation */
-  set_size = set_count * CONST_SET_ELT_SIZE;
+  set_size = set_count * C_SET_ELT_SIZE;
   prev_set = calloc_perror(set_size, 1);
   sum_wt = malloc_perror(wt_size);
   prev_set[0] = start;
@@ -272,9 +273,9 @@ static void build_next(const adj_lst_t *a,
 */
 
 static void set_init(ibit_t *ibit, size_t n){
-  ibit->ix = n / CONST_SET_ELT_BIT;
+  ibit->ix = n / C_SET_ELT_BIT;
   ibit->bit = 1;
-  ibit->bit <<= n % CONST_SET_ELT_BIT;
+  ibit->bit <<= n % C_SET_ELT_BIT;
 }
 
 static size_t *set_member(const ibit_t *ibit, const size_t *set){
@@ -299,8 +300,8 @@ static void ht_def_init(ht_def_t *ht,
 			void (*free_elt)(void *),
 			void *context){
   context_t *c = context;
-  if (c->num_vts >= CONST_SET_ELT_BIT ||
-      pow_two(c->num_vts) > CONST_SIZE_MAX / c->num_vts / elt_size){
+  if (c->num_vts >= C_SET_ELT_BIT ||
+      pow_two(c->num_vts) > C_SIZE_MAX / c->num_vts / elt_size){
     fprintf_stderr_exit("default hash table allocation failed", __LINE__);
   }
   ht->key_size = key_size;
@@ -353,7 +354,7 @@ static void ht_def_free(ht_def_t *ht){
 }
 
 /**
-   Returns the kth power of 2, where 0 <= k < CONST_SET_ELT_BIT.
+   Returns the kth power of 2, where 0 <= k < C_SET_ELT_BIT.
 */
 static size_t pow_two(size_t k){
   size_t ret = 1;

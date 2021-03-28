@@ -22,10 +22,10 @@
    is used, which contains an array with a count that is equal to n * 2^n,
    where n is the number of vertices in the graph.   
 
-   If E >> V and V < sizeof(size_t) * 8, a default hash table may provide
-   speed advantages by avoiding the computation of hash values. If V is
-   larger and the graph is sparse, a non-default hash table may provide space
-   advantages.
+   If E >> V and V < sizeof(size_t) * CHAR_BIT, a default hash table may
+   provide speed advantages by avoiding the computation of hash values. If V
+   is larger and the graph is sparse, a non-default hash table may provide
+   space advantages.
 */
 
 #ifndef TSP_H  
@@ -67,8 +67,9 @@ typedef struct{
                  array with a count that is equal to n * 2^n, where n is the
                  number of vertices in the adjacency list; the maximal n
                  in a default hash table is system-dependent and is less
-                 than sizeof(size_t) * 8; if the allocation of a default hash
-                 table fails, the program terminates with an error message
+                 than sizeof(size_t) * CHAR_BIT; if the allocation of a
+                 default hash table fails, the program terminates with an
+                 error message
                  - a pointer to a set of parameters specifying a hash table
                  used for set hashing operations; the size of a hash key is 
                  k * (1 + lowest # k-sized blocks s.t. # bits >= # vertices),
