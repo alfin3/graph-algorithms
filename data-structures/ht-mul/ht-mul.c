@@ -13,7 +13,7 @@
 
    The alpha parameter does not provide an upper bound after the maximum 
    count of slots in a hash table is reached. After exceeding the alpha
-   parameter, the load factor is <= 1.0 due to open addressing, and the
+   parameter value, the load factor is <= 1.0 due to open addressing, and the
    expected number of probes is upper-bounded by 1/(1 - load factor) before
    the full occupancy is reached.
 
@@ -113,9 +113,7 @@ static void placeholder_free(dll_node_t *node);
 /* hashing */
 static size_t find_build_prime(const size_t *parts);
 static size_t convert_std_key(const ht_mul_t *ht, const void *key);
-static size_t hash(size_t prime, size_t std_key);
 static size_t adjust_hash_dist(size_t dist);
-static size_t probe_dbl_hash(const ht_mul_t *ht, size_t dist, size_t ix);
 
 /* hash table operations */
 static dll_node_t **search(const ht_mul_t *ht, const void *key);
@@ -140,7 +138,7 @@ static void reinsert(ht_mul_t *ht, const dll_node_t *node);
                  rdc_key is NULL
                  - if key_size is greater than sizeof(size_t) bytes, then
                  rdc_key is not NULL and reduces a key to a sizeof(size_t)-
-                 byte block prior to hashing; the first argument points to an
+                 byte block prior to hashing; the first argument points to a
                  sizeof(size_t)-byte block, where the reduced form of the
                  block pointed to by the second argument is copied
    free_elt    : - if an element is within a contiguous memory block,
@@ -170,11 +168,11 @@ void ht_mul_init(ht_mul_t *ht,
   ht->max_num_probes = 1; /* at least one probe */
   ht->num_elts = 0;
   ht->num_placeholders = 0;
+  ht->first_prime = find_build_prime(C_FIRST_PRIME_PARTS);
+  ht->second_prime = find_build_prime(C_SECOND_PRIME_PARTS);
   ht->alpha = alpha;
   ht->placeholder = malloc_perror(sizeof(dll_node_t));
   placeholder_init(ht->placeholder, elt_size);
-  ht->first_prime = find_build_prime(C_FIRST_PRIME_PARTS);
-  ht->second_prime = find_build_prime(C_SECOND_PRIME_PARTS);
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
@@ -206,8 +204,8 @@ void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
     }
   }
   std_key = convert_std_key(ht, key);
-  first_val = hash(ht->first_prime, std_key); 
-  second_val = hash(ht->second_prime, std_key);
+  first_val = ht->first_prime * std_key; /* mod 2^FULL_BIT */
+  second_val = ht->second_prime * std_key; /* mod 2^FULL_BIT */
   /* prepare a hash key and two hash values for storage as a block */
   key_block = malloc_perror(key_block_size);
   memcpy(key_block, key, ht->key_size);
@@ -225,7 +223,7 @@ void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
       key_block = NULL;
       return;
     }
-    ix = probe_dbl_hash(ht, dist, ix);
+    ix = sum_mod(dist, ix, ht->count);
     head = &ht->key_elts[ix];
     num_probes++;
     if (num_probes > ht->max_num_probes){
@@ -372,21 +370,21 @@ static size_t build_prime(const size_t *parts, size_t start, size_t count){
 }
 
 /**
-   Finds a and builds a prime number p, s.t. 2^{n - 1} < p < 2^n where
+   Finds and builds a prime number p, s.t. 2^{n - 1} < p < 2^n where
    n = CHAR_BIT * sizeof(size_t), from parts in the C_FIRST_PRIME_PARTS or
    C_SECOND_PRIME_PARTS array.
 */
 static size_t find_build_prime(const size_t *parts){
   size_t p;
-  size_t pti = 0, gpi = 0;
-  p = build_prime(parts, pti, C_PARTS_PER_PRIME[gpi]);
-  pti += C_PARTS_PER_PRIME[gpi];
-  if (pti == C_PARTS_ACC_COUNTS[gpi]) gpi++;
-  while (pti <= C_LAST_PRIME_IX &&
-	 !is_overflow(parts, pti, C_PARTS_PER_PRIME[gpi])){
-    p = build_prime(parts, pti, C_PARTS_PER_PRIME[gpi]);
-    pti += C_PARTS_PER_PRIME[gpi];
-    if (pti == C_PARTS_ACC_COUNTS[gpi]) gpi++;
+  size_t i = 0, j = 0;
+  p = build_prime(parts, i, C_PARTS_PER_PRIME[j]);
+  i += C_PARTS_PER_PRIME[j];
+  if (i == C_PARTS_ACC_COUNTS[j]) j++;
+  while (i <= C_LAST_PRIME_IX &&
+	 !is_overflow(parts, i, C_PARTS_PER_PRIME[j])){
+    p = build_prime(parts, i, C_PARTS_PER_PRIME[j]);
+    i += C_PARTS_PER_PRIME[j];
+    if (i == C_PARTS_ACC_COUNTS[j]) j++;
   }
   return p;
 }
@@ -396,21 +394,12 @@ static size_t find_build_prime(const size_t *parts){
 */
 static size_t convert_std_key(const ht_mul_t *ht, const void *key){
   size_t std_key = 0; /* initialize all bits */
-  if (ht->key_size > sizeof(size_t)){
+  if (ht->key_size > C_FULL_SIZE){
     ht->rdc_key(&std_key, key);
   }else{ 
     memcpy(&std_key, key, ht->key_size);
   }
   return std_key;
-}
-
-/**
-   Maps a hash key to a hash value without subsequent bit shifting. The 
-   latter is necessary to determine the index of a slot in a hash table or 
-   a probe distance.
-*/
-static size_t hash(size_t prime, size_t std_key){
-  return mul_mod_pow_two(prime, std_key);
 }
 
 /**
@@ -429,13 +418,6 @@ static size_t adjust_hash_dist(size_t dist){
 }
 
 /**
-   Returns the next index in a hash table, based on double hashing.
-*/
-static size_t probe_dbl_hash(const ht_mul_t *ht, size_t dist, size_t ix){
-  return sum_mod(dist, ix, ht->count);
-}
-
-/**
    If a key is present in a hash table, returns a head pointer to the dll
    with a single node containing the key, otherwise returns NULL.
 */
@@ -444,8 +426,8 @@ static dll_node_t **search(const ht_mul_t *ht, const void *key){
   size_t std_key, first_val, second_val, ix, dist;
   dll_node_t **head = NULL;
   std_key = convert_std_key(ht, key);
-  first_val = hash(ht->first_prime, std_key); 
-  second_val = hash(ht->second_prime, std_key); 
+  first_val = ht->first_prime * std_key; /* mod 2^FULL_BIT */
+  second_val = ht->second_prime * std_key; /* mod 2^FULL_BIT */
   ix = first_val >> (C_FULL_BIT - ht->log_count);
   dist = adjust_hash_dist(second_val >> (C_FULL_BIT - ht->log_count));
   head = &ht->key_elts[ix];
@@ -456,7 +438,7 @@ static dll_node_t **search(const ht_mul_t *ht, const void *key){
     }else if (num_probes == ht->max_num_probes){
       break;
     }else{
-      ix = probe_dbl_hash(ht, dist, ix);
+      ix = sum_mod(dist, ix, ht->count);
       head = &ht->key_elts[ix];
       num_probes++;
     }
@@ -466,6 +448,7 @@ static dll_node_t **search(const ht_mul_t *ht, const void *key){
 
 /**
    Compute pointers to the first and second hash values in a key block.
+   In a key block, a hash key must be followed by two hash values.
 */
 static size_t *first_val_ptr(const void* key_block, size_t key_size){
   return (size_t *)((char *)key_block + key_size);
@@ -549,7 +532,7 @@ static void reinsert(ht_mul_t *ht, const dll_node_t *node){
   dist = adjust_hash_dist(second_val >> (C_FULL_BIT - ht->log_count));
   head = &ht->key_elts[ix];
   while (*head != NULL){
-    ix = probe_dbl_hash(ht, dist, ix);
+    ix = sum_mod(dist, ix, ht->count);
     head = &ht->key_elts[ix];
     num_probes++;
     if (num_probes > ht->max_num_probes){

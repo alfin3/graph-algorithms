@@ -14,7 +14,7 @@
 
    The alpha parameter does not provide an upper bound after the maximum 
    count of slots in a hash table is reached. After exceeding the alpha
-   parameter, the load factor is <= 1.0 due to open addressing, and the
+   parameter value, the load factor is <= 1.0 due to open addressing, and the
    expected number of probes is upper-bounded by 1/(1 - load factor) before
    the full occupancy is reached.
 
@@ -66,7 +66,7 @@ typedef struct{
                  rdc_key is NULL
                  - if key_size is greater than sizeof(size_t) bytes, then
                  rdc_key is not NULL and reduces a key to a sizeof(size_t)-
-                 byte block prior to hashing; the first argument points to an
+                 byte block prior to hashing; the first argument points to a
                  sizeof(size_t)-byte block, where the reduced form of the
                  block pointed to by the second argument is copied
    free_elt    : - if an element is within a contiguous memory block,
