@@ -17,8 +17,8 @@
 #include "dijkstra.h"
 #include "bfs.h"
 #include "heap.h"
-#include "ht-div-uint64.h"
-#include "ht-mul-uint64.h"
+#include "ht-div.h"
+#include "ht-mul.h"
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
@@ -88,31 +88,22 @@ typedef struct{
   float alpha;
 } context_t;
 
-void ht_div_uint64_init_helper(ht_div_uint64_t *ht,
-			       size_t key_size,
-			       size_t elt_size,
-			       void (*free_elt)(void *),
-			       void *context){
+void ht_div_init_helper(ht_div_t *ht,
+			size_t key_size,
+			size_t elt_size,
+			void (*free_elt)(void *),
+			void *context){
   context_t *c = context;
-  ht_div_uint64_init(ht,
-		     key_size,
-		     elt_size,
-		     c->alpha,
-		     free_elt);
+  ht_div_init(ht, key_size, elt_size, c->alpha, free_elt);
 }
 
-void ht_mul_uint64_init_helper(ht_mul_uint64_t *ht,
-			       size_t key_size,
-			       size_t elt_size,
-			       void (*free_elt)(void *),
-			       void *context){
+void ht_mul_init_helper(ht_mul_t *ht,
+			size_t key_size,
+			size_t elt_size,
+			void (*free_elt)(void *),
+			void *context){
   context_t * c = context;
-  ht_mul_uint64_init(ht,
-		     key_size,
-		     elt_size,
-		     c->alpha,
-		     NULL, /* vertex is hash key */
-		     free_elt);
+  ht_mul_init(ht, key_size, elt_size, c->alpha, NULL, free_elt);
 }
 
 void run_default_uint64_dijkstra(const adj_lst_t *a){
@@ -139,7 +130,7 @@ void run_div_uint64_dijkstra(const adj_lst_t *a){
   uint64_t *dist = NULL;
   uint64_t *prev = NULL;
   float alpha = 1.0;
-  ht_div_uint64_t ht_div;
+  ht_div_t ht_div;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts * sizeof(uint64_t));
@@ -147,11 +138,11 @@ void run_div_uint64_dijkstra(const adj_lst_t *a){
   context.alpha = alpha;
   hht.ht = &ht_div;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_div_uint64_init_helper;
-  hht.insert = (heap_ht_insert)ht_div_uint64_insert;
-  hht.search = (heap_ht_search)ht_div_uint64_search;
-  hht.remove = (heap_ht_remove)ht_div_uint64_remove;
-  hht.free = (heap_ht_free)ht_div_uint64_free;
+  hht.init = (heap_ht_init)ht_div_init_helper;
+  hht.insert = (heap_ht_insert)ht_div_insert;
+  hht.search = (heap_ht_search)ht_div_search;
+  hht.remove = (heap_ht_remove)ht_div_remove;
+  hht.free = (heap_ht_free)ht_div_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_uint64, cmp_uint64);
     printf("distances and previous vertices with %lu as start \n", i);
@@ -170,7 +161,7 @@ void run_mul_uint64_dijkstra(const adj_lst_t *a){
   uint64_t *dist = NULL;
   uint64_t *prev = NULL;
   float alpha = 0.4;
-  ht_mul_uint64_t ht_mul;
+  ht_mul_t ht_mul;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts * sizeof(uint64_t));
@@ -178,11 +169,11 @@ void run_mul_uint64_dijkstra(const adj_lst_t *a){
   context.alpha = alpha;
   hht.ht = &ht_mul;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_mul_uint64_init_helper;
-  hht.insert = (heap_ht_insert)ht_mul_uint64_insert;
-  hht.search = (heap_ht_search)ht_mul_uint64_search;
-  hht.remove = (heap_ht_remove)ht_mul_uint64_remove;
-  hht.free = (heap_ht_free)ht_mul_uint64_free;
+  hht.init = (heap_ht_init)ht_mul_init_helper;
+  hht.insert = (heap_ht_insert)ht_mul_insert;
+  hht.search = (heap_ht_search)ht_mul_search;
+  hht.remove = (heap_ht_remove)ht_mul_remove;
+  hht.free = (heap_ht_free)ht_mul_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_uint64, cmp_uint64);
     printf("distances and previous vertices with %lu as start \n", i);
@@ -202,8 +193,8 @@ void run_uint64_graph_test(){
   graph_uint64_wts_init(&g);
   printf("Running a test on a directed uint64_t graph with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_uint64_t hash table \n"
-	 "iii) ht_mul_uint64_t hash table \n\n");
+	 "ii) ht_div_t hash table \n"
+	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_uint64_elts);
@@ -213,8 +204,8 @@ void run_uint64_graph_test(){
   adj_lst_free(&a);
   printf("Running a test on an undirected uint64_t graph with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_uint64_t hash table \n"
-	 "iii) ht_mul_uint64_t hash table \n\n");
+	 "ii) ht_div_t hash table \n"
+	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_uint64_elts);
@@ -227,8 +218,8 @@ void run_uint64_graph_test(){
   printf("Running a test on a directed uint64_t graph with no edges, "
 	 "with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_uint64_t hash table \n"
-	 "iii) ht_mul_uint64_t hash table \n\n");
+	 "ii) ht_div_t hash table \n"
+	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_uint64_elts);
@@ -239,8 +230,8 @@ void run_uint64_graph_test(){
   printf("Running a test on a undirected uint64_t graph with no edges, "
 	 "with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_uint64_t hash table \n"
-	 "iii) ht_mul_uint64_t hash table \n\n");
+	 "ii) ht_div_t hash table \n"
+	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_uint64_elts);
@@ -318,7 +309,7 @@ void run_div_double_dijkstra(const adj_lst_t *a){
   uint64_t *prev = NULL;
   float alpha = 1.0;
   double *dist = NULL;
-  ht_div_uint64_t ht_div;
+  ht_div_t ht_div;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts * sizeof(double));
@@ -326,11 +317,11 @@ void run_div_double_dijkstra(const adj_lst_t *a){
   context.alpha = alpha;
   hht.ht = &ht_div;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_div_uint64_init_helper;
-  hht.insert = (heap_ht_insert)ht_div_uint64_insert;
-  hht.search = (heap_ht_search)ht_div_uint64_search;
-  hht.remove = (heap_ht_remove)ht_div_uint64_remove;
-  hht.free = (heap_ht_free)ht_div_uint64_free;
+  hht.init = (heap_ht_init)ht_div_init_helper;
+  hht.insert = (heap_ht_insert)ht_div_insert;
+  hht.search = (heap_ht_search)ht_div_search;
+  hht.remove = (heap_ht_remove)ht_div_remove;
+  hht.free = (heap_ht_free)ht_div_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_double, cmp_double);
     printf("distances and previous vertices with %lu as start \n", i);
@@ -349,7 +340,7 @@ void run_mul_double_dijkstra(const adj_lst_t *a){
   uint64_t *prev = NULL;
   float alpha = 0.4;
   double *dist = NULL;
-  ht_mul_uint64_t ht_mul;
+  ht_mul_t ht_mul;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts * sizeof(double));
@@ -357,11 +348,11 @@ void run_mul_double_dijkstra(const adj_lst_t *a){
   context.alpha = alpha;
   hht.ht = &ht_mul;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_mul_uint64_init_helper;
-  hht.insert = (heap_ht_insert)ht_mul_uint64_insert;
-  hht.search = (heap_ht_search)ht_mul_uint64_search;
-  hht.remove = (heap_ht_remove)ht_mul_uint64_remove;
-  hht.free = (heap_ht_free)ht_mul_uint64_free;
+  hht.init = (heap_ht_init)ht_mul_init_helper;
+  hht.insert = (heap_ht_insert)ht_mul_insert;
+  hht.search = (heap_ht_search)ht_mul_search;
+  hht.remove = (heap_ht_remove)ht_mul_remove;
+  hht.free = (heap_ht_free)ht_mul_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_double, cmp_double);
     printf("distances and previous vertices with %lu as start \n", i);
@@ -381,8 +372,8 @@ void run_double_graph_test(){
   graph_double_wts_init(&g);
   printf("Running a test on a directed double graph with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_uint64_t hash table \n"
-	 "iii) ht_mul_uint64_t hash table \n\n");
+	 "ii) ht_div_t hash table \n"
+	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_double_elts);
@@ -392,8 +383,8 @@ void run_double_graph_test(){
   adj_lst_free(&a);
   printf("Running a test on an undirected double graph with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_uint64_t hash table \n"
-	 "iii) ht_mul_uint64_t hash table \n\n");
+	 "ii) ht_div_t hash table \n"
+	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_double_elts);
@@ -405,8 +396,8 @@ void run_double_graph_test(){
   graph_double_wts_no_edges_init(&g);
   printf("Running a test on a directed double graph with no edges, with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_uint64_t hash table \n"
-	 "iii) ht_mul_uint64_t hash table \n\n");
+	 "ii) ht_div_t hash table \n"
+	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_double_elts);
@@ -417,8 +408,8 @@ void run_double_graph_test(){
   printf("Running a test on a undirected double graph with no edges, "
 	 "with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_uint64_t hash table \n"
-	 "iii) ht_mul_uint64_t hash table \n\n");
+	 "ii) ht_div_t hash table \n"
+	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_double_elts);
@@ -522,27 +513,27 @@ void run_bfs_dijkstra_test(){
 		     0.000000};
   adj_lst_t a;
   bern_arg_t b;
-  ht_div_uint64_t ht_div;
-  ht_mul_uint64_t ht_mul;
+  ht_div_t ht_div;
+  ht_mul_t ht_mul;
   context_t context_div, context_mul;
   heap_ht_t hht_div, hht_mul;
   clock_t t_bfs, t_def, t_div, t_mul;
   context_div.alpha = alpha_div;
   hht_div.ht = &ht_div;
   hht_div.context = &context_div;
-  hht_div.init = (heap_ht_init)ht_div_uint64_init_helper;
-  hht_div.insert = (heap_ht_insert)ht_div_uint64_insert;
-  hht_div.search = (heap_ht_search)ht_div_uint64_search;
-  hht_div.remove = (heap_ht_remove)ht_div_uint64_remove;
-  hht_div.free = (heap_ht_free)ht_div_uint64_free;
+  hht_div.init = (heap_ht_init)ht_div_init_helper;
+  hht_div.insert = (heap_ht_insert)ht_div_insert;
+  hht_div.search = (heap_ht_search)ht_div_search;
+  hht_div.remove = (heap_ht_remove)ht_div_remove;
+  hht_div.free = (heap_ht_free)ht_div_free;
   context_mul.alpha = alpha_mul;
   hht_mul.ht = &ht_mul;
   hht_mul.context = &context_mul;
-  hht_mul.init = (heap_ht_init)ht_mul_uint64_init_helper;
-  hht_mul.insert = (heap_ht_insert)ht_mul_uint64_insert;
-  hht_mul.search = (heap_ht_search)ht_mul_uint64_search;
-  hht_mul.remove = (heap_ht_remove)ht_mul_uint64_remove;
-  hht_mul.free = (heap_ht_free)ht_mul_uint64_free;
+  hht_mul.init = (heap_ht_init)ht_mul_init_helper;
+  hht_mul.insert = (heap_ht_insert)ht_mul_insert;
+  hht_mul.search = (heap_ht_search)ht_mul_search;
+  hht_mul.remove = (heap_ht_remove)ht_mul_remove;
+  hht_mul.free = (heap_ht_free)ht_mul_free;
   printf("Run a bfs and dijkstra test on random directed "
 	 "graphs with the same weight across edges\n");
   fflush(stdout);
@@ -614,8 +605,8 @@ void run_bfs_dijkstra_test(){
 	     a.num_vts, a.num_es);
       printf("\t\t\tbfs ave runtime:                     %.8f seconds\n"
 	     "\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
-	     "\t\t\tdijkstra ht_div_uint64 ave runtime:  %.8f seconds\n"
-	     "\t\t\tdijkstra ht_mul_uint64 ave runtime:  %.8f seconds\n",
+	     "\t\t\tdijkstra ht_div ave runtime:         %.8f seconds\n"
+	     "\t\t\tdijkstra ht_mul ave runtime:         %.8f seconds\n",
 	     (float)t_bfs / iter / CLOCKS_PER_SEC,
 	     (float)t_def / iter / CLOCKS_PER_SEC,
 	     (float)t_div / iter / CLOCKS_PER_SEC,
@@ -673,27 +664,27 @@ void run_rand_uint64_test(){
 		     0.000000};
   adj_lst_t a;
   bern_arg_t b;
-  ht_div_uint64_t ht_div;
-  ht_mul_uint64_t ht_mul;
+  ht_div_t ht_div;
+  ht_mul_t ht_mul;
   context_t context_div, context_mul;
   heap_ht_t hht_div, hht_mul;
   clock_t t_def, t_div, t_mul;
   context_div.alpha = alpha_div;
   hht_div.ht = &ht_div;
   hht_div.context = &context_div;
-  hht_div.init = (heap_ht_init)ht_div_uint64_init_helper;
-  hht_div.insert = (heap_ht_insert)ht_div_uint64_insert;
-  hht_div.search = (heap_ht_search)ht_div_uint64_search;
-  hht_div.remove = (heap_ht_remove)ht_div_uint64_remove;
-  hht_div.free = (heap_ht_free)ht_div_uint64_free;
+  hht_div.init = (heap_ht_init)ht_div_init_helper;
+  hht_div.insert = (heap_ht_insert)ht_div_insert;
+  hht_div.search = (heap_ht_search)ht_div_search;
+  hht_div.remove = (heap_ht_remove)ht_div_remove;
+  hht_div.free = (heap_ht_free)ht_div_free;
   context_mul.alpha = alpha_mul;
   hht_mul.ht = &ht_mul;
   hht_mul.context = &context_mul;
-  hht_mul.init = (heap_ht_init)ht_mul_uint64_init_helper;
-  hht_mul.insert = (heap_ht_insert)ht_mul_uint64_insert;
-  hht_mul.search = (heap_ht_search)ht_mul_uint64_search;
-  hht_mul.remove = (heap_ht_remove)ht_mul_uint64_remove;
-  hht_mul.free = (heap_ht_free)ht_mul_uint64_free;
+  hht_mul.init = (heap_ht_init)ht_mul_init_helper;
+  hht_mul.insert = (heap_ht_insert)ht_mul_insert;
+  hht_mul.search = (heap_ht_search)ht_mul_search;
+  hht_mul.remove = (heap_ht_remove)ht_mul_remove;
+  hht_mul.free = (heap_ht_free)ht_mul_free;
   printf("Run a dijkstra test on random directed graphs with random "
 	 "uint64_t weights in [%lu, %lu]\n", wt_l, wt_h);
   fflush(stdout);
@@ -758,8 +749,8 @@ void run_rand_uint64_test(){
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
 	     a.num_vts, a.num_es);
       printf("\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
-	     "\t\t\tdijkstra ht_div_uint64 ave runtime:  %.8f seconds\n"
-	     "\t\t\tdijkstra ht_mul_uint64 ave runtime:  %.8f seconds\n",
+	     "\t\t\tdijkstra ht_div ave runtime:         %.8f seconds\n"
+	     "\t\t\tdijkstra ht_mul ave runtime:         %.8f seconds\n",
 	     (float)t_def / iter / CLOCKS_PER_SEC,
 	     (float)t_div / iter / CLOCKS_PER_SEC,
 	     (float)t_mul / iter / CLOCKS_PER_SEC);
