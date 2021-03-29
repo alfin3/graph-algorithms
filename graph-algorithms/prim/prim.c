@@ -48,7 +48,7 @@ typedef struct{
   void (*free_elt)(void *);
 } ht_def_t;
 
-static const size_t NR = (size_t)-1; /* not reached as index */
+static const size_t C_NREACHED = (size_t)-1; /* not reached as index */
 
 /* default hash table operations */
 static void ht_def_init(ht_def_t *ht,
@@ -110,7 +110,7 @@ void prim(const adj_lst_t *a,
   heap_t h;
   u_wt = malloc_perror(wt_size);
   memset(dist, 0, a->num_vts * wt_size);
-  memset(prev, 0xff, a->num_vts * vt_size); /* initialize to NR */
+  memset(prev, 0xff, a->num_vts * vt_size); /* initialize to C_NREACHED */
   if (hht == NULL){
     context.count = a->num_vts;
     hht_def.ht = &ht_def;
@@ -132,7 +132,7 @@ void prim(const adj_lst_t *a,
       v = *vt_ptr(a->vts[u]->elts, i);
       v_wt = wt_ptr(dist, v, wt_size);
       uv_wt = wt_ptr(a->wts[u]->elts, i, wt_size);
-      if (prev[v] == NR){
+      if (prev[v] == C_NREACHED){
 	memcpy(v_wt, uv_wt, wt_size);
 	heap_push(&h, v_wt, &v);
 	prev[v] = u;
