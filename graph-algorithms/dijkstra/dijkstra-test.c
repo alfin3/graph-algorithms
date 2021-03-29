@@ -5,13 +5,11 @@
    i) default, division-based and multiplication-based hash tables, and ii)
    edge weight types.
 
-   Tests are designed to be run with and without -m32 and -m16 and include
-   stdint.h that is required only for test purposes.
+   Tests provide the following machine-specific options: -m32, -m16.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <time.h>
 #include "dijkstra.h"
@@ -34,7 +32,16 @@
 #define RANDOM() (rand()) /* [0, RAND_MAX] */
 #define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
 
-/* TODO CONDITIONALS HERE BASED ON SIZE_MAX */
+#if defined(OPT_M32)
+  const int C_POW_TWO_END = 14;
+  const size_t C_WEIGHT_HIGH = pow_two(8);
+#elif defined(OPT_M16)
+  const int C_POW_TWO_END = 8;
+  const size_t C_WEIGHT_HIGH = pow_two(8);
+#else
+  const int C_POW_TWO_END = 14;
+  const size_t C_WEIGHT_HIGH = pow_two(8);
+#endif /* OPT_M32 and OPT_M16 conditions */
 
 void print_uint_elts(const stack_t *s);
 void print_double_elts(const stack_t *s);
@@ -503,7 +510,7 @@ void norm_uint_arr(size_t *a, size_t norm, size_t n){
 
 void run_bfs_dijkstra_test(){
   int p, num_probs = 7;
-  int i, pow_two_start = 0, pow_two_end = 14;
+  int i, pow_two_start = 0, pow_two_end = C_POW_TWO_END;
   int j, iter = 10;
   int res = 1;
   size_t n, rand_start[10];
@@ -652,13 +659,13 @@ void sum_paths(size_t *wt_paths,
 
 void run_rand_uint_test(){
   int p, num_probs = 7;
-  int i, pow_two_start = 10, pow_two_end = 14;
+  int i, pow_two_start = 10, pow_two_end = C_POW_TWO_END;
   int j, iter = 10;
   int res = 1;
   size_t wt_paths_def, wt_paths_div, wt_paths_mul;
   size_t num_paths_def, num_paths_div, num_paths_mul;
   size_t n, rand_start[10];
-  size_t wt_l = 0, wt_h = pow_two(32) - 1;
+  size_t wt_l = 0, wt_h = C_WEIGHT_HIGH;
   size_t *dist = NULL, *prev = NULL;
   float alpha_div = 1.0, alpha_mul = 0.4;
   double probs[7] = {1.000000, 0.250000, 0.062500,
