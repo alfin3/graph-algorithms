@@ -89,11 +89,7 @@ void ht_div_init_helper(ht_div_t *ht,
 			       void (*free_elt)(void *),
 			       void *context){
   context_t *c = context;
-  ht_div_init(ht,
-		     key_size,
-		     elt_size,
-		     c->alpha,
-		     free_elt);
+  ht_div_init(ht, key_size, elt_size, c->alpha, free_elt);
 }
 
 void ht_mul_init_helper(ht_mul_t *ht,
@@ -102,12 +98,7 @@ void ht_mul_init_helper(ht_mul_t *ht,
 			       void (*free_elt)(void *),
 			       void *context){
   context_t * c = context;
-  ht_mul_init(ht,
-		     key_size,
-		     elt_size,
-		     c->alpha,
-		     NULL, /* vertex is hash key */
-		     free_elt);
+  ht_mul_init(ht, key_size, elt_size, c->alpha, NULL, free_elt);
 }
 
 void run_default_uint64_prim(const adj_lst_t *a){
