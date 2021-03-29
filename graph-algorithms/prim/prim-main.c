@@ -84,19 +84,19 @@ typedef struct{
 } context_t;
 
 void ht_div_init_helper(ht_div_t *ht,
-			       size_t key_size,
-			       size_t elt_size,
-			       void (*free_elt)(void *),
-			       void *context){
+			size_t key_size,
+			size_t elt_size,
+			void (*free_elt)(void *),
+			void *context){
   context_t *c = context;
   ht_div_init(ht, key_size, elt_size, c->alpha, free_elt);
 }
 
 void ht_mul_init_helper(ht_mul_t *ht,
-			       size_t key_size,
-			       size_t elt_size,
-			       void (*free_elt)(void *),
-			       void *context){
+			size_t key_size,
+			size_t elt_size,
+			void (*free_elt)(void *),
+			void *context){
   context_t * c = context;
   ht_mul_init(ht, key_size, elt_size, c->alpha, NULL, free_elt);
 }
