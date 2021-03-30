@@ -4,13 +4,12 @@
    Tests of Dijkstra's algorithm with a hash table parameter across
    i) default, division-based and multiplication-based hash tables, and ii)
    edge weight types.
-
-   Tests provide the following machine-specific options: -m32, -m16.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <time.h>
 #include "dijkstra.h"
 #include "bfs.h"
@@ -32,16 +31,11 @@
 #define RANDOM() (rand()) /* [0, RAND_MAX] */
 #define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
 
-#if defined(OPT_M32)
-  const int C_POW_TWO_END = 14;
-  const size_t C_WEIGHT_HIGH = pow_two(8);
-#elif defined(OPT_M16)
-  const int C_POW_TWO_END = 8;
-  const size_t C_WEIGHT_HIGH = pow_two(8);
-#else
-  const int C_POW_TWO_END = 14;
-  const size_t C_WEIGHT_HIGH = pow_two(8);
-#endif /* OPT_M32 and OPT_M16 conditions */
+#define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
+
+const size_t C_SIZE_MAX = (size_t)-1;
+const size_t C_WEIGHT_HIGH = ((size_t)-1 >>
+			      ((CHAR_BIT * sizeof(size_t) + 1) / 2));
 
 void print_uint_elts(const stack_t *s);
 void print_double_elts(const stack_t *s);
@@ -123,7 +117,7 @@ void run_default_uint_dijkstra(const adj_lst_t *a){
   prev = malloc_perror(a->num_vts * sizeof(size_t));
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, NULL, add_uint, cmp_uint);
-    printf("distances and previous vertices with %lu as start \n", i);
+    printf("distances and previous vertices with %lu as start \n", TOLU(i));
     print_uint_arr(dist, a->num_vts);
     print_uint_arr(prev, a->num_vts);
   }
@@ -154,7 +148,7 @@ void run_div_uint_dijkstra(const adj_lst_t *a){
   hht.free = (heap_ht_free)ht_div_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_uint, cmp_uint);
-    printf("distances and previous vertices with %lu as start \n", i);
+    printf("distances and previous vertices with %lu as start \n", TOLU(i));
     print_uint_arr(dist, a->num_vts);
     print_uint_arr(prev, a->num_vts);
   }
@@ -185,7 +179,7 @@ void run_mul_uint_dijkstra(const adj_lst_t *a){
   hht.free = (heap_ht_free)ht_mul_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_uint, cmp_uint);
-    printf("distances and previous vertices with %lu as start \n", i);
+    printf("distances and previous vertices with %lu as start \n", TOLU(i));
     print_uint_arr(dist, a->num_vts);
     print_uint_arr(prev, a->num_vts);
   }
@@ -302,7 +296,7 @@ void run_default_double_dijkstra(const adj_lst_t *a){
   prev = malloc_perror(a->num_vts * sizeof(size_t));
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, NULL, add_double, cmp_double);
-    printf("distances and previous vertices with %lu as start \n", i);
+    printf("distances and previous vertices with %lu as start \n", TOLU(i));
     print_double_arr(dist, a->num_vts);
     print_uint_arr(prev, a->num_vts);
   }
@@ -333,7 +327,7 @@ void run_div_double_dijkstra(const adj_lst_t *a){
   hht.free = (heap_ht_free)ht_div_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_double, cmp_double);
-    printf("distances and previous vertices with %lu as start \n", i);
+    printf("distances and previous vertices with %lu as start \n", TOLU(i));
     print_double_arr(dist, a->num_vts);
     print_uint_arr(prev, a->num_vts);
   }
@@ -364,7 +358,7 @@ void run_mul_double_dijkstra(const adj_lst_t *a){
   hht.free = (heap_ht_free)ht_mul_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_double, cmp_double);
-    printf("distances and previous vertices with %lu as start \n", i);
+    printf("distances and previous vertices with %lu as start \n", TOLU(i));
     print_double_arr(dist, a->num_vts);
     print_uint_arr(prev, a->num_vts);
   }
@@ -508,9 +502,9 @@ void norm_uint_arr(size_t *a, size_t norm, size_t n){
   }
 }
 
-void run_bfs_dijkstra_test(){
+void run_bfs_dijkstra_test(int pow_start, int pow_end){
   int p, num_probs = 7;
-  int i, pow_two_start = 0, pow_two_end = C_POW_TWO_END;
+  int i;
   int j, iter = 10;
   int res = 1;
   size_t n, rand_start[10];
@@ -549,7 +543,7 @@ void run_bfs_dijkstra_test(){
   for (p = 0; p < num_probs; p++){
     b.p = probs[p];
     printf("\tP[an edge is in a graph] = %.4f\n", probs[p]);
-    for (i = pow_two_start; i <  pow_two_end; i++){
+    for (i = pow_start; i <= pow_end; i++){
       n = pow_two(i); /* 0 < n */
       dist_bfs = malloc_perror(n * sizeof(size_t));
       prev_bfs = malloc_perror(n * sizeof(size_t));
@@ -611,7 +605,7 @@ void run_bfs_dijkstra_test(){
       norm_uint_arr(dist, i + 1, n);
       res *= (memcmp(dist_bfs, dist, n * sizeof(size_t)) == 0);
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
-	     a.num_vts, a.num_es);
+	     TOLU(a.num_vts), TOLU(a.num_es));
       printf("\t\t\tbfs ave runtime:                     %.8f seconds\n"
 	     "\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
 	     "\t\t\tdijkstra ht_div ave runtime:         %.8f seconds\n"
@@ -650,16 +644,16 @@ void sum_paths(size_t *wt_paths,
   *wt_paths = 0;
   *num_paths = 0;
   for (i = 0; i < num_vts; i++){
-    if (prev[i] != SIZE_MAX){
+    if (prev[i] != C_SIZE_MAX){
       *wt_paths += dist[i];
       (*num_paths)++;
     }
   }
 }
 
-void run_rand_uint_test(){
+void run_rand_uint_test(int pow_start, int pow_end){
   int p, num_probs = 7;
-  int i, pow_two_start = 10, pow_two_end = C_POW_TWO_END;
+  int i;
   int j, iter = 10;
   int res = 1;
   size_t wt_paths_def, wt_paths_div, wt_paths_mul;
@@ -695,12 +689,12 @@ void run_rand_uint_test(){
   hht_mul.remove = (heap_ht_remove)ht_mul_remove;
   hht_mul.free = (heap_ht_free)ht_mul_free;
   printf("Run a dijkstra test on random directed graphs with random "
-	 "size_t weights in [%lu, %lu]\n", wt_l, wt_h);
+	 "size_t weights in [%lu, %lu]\n", TOLU(wt_l), TOLU(wt_h));
   fflush(stdout);
   for (p = 0; p < num_probs; p++){
     b.p = probs[p];
     printf("\tP[an edge is in a graph] = %.4f\n", probs[p]);
-    for (i = pow_two_start; i <  pow_two_end; i++){
+    for (i = pow_start; i <= pow_end; i++){
       n = pow_two(i); /* 0 < n */
       dist = malloc_perror(n * sizeof(size_t));
       prev = malloc_perror(n * sizeof(size_t));
@@ -756,7 +750,7 @@ void run_rand_uint_test(){
       res *= (num_paths_def == num_paths_div &&
 	      num_paths_div == num_paths_mul);
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
-	     a.num_vts, a.num_es);
+	     TOLU(a.num_vts), TOLU(a.num_es));
       printf("\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
 	     "\t\t\tdijkstra ht_div ave runtime:         %.8f seconds\n"
 	     "\t\t\tdijkstra ht_mul ave runtime:         %.8f seconds\n",
@@ -766,7 +760,7 @@ void run_rand_uint_test(){
       printf("\t\t\tcorrectness:                         ");
       print_test_result(res);
       printf("\t\t\tlast run # paths:                    %lu\n",
-	     num_paths_def - 1);
+	     TOLU(num_paths_def) - 1);
       if (num_paths_def > 1){
 	printf("\t\t\tlast run ave path weight:            %.1f\n",
 	       (double)wt_paths_def / (num_paths_def - 1));
@@ -790,7 +784,7 @@ void run_rand_uint_test(){
 void print_uint_elts(const stack_t *s){
   size_t i;
   for (i = 0; i < s->num_elts; i++){
-    printf("%lu ", *((size_t *)s->elts + i));
+    printf("%lu ", TOLU(*((size_t *)s->elts) + TOLU(i)));
   }
   printf("\n");
 }
@@ -807,13 +801,13 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *)){
   size_t i;
   printf("\tvertices: \n");
   for (i = 0; i < a->num_vts; i++){
-    printf("\t%lu : ", i);
+    printf("\t%lu : ", TOLU(i));
     print_uint_elts(a->vts[i]);
   }
   if (print_wts != NULL){
     printf("\tweights: \n");
     for (i = 0; i < a->num_vts; i++){
-      printf("\t%lu : ", i);
+      printf("\t%lu : ", TOLU(i));
       print_wts(a->wts[i]);
     }
   }
@@ -823,10 +817,10 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *)){
 void print_uint_arr(const size_t *arr, size_t n){
   size_t i;
   for (i = 0; i < n; i++){
-    if (arr[i] == SIZE_MAX){
+    if (arr[i] == C_SIZE_MAX){
       printf("NR ");
     }else{
-      printf("%lu ", arr[i]);
+      printf("%lu ", TOLU(arr[i]));
     }
   }
   printf("\n");
@@ -852,7 +846,7 @@ int main(){
   RGENS_SEED();
   run_uint_graph_test();
   run_double_graph_test();
-  run_bfs_dijkstra_test();
-  run_rand_uint_test();
+  run_bfs_dijkstra_test(8, 10);
+  run_rand_uint_test(8, 10);
   return 0;
 }
