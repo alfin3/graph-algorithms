@@ -4,6 +4,23 @@
    Tests of Dijkstra's algorithm with a hash table parameter across
    i) default, division-based and multiplication-based hash tables, and ii)
    edge weight types.
+
+   The following command line arguments can be used to customize tests:
+   dijkstra-test:
+   -  [0, # bits in size_t / 2] : n for 2^n vertices in the smallest graph
+   -  [0, # bits in size_t / 2] : n for 2^n vertices in the largest graph
+   -  [0, 1] : small graph test on/off
+   -  [0, 1] : bfs comparison test on/off
+   -  [0, 1] : test on random graphs with random size_t weights on/off
+
+   usage examples: 
+   ./dijkstra-test
+   ./dijkstra-test 14 14 0 0 1
+
+   dijkstra-test can be run with any number of command line arguments in the 
+   above-defined order. The unspecified arguments are set to default values 
+   which are 0 for the first argument, 10 for the second argument, and
+   1 for other arguments.
 */
 
 #include <stdio.h>
@@ -33,6 +50,17 @@
 
 #define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
 
+const char *C_USAGE =
+  "dijkstra-test \n"
+  "[0, # bits in size_t / 2] : n for 2^n vertices in smallest graph \n"
+  "[0, # bits in size_t / 2] : n for 2^n vertices in largest graph \n"
+  "[0, 1] : small graph test on/off \n"
+  "[0, 1] : bfs comparison test on/off \n"
+  "[0, 1] : random graphs with random size_t weights test on/off \n";
+const int C_ARGC_MAX = 6;
+const size_t C_ARGS_DEF[5] = {0, 10, 1, 1, 1};
+
+const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_WEIGHT_HIGH = ((size_t)-1 >>
 			      ((CHAR_BIT * sizeof(size_t) + 1) / 2));
@@ -842,11 +870,38 @@ void print_test_result(int res){
   }
 }
 
-int main(){
+
+int main(int argc, char *argv[]){
+  int i;
+  size_t *args = NULL;
   RGENS_SEED();
-  run_uint_graph_test();
-  run_double_graph_test();
-  run_bfs_dijkstra_test(8, 10);
-  run_rand_uint_test(8, 10);
+  if (argc > C_ARGC_MAX){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  args = malloc_perror((C_ARGC_MAX - 1) * sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  if (argc > 0){
+    for (i = 1; i < argc; i++){
+      args[i - 1] = atoi(argv[i]);
+    }
+  }
+  if (args[0] > C_FULL_BIT / 2 ||
+      args[1] > C_FULL_BIT / 2 ||
+      args[1] < args[0] ||
+      args[2] > 1 ||
+      args[3] > 1 ||
+      args[4] > 1){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  if (args[2]){
+    run_uint_graph_test();
+    run_double_graph_test();
+  }
+  if (args[3]) run_bfs_dijkstra_test(args[0], args[1]);
+  if (args[4]) run_rand_uint_test(args[0], args[1]);
+  free(args);
+  args = NULL;
   return 0;
 }
