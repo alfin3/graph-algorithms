@@ -176,13 +176,12 @@ void run_div_uint_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *dist = NULL;
   size_t *prev = NULL;
-  float alpha = C_ALPHA_DIV;
   ht_div_t ht_div;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts * sizeof(size_t));
   prev = malloc_perror(a->num_vts * sizeof(size_t));
-  context.alpha = alpha;
+  context.alpha = C_ALPHA_DIV;
   hht.ht = &ht_div;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_div_init_helper;
@@ -207,13 +206,12 @@ void run_mul_uint_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *dist = NULL;
   size_t *prev = NULL;
-  float alpha = C_ALPHA_MUL;
   ht_mul_t ht_mul;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts * sizeof(size_t));
   prev = malloc_perror(a->num_vts * sizeof(size_t));
-  context.alpha = alpha;
+  context.alpha = C_ALPHA_MUL;
   hht.ht = &ht_mul;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_mul_init_helper;
@@ -351,14 +349,13 @@ void run_default_double_dijkstra(const adj_lst_t *a){
 void run_div_double_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *prev = NULL;
-  float alpha = C_ALPHA_DIV;
   double *dist = NULL;
   ht_div_t ht_div;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts * sizeof(double));
   prev = malloc_perror(a->num_vts * sizeof(size_t));
-  context.alpha = alpha;
+  context.alpha = C_ALPHA_DIV;
   hht.ht = &ht_div;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_div_init_helper;
@@ -382,14 +379,13 @@ void run_div_double_dijkstra(const adj_lst_t *a){
 void run_mul_double_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *prev = NULL;
-  float alpha = C_ALPHA_MUL;
   double *dist = NULL;
   ht_mul_t ht_mul;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts * sizeof(double));
   prev = malloc_perror(a->num_vts * sizeof(size_t));
-  context.alpha = alpha;
+  context.alpha = C_ALPHA_MUL;
   hht.ht = &ht_mul;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_mul_init_helper;
@@ -849,7 +845,7 @@ void run_rand_uint_test(int pow_start, int pow_end){
 void print_uint_elts(const stack_t *s){
   size_t i;
   for (i = 0; i < s->num_elts; i++){
-    printf("%lu ", TOLU(*((size_t *)s->elts) + TOLU(i)));
+    printf("%lu ", TOLU(*((size_t *)s->elts + i)));
   }
   printf("\n");
 }

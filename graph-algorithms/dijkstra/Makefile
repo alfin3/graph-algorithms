@@ -3,13 +3,13 @@
 #  provided build mode.
 #
 #  On x86-64 processors in 64-bit environments, the use of a non-default
-#  build modes may require first running "apt-get install gcc-multilib".
+#  build mode may require "apt-get install gcc-multilib".
 #
 #  Additional information is available at:
 #  https://gcc.gnu.org/onlinedocs/gcc/Submodel-Options.html#Submodel-Options
 #  https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#x86-Options
 #   
-#  usage:
+#  usage examples:
 #    make
 #    make BUILD_MODE=M32
 #    make BUILD_MODE=M64
