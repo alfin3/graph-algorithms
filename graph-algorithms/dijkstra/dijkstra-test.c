@@ -50,6 +50,7 @@
 
 #define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
 
+/* input handling */
 const char *C_USAGE =
   "dijkstra-test \n"
   "[0, # bits in size_t / 2] : n for 2^n vertices in smallest graph \n"
@@ -60,6 +61,24 @@ const char *C_USAGE =
 const int C_ARGC_MAX = 6;
 const size_t C_ARGS_DEF[5] = {0, 10, 1, 1, 1};
 
+/* hash table load factor upper bounds */
+const float C_ALPHA_DIV = 1.0;
+const float C_ALPHA_MUL = 0.4;
+
+/* small graph tests */
+const size_t C_NUM_VTS = 5;
+const size_t C_NUM_ES = 4;
+const size_t C_U[4] = {0, 0, 0, 1};
+const size_t C_V[4] = {1, 2, 3, 3};
+const size_t C_WTS_UINT[4] = {4, 3, 2, 1};
+const double C_WTS_DOUBLE[4] = {4.0, 3.0, 2.0, 1.0};
+
+/* bfs comparison and random uint graph tests */
+const int C_ITER = 10;
+const int C_PROBS_COUNT = 7;
+const double C_PROBS[7] = {1.000000, 0.250000, 0.062500,
+			   0.015625, 0.003906, 0.000977,
+			   0.000000};
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_WEIGHT_HIGH = ((size_t)-1 >>
@@ -77,24 +96,21 @@ void print_test_result(int res);
 */
 
 void graph_uint_wts_init(graph_t *g){
-  size_t u[] = {0, 0, 0, 1};
-  size_t v[] = {1, 2, 3, 3};
-  size_t wts[] = {4, 3, 2, 1};
   size_t i;
-  graph_base_init(g, 5, sizeof(size_t));
-  g->num_es = 4;
+  graph_base_init(g, C_NUM_VTS, sizeof(size_t));
+  g->num_es = C_NUM_ES;
   g->u = malloc_perror(g->num_es * sizeof(size_t));
   g->v = malloc_perror(g->num_es * sizeof(size_t));
   g->wts = malloc_perror(g->num_es * g->wt_size);
   for (i = 0; i < g->num_es; i++){
-    g->u[i] = u[i];
-    g->v[i] = v[i];
-    *((size_t *)g->wts + i) = wts[i];
+    g->u[i] = C_U[i];
+    g->v[i] = C_V[i];
+    *((size_t *)g->wts + i) = C_WTS_UINT[i];
   }
 }
 
 void graph_uint_wts_no_edges_init(graph_t *g){
-  graph_base_init(g, 5, sizeof(size_t));
+  graph_base_init(g, C_NUM_VTS, sizeof(size_t));
 }
 
 /**
@@ -160,7 +176,7 @@ void run_div_uint_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *dist = NULL;
   size_t *prev = NULL;
-  float alpha = 1.0;
+  float alpha = C_ALPHA_DIV;
   ht_div_t ht_div;
   context_t context;
   heap_ht_t hht;
@@ -191,7 +207,7 @@ void run_mul_uint_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *dist = NULL;
   size_t *prev = NULL;
-  float alpha = 0.4;
+  float alpha = C_ALPHA_MUL;
   ht_mul_t ht_mul;
   context_t context;
   heap_ht_t hht;
@@ -278,24 +294,21 @@ void run_uint_graph_test(){
 */
 
 void graph_double_wts_init(graph_t *g){
-  size_t u[] = {0, 0, 0, 1};
-  size_t v[] = {1, 2, 3, 3};
   size_t i;
-  double wts[] = {4.0, 3.0, 2.0, 1.0};
-  graph_base_init(g, 5, sizeof(double));
-  g->num_es = 4;
+  graph_base_init(g, C_NUM_VTS, sizeof(double));
+  g->num_es = C_NUM_ES;
   g->u = malloc_perror(g->num_es * sizeof(size_t));
   g->v = malloc_perror(g->num_es * sizeof(size_t));
   g->wts = malloc_perror(g->num_es * g->wt_size);
   for (i = 0; i < g->num_es; i++){
-    g->u[i] = u[i];
-    g->v[i] = v[i];
-    *((double *)g->wts + i) = wts[i];
+    g->u[i] = C_U[i];
+    g->v[i] = C_V[i];
+    *((double *)g->wts + i) = C_WTS_DOUBLE[i];
   }
 }
 
 void graph_double_wts_no_edges_init(graph_t *g){
-  graph_base_init(g, 5, sizeof(double));
+  graph_base_init(g, C_NUM_VTS, sizeof(double));
 }
 
 /**
@@ -338,7 +351,7 @@ void run_default_double_dijkstra(const adj_lst_t *a){
 void run_div_double_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *prev = NULL;
-  float alpha = 1.0;
+  float alpha = C_ALPHA_DIV;
   double *dist = NULL;
   ht_div_t ht_div;
   context_t context;
@@ -369,7 +382,7 @@ void run_div_double_dijkstra(const adj_lst_t *a){
 void run_mul_double_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *prev = NULL;
-  float alpha = 0.4;
+  float alpha = C_ALPHA_MUL;
   double *dist = NULL;
   ht_mul_t ht_mul;
   context_t context;
@@ -531,17 +544,12 @@ void norm_uint_arr(size_t *a, size_t norm, size_t n){
 }
 
 void run_bfs_dijkstra_test(int pow_start, int pow_end){
-  int p, num_probs = 7;
-  int i;
-  int j, iter = 10;
+  int p, i, j;
   int res = 1;
-  size_t n, rand_start[10];
+  size_t n;
+  size_t *rand_start = NULL;
   size_t *dist_bfs = NULL, *prev_bfs = NULL;
   size_t *dist = NULL, *prev = NULL;
-  float alpha_div = 1.0, alpha_mul = 0.4;
-  double probs[7] = {1.000000, 0.250000, 0.062500,
-		     0.015625, 0.003906, 0.000977,
-		     0.000000};
   adj_lst_t a;
   bern_arg_t b;
   ht_div_t ht_div;
@@ -549,7 +557,12 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
   context_t context_div, context_mul;
   heap_ht_t hht_div, hht_mul;
   clock_t t_bfs, t_def, t_div, t_mul;
-  context_div.alpha = alpha_div;
+  rand_start = malloc_perror(C_ITER * sizeof(size_t));
+  dist_bfs = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  prev_bfs = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  dist = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  prev = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  context_div.alpha = C_ALPHA_DIV;
   hht_div.ht = &ht_div;
   hht_div.context = &context_div;
   hht_div.init = (heap_ht_init)ht_div_init_helper;
@@ -557,7 +570,7 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
   hht_div.search = (heap_ht_search)ht_div_search;
   hht_div.remove = (heap_ht_remove)ht_div_remove;
   hht_div.free = (heap_ht_free)ht_div_free;
-  context_mul.alpha = alpha_mul;
+  context_mul.alpha = C_ALPHA_MUL;
   hht_mul.ht = &ht_mul;
   hht_mul.context = &context_mul;
   hht_mul.init = (heap_ht_init)ht_mul_init_helper;
@@ -568,15 +581,11 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
   printf("Run a bfs and dijkstra test on random directed "
 	 "graphs with the same weight across edges\n");
   fflush(stdout);
-  for (p = 0; p < num_probs; p++){
-    b.p = probs[p];
-    printf("\tP[an edge is in a graph] = %.4f\n", probs[p]);
+  for (p = 0; p < C_PROBS_COUNT; p++){
+    b.p = C_PROBS[p];
+    printf("\tP[an edge is in a graph] = %.4f\n", C_PROBS[p]);
     for (i = pow_start; i <= pow_end; i++){
       n = pow_two(i); /* 0 < n */
-      dist_bfs = malloc_perror(n * sizeof(size_t));
-      prev_bfs = malloc_perror(n * sizeof(size_t));
-      dist = malloc_perror(n * sizeof(size_t));
-      prev = malloc_perror(n * sizeof(size_t));
       adj_lst_rand_dir_wts(&a,
 			   n,
 			   sizeof(size_t),
@@ -585,16 +594,16 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
 			   bern,
 			   &b,
 			   add_dir_uint_edge);
-      for (j = 0; j < iter; j++){
+      for (j = 0; j < C_ITER; j++){
 	rand_start[j] = RANDOM() % n;
       }
       t_bfs = clock();
-      for (j = 0; j < iter; j++){
+      for (j = 0; j < C_ITER; j++){
 	bfs(&a, rand_start[j], dist_bfs, prev_bfs);
       }
       t_bfs = clock() - t_bfs;
       t_def = clock();
-      for (j = 0; j < iter; j++){
+      for (j = 0; j < C_ITER; j++){
 	dijkstra(&a,
 		 rand_start[j],
 		 dist,
@@ -607,7 +616,7 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
       norm_uint_arr(dist, i + 1, n);
       res *= (memcmp(dist_bfs, dist, n * sizeof(size_t)) == 0);
       t_div = clock();
-      for (j = 0; j < iter; j++){
+      for (j = 0; j < C_ITER; j++){
 	dijkstra(&a,
 		 rand_start[j],
 		 dist,
@@ -620,7 +629,7 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
       norm_uint_arr(dist, i + 1, n);
       res *= (memcmp(dist_bfs, dist, n * sizeof(size_t)) == 0);
       t_mul = clock();
-      for (j = 0; j < iter; j++){
+      for (j = 0; j < C_ITER; j++){
 	dijkstra(&a,
 		 rand_start[j],
 		 dist,
@@ -638,24 +647,26 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
 	     "\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
 	     "\t\t\tdijkstra ht_div ave runtime:         %.8f seconds\n"
 	     "\t\t\tdijkstra ht_mul ave runtime:         %.8f seconds\n",
-	     (float)t_bfs / iter / CLOCKS_PER_SEC,
-	     (float)t_def / iter / CLOCKS_PER_SEC,
-	     (float)t_div / iter / CLOCKS_PER_SEC,
-	     (float)t_mul / iter / CLOCKS_PER_SEC);
+	     (float)t_bfs / C_ITER / CLOCKS_PER_SEC,
+	     (float)t_def / C_ITER / CLOCKS_PER_SEC,
+	     (float)t_div / C_ITER / CLOCKS_PER_SEC,
+	     (float)t_mul / C_ITER / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness:                         ");
       print_test_result(res);
       res = 1;
       adj_lst_free(&a);
-      free(dist_bfs);
-      free(prev_bfs);
-      free(dist);
-      free(prev);
-      dist_bfs = NULL;
-      prev_bfs = NULL;
-      dist = NULL;
-      prev = NULL;
     }
   }
+  free(rand_start);
+  free(dist_bfs);
+  free(prev_bfs);
+  free(dist);
+  free(prev);
+  rand_start = NULL;
+  dist_bfs = NULL;
+  prev_bfs = NULL;
+  dist = NULL;
+  prev = NULL;
 }
 
 /**
@@ -688,20 +699,15 @@ void wrap_sum(size_t *num_wraps,
 }
 
 void run_rand_uint_test(int pow_start, int pow_end){
-  int p, num_probs = 7;
-  int i;
-  int j, iter = 10;
+  int p, i, j;
   int res = 1;
   size_t num_wraps_def, num_wraps_div, num_wraps_mul;
   size_t sum_def, sum_div, sum_mul;
   size_t num_paths_def, num_paths_div, num_paths_mul;
-  size_t n, rand_start[10];
+  size_t n;
   size_t wt_l = 0, wt_h = C_WEIGHT_HIGH;
+  size_t *rand_start = NULL;
   size_t *dist = NULL, *prev = NULL;
-  float alpha_div = 1.0, alpha_mul = 0.4;
-  double probs[7] = {1.000000, 0.250000, 0.062500,
-		     0.015625, 0.003906, 0.000977,
-		     0.000000};
   adj_lst_t a;
   bern_arg_t b;
   ht_div_t ht_div;
@@ -709,7 +715,10 @@ void run_rand_uint_test(int pow_start, int pow_end){
   context_t context_div, context_mul;
   heap_ht_t hht_div, hht_mul;
   clock_t t_def, t_div, t_mul;
-  context_div.alpha = alpha_div;
+  rand_start = malloc_perror(C_ITER * sizeof(size_t));
+  dist = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  prev = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  context_div.alpha = C_ALPHA_DIV;
   hht_div.ht = &ht_div;
   hht_div.context = &context_div;
   hht_div.init = (heap_ht_init)ht_div_init_helper;
@@ -717,7 +726,7 @@ void run_rand_uint_test(int pow_start, int pow_end){
   hht_div.search = (heap_ht_search)ht_div_search;
   hht_div.remove = (heap_ht_remove)ht_div_remove;
   hht_div.free = (heap_ht_free)ht_div_free;
-  context_mul.alpha = alpha_mul;
+  context_mul.alpha = C_ALPHA_MUL;
   hht_mul.ht = &ht_mul;
   hht_mul.context = &context_mul;
   hht_mul.init = (heap_ht_init)ht_mul_init_helper;
@@ -728,13 +737,11 @@ void run_rand_uint_test(int pow_start, int pow_end){
   printf("Run a dijkstra test on random directed graphs with random "
 	 "size_t weights in [%lu, %lu]\n", TOLU(wt_l), TOLU(wt_h));
   fflush(stdout);
-  for (p = 0; p < num_probs; p++){
-    b.p = probs[p];
-    printf("\tP[an edge is in a graph] = %.4f\n", probs[p]);
+  for (p = 0; p < C_PROBS_COUNT; p++){
+    b.p = C_PROBS[p];
+    printf("\tP[an edge is in a graph] = %.4f\n", C_PROBS[p]);
     for (i = pow_start; i <= pow_end; i++){
       n = pow_two(i); /* 0 < n */
-      dist = malloc_perror(n * sizeof(size_t));
-      prev = malloc_perror(n * sizeof(size_t));
       adj_lst_rand_dir_wts(&a,
 			   n,
 			   sizeof(size_t),
@@ -743,11 +750,11 @@ void run_rand_uint_test(int pow_start, int pow_end){
 			   bern,
 			   &b,
 			   add_dir_uint_edge);
-      for (j = 0; j < iter; j++){
+      for (j = 0; j < C_ITER; j++){
 	rand_start[j] = RANDOM() % n;
       }
       t_def = clock();
-      for (j = 0; j < iter; j++){
+      for (j = 0; j < C_ITER; j++){
 	dijkstra(&a,
 		 rand_start[j],
 		 dist,
@@ -764,7 +771,7 @@ void run_rand_uint_test(int pow_start, int pow_end){
 	       dist,
 	       prev);
       t_div = clock();
-      for (j = 0; j < iter; j++){
+      for (j = 0; j < C_ITER; j++){
 	dijkstra(&a,
 		 rand_start[j],
 		 dist,
@@ -781,7 +788,7 @@ void run_rand_uint_test(int pow_start, int pow_end){
 	       dist,
 	       prev);
       t_mul = clock();
-      for (j = 0; j < iter; j++){
+      for (j = 0; j < C_ITER; j++){
 	dijkstra(&a,
 		 rand_start[j],
 		 dist,
@@ -808,9 +815,9 @@ void run_rand_uint_test(int pow_start, int pow_end){
       printf("\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
 	     "\t\t\tdijkstra ht_div ave runtime:         %.8f seconds\n"
 	     "\t\t\tdijkstra ht_mul ave runtime:         %.8f seconds\n",
-	     (float)t_def / iter / CLOCKS_PER_SEC,
-	     (float)t_div / iter / CLOCKS_PER_SEC,
-	     (float)t_mul / iter / CLOCKS_PER_SEC);
+	     (float)t_def / C_ITER / CLOCKS_PER_SEC,
+	     (float)t_div / C_ITER / CLOCKS_PER_SEC,
+	     (float)t_mul / C_ITER / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness:                         ");
       print_test_result(res);
       printf("\t\t\tlast run # paths:                    %lu\n",
@@ -825,12 +832,14 @@ void run_rand_uint_test(int pow_start, int pow_end){
       }
       res = 1;
       adj_lst_free(&a);
-      free(dist);
-      free(prev);
-      dist = NULL;
-      prev = NULL;
     }
   }
+  free(rand_start);
+  free(dist);
+  free(prev);
+  rand_start = NULL;
+  dist = NULL;
+  prev = NULL;
 }
 
 /**
