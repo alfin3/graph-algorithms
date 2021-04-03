@@ -663,17 +663,25 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
    across default, division-based and multiplication-based hash tables.
 */
 
-void sum_paths(size_t *wt_paths,
-	       size_t *num_paths,
-	       size_t num_vts,
-	       const size_t *dist,
-	       const size_t *prev){
+/**
+   Computes the sum across non-negative integer weights in an overflow-safe
+   fashion by counting wrap-arounds. The total sum is # wraps * C_SIZE_MAX +
+   # wraps + sum, which is amenable to division for averaging purposes.
+*/
+void wrap_sum(size_t *num_wraps,
+	      size_t *sum,
+	      size_t *num_paths,
+	      size_t num_vts,
+	      const size_t *dist,
+	      const size_t *prev){
   size_t i;
-  *wt_paths = 0;
+  *num_wraps = 0;
+  *sum = 0;
   *num_paths = 0;
   for (i = 0; i < num_vts; i++){
     if (prev[i] != C_SIZE_MAX){
-      *wt_paths += dist[i];
+      if (C_SIZE_MAX - *sum < dist[i]) (*num_wraps)++;
+      *sum += dist[i];
       (*num_paths)++;
     }
   }
@@ -684,7 +692,8 @@ void run_rand_uint_test(int pow_start, int pow_end){
   int i;
   int j, iter = 10;
   int res = 1;
-  size_t wt_paths_def, wt_paths_div, wt_paths_mul;
+  size_t num_wraps_def, num_wraps_div, num_wraps_mul;
+  size_t sum_def, sum_div, sum_mul;
   size_t num_paths_def, num_paths_div, num_paths_mul;
   size_t n, rand_start[10];
   size_t wt_l = 0, wt_h = C_WEIGHT_HIGH;
@@ -748,7 +757,12 @@ void run_rand_uint_test(int pow_start, int pow_end){
 		 cmp_uint);
       }
       t_def = clock() - t_def;
-      sum_paths(&wt_paths_def, &num_paths_def, a.num_vts, dist, prev);
+      wrap_sum(&num_wraps_def,
+	       &sum_def,
+	       &num_paths_def,
+	       a.num_vts,
+	       dist,
+	       prev);
       t_div = clock();
       for (j = 0; j < iter; j++){
 	dijkstra(&a,
@@ -760,7 +774,12 @@ void run_rand_uint_test(int pow_start, int pow_end){
 		 cmp_uint);
       }
       t_div = clock() - t_div;
-      sum_paths(&wt_paths_div, &num_paths_div, a.num_vts, dist, prev);
+      wrap_sum(&num_wraps_div,
+	       &sum_div,
+	       &num_paths_div,
+	       a.num_vts,
+	       dist,
+	       prev);
       t_mul = clock();
       for (j = 0; j < iter; j++){
 	dijkstra(&a,
@@ -772,9 +791,16 @@ void run_rand_uint_test(int pow_start, int pow_end){
 		 cmp_uint);
       }
       t_mul = clock() - t_mul;
-      sum_paths(&wt_paths_mul, &num_paths_mul, a.num_vts, dist, prev);
-      res *= (wt_paths_def == wt_paths_div &&
-	      wt_paths_div == wt_paths_mul);
+      wrap_sum(&num_wraps_mul,
+	       &sum_mul,
+	       &num_paths_mul,
+	       a.num_vts,
+	       dist,
+	       prev);
+      res *= (num_wraps_def == num_wraps_div &&
+	      num_wraps_div == num_wraps_mul);
+      res *= (sum_def == sum_div &&
+	      sum_div == sum_mul);
       res *= (num_paths_def == num_paths_div &&
 	      num_paths_div == num_paths_mul);
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
@@ -791,7 +817,9 @@ void run_rand_uint_test(int pow_start, int pow_end){
 	     TOLU(num_paths_def) - 1);
       if (num_paths_def > 1){
 	printf("\t\t\tlast run ave path weight:            %.1f\n",
-	       (double)wt_paths_def / (num_paths_def - 1));
+	       (num_wraps_def * ((double)C_SIZE_MAX / (num_paths_def - 1)) +
+		(double)num_wraps_def / (num_paths_def - 1) +
+		(double)sum_def / (num_paths_def - 1)));
       }else{
 	printf("\t\t\tlast run ave path weight:            none\n");
       }
@@ -870,7 +898,6 @@ void print_test_result(int res){
   }
 }
 
-
 int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
@@ -881,10 +908,8 @@ int main(int argc, char *argv[]){
   }
   args = malloc_perror((C_ARGC_MAX - 1) * sizeof(size_t));
   memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
-  if (argc > 0){
-    for (i = 1; i < argc; i++){
-      args[i - 1] = atoi(argv[i]);
-    }
+  for (i = 1; i < argc; i++){
+    args[i - 1] = atoi(argv[i]);
   }
   if (args[0] > C_FULL_BIT / 2 ||
       args[1] > C_FULL_BIT / 2 ||
