@@ -16,10 +16,14 @@
    ./prim-test
    ./prim-test 14 14 0 1
 
-   prim-test can be run with any number of command line arguments in the 
-   above-defined order. The unspecified arguments are set to default values 
-   which are 0 for the first argument, 10 for the second argument, and
-   1 for other arguments.
+   prim-test can be run with any subset of command line arguments in the 
+   above-defined order. Default values are used for the unspecified
+   arguments, which are 0 for the first argument, 10 for the second argument,
+   and 1 for other arguments.
+
+   The implementation does not use stdint.h and is portable under C89/C90
+   with the only requirement that CHAR_BIT * sizeof(size_t) is greater or
+   equal to 16 and is even.
 */
 
 #include <stdio.h>
@@ -70,7 +74,7 @@ const size_t C_V[4] = {1, 2, 3, 3};
 const size_t C_WTS_UINT[4] = {4, 3, 2, 1};
 const double C_WTS_DOUBLE[4] = {4.0, 3.0, 2.0, 1.0};
 
-/* bfs comparison and random uint graph tests */
+/* random uint graph test */
 const int C_ITER = 10;
 const int C_PROBS_COUNT = 7;
 const double C_PROBS[7] = {1.000000, 0.250000, 0.062500,
@@ -146,7 +150,7 @@ void ht_mul_init_helper(ht_mul_t *ht,
   ht_mul_init(ht, key_size, elt_size, c->alpha, NULL, free_elt);
 }
 
-void run_default_uint_prim(const adj_lst_t *a){
+void run_def_uint_prim(const adj_lst_t *a){
   size_t i;
   size_t *dist = NULL;
   size_t *prev = NULL;
@@ -236,7 +240,7 @@ void run_uint_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_uint_elts);
-  run_default_uint_prim(&a);
+  run_def_uint_prim(&a);
   run_div_uint_prim(&a);
   run_mul_uint_prim(&a);
   adj_lst_free(&a);
@@ -250,7 +254,7 @@ void run_uint_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_uint_elts);
-  run_default_uint_prim(&a);
+  run_def_uint_prim(&a);
   run_div_uint_prim(&a);
   run_mul_uint_prim(&a);
   adj_lst_free(&a);
@@ -293,7 +297,7 @@ int cmp_double(const void *a, const void *b){
   } 
 }
 
-void run_default_double_prim(const adj_lst_t *a){
+void run_def_double_prim(const adj_lst_t *a){
   size_t i;
   size_t *prev = NULL;
   double *dist = NULL;
@@ -383,7 +387,7 @@ void run_double_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_double_elts);
-  run_default_double_prim(&a);
+  run_def_double_prim(&a);
   run_div_double_prim(&a);
   run_mul_double_prim(&a);
   adj_lst_free(&a);
@@ -397,7 +401,7 @@ void run_double_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_double_elts);
-  run_default_double_prim(&a);
+  run_def_double_prim(&a);
   run_div_double_prim(&a);
   run_mul_double_prim(&a);
   adj_lst_free(&a);
