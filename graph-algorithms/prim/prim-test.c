@@ -14,12 +14,14 @@
 
    usage examples: 
    ./prim-test
+   ./prim-test 10 14
    ./prim-test 14 14 0 1
 
-   prim-test can be run with any subset of command line arguments in the 
-   above-defined order. Default values are used for the unspecified
-   arguments, which are 0 for the first argument, 10 for the second argument,
-   and 1 for other arguments.
+   prim-test can be run with any subset of command line arguments in the
+   above-defined order. If the (i + 1)th argument is specified then the ith
+   argument must be specified for i >= 0. Default values are used for the
+   unspecified arguments, which are 0 for the first argument, 10 for the
+   second argument, and 1 for the following arguments.
 
    The implementation does not use stdint.h and is portable under C89/C90
    with the only requirement that CHAR_BIT * sizeof(size_t) is greater or
