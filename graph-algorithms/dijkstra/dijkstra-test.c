@@ -15,12 +15,18 @@
 
    usage examples: 
    ./dijkstra-test
+   ./dijkstra-test 10 14
    ./dijkstra-test 14 14 0 0 1
 
-   dijkstra-test can be run with any number of command line arguments in the 
-   above-defined order. The unspecified arguments are set to default values 
-   which are 0 for the first argument, 10 for the second argument, and
-   1 for other arguments.
+   dijkstra-test can be run with any subset of command line arguments in the
+   above-defined order. If the (i + 1)th argument is specified then the ith
+   argument must be specified for i >= 0. Default values are used for the
+   unspecified arguments, which are 0 for the first argument, 10 for the
+   second argument, and 1 for the following arguments.
+
+   The implementation does not use stdint.h and is portable under C89/C90
+   with the only requirement that CHAR_BIT * sizeof(size_t) is greater or
+   equal to 16 and is even.
 */
 
 #include <stdio.h>
