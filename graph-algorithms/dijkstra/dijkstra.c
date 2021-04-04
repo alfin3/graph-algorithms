@@ -20,6 +20,8 @@
    If E >> V, a default hash table may provide speed advantages by avoiding
    the computation of hash values. If V is large and the graph is sparse,
    a non-default hash table may provide space advantages.
+
+   The implementation does not use stdint.h and is portable under C89/C90.
 */
 
 #include <stdio.h>

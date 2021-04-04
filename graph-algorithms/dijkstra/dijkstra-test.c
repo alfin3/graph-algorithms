@@ -24,9 +24,9 @@
    unspecified arguments, which are 0 for the first argument, 10 for the
    second argument, and 1 for the following arguments.
 
-   The implementation does not use stdint.h and is portable under C89/C90
-   with the only requirement that CHAR_BIT * sizeof(size_t) is greater or
-   equal to 16 and is even.
+   The implementation of tests does not use stdint.h and is portable under
+   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is
+   greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
