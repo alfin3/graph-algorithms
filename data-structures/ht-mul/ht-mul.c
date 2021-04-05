@@ -100,7 +100,6 @@ static const size_t C_PARTS_ACC_COUNTS[4] = {1,
 					     1 + 8 * (2 + 3),
 					     1 + 8 * (2 + 3 + 4)};
 static const size_t C_BUILD_SHIFT = 16;
-static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_FULL_SIZE = sizeof(size_t);
 static const size_t C_INIT_LOG_COUNT = 8;
@@ -350,7 +349,7 @@ static int is_overflow(const size_t *parts, size_t start, size_t count){
     n_shift >>= 1;
     c++;
   }
-  return (c + (count - 1) * C_BYTE_BIT > C_FULL_BIT);
+  return (c + (count - 1) * C_BUILD_SHIFT > C_FULL_BIT);
 }
 
 /**

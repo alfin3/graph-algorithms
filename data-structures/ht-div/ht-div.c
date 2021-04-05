@@ -100,14 +100,13 @@ static const size_t C_PARTS_ACC_COUNTS[4] = {6,
 					     6 + 16 * (2 + 3),
 					     6 + 16 * (2 + 3 + 4)};
 static const size_t C_BUILD_SHIFT = 16;
-static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_SIZE_MAX = (size_t)-1;
 
 static size_t hash(const ht_div_t *ht, const void *key);
 static void ht_grow(ht_div_t *ht);
 static void copy_reinsert(ht_div_t *ht, const dll_node_t *node);
-static int overflow(size_t start, size_t count);
+static int is_overflow(size_t start, size_t count);
 static size_t build_prime(size_t start, size_t count);
 
 /**
@@ -257,7 +256,7 @@ static void ht_grow(ht_div_t *ht){
   dll_node_t **head = NULL;
   ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
   if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
-  if (overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
+  if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
     /* last prime representable as size_t on a system reached */
     ht->count_ix = C_SIZE_MAX;
     return;
@@ -299,7 +298,7 @@ static void copy_reinsert(ht_div_t *ht, const dll_node_t *node){
    Tests if the next prime number results in an overflow of size_t
    on a given system. Returns 0 if no overflow, otherwise returns 1.
 */
-static int overflow(size_t start, size_t count){
+static int is_overflow(size_t start, size_t count){
   size_t c = 0;
   size_t n_shift;
   n_shift = C_PRIME_PARTS[start + (count - 1)];
@@ -307,7 +306,7 @@ static int overflow(size_t start, size_t count){
     n_shift >>= 1;
     c++;
   }
-  return (c + (count - 1) * C_BYTE_BIT > C_FULL_BIT);
+  return (c + (count - 1) * C_BUILD_SHIFT > C_FULL_BIT);
 }
 
 /**
