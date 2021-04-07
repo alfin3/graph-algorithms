@@ -4,10 +4,15 @@
    Tests of an exact solution of TSP without vertex revisiting
    across i) division and multiplication-based hash tables, and ii)
    weight types.
+
+   ./tsp-test
+   ./tsp-test 12 18 18 22 10 60
+   ./tsp-test 12 18 18 22 100 105 0 0 1 1
 */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 #include <time.h>
 #include "tsp.h"
@@ -33,18 +38,19 @@
 /* input handling */
 const char *C_USAGE =
   "tsp-test \n"
-  "[1, # bits in size_t) : smallest # vertices for all hash tables test \n"
-  "[1, # bits in size_t) : largest # vertices for all hash tables test \n"
-  "[1, # bits in size_t) : smallest # vertices for default hash table test \n"
-  "[1, # bits in size_t) : largest # vertices for default hash table test \n"
-  ">= 1 : smallest # vertices in sparse graph test \n"
-  ">= 1 : largest # vertices in sparse graph test \n"
+  "[1, # bits in size_t) : a \n"
+  "[1, # bits in size_t) : b s.t. a <= |V| <= b for all hash tables test \n"
+  "[1, # bits in size_t) : c \n"
+  "[1, # bits in size_t) : d s.t. c <= |V| <= d for default hash table test \n"
+  "[1, 8 * # bits in size_t]  : e \n"
+  "[1, 8 * # bits in size_t]  : f s.t. e <= |V| <= f for sparse graph test \n"
   "[0, 1] : on/off for small graph test \n"
   "[0, 1] : on/off for all hash tables test \n"
   "[0, 1] : on/off for default hash table test \n"
   "[0, 1] : on/off for sparse graph test \n";
 const int C_ARGC_MAX = 11;
 const size_t C_ARGS_DEF[10] = {1, 20, 20, 21, 100, 104, 1, 1, 1, 1};
+const size_t C_SPARSE_GRAPH_V_MAX = 8 * CHAR_BIT * sizeof(size_t); 
 
 /* hash table load factor upper bounds */
 const float C_ALPHA_DIV = 1.0;
@@ -78,6 +84,7 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *));
 void print_uint_arr(const size_t *arr, size_t n);
 void print_double_arr(const double *arr, size_t n);
 void print_test_result(int res);
+void fprintf_stderr_exit(const char *s, int line);
 
 /**
    Initialize small graphs with size_t weights.
@@ -119,26 +126,87 @@ int cmp_uint(const void *a, const void *b){
   }
 }
 
-void rdc_key_2blocks(void *t, const void *s){
+/** TODO add key_size parameter to the reduction function in multiplication
+    based hash table.
+*/
+
+void rdc_key_blocks(void *t, const void *s, size_t num_blocks){
   size_t r = 0;
   size_t i;
   size_t *s_arr = (size_t *)s;
-  for(i = 0; i < 2; i++){
+  for(i = 0; i < num_blocks; i++){
     r = sum_mod(r, s_arr[i], C_SIZE_MAX);
   }
   *(size_t *)t = r;
+}
+
+void rdc_key_2blocks(void *t, const void *s){
+  rdc_key_blocks(t, s, 2); 
 }
 
 void rdc_key_3blocks(void *t, const void *s){
-  size_t r = 0;
-  size_t i;
-  size_t *s_arr = (size_t *)s;
-  for(i = 0; i < 3; i++){
-    r = sum_mod(r, s_arr[i], C_SIZE_MAX);
-  }
-  *(size_t *)t = r;
+  rdc_key_blocks(t, s, 3); 
 }
 
+void rdc_key_4blocks(void *t, const void *s){
+  rdc_key_blocks(t, s, 4); 
+}
+
+void rdc_key_5blocks(void *t, const void *s){
+  rdc_key_blocks(t, s, 5); 
+}
+
+void rdc_key_6blocks(void *t, const void *s){
+  rdc_key_blocks(t, s, 6); 
+}
+
+void rdc_key_7blocks(void *t, const void *s){
+  rdc_key_blocks(t, s, 7); 
+}
+
+void rdc_key_8blocks(void *t, const void *s){
+  rdc_key_blocks(t, s, 8); 
+}
+
+void rdc_key_9blocks(void *t, const void *s){
+  rdc_key_blocks(t, s, 9); 
+}
+
+void (*choose_rdc_key(size_t num_vts)) (void *, const void *){
+  size_t num_blocks = num_vts / C_FULL_BIT;
+  void (*ret)(void *, const void *);
+  if (num_blocks * C_FULL_BIT < num_vts) num_blocks++;
+  switch (num_blocks){
+  case 1 :
+    ret = rdc_key_2blocks;
+    break;
+  case 2 :
+    ret = rdc_key_3blocks;
+    break;
+  case 3 :
+    ret = rdc_key_4blocks;
+    break;
+  case 4 :
+    ret = rdc_key_5blocks;
+    break;
+  case 5 :
+    ret = rdc_key_6blocks;
+    break;
+  case 6 :
+    ret = rdc_key_7blocks;
+    break;
+  case 7 :
+    ret = rdc_key_8blocks;
+    break;
+  case 8 :
+    ret = rdc_key_9blocks;
+    break;
+  default :
+    fprintf_stderr_exit("rdc_key choice failed", __LINE__);
+  }
+  return ret;
+}
+  
 typedef struct{
   float alpha;
 } context_div_t;
@@ -209,7 +277,7 @@ void run_mul_uint_tsp(const adj_lst_t *a){
   context_mul_t context_mul;
   tsp_ht_t tht;
   context_mul.alpha = C_ALPHA_MUL;
-  context_mul.rdc_key = rdc_key_2blocks;
+  context_mul.rdc_key = choose_rdc_key(a->num_vts);
   tht.ht = &ht_mul;
   tht.context = &context_mul;
   tht.init = (tsp_ht_init)ht_mul_init_helper;
@@ -340,7 +408,7 @@ void run_mul_double_tsp(const adj_lst_t *a){
   context_mul_t context_mul;
   tsp_ht_t tht;
   context_mul.alpha = C_ALPHA_MUL;
-  context_mul.rdc_key = rdc_key_2blocks;
+  context_mul.rdc_key = choose_rdc_key(a->num_vts);
   tht.ht = &ht_mul;
   tht.context = &context_mul;
   tht.init = (tsp_ht_init)ht_mul_init_helper;
@@ -497,7 +565,7 @@ void run_rand_uint_test(int num_vts_start, int num_vts_end){
   tht_div.remove = (tsp_ht_remove)ht_div_remove;
   tht_div.free = (tsp_ht_free)ht_div_free;
   context_mul.alpha = C_ALPHA_MUL;
-  context_mul.rdc_key = rdc_key_2blocks;
+  context_mul.rdc_key = choose_rdc_key(num_vts_end);
   tht_mul.ht = &ht_mul;
   tht_mul.context = &context_mul;
   tht_mul.init = (tsp_ht_init)ht_mul_init_helper;
@@ -674,7 +742,6 @@ void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
   tht_div.remove = (tsp_ht_remove)ht_div_remove;
   tht_div.free = (tsp_ht_free)ht_div_free;
   context_mul.alpha = C_ALPHA_MUL;
-  context_mul.rdc_key = rdc_key_3blocks;
   tht_mul.ht = &ht_mul;
   tht_mul.context = &context_mul;
   tht_mul.init = (tsp_ht_init)ht_mul_init_helper;
@@ -690,6 +757,7 @@ void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
     printf("\tP[an edge is in a graph] = %.4f\n", C_SPARSE_PROBS[p]);
     for (i = num_vts_start; i <= num_vts_end; i++){
       n = i;
+      context_mul.rdc_key = choose_rdc_key(n);
       adj_lst_rand_dir_wts(&a,
 			   n,
 			   sizeof(size_t),
@@ -805,12 +873,54 @@ void print_test_result(int res){
   }
 }
 
-int main(){
+void fprintf_stderr_exit(const char *s, int line){
+  fprintf(stderr, "%s in %s at line %d\n", s,  __FILE__, line);
+  exit(EXIT_FAILURE);
+}
+
+int main(int argc, char *argv[]){
+  int i;
+  size_t *args = NULL;
   RGENS_SEED();
-  run_uint_graph_test();
-  run_double_graph_test();
-  run_rand_uint_test(1, 20);
-  run_def_rand_uint_test(20, 21);
-  run_sparse_rand_uint_test(100, 104);
+  if (argc > C_ARGC_MAX){
+    fprintf(stderr, "USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  args = malloc_perror((C_ARGC_MAX - 1) * sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  for (i = 1; i < argc; i++){
+    args[i - 1] = atoi(argv[i]);
+  }
+  if (args[0] < 1 ||
+      args[0] > C_FULL_BIT - 1 ||
+      args[1] < 1 ||
+      args[1] > C_FULL_BIT - 1 ||
+      args[2] < 1 ||
+      args[2] > C_FULL_BIT - 1 ||
+      args[3] < 1 ||
+      args[3] > C_FULL_BIT - 1 ||
+      args[4] < 1 ||
+      args[4] > C_SPARSE_GRAPH_V_MAX ||
+      args[5] < 1 ||
+      args[5] > C_SPARSE_GRAPH_V_MAX ||
+      args[0] > args[1] ||
+      args[2] > args[3] ||
+      args[4] > args[5] ||
+      args[6] > 1 ||
+      args[7] > 1 ||
+      args[8] > 1 ||
+      args[9] > 1){
+    fprintf(stderr, "USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  if (args[6]){
+    run_uint_graph_test();
+    run_double_graph_test();
+  }
+  if (args[7]) run_rand_uint_test(args[0], args[1]);
+  if (args[8]) run_def_rand_uint_test(args[2], args[3]);
+  if (args[9]) run_sparse_rand_uint_test(args[4], args[5]);
+  free(args);
+  args = NULL;
   return 0;
 }
