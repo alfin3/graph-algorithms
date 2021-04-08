@@ -1,10 +1,14 @@
 # data-structures-algorithms-c
 
-A set of generic hashing-based data structures and algorithms were implemented from first principles in straight C, providing i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) parameters for hashing and parallelism optimization across input ranges and hardware settings.
+Graph algorithms and supporting data structures with generic (any type) edge weights, a hash table parameter, low memory footprint, and general C89/C90 portability across systems without conditional compilation.
 
-A two-step approach was used to minimize the memory space occupied and used by a program: generic programming and hashing parametrization. The approach reflects the perspective of the author that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method.
+The implementation provides i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) parameters for hashing-based optimization of graph algorithms across graph topologies and hardware settings.
 
-Compilation was completed with gcc 7.5 at the -O3 optimization level under `-std=c90` (some C99 features are accepted as extensions at this time) and `-std=c99` on a 64-bit system. It is anticipated that with the exception of hash tables that are passed as parameter values the implementations of data structures and algorithms will not require `stdint.h` and will be portable under C90 to facilitate embedded applications. If `stdint.h` is unavailable, a user-defined or default hash table may be used, thereby reducing the control over C90 portability to hash tables. It is anticipated that the provided implementations will be compiled on lower bit systems in the near future. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
+A two-step approach was used to minimize the memory space occupied and used by a program: generic programming and hashing parametrization. The approach reflects the perspective that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method. 
+
+Generic division and multiplication-based hash tables are provided and are portable under C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is greater or equal to 16 and is even.
+
+Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
 In each directory with a Makefile, run:
 
