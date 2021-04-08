@@ -559,8 +559,8 @@ void adj_lst_rand_dir_wts(adj_lst_t *a,
 }
 
 /**
-   Tests tsp on random directed graphs with random size_t non-tour 
-   weights and a known tour across all hash tables.
+   Tests tsp across all hash tables on random directed graphs with random
+   size_t non-tour weights and a known tour.
 */
 void run_rand_uint_test(int num_vts_start, int num_vts_end){
   int p, i, j;
@@ -691,7 +691,7 @@ void run_def_rand_uint_test(int num_vts_start, int num_vts_end){
   rand_start = malloc_perror(C_ITER * sizeof(size_t));
   printf("Run a tsp test with a default hash table on directed graphs \n"
 	 "with random size_t non-tour weights in [%lu, %lu]\n",
-	 num_vts_start, TOLU(wt_l), TOLU(wt_h));
+	 TOLU(wt_l), TOLU(wt_h));
   fflush(stdout);
   b.p = C_PROB_ONE;
   printf("\tP[an edge is in a graph] = %.4f\n", C_PROB_ONE);
