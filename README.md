@@ -8,11 +8,11 @@ A two-step approach was used to minimize the memory space occupied and used by a
 
 Generic division and multiplication-based hash tables are provided and are portable under C89/C90 with the only requirement that `CHAR_BIT * sizeof(size_t)` is greater or equal to 16 and is even.
 
-Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
+Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations. The conversion of tests to C89/C90 is work in progress.
 
 In each directory with a Makefile, run:
 
-`make`
+`make` or optionally if available `make BUILD_MODE=M32` or `make BUILD_MODE=M64`
 
 `./executable-name`
 
@@ -40,28 +40,22 @@ A generic (min) heap with a hash table parameter. The implementation provides a 
 
 The hash table parameter specifies a hash table used for in-heap search and modifications, and enables the optimization of space and time resources associated with heap operations by choice of a hash table and its load factor upper bound. Tests across i) division- and mutliplication-based hash tables, ii) contiguous and noncontiguous elements, and iii) priority types are provided.
 
-`./data-structures/ht-mul-uint64/`
+`./data-structures/ht-mul/`
 
-A hash table with generic hash keys and generic elements, where a hash key is an object within a contiguous memory block (e.g. a basic type, array, struct), and an element is any object in memory.
+A hash table with generic hash keys and generic elements, where a hash key is an object within a contiguous memory block (e.g. a basic type, array, struct), and an element is within a contiguous or noncontiguous memory block.
 
-The implementation is based on a multiplication method for hashing into upto 2^63 slots and double hashing as an open addressing strategy for resolving collisions. The expected number of probes in a search is upper-bounded by 1/(1 - alpha) under the uniform hashing assumption, where alpha is a load factor upper bound. For every delete and remove operation at most one (re)insert operation is performed, resulting in a probing overhead per delete and remove operation bounded by 1/(1 - alpha) in expectation, and thus a 2/(1 – alpha) overall upper bound for the expected number of probes per delete and remove operation by linearity of expectation. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to element objects within contiguous and noncontiguous memory blocks.
+The implementation is based on a multiplication method for hashing and double hashing as an open addressing strategy for resolving collisions. The expected number of probes in a search is upper-bounded by 1/(1 - alpha) under the uniform hashing assumption, where alpha is a load factor upper bound. For every delete and remove operation at most one (re)insert operation is performed, resulting in a probing overhead per delete and remove operation bounded by 1/(1 - alpha) in expectation, and thus a 2/(1 – alpha) overall upper bound for the expected number of probes per delete and remove operation by linearity of expectation. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to elements within contiguous and noncontiguous memory blocks.
 
-`./data-structures/ht-div-{uint32, uint64}/`
+The implementation requires that `CHAR_BIT * sizeof(size_t)` is greater or equal to 16 and is even.
 
-A hash table with generic hash keys and generic elements, where a hash key is an object within a contiguous memory block (e.g. a basic type, array, struct), and an element is any object in memory. 
+`./data-structures/ht-div/`
 
-The implementation is based on a division method for hashing into upto > {2^31, 2^63} slots (largest provided prime number) and a chaining method for resolving collisions. Due to chaining, the number of keys and elements that can be inserted is not limited by the hash table implementation. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to element objects within contiguous and noncontiguous memory blocks.
+A hash table with generic hash keys and generic elements, where a hash key is an object within a contiguous memory block (e.g. a basic type, array, struct), and an element is within a contiguous or noncontiguous memory block. 
 
-`./algorithms-mthread/mergesort-mthread/`
+The implementation is based on a division method for hashing and a chaining method for resolving collisions. Due to chaining, the number of keys and elements that can be inserted is not limited by the hash table implementation. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to elements within contiguous and noncontiguous memory blocks.
 
-A merge sort algorithm with parallel sorting and parallel merging for sorting arrays of generic elements, providing \Theta(n/log^{2}n) theoretical parallelism within the dynamic multithreading model, and demonstrating a parametrization approach to optimizing the parallelism of a recursive algorithm.
-
-The implementation provides i) a set of parameters for setting the constant base case upper bounds for switching from parallel sorting to serial sorting and from parallel merging to serial merging during recursion, and ii) a macro for setting the constant upper bound for the number of recursive calls placed on the stack of a thread across sorting and merging operations, thereby enabling the optimization of the parallelism and concurrency-associated overhead across input ranges and hardware settings. On a 4-core machine, the optimization of the base case upper bound parameters, demonstrated in the accompanying tests, resulted in a speedup of approximately 2.6X in comparison to serial qsort (stdlib.h) on arrays of 10M random integer or double elements.
+The implementation requires that `CHAR_BIT * sizeof(size_t)` is greater or equal to 16 and is even.
 
 `./utilities/utilities-mod/`
 
 Utility functions in the area of modular arithmetic generalized to size_t. mem_mod computes the modulo operation on a memory block by treating each byte of the block in the little-endian order and inductively applying modular arithmetic relations, without requiring a little-endian machine. fast_mem_mod treats a memory block in sizeof(size_t)-byte increments. Given a little-endian machine, the result is equal to the return value of mem_mod.
-
-`./utilities/utilities-rand-{uint32, uint64}/`
-
-Randomness utility functions. The generation of random numbers in a given range is achieved in a randomized approach by exponentially decreasing the probability of not finding a number bounded by 0.5^N under the assumption of random number generator uniformity, where N is the number of generated number candidates. N is less or equal to 2 in expectation.
