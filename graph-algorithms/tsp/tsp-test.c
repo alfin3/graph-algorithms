@@ -2,12 +2,35 @@
    tsp-test.c
 
    Tests of an exact solution of TSP without vertex revisiting
-   across i) division and multiplication-based hash tables, and ii)
+   across i) default, division and multiplication-based hash tables, and ii)
    weight types.
 
+   The following command line arguments can be used to customize tests:
+   tsp-test:
+   -  [1, # bits in size_t) : a
+   -  [1, # bits in size_t) : b s.t. a <= |V| <= b for all hash tables test
+   -  [1, # bits in size_t) : c
+   -  [1, # bits in size_t) : d s.t. c <= |V| <= d for default hash table test
+   -  [1, 8 * # bits in size_t]  : e
+   -  [1, 8 * # bits in size_t]  : f s.t. e <= |V| <= f for sparse graph test
+   -  [0, 1] : on/off for small graph test
+   -  [0, 1] : on/off for all hash tables test
+   -  [0, 1] : on/off for default hash table test
+   -  [0, 1] : on/off for sparse graph test
+
+   usage examples:
    ./tsp-test
    ./tsp-test 12 18 18 22 10 60
    ./tsp-test 12 18 18 22 100 105 0 0 1 1
+
+   tsp-test can be run with any subset of command line arguments in the
+   above-defined order. If the (i + 1)th argument is specified then the ith
+   argument must be specified for i >= 0. Default values are used for the
+   unspecified arguments according to the C_ARGS_DEF array.
+
+   The implementation of tests does not use stdint.h and is portable under
+   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is
+   greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
@@ -50,7 +73,8 @@ const char *C_USAGE =
   "[0, 1] : on/off for sparse graph test \n";
 const int C_ARGC_MAX = 11;
 const size_t C_ARGS_DEF[10] = {1, 20, 20, 21, 100, 104, 1, 1, 1, 1};
-const size_t C_SPARSE_GRAPH_V_MAX = 8 * CHAR_BIT * sizeof(size_t); 
+const size_t C_SPARSE_GRAPH_V_MAX = 8 * CHAR_BIT * sizeof(size_t);
+const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* hash table load factor upper bounds */
 const float C_ALPHA_DIV = 1.0;
@@ -73,7 +97,6 @@ const double C_PROBS[4] = {1.0000, 0.2500, 0.0625, 0.0000};
 const double C_SPARSE_PROBS[2] = {0.0050, 0.0025};
 const double C_PROB_ONE = 1.0;
 const double C_PROB_ZERO = 0.0;
-const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_WEIGHT_HIGH = ((size_t)-1 >>
 			      ((CHAR_BIT * sizeof(size_t) + 1) / 2));
@@ -126,8 +149,8 @@ int cmp_uint(const void *a, const void *b){
   }
 }
 
-/** TODO add key_size parameter to the reduction function in multiplication
-    based hash table.
+/** TODO add a key_size parameter to the reduction function in the
+    multiplication based hash table; until then the below approach is used.
 */
 
 void rdc_key_blocks(void *t, const void *s, size_t num_blocks){
@@ -536,8 +559,8 @@ void adj_lst_rand_dir_wts(adj_lst_t *a,
 }
 
 /**
-   Test tsp on random directed graphs with random size_t non-tour 
-   weights and a known tour.
+   Tests tsp on random directed graphs with random size_t non-tour 
+   weights and a known tour across all hash tables.
 */
 void run_rand_uint_test(int num_vts_start, int num_vts_end){
   int p, i, j;
@@ -573,8 +596,9 @@ void run_rand_uint_test(int num_vts_start, int num_vts_end){
   tht_mul.search = (tsp_ht_search)ht_mul_search;
   tht_mul.remove = (tsp_ht_remove)ht_mul_remove;
   tht_mul.free = (tsp_ht_free)ht_mul_free;
-  printf("Run a tsp test on random directed graphs with random "
-	 "size_t non-tour weights in [%lu, %lu]\n", TOLU(wt_l), TOLU(wt_h));
+  printf("Run a tsp test across all hash tables on random directed graphs \n"
+	 "with random size_t non-tour weights in [%lu, %lu]\n",
+	 TOLU(wt_l), TOLU(wt_h));
   fflush(stdout);
   for (p = 0; p < C_PROBS_COUNT; p++){
     b.p = C_PROBS[p];
@@ -650,8 +674,8 @@ void run_rand_uint_test(int num_vts_start, int num_vts_end){
 }
 
 /**
-   Test tsp with a default hash table on directed graphs with >= 20
-   vertices and random size_t non-tour weights and a known tour.
+   Tests tsp with a default hash table on directed graphs with
+   random size_t non-tour weights and a known tour.
 */
 void run_def_rand_uint_test(int num_vts_start, int num_vts_end){
   int i, j;
@@ -665,8 +689,8 @@ void run_def_rand_uint_test(int num_vts_start, int num_vts_end){
   bern_arg_t b;
   clock_t t_def;
   rand_start = malloc_perror(C_ITER * sizeof(size_t));
-  printf("Run a tsp test on directed graphs with >= %d vertices and "
-	 "random size_t non-tour weights in [%lu, %lu]\n",
+  printf("Run a tsp test with a default hash table on directed graphs \n"
+	 "with random size_t non-tour weights in [%lu, %lu]\n",
 	 num_vts_start, TOLU(wt_l), TOLU(wt_h));
   fflush(stdout);
   b.p = C_PROB_ONE;
@@ -713,7 +737,7 @@ void run_def_rand_uint_test(int num_vts_start, int num_vts_end){
 }
 
 /**
-   Test tsp on sparse random directed graphs with random size_t non-tour 
+   Tests tsp on sparse random directed graphs with random size_t non-tour 
    weights and a known tour.
 */
 void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
