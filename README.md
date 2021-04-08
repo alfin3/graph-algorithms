@@ -2,11 +2,11 @@
 
 Graph algorithms and supporting data structures with generic (any type) edge weights, a hash table parameter, low memory footprint, and general C89/C90 portability across systems without conditional compilation.
 
-The implementation provides i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) parameters for hashing-based optimization of graph algorithms across graph topologies and hardware settings.
+The implementation provides i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) parameters for hashing-based optimization across graph topologies and hardware settings.
 
 A two-step approach was used to minimize the memory space occupied and used by a program: generic programming and hashing parametrization. The approach reflects the perspective that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method. 
 
-Generic division and multiplication-based hash tables are provided and are portable under C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is greater or equal to 16 and is even.
+Generic division and multiplication-based hash tables are provided and are portable under C89/C90 with the only requirement that `CHAR_BIT * sizeof(size_t)` is greater or equal to 16 and is even.
 
 Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
