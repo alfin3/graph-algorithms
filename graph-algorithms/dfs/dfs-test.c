@@ -1,20 +1,45 @@
 /**
-   dfs-main.c
+   dfs-test.c
 
    Tests of the DFS algorithm.
- 
-   Requirements for running tests: 
-   - UINT64_MAX must be defined
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <time.h>
 #include "dfs.h"
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
+
+/* small graph test */
+const size_t C_NUM_VTS_FIRST = 6;
+const size_t C_NUM_ES_FIRST = 7;
+const size_t C_U_FIRST[7] = {0, 1, 2, 3, 0, 4, 4};
+const size_t C_V_FIRST[7] = {1, 2, 3, 1, 3, 2, 5};
+const size_t C_START_FIRST = 0;
+const size_t C_DIR_PRE_FIRST[6] = {0, 1, 2, 3, 8, 9};
+const size_t C_DIR_POST_FIRST[6] = {7, 6, 5, 4, 11, 10};
+const size_t C_UNDIR_PRE_FIRST[6] = {0, 1, 2, 3, 5, 6};
+const size_t C_UNDIR_POST_FIRST[6] = {11, 10, 9, 4, 8, 7};
+
+const size_t C_NUM_VTS_SECOND = 6;
+const size_t C_NUM_ES_SECOND = 5;
+const size_t C_U_SECOND[5] = {0, 1, 2, 3, 4};
+const size_t C_V_SECOND[5] = {1, 2, 3, 4, 5};
+const size_t C_START_SECOND = 0;
+const size_t C_DIR_PRE_SECOND[6] = {0, 1, 2, 3, 4, 5};
+const size_t C_DIR_POST_SECOND[6] = {11, 10, 9, 8, 7, 6};
+const size_t C_UNDIR_PRE_SECOND[6] = {0, 1, 2, 3, 4, 5};
+const size_t C_UNDIR_POST_SECOND[6] = {11, 10, 9, 8, 7, 6};
+
+/* random graph tests */
+const int C_ITER = 10;
+const int C_PROBS_COUNT = 5;
+const double C_PROBS[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
+const double C_PROB_ONE = 1.0;
+const double C_PROB_ZERO = 0.0;
+const size_t C_SIZE_MAX = (size_t)-1;
 
 /**
    Generate random numbers in a portable way for test purposes only; rand()
@@ -26,8 +51,10 @@
 #define RANDOM() (rand()) /* [0, RAND_MAX] */
 #define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
 
-int cmp_arr(const uint64_t *a, const uint64_t *b, uint64_t n);
-uint64_t pow_two(int k);
+#define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
+
+int cmp_arr(const size_t *a, const size_t *b, size_t n);
+size_t pow_two(int k);
 void print_test_result(int res);
 
 /**  
@@ -38,17 +65,14 @@ void print_test_result(int res);
    Initializes the first graph with six vertices.
 */
 void first_vsix_graph_init(graph_t *g){
-  uint64_t u[] = {0, 1, 2, 3, 0, 4, 4};
-  uint64_t v[] = {1, 2, 3, 1, 3, 2, 5};
-  uint64_t num_vts = 6;
-  uint64_t i;
-  graph_base_init(g, num_vts, 0);
-  g->num_es = 7;
-  g->u = malloc_perror(g->num_es * sizeof(uint64_t));
-  g->v = malloc_perror(g->num_es * sizeof(uint64_t));
+  size_t i;
+  graph_base_init(g, C_NUM_VTS_FIRST, 0);
+  g->num_es = C_NUM_ES_FIRST;
+  g->u = malloc_perror(g->num_es * sizeof(size_t));
+  g->v = malloc_perror(g->num_es * sizeof(size_t));
   for (i = 0; i < g->num_es; i++){
-    g->u[i] = u[i];
-    g->v[i] = v[i];
+    g->u[i] = C_U_FIRST[i];
+    g->v[i] = C_V_FIRST[i];
   }
 }
 
@@ -56,17 +80,14 @@ void first_vsix_graph_init(graph_t *g){
    Initializes the second graph with six vertices.
 */
 void second_vsix_graph_init(graph_t *g){
-  uint64_t u[] = {0, 1, 2, 3, 4};
-  uint64_t v[] = {1, 2, 3, 4, 5};
-  uint64_t num_vts = 6;
-  uint64_t i;
-  graph_base_init(g, num_vts, 0);
-  g->num_es = 5;
-  g->u = malloc_perror(g->num_es * sizeof(uint64_t));
-  g->v = malloc_perror(g->num_es * sizeof(uint64_t));
+  size_t i;
+  graph_base_init(g, C_NUM_VTS_SECOND, 0);
+  g->num_es = C_NUM_ES_SECOND;
+  g->u = malloc_perror(g->num_es * sizeof(size_t));
+  g->v = malloc_perror(g->num_es * sizeof(size_t));
   for (i = 0; i < g->num_es; i++){
-    g->u[i] = u[i];
-    g->v[i] = v[i];
+    g->u[i] = C_U_SECOND[i];
+    g->v[i] = C_V_SECOND[i];
   }
 }
 
@@ -75,27 +96,27 @@ void second_vsix_graph_init(graph_t *g){
 */
 
 void small_graph_helper(const graph_t *g,
-			uint64_t start,
-			uint64_t ret_pre[],
-			uint64_t ret_post[],
+			size_t start,
+			const size_t ret_pre[],
+			const size_t ret_post[],
 			void (*build)(adj_lst_t *, const graph_t *),
 			int *res);
 
 void run_first_vsix_graph_test(){
   int res = 1;
-  uint64_t start = 0;
-  uint64_t dir_pre[6] = {0, 1, 2, 3, 8, 9};
-  uint64_t dir_post[6] = {7, 6, 5, 4, 11, 10};
-  uint64_t undir_pre[6] = {0, 1, 2, 3, 5, 6};
-  uint64_t undir_post[6] = {11, 10, 9, 4, 8, 7};
   graph_t g;
   printf("Run a dfs test on the first small graph instance --> ");
   first_vsix_graph_init(&g);
-  small_graph_helper(&g, start, dir_pre, dir_post, adj_lst_dir_build, &res);
   small_graph_helper(&g,
-		     start,
-		     undir_pre,
-		     undir_post,
+		     C_START_FIRST,
+		     C_DIR_PRE_FIRST,
+		     C_DIR_POST_FIRST,
+		     adj_lst_dir_build,
+		     &res);
+  small_graph_helper(&g,
+		     C_START_FIRST,
+		     C_UNDIR_PRE_FIRST,
+		     C_UNDIR_POST_FIRST,
 		     adj_lst_undir_build,
 		     &res);
   graph_free(&g);
@@ -104,19 +125,19 @@ void run_first_vsix_graph_test(){
 
 void run_second_vsix_graph_test(){
   int res = 1;
-  uint64_t start = 0;
-  uint64_t dir_pre[6] = {0, 1, 2, 3, 4, 5};
-  uint64_t dir_post[6] = {11, 10, 9, 8, 7, 6};
-  uint64_t undir_pre[6] = {0, 1, 2, 3, 4, 5};
-  uint64_t undir_post[6] = {11, 10, 9, 8, 7, 6};
   graph_t g;
   printf("Run a dfs test on the second small graph instance --> ");
   second_vsix_graph_init(&g);
-  small_graph_helper(&g, start, dir_pre, dir_post, adj_lst_dir_build, &res);
   small_graph_helper(&g,
-		     start,
-		     undir_pre,
-		     undir_post,
+		     C_START_SECOND,
+		     C_DIR_PRE_SECOND,
+		     C_DIR_POST_SECOND,
+		     adj_lst_dir_build,
+		     &res);
+  small_graph_helper(&g,
+		     C_START_SECOND,
+		     C_UNDIR_PRE_SECOND,
+		     C_UNDIR_POST_SECOND,
 		     adj_lst_undir_build,
 		     &res);
   graph_free(&g);
@@ -124,18 +145,18 @@ void run_second_vsix_graph_test(){
 }
 
 void small_graph_helper(const graph_t *g,
-			uint64_t start,
-			uint64_t ret_pre[],
-			uint64_t ret_post[],
+			size_t start,
+			const size_t ret_pre[],
+			const size_t ret_post[],
 			void (*build)(adj_lst_t *, const graph_t *),
 			int *res){
-  uint64_t i;
-  uint64_t *pre = NULL, *post = NULL;
+  size_t i;
+  size_t *pre = NULL, *post = NULL;
   adj_lst_t a;
   adj_lst_init(&a, g);
   build(&a, g);
-  pre = malloc_perror(a.num_vts * sizeof(uint64_t));
-  post = malloc_perror(a.num_vts * sizeof(uint64_t));
+  pre = malloc_perror(a.num_vts * sizeof(size_t));
+  post = malloc_perror(a.num_vts * sizeof(size_t));
   for (i = 0; i < a.num_vts; i++){
     dfs(&a, start, pre, post);
     *res *= cmp_arr(pre, ret_pre, a.num_vts);
@@ -156,10 +177,10 @@ typedef struct{
   double p;
 } bern_arg_t;
 
-int bern_fn(void *arg){
+int bern(void *arg){
   bern_arg_t *b = arg;
-  if (b->p >= 1.00) return 1;
-  if (b->p <= 0.00) return 0;
+  if (b->p >= C_PROB_ONE) return 1;
+  if (b->p <= C_PROB_ZERO) return 0;
   if (b->p > DRAND()) return 1;
   return 0;
 }
@@ -168,22 +189,22 @@ int bern_fn(void *arg){
    Runs a dfs test on directed graphs with n(n - 1) edges. The test relies
    on the construction order in adj_lst_rand_dir.
 */
-void run_max_edges_graph_test(){
+void run_max_edges_graph_test(int pow_start, int pow_end){
   int res = 1;
-  int i, pow_end = 15;
-  uint64_t j, n, start;
-  uint64_t *pre = NULL, *post = NULL;
+  int i;
+  size_t j, n, start;
+  size_t *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
-  b.p = 1.00;
+  pre = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  post = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  b.p = C_PROB_ONE;
   printf("Run a dfs test on graphs with n vertices, where "
 	 "0 < n <= 2^%d, and n(n - 1) edges --> ", pow_end - 1);
   fflush(stdout);
-  for (i = 0; i < pow_end; i++){
+  for (i = pow_start; i <= pow_end; i++){
     n = pow_two(i); /* n > 0 */
-    pre = malloc_perror(n * sizeof(uint64_t));
-    post = malloc_perror(n * sizeof(uint64_t));
-    adj_lst_rand_dir(&a, n, bern_fn, &b);
+    adj_lst_rand_dir(&a, n, bern, &b);
     start =  RANDOM() % n;
     dfs(&a, start, pre, post);
     for (j = 0; j < n; j++){
@@ -200,45 +221,45 @@ void run_max_edges_graph_test(){
       }
     }
     adj_lst_free(&a);
-    free(pre);
-    free(post);
-    pre = NULL;
-    post = NULL;
   }
   print_test_result(res);
+  free(pre);
+  free(post);
+  pre = NULL;
+  post = NULL;
 }
 
 /**
    Runs a dfs test on graphs with no edges.
 */
-void run_no_edges_graph_test(){
+void run_no_edges_graph_test(int pow_start, int pow_end){
   int res = 1;
-  int i, pow_end = 15;
-  uint64_t j, n, start;
-  uint64_t *pre = NULL, *post = NULL;
+  int i;
+  size_t j, n, start;
+  size_t *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
-  b.p = 0.00;
+  pre = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  post = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  b.p = C_PROB_ZERO;
   printf("Run a dfs test on graphs with n vertices, where "
 	 "0 < n <= 2^%d, and no edges --> ", pow_end - 1);
   fflush(stdout);
-  for (i = 0; i < pow_end; i++){
+  for (i = pow_start; i <= pow_end; i++){
     n = pow_two(i);
-    pre = malloc_perror(n * sizeof(uint64_t));
-    post = malloc_perror(n * sizeof(uint64_t));
-    adj_lst_rand_dir(&a, n, bern_fn, &b);
+    adj_lst_rand_dir(&a, n, bern, &b);
     start =  RANDOM() % n;
     dfs(&a, start, pre, post);
     for (j = 0; j < n; j++){
       res *= (post[j] - pre[j] == 1);
     }
     adj_lst_free(&a);
-    free(pre);
-    free(post);
-    pre = NULL;
-    post = NULL;
   }
   print_test_result(res);
+  free(pre);
+  free(post);
+  pre = NULL;
+  post = NULL;
 }
 
 /**
@@ -248,53 +269,55 @@ void run_no_edges_graph_test(){
 /**
    Runs a dfs test on random directed graphs.
 */
-void run_random_dir_graph_test(){
-  int i, num_p = 5;
-  int j, k, pow_end = 15, ave_iter = 10;
-  uint64_t n, start[10];
-  uint64_t *pre = NULL, *post = NULL;
-  double p[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
+void run_random_dir_graph_test(int pow_start, int pow_end){
+  int i, j, k;
+  size_t n;
+  size_t *start = NULL;
+  size_t *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
   clock_t t;
   printf("Run a dfs test on random directed graphs from %d random "
-	 "start vertices in each graph \n", ave_iter);
+	 "start vertices in each graph \n", C_ITER);
   fflush(stdout);
-  for (i = 0; i < num_p; i++){
-    b.p = p[i];
+  start = malloc_perror(C_ITER * sizeof(size_t));
+  pre = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  post = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  for (i = 0; i < C_PROBS_COUNT; i++){
+    b.p = C_PROBS[i];
     printf("\tP[an edge is in a graph] = %.2f\n", b.p);
-    for (j = 0; j <  pow_end; j++){
+    for (j = pow_start; j <= pow_end; j++){
       n = pow_two(j);
-      pre = malloc_perror(n * sizeof(uint64_t));
-      post = malloc_perror(n * sizeof(uint64_t));
-      adj_lst_rand_dir(&a, n, bern_fn, &b);
-      for (k = 0; k < ave_iter; k++){
+      adj_lst_rand_dir(&a, n, bern, &b);
+      for (k = 0; k < C_ITER; k++){
 	start[k] =  RANDOM() % n;
       }
       t = clock();
-      for (k = 0; k < ave_iter; k++){
+      for (k = 0; k < C_ITER; k++){
 	dfs(&a, start[k], pre, post);
       }
       t = clock() - t;
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f, "
 	     "average runtime: %.6f seconds\n",
-	     n, b.p * n * (n - 1), (float)t / ave_iter / CLOCKS_PER_SEC);
+	     TOLU(n), b.p * n * (n - 1), (float)t / C_ITER / CLOCKS_PER_SEC);
       fflush(stdout);
       adj_lst_free(&a);
-      free(pre);
-      free(post);
-      pre = NULL;
-      post = NULL;
     }
   }
+  free(start);
+  free(pre);
+  free(post);
+  start = NULL;
+  pre = NULL;
+  post = NULL;
 }
 
 /**
-   Compares the elements of two uint64_t arrays.
+   Compares the elements of two size_t arrays.
 */
-int cmp_arr(const uint64_t *a, const uint64_t *b, uint64_t n){
+int cmp_arr(const size_t *a, const size_t *b, size_t n){
   int res = 1;
-  uint64_t i;
+  size_t i;
   for (i = 0; i < n; i++){
     res *= (a[i] == b[i]);
   }
@@ -304,8 +327,8 @@ int cmp_arr(const uint64_t *a, const uint64_t *b, uint64_t n){
 /**
    Returns the kth power of 2, where 0 <= k <= 63.
 */
-uint64_t pow_two(int k){
-  uint64_t ret = 1;
+size_t pow_two(int k){
+  size_t ret = 1;
   return ret << k;
 }
 
@@ -324,8 +347,8 @@ int main(){
   RGENS_SEED();
   run_first_vsix_graph_test();
   run_second_vsix_graph_test();
-  run_max_edges_graph_test();
-  run_no_edges_graph_test();
-  run_random_dir_graph_test();
+  run_max_edges_graph_test(0, 14);
+  run_no_edges_graph_test(0, 14);
+  run_random_dir_graph_test(0, 14);
   return 0;
 }

@@ -8,17 +8,17 @@ CFLAGS = -I$(GRAPH_DIR)                        \
          -I$(UTILS_MEM_DIR)                    \
          -std=c90 -Wall -Wextra -Wpedantic -O3
 
-OBJ = dfs-main.o                      \
+OBJ = dfs-test.o                      \
       dfs.o                           \
       $(GRAPH_DIR)graph.o             \
       $(STACK_DIR)stack.o             \
       $(UTILS_MEM_DIR)utilities-mem.o 
 
 
-dfs : $(OBJ)
+dfs-test : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
 
-dfs-main.o                      : dfs.h                           \
+dfs-test.o                      : dfs.h                           \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h
@@ -37,4 +37,4 @@ $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
 clean :
 	rm $(OBJ)
 clean-all : 
-	rm -f dfs $(OBJ)
+	rm -f dfs-test $(OBJ)
