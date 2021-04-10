@@ -10,7 +10,7 @@
    -  [0, # bits in size_t / 2] : c
    -  [0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test
    -  [0, # bits in size_t / 2]  : e
-   -  [0, # bits in size_t / 2]  : f s.t. e <= |V| <= f random graph test
+   -  [0, # bits in size_t / 2]  : f s.t. e <= |V| <= f for random graph test
    -  [0, 1] : on/off for small graph tests
    -  [0, 1] : on/off for max edges test
    -  [0, 1] : on/off for no edges test
@@ -59,7 +59,7 @@ const char *C_USAGE =
   "[0, # bits in size_t / 2] : c \n"
   "[0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test \n"
   "[0, # bits in size_t / 2]  : e \n"
-  "[0, # bits in size_t / 2]  : f s.t. e <= |V| <= f random graph test \n"
+  "[0, # bits in size_t / 2]  : f s.t. e <= |V| <= f for random graph test \n"
   "[0, 1] : on/off for small graph tests \n"
   "[0, 1] : on/off for max edges test \n"
   "[0, 1] : on/off for no edges test \n"
@@ -246,7 +246,7 @@ void small_graph_helper(const graph_t *g,
 }
 
 /**  
-   Test bfs on directed graphs with n(n - 1) edges.
+   Test bfs on large graphs.
 */
 
 typedef struct{
@@ -299,10 +299,6 @@ void run_max_edges_graph_test(int pow_start, int pow_end){
   prev = NULL;
 }
 
-/** 
-   Test bfs on graphs with no edges.
-*/
-
 /**
    Runs a bfs test on directed graphs with no edges.
 */
@@ -340,10 +336,6 @@ void run_no_edges_graph_test(int pow_start, int pow_end){
   dist = NULL;
   prev = NULL;
 }
-
-/** 
-   Test bfs on random directed graphs.
-*/
 
 /**
    Runs a bfs test on random directed graphs.
@@ -390,6 +382,10 @@ void run_random_dir_graph_test(int pow_start, int pow_end){
   dist = NULL;
   prev = NULL;
 }
+
+/**
+   Auxiliary functions.
+*/
 
 /**
    Compares elements of two size_t arrays.
