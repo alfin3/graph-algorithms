@@ -8,7 +8,7 @@ A two-step approach was used to minimize the memory space occupied and used by a
 
 Generic division and multiplication-based hash tables are provided and are portable under C89/C90 with the only requirement that `CHAR_BIT * sizeof(size_t)` is greater or equal to 16 and is even.
 
-Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations. The conversion of tests to C89/C90 is work in progress.
+Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations. The conversion of tests to C89/C90 is work in progress. Instructions for making libname.a will be provided in the near future.
 
 In each directory with a Makefile, run:
 
