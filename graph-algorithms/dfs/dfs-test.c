@@ -10,7 +10,7 @@
    -  [0, # bits in size_t / 2] : c
    -  [0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test
    -  [0, # bits in size_t / 2]  : e
-   -  [0, # bits in size_t / 2]  : f s.t. e <= |V| <= f random graph test
+   -  [0, # bits in size_t / 2]  : f s.t. e <= |V| <= f for random graph test
    -  [0, 1] : on/off for small graph tests
    -  [0, 1] : on/off for max edges test
    -  [0, 1] : on/off for no edges test
@@ -47,7 +47,7 @@ const char *C_USAGE =
   "[0, # bits in size_t / 2] : c \n"
   "[0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test \n"
   "[0, # bits in size_t / 2]  : e \n"
-  "[0, # bits in size_t / 2]  : f s.t. e <= |V| <= f random graph test \n"
+  "[0, # bits in size_t / 2]  : f s.t. e <= |V| <= f for random graph test \n"
   "[0, 1] : on/off for small graph tests \n"
   "[0, 1] : on/off for max edges test \n"
   "[0, 1] : on/off for no edges test \n"
@@ -105,9 +105,9 @@ void print_test_result(int res);
 */
 
 /**
-   Initializes the first graph with six vertices.
+   Initializes the first small graph.
 */
-void first_vsix_graph_init(graph_t *g){
+void first_graph_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS_FIRST, 0);
   g->num_es = C_NUM_ES_FIRST;
@@ -120,9 +120,9 @@ void first_vsix_graph_init(graph_t *g){
 }
 
 /**
-   Initializes the second graph with six vertices.
+   Initializes the second small graph.
 */
-void second_vsix_graph_init(graph_t *g){
+void second_graph_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS_SECOND, 0);
   g->num_es = C_NUM_ES_SECOND;
@@ -145,11 +145,11 @@ void small_graph_helper(const graph_t *g,
 			void (*build)(adj_lst_t *, const graph_t *),
 			int *res);
 
-void run_first_vsix_graph_test(){
+void run_first_graph_test(){
   int res = 1;
   graph_t g;
   printf("Run a dfs test on the first small graph instance --> ");
-  first_vsix_graph_init(&g);
+  first_graph_init(&g);
   small_graph_helper(&g,
 		     C_START_FIRST,
 		     C_DIR_PRE_FIRST,
@@ -166,11 +166,11 @@ void run_first_vsix_graph_test(){
   print_test_result(res);
 }
 
-void run_second_vsix_graph_test(){
+void run_second_graph_test(){
   int res = 1;
   graph_t g;
   printf("Run a dfs test on the second small graph instance --> ");
-  second_vsix_graph_init(&g);
+  second_graph_init(&g);
   small_graph_helper(&g,
 		     C_START_SECOND,
 		     C_DIR_PRE_SECOND,
@@ -213,7 +213,7 @@ void small_graph_helper(const graph_t *g,
 }
 
 /**  
-   Test dfs on directed graphs with n(n - 1) edges.
+   Test dfs on large graphs.
 */
 
 typedef struct{
@@ -306,10 +306,6 @@ void run_no_edges_graph_test(int pow_start, int pow_end){
 }
 
 /**
-   Test dfs on random directed graphs.
-*/
-
-/**
    Runs a dfs test on random directed graphs.
 */
 void run_random_dir_graph_test(int pow_start, int pow_end){
@@ -355,6 +351,11 @@ void run_random_dir_graph_test(int pow_start, int pow_end){
   post = NULL;
 }
 
+
+/**
+   Auxiliary functions.
+*/
+
 /**
    Compares the elements of two size_t arrays.
 */
@@ -368,7 +369,7 @@ int cmp_arr(const size_t *a, const size_t *b, size_t n){
 }
 
 /**
-   Returns the kth power of 2, where 0 <= k <= 63.
+   Returns the kth power of 2, where 0 <= k <= CHAR_BIT * sizeof(size_t) - 1.
 */
 size_t pow_two(int k){
   size_t ret = 1;
@@ -416,8 +417,8 @@ int main(int argc, char *argv[]){
     exit(EXIT_FAILURE);
   }
   if (args[6]){
-    run_first_vsix_graph_test();
-    run_second_vsix_graph_test();
+    run_first_graph_test();
+    run_second_graph_test();
   }
   if (args[7]) run_max_edges_graph_test(args[0], args[1]);
   if (args[8]) run_no_edges_graph_test(args[2], args[3]);
