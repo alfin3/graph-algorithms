@@ -2,11 +2,37 @@
    bfs-test.c
 
    Tests of the BFS algorithm.
+
+   The following command line arguments can be used to customize tests:
+   bfs-test
+   -  [0, # bits in size_t / 2] : a
+   -  [0, # bits in size_t / 2] : b s.t. a <= |V| <= b for max edges test
+   -  [0, # bits in size_t / 2] : c
+   -  [0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test
+   -  [0, # bits in size_t / 2]  : e
+   -  [0, # bits in size_t / 2]  : f s.t. e <= |V| <= f random graph test
+   -  [0, 1] : on/off for small graph tests
+   -  [0, 1] : on/off for max edges test
+   -  [0, 1] : on/off for no edges test
+   -  [0, 1] : on/off for random graph test
+
+   usage examples: 
+   ./bfs-test
+   ./bfs-test 10 14 10 14 10 14
+   ./bfs-test 10 14 10 14 10 14 0 1 1 1
+
+   bfs-test can be run with any subset of command line arguments in the
+   above-defined order. If the (i + 1)th argument is specified then the ith
+   argument must be specified for i >= 0. Default values are used for the
+   unspecified arguments according to the C_ARGS_DEF array.
+
+   The implementation does not use stdint.h and is portable under C89/C90.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <time.h>
 #include "bfs.h"
 #include "graph.h"
@@ -24,6 +50,23 @@
 #define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
 
 #define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
+
+/* input handling */
+const char *C_USAGE =
+  "bfs-test \n"
+  "[0, # bits in size_t / 2] : a \n"
+  "[0, # bits in size_t / 2] : b s.t. a <= |V| <= b for max edges test \n"
+  "[0, # bits in size_t / 2] : c \n"
+  "[0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test \n"
+  "[0, # bits in size_t / 2]  : e \n"
+  "[0, # bits in size_t / 2]  : f s.t. e <= |V| <= f random graph test \n"
+  "[0, 1] : on/off for small graph tests \n"
+  "[0, 1] : on/off for max edges test \n"
+  "[0, 1] : on/off for no edges test \n"
+  "[0, 1] : on/off for random graph test \n";
+const int C_ARGC_MAX = 11;
+const size_t C_ARGS_DEF[10] = {0, 14, 0, 14, 0, 14, 1, 1, 1, 1};
+const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* small graph test */
 const size_t C_NUM_VTS_FIRST = 5;
@@ -101,9 +144,9 @@ void print_test_result(int res);
 */
 
 /**
-   Initializes the first graph with five vertices.
+   Initializes the first small graph.
 */
-void first_vfive_graph_init(graph_t *g){
+void first_graph_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS_FIRST, 0);
   g->num_es = C_NUM_ES_FIRST;
@@ -116,9 +159,9 @@ void first_vfive_graph_init(graph_t *g){
 }
 
 /**
-   Initializes the second graph with five vertices.
+   Initializes the second small graph.
 */
-void second_vfive_graph_init(graph_t *g){
+void second_graph_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS_SECOND, 0);
   g->num_es = C_NUM_ES_SECOND;
@@ -133,41 +176,58 @@ void second_vfive_graph_init(graph_t *g){
 /**
    Run bfs tests on small graphs.
 */
-void vfive_graph_helper(const graph_t *g,
+
+void small_graph_helper(const graph_t *g,
 			const size_t ret_dist[][5],
 			const size_t ret_prev[][5],
 			void (*build)(adj_lst_t *, const graph_t *),
 			int *res);
 
-void run_first_vfive_graph_test(){
+void run_first_graph_test(){
   int res = 1;
   graph_t g;
   printf("Run a bfs test on the first small graph instance --> ");
-  first_vfive_graph_init(&g);
-  vfive_graph_helper(&g, C_DIR_DIST_FIRST, C_DIR_PREV_FIRST, adj_lst_dir_build, &res);
-  vfive_graph_helper(&g, C_UNDIR_DIST_FIRST, C_UNDIR_PREV_FIRST, adj_lst_undir_build, &res);
+  first_graph_init(&g);
+  small_graph_helper(&g,
+		     C_DIR_DIST_FIRST,
+		     C_DIR_PREV_FIRST,
+		     adj_lst_dir_build,
+		     &res);
+  small_graph_helper(&g,
+		     C_UNDIR_DIST_FIRST,
+		     C_UNDIR_PREV_FIRST,
+		     adj_lst_undir_build,
+		     &res);
   graph_free(&g);
   print_test_result(res);
 }
 
-void run_second_vfive_graph_test(){
+void run_second_graph_test(){
   int res = 1;
   graph_t g;
   printf("Run a bfs test on the second small graph instance --> ");
-  second_vfive_graph_init(&g);
-  vfive_graph_helper(&g, C_DIR_DIST_SECOND, C_DIR_PREV_SECOND, adj_lst_dir_build, &res);
-  vfive_graph_helper(&g, C_UNDIR_DIST_SECOND, C_UNDIR_PREV_SECOND, adj_lst_undir_build, &res);
+  second_graph_init(&g);
+  small_graph_helper(&g,
+		     C_DIR_DIST_SECOND,
+		     C_DIR_PREV_SECOND,
+		     adj_lst_dir_build,
+		     &res);
+  small_graph_helper(&g,
+		     C_UNDIR_DIST_SECOND,
+		     C_UNDIR_PREV_SECOND,
+		     adj_lst_undir_build,
+		     &res);
   graph_free(&g);
   print_test_result(res);
 }
 
-void vfive_graph_helper(const graph_t *g,
+void small_graph_helper(const graph_t *g,
 			const size_t ret_dist[][5],
 			const size_t ret_prev[][5],
 			void (*build)(adj_lst_t *, const graph_t *),
 			int *res){
-  size_t *dist = NULL, *prev = NULL;
   size_t i;
+  size_t *dist = NULL, *prev = NULL;
   adj_lst_t a;
   adj_lst_init(&a, g);
   build(&a, g);
@@ -344,7 +404,7 @@ int cmp_arr(const size_t *a, const size_t *b, size_t n){
 }
 
 /**
-   Returns the kth power of 2, where 0 <= k <= 63.
+   Returns the kth power of 2, where 0 <= k <= CHAR_BIT * sizeof(size_t) - 1.
 */
 size_t pow_two(int k){
   size_t ret = 1;
@@ -359,12 +419,43 @@ void print_test_result(int res){
   }
 }
 
-int main(){
+int main(int argc, char *argv[]){
+  int i;
+  size_t *args = NULL;
   RGENS_SEED();
-  run_first_vfive_graph_test();
-  run_second_vfive_graph_test();
-  run_max_edges_graph_test(0, 14);
-  run_no_edges_graph_test(0, 14);
-  run_random_dir_graph_test(0, 14);
+  if (argc > C_ARGC_MAX){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  args = malloc_perror((C_ARGC_MAX - 1) * sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  for (i = 1; i < argc; i++){
+    args[i - 1] = atoi(argv[i]);
+  }
+  if (args[0] > C_FULL_BIT / 2 ||
+      args[1] > C_FULL_BIT / 2 ||
+      args[2] > C_FULL_BIT / 2 ||
+      args[3] > C_FULL_BIT / 2 ||
+      args[4] > C_FULL_BIT / 2 ||
+      args[5] > C_FULL_BIT / 2 ||
+      args[1] < args[0] ||
+      args[3] < args[2] ||
+      args[5] < args[4] ||
+      args[6] > 1 ||
+      args[7] > 1 ||
+      args[8] > 1 ||
+      args[9] > 1){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  if (args[6]){
+    run_first_graph_test();
+    run_second_graph_test();
+  }
+  if (args[7]) run_max_edges_graph_test(args[0], args[1]);
+  if (args[8]) run_no_edges_graph_test(args[2], args[3]);
+  if (args[9]) run_random_dir_graph_test(args[4], args[5]);
+  free(args);
+  args = NULL;
   return 0;
 }
