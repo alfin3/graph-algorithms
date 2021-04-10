@@ -2,15 +2,59 @@
    dfs-test.c
 
    Tests of the DFS algorithm.
+
+   The following command line arguments can be used to customize tests:
+   dfs-test
+   -  [0, # bits in size_t / 2] : a
+   -  [0, # bits in size_t / 2] : b s.t. a <= |V| <= b for max edges test
+   -  [0, # bits in size_t / 2] : c
+   -  [0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test
+   -  [0, # bits in size_t / 2]  : e
+   -  [0, # bits in size_t / 2]  : f s.t. e <= |V| <= f random graph test
+   -  [0, 1] : on/off for small graph tests
+   -  [0, 1] : on/off for max edges test
+   -  [0, 1] : on/off for no edges test
+   -  [0, 1] : on/off for random graph test
+
+   usage examples: 
+   ./dfs-test
+   ./dfs-test 10 14 10 14 10 14
+   ./dfs-test 10 14 10 14 10 14 0 1 1 1
+
+   dfs-test can be run with any subset of command line arguments in the
+   above-defined order. If the (i + 1)th argument is specified then the ith
+   argument must be specified for i >= 0. Default values are used for the
+   unspecified arguments according to the C_ARGS_DEF array.
+
+   The implementation does not use stdint.h and is portable under C89/C90.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <limits.h>
 #include <time.h>
 #include "dfs.h"
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
+
+/* input handling */
+const char *C_USAGE =
+  "dfs-test \n"
+  "[0, # bits in size_t / 2] : a \n"
+  "[0, # bits in size_t / 2] : b s.t. a <= |V| <= b for max edges test \n"
+  "[0, # bits in size_t / 2] : c \n"
+  "[0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test \n"
+  "[0, # bits in size_t / 2]  : e \n"
+  "[0, # bits in size_t / 2]  : f s.t. e <= |V| <= f random graph test \n"
+  "[0, 1] : on/off for small graph tests \n"
+  "[0, 1] : on/off for max edges test \n"
+  "[0, 1] : on/off for no edges test \n"
+  "[0, 1] : on/off for random graph test \n";
+const int C_ARGC_MAX = 11;
+const size_t C_ARGS_DEF[10] = {0, 14, 0, 14, 0, 14, 1, 1, 1, 1};
+const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* small graph test */
 const size_t C_NUM_VTS_FIRST = 6;
@@ -39,7 +83,6 @@ const int C_PROBS_COUNT = 5;
 const double C_PROBS[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
 const double C_PROB_ONE = 1.0;
 const double C_PROB_ZERO = 0.0;
-const size_t C_SIZE_MAX = (size_t)-1;
 
 /**
    Generate random numbers in a portable way for test purposes only; rand()
@@ -200,7 +243,7 @@ void run_max_edges_graph_test(int pow_start, int pow_end){
   post = malloc_perror(pow_two(pow_end) * sizeof(size_t));
   b.p = C_PROB_ONE;
   printf("Run a dfs test on graphs with n vertices, where "
-	 "0 < n <= 2^%d, and n(n - 1) edges --> ", pow_end - 1);
+	 "2^%d <= n <= 2^%d, and n(n - 1) edges --> ", pow_start, pow_end);
   fflush(stdout);
   for (i = pow_start; i <= pow_end; i++){
     n = pow_two(i); /* n > 0 */
@@ -243,7 +286,7 @@ void run_no_edges_graph_test(int pow_start, int pow_end){
   post = malloc_perror(pow_two(pow_end) * sizeof(size_t));
   b.p = C_PROB_ZERO;
   printf("Run a dfs test on graphs with n vertices, where "
-	 "0 < n <= 2^%d, and no edges --> ", pow_end - 1);
+	 "2^%d <= n <= 2^%d, and no edges --> ", pow_start, pow_end);
   fflush(stdout);
   for (i = pow_start; i <= pow_end; i++){
     n = pow_two(i);
@@ -343,12 +386,44 @@ void print_test_result(int res){
   }
 }
 
-int main(){
+int main(int argc, char *argv[]){
+  int i;
+  size_t *args = NULL;
   RGENS_SEED();
-  run_first_vsix_graph_test();
-  run_second_vsix_graph_test();
-  run_max_edges_graph_test(0, 14);
-  run_no_edges_graph_test(0, 14);
-  run_random_dir_graph_test(0, 14);
+  if (argc > C_ARGC_MAX){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  args = malloc_perror((C_ARGC_MAX - 1) * sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  for (i = 1; i < argc; i++){
+    args[i - 1] = atoi(argv[i]);
+  }
+  if (args[0] > C_FULL_BIT / 2 ||
+      args[1] > C_FULL_BIT / 2 ||
+      args[2] > C_FULL_BIT / 2 ||
+      args[3] > C_FULL_BIT / 2 ||
+      args[4] > C_FULL_BIT / 2 ||
+      args[5] > C_FULL_BIT / 2 ||
+      args[1] < args[0] ||
+      args[3] < args[2] ||
+      args[5] < args[4] ||
+      args[6] > 1 ||
+      args[7] > 1 ||
+      args[8] > 1 ||
+      args[9] > 1){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  if (args[6]){
+    run_first_vsix_graph_test();
+    run_second_vsix_graph_test();
+  }
+  if (args[7]) run_max_edges_graph_test(args[0], args[1]);
+  if (args[8]) run_no_edges_graph_test(args[2], args[3]);
+  if (args[9]) run_random_dir_graph_test(args[4], args[5]);
+  free(args);
+  args = NULL;
   return 0;
 }
+
