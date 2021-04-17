@@ -642,7 +642,7 @@ int main(int argc, char *argv[]){
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
-  if (args[0] > C_SIZE_MAX / 2 ||
+  if (args[0] > C_FULL_BIT - 2 ||
       args[1] < 1 || 
       args[2] < 1 || 
       args[3] > C_FULL_BIT - 1 ||
