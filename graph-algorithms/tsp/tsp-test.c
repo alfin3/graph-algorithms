@@ -148,87 +148,6 @@ int cmp_uint(const void *a, const void *b){
     return 0;
   }
 }
-
-/** TODO add a key_size parameter to the reduction function in the
-    multiplication based hash table; until then the below approach is used.
-*/
-
-void rdc_key_blocks(void *t, const void *s, size_t num_blocks){
-  size_t r = 0;
-  size_t i;
-  size_t *s_arr = (size_t *)s;
-  for(i = 0; i < num_blocks; i++){
-    r = sum_mod(r, s_arr[i], C_SIZE_MAX);
-  }
-  *(size_t *)t = r;
-}
-
-void rdc_key_2blocks(void *t, const void *s){
-  rdc_key_blocks(t, s, 2); 
-}
-
-void rdc_key_3blocks(void *t, const void *s){
-  rdc_key_blocks(t, s, 3); 
-}
-
-void rdc_key_4blocks(void *t, const void *s){
-  rdc_key_blocks(t, s, 4); 
-}
-
-void rdc_key_5blocks(void *t, const void *s){
-  rdc_key_blocks(t, s, 5); 
-}
-
-void rdc_key_6blocks(void *t, const void *s){
-  rdc_key_blocks(t, s, 6); 
-}
-
-void rdc_key_7blocks(void *t, const void *s){
-  rdc_key_blocks(t, s, 7); 
-}
-
-void rdc_key_8blocks(void *t, const void *s){
-  rdc_key_blocks(t, s, 8); 
-}
-
-void rdc_key_9blocks(void *t, const void *s){
-  rdc_key_blocks(t, s, 9); 
-}
-
-void (*choose_rdc_key(size_t num_vts)) (void *, const void *){
-  size_t num_blocks = num_vts / C_FULL_BIT;
-  void (*ret)(void *, const void *);
-  if (num_blocks * C_FULL_BIT < num_vts) num_blocks++;
-  switch (num_blocks){
-  case 1 :
-    ret = rdc_key_2blocks;
-    break;
-  case 2 :
-    ret = rdc_key_3blocks;
-    break;
-  case 3 :
-    ret = rdc_key_4blocks;
-    break;
-  case 4 :
-    ret = rdc_key_5blocks;
-    break;
-  case 5 :
-    ret = rdc_key_6blocks;
-    break;
-  case 6 :
-    ret = rdc_key_7blocks;
-    break;
-  case 7 :
-    ret = rdc_key_8blocks;
-    break;
-  case 8 :
-    ret = rdc_key_9blocks;
-    break;
-  default :
-    fprintf_stderr_exit("rdc_key choice failed", __LINE__);
-  }
-  return ret;
-}
   
 typedef struct{
   float alpha;
@@ -236,7 +155,7 @@ typedef struct{
 
 typedef struct{
   float alpha;
-  void (*rdc_key)(void *, const void *);
+  size_t (*rdc_key)(const void *, size_t);
 } context_mul_t;
 
 void ht_div_init_helper(ht_div_t *ht,
@@ -300,7 +219,7 @@ void run_mul_uint_tsp(const adj_lst_t *a){
   context_mul_t context_mul;
   tsp_ht_t tht;
   context_mul.alpha = C_ALPHA_MUL;
-  context_mul.rdc_key = choose_rdc_key(a->num_vts);
+  context_mul.rdc_key = NULL;
   tht.ht = &ht_mul;
   tht.context = &context_mul;
   tht.init = (tsp_ht_init)ht_mul_init_helper;
@@ -431,7 +350,7 @@ void run_mul_double_tsp(const adj_lst_t *a){
   context_mul_t context_mul;
   tsp_ht_t tht;
   context_mul.alpha = C_ALPHA_MUL;
-  context_mul.rdc_key = choose_rdc_key(a->num_vts);
+  context_mul.rdc_key = NULL;
   tht.ht = &ht_mul;
   tht.context = &context_mul;
   tht.init = (tsp_ht_init)ht_mul_init_helper;
@@ -588,7 +507,7 @@ void run_rand_uint_test(int num_vts_start, int num_vts_end){
   tht_div.remove = (tsp_ht_remove)ht_div_remove;
   tht_div.free = (tsp_ht_free)ht_div_free;
   context_mul.alpha = C_ALPHA_MUL;
-  context_mul.rdc_key = choose_rdc_key(num_vts_end);
+  context_mul.rdc_key = NULL;
   tht_mul.ht = &ht_mul;
   tht_mul.context = &context_mul;
   tht_mul.init = (tsp_ht_init)ht_mul_init_helper;
@@ -766,6 +685,7 @@ void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
   tht_div.remove = (tsp_ht_remove)ht_div_remove;
   tht_div.free = (tsp_ht_free)ht_div_free;
   context_mul.alpha = C_ALPHA_MUL;
+  context_mul.rdc_key = NULL;
   tht_mul.ht = &ht_mul;
   tht_mul.context = &context_mul;
   tht_mul.init = (tsp_ht_init)ht_mul_init_helper;
@@ -781,7 +701,6 @@ void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
     printf("\tP[an edge is in a graph] = %.4f\n", C_SPARSE_PROBS[p]);
     for (i = num_vts_start; i <= num_vts_end; i++){
       n = i;
-      context_mul.rdc_key = choose_rdc_key(n);
       adj_lst_rand_dir_wts(&a,
 			   n,
 			   sizeof(size_t),
