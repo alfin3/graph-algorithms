@@ -8,12 +8,12 @@
    The following command line arguments can be used to customize tests:
    ht-div-test
       [0, # bits in size_t - 1) : i s.t. # inserts = 2^i
-      > 0 : x
-      > 0 : y s.t. z = x / y
       [0, # bits in size_t) : a given k = sizeof(size_t)
       [0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b
-      [0, # bits in size_t) : c
-      [0, # bits in size_t) : d s.t. z * 2^c <= alpha <= z * 2^d
+      > 0 : c
+      > 0 : d s.t. z = c / d
+      [0, # bits in size_t) : e
+      [0, # bits in size_t) : f s.t. z * 2^e <= alpha <= z * 2^f
       [0, 1] : on/off insert search uint test
       [0, 1] : on/off remove delete uint test
       [0, 1] : on/off insert search uint_ptr test
@@ -22,10 +22,10 @@
 
    usage examples:
    ./ht-div-test
-   ./ht-div-test 17 1 100 0 4
-   ./ht-div-test 17 2 10 0 4 0 8
-   ./ht-div-test 17 2 10 5 6 0 1
-   ./ht-div-test 17 2 10 5 6 0 1 0 0 1 1 0
+   ./ht-div-test 17 0 4 1 100
+   ./ht-div-test 17 0 4 2 10 0 8
+   ./ht-div-test 17 5 6 2 10 0 1
+   ./ht-div-test 17 5 6 2 10 0 1 0 0 1 1 0
 
    ht-div-test can be run with any subset of command line arguments in the
    above-defined order. If the (i + 1)th argument is specified then the ith
@@ -63,19 +63,19 @@
 const char *C_USAGE =
   "ht-div-test \n"
   "[0, # bits in size_t - 1) : i s.t. # inserts = 2^i \n"
-  "> 0 : x \n"
-  "> 0 : y s.t. z = x / y \n"
   "[0, # bits in size_t) : a given k = sizeof(size_t) \n"
   "[0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b \n"
-  "[0, # bits in size_t) : c \n"
-  "[0, # bits in size_t) : d s.t. z * 2^c <= alpha <= z * 2^d \n"
+  "> 0 : c \n"
+  "> 0 : d s.t. z = c / d \n"
+  "[0, # bits in size_t) : e \n"
+  "[0, # bits in size_t) : f s.t. z * 2^e <= alpha <= z * 2^f \n"
   "[0, 1] : on/off insert search uint test \n"
   "[0, 1] : on/off remove delete uint test \n"
   "[0, 1] : on/off insert search uint_ptr test \n"
   "[0, 1] : on/off remove delete uint_ptr test \n"
   "[0, 1] : on/off corner cases test \n";
 const int C_ARGC_MAX = 13;
-const size_t C_ARGS_DEF[12] = {14, 3, 10, 0, 2, 0, 6, 1, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[12] = {14, 0, 2, 3, 10, 0, 6, 1, 1, 1, 1, 1};
 const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
@@ -643,13 +643,13 @@ int main(int argc, char *argv[]){
     args[i - 1] = atoi(argv[i]);
   }
   if (args[0] > C_FULL_BIT - 2 ||
-      args[1] < 1 || 
-      args[2] < 1 || 
-      args[3] > C_FULL_BIT - 1 ||
-      args[4] > C_FULL_BIT - 1 ||      
+      args[1] > C_FULL_BIT - 1 ||
+      args[2] > C_FULL_BIT - 1 ||
+      args[1] > args[2] ||
+      args[3] < 1 || 
+      args[4] < 1 ||      
       args[5] > C_FULL_BIT - 1 ||
       args[6] > C_FULL_BIT - 1 ||
-      args[3] > args[4] ||
       args[5] > args[6] ||
       args[7] > 1 ||
       args[8] > 1 ||
@@ -659,28 +659,28 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  alpha_factor = (float)args[1] / args[2];
+  alpha_factor = (float)args[3] / args[4];
   if (args[7]) run_insert_search_free_uint_test(args[0],
-						args[3],
-						args[4],
+						args[1],
+						args[2],
 						alpha_factor,
 						args[5],
 						args[6]);
   if (args[8]) run_remove_delete_uint_test(args[0],
-					   args[3],
-					   args[4],
+					   args[1],
+					   args[2],
 					   alpha_factor,
 					   args[5],
 					   args[6]);
   if (args[9]) run_insert_search_free_uint_ptr_test(args[0],
-						    args[3],
-						    args[4],
+						    args[1],
+						    args[2],
 						    alpha_factor,
 						    args[5],
 						    args[6]);
   if (args[10]) run_remove_delete_uint_ptr_test(args[0],
-						args[3],
-						args[4],
+						args[1],
+						args[2],
 						alpha_factor,
 						args[5],
 						args[6]);
