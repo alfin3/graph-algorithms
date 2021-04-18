@@ -36,9 +36,9 @@
 #include "dll.h"
 
 typedef struct{
-  size_t log_count;
   size_t key_size;
   size_t elt_size;
+  size_t log_count;
   size_t count;
   size_t max_count;
   size_t max_num_probes;
@@ -49,7 +49,7 @@ typedef struct{
   float alpha;
   dll_node_t *placeholder; /* node with node->key == NULL */
   dll_node_t **key_elts; /* array of pointers to dlls, each with <= 1 node */
-  void (*rdc_key)(void *, const void *);
+  size_t (*rdc_key)(const void *, size_t);
   void (*free_elt)(void *);
 } ht_mul_t;
 
@@ -62,13 +62,14 @@ typedef struct{
                  - size of a pointer to an element, if the element is within
                  a noncontiguous memory block
    alpha       : a load factor upper bound that is > 0.0 and < 1.0
-   rdc_key     : - if key_size is less or equal to sizeof(size_t) bytes, then
-                 rdc_key is NULL
-                 - if key_size is greater than sizeof(size_t) bytes, then
-                 rdc_key is not NULL and reduces a key to a sizeof(size_t)-
-                 byte block prior to hashing; the first argument points to a
-                 sizeof(size_t)-byte block, where the reduced form of the
-                 block pointed to by the second argument is copied
+   rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
+                 then no reduction operation is performed on a key
+                 - if NULL and key_size is greater than sizeof(size_t), then
+                 a default mod 2^{CHAR_BIT * sizeof(size_t)} addition routine
+                 is performed on a key to reduce it in size
+                 - otherwise rdc_key is applied to a key prior to hashing;
+                 the first argument points to a key and the second argument
+                 provides the size of the key
    free_elt    : - if an element is within a contiguous memory block,
                  as reflected by elt_size, and a pointer to the element is 
                  passed as elt in ht_mul_insert, then the element is
@@ -85,7 +86,7 @@ void ht_mul_init(ht_mul_t *ht,
 		 size_t key_size,
 		 size_t elt_size,
 		 float alpha,
-		 void (*rdc_key)(void *, const void *),
+		 size_t (*rdc_key)(const void *, size_t),
 		 void (*free_elt)(void *));
 
 /**

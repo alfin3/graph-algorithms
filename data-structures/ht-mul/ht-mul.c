@@ -100,19 +100,20 @@ static const size_t C_PARTS_ACC_COUNTS[4] = {1,
 					     1 + 8 * (2 + 3),
 					     1 + 8 * (2 + 3 + 4)};
 static const size_t C_BUILD_SHIFT = 16;
+static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_FULL_SIZE = sizeof(size_t);
 static const size_t C_INIT_LOG_COUNT = 8;
 
 /* placeholder object handling */
-static void placeholder_init(dll_node_t *node, int elt_size);
+static void placeholder_init(dll_node_t *node);
 static int is_placeholder(const dll_node_t *node);
 static void placeholder_free(dll_node_t *node);
 
 /* hashing */
 static size_t find_build_prime(const size_t *parts);
 static size_t convert_std_key(const ht_mul_t *ht, const void *key);
-static size_t adjust_hash_dist(size_t dist);
+static size_t adjust_dist(size_t dist);
 
 /* hash table operations */
 static dll_node_t **search(const ht_mul_t *ht, const void *key);
@@ -133,13 +134,14 @@ static void reinsert(ht_mul_t *ht, const dll_node_t *node);
                  - size of a pointer to an element, if the element is within
                  a noncontiguous memory block
    alpha       : a load factor upper bound that is > 0.0 and < 1.0
-   rdc_key     : - if key_size is less or equal to sizeof(size_t) bytes, then
-                 rdc_key is NULL
-                 - if key_size is greater than sizeof(size_t) bytes, then
-                 rdc_key is not NULL and reduces a key to a sizeof(size_t)-
-                 byte block prior to hashing; the first argument points to a
-                 sizeof(size_t)-byte block, where the reduced form of the
-                 block pointed to by the second argument is copied
+   rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
+                 then no reduction operation is performed on a key
+                 - if NULL and key_size is greater than sizeof(size_t), then
+                 a default mod 2^{CHAR_BIT * sizeof(size_t)} addition routine
+                 is performed on a key to reduce it in size
+                 - otherwise rdc_key is applied to a key prior to hashing;
+                 the first argument points to a key and the second argument
+                 provides the size of the key
    free_elt    : - if an element is within a contiguous memory block,
                  as reflected by elt_size, and a pointer to the element is 
                  passed as elt in ht_mul_insert, then the element is
@@ -156,12 +158,12 @@ void ht_mul_init(ht_mul_t *ht,
 		 size_t key_size,
 		 size_t elt_size,
 		 float alpha,
-		 void (*rdc_key)(void *, const void *),
+		 size_t (*rdc_key)(const void *, size_t),
 		 void (*free_elt)(void *)){
   size_t i;
-  ht->log_count = C_INIT_LOG_COUNT;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
+  ht->log_count = C_INIT_LOG_COUNT;
   ht->count = pow_two(ht->log_count);
   ht->max_count = pow_two(C_FULL_BIT - 1);
   ht->max_num_probes = 1; /* at least one probe */
@@ -171,7 +173,7 @@ void ht_mul_init(ht_mul_t *ht,
   ht->second_prime = find_build_prime(C_SECOND_PRIME_PARTS);
   ht->alpha = alpha;
   ht->placeholder = malloc_perror(sizeof(dll_node_t));
-  placeholder_init(ht->placeholder, elt_size);
+  placeholder_init(ht->placeholder);
   ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
@@ -187,7 +189,9 @@ void ht_mul_init(ht_mul_t *ht,
 */
 void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
   size_t num_probes = 1;
-  size_t std_key, first_val, second_val, ix, dist;
+  size_t std_key;
+  size_t first_val, second_val;
+  size_t ix, dist;
   size_t key_block_size = ht->key_size + 2 * C_FULL_SIZE;
   void *key_block = NULL;
   dll_node_t **head = NULL;
@@ -211,7 +215,7 @@ void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
   *first_val_ptr(key_block, ht->key_size) = first_val;
   *second_val_ptr(key_block, ht->key_size) = second_val;
   ix = first_val >> (C_FULL_BIT - ht->log_count);
-  dist = adjust_hash_dist(second_val >> (C_FULL_BIT - ht->log_count));
+  dist = adjust_dist(second_val >> (C_FULL_BIT - ht->log_count));
   head = &ht->key_elts[ix];
   while (*head != NULL){
     if (!is_placeholder(*head) &&
@@ -307,11 +311,11 @@ void ht_mul_free(ht_mul_t *ht){
    Initializes a placeholder node. The node parameter points to a
    preallocated block of size sizeof(dll_node_t).
 */
-static void placeholder_init(dll_node_t *node, int elt_size){
+static void placeholder_init(dll_node_t *node){
   node->key_size = 0;
-  node->elt_size = elt_size;
+  node->elt_size = 1;
   node->key = NULL; /* element in ht cannot have node->key == NULL */
-  node->elt = calloc_perror(1, elt_size); /* for consistency purposes */
+  node->elt = calloc_perror(1, 1); /* for consistency purposes */
   node->next = node;
   node->prev = node;
 }
@@ -389,14 +393,39 @@ static size_t find_build_prime(const size_t *parts){
 }
 
 /**
+   Performs a default mod 2^{CHAR_BIT * sizeof(size_t)} addition routine
+   on a key of size greater than sizeof(size_t) bytes.
+*/
+static size_t rdc_key_def(const void *key, size_t key_size){
+  unsigned char *c_ptr = NULL;
+  size_t std_key = 0;
+  size_t i, rem_count, sz_count;
+  size_t *sz_ptr = NULL;
+  sz_count = key_size / sizeof(size_t);
+  rem_count = key_size - sz_count * sizeof(size_t);
+  c_ptr = (unsigned char *)key;
+  for (i = 0; i < rem_count; i++){
+    std_key += c_ptr[i];
+    std_key <<= C_BYTE_BIT;
+  }
+  sz_ptr = (size_t *)(&c_ptr[rem_count]);
+  for (i = 0; i < sz_count; i++){
+    std_key += sz_ptr[i];
+  }
+  return std_key;
+}
+
+/**
    Converts a key to a key of the standard size of sizeof(size_t) bytes.
 */
 static size_t convert_std_key(const ht_mul_t *ht, const void *key){
-  size_t std_key = 0; /* initialize all bits */
-  if (ht->key_size > C_FULL_SIZE){
-    ht->rdc_key(&std_key, key);
-  }else{ 
+  size_t std_key = 0;
+  if (ht->rdc_key != NULL){
+    std_key = ht->rdc_key(key, ht->key_size);
+  }else if (ht->key_size <= C_FULL_SIZE){
     memcpy(&std_key, key, ht->key_size);
+  }else{
+    std_key = rdc_key_def(key, ht->key_size);
   }
   return std_key;
 }
@@ -404,7 +433,7 @@ static size_t convert_std_key(const ht_mul_t *ht, const void *key){
 /**
    Adjusts a probe distance to an odd distance, if necessary. 
 */
-static size_t adjust_hash_dist(size_t dist){
+static size_t adjust_dist(size_t dist){
   size_t ret = dist;
   if (!(dist & 1)){
     if (dist == 0){
@@ -428,7 +457,7 @@ static dll_node_t **search(const ht_mul_t *ht, const void *key){
   first_val = ht->first_prime * std_key; /* mod 2^FULL_BIT */
   second_val = ht->second_prime * std_key; /* mod 2^FULL_BIT */
   ix = first_val >> (C_FULL_BIT - ht->log_count);
-  dist = adjust_hash_dist(second_val >> (C_FULL_BIT - ht->log_count));
+  dist = adjust_dist(second_val >> (C_FULL_BIT - ht->log_count));
   head = &ht->key_elts[ix];
   while (*head != NULL){
     if (!is_placeholder(*head) &&
@@ -528,7 +557,7 @@ static void reinsert(ht_mul_t *ht, const dll_node_t *node){
   first_val = *first_val_ptr(node->key, ht->key_size);
   second_val = *second_val_ptr(node->key, ht->key_size);
   ix = first_val >> (C_FULL_BIT - ht->log_count);
-  dist = adjust_hash_dist(second_val >> (C_FULL_BIT - ht->log_count));
+  dist = adjust_dist(second_val >> (C_FULL_BIT - ht->log_count));
   head = &ht->key_elts[ix];
   while (*head != NULL){
     ix = sum_mod(dist, ix, ht->count);
