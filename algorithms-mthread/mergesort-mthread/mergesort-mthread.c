@@ -156,7 +156,7 @@ static void *mergesort_thread(void *arg){
     ma.mbase_count = msa->mbase_count;
     ma.elt_size = msa->elt_size;
     ma.num_onthread_rec = msa->num_onthread_rec;
-    ma.cat_elts = malloc_perror((msa->r - msa->p + 1) * msa->elt_size);
+    ma.cat_elts = malloc_perror(msa->r - msa->p + 1, msa->elt_size);
     ma.elts = msa->elts;
     ma.cmp = msa->cmp;
     merge_thread(&ma);

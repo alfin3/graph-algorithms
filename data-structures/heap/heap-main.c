@@ -349,8 +349,8 @@ int cmp_uint64_ptr(const void *a, const void *b){
 
 void new_uint64_ptr(void *a, uint64_t val){
   uint64_ptr_t **s = a;
-  *s = malloc_perror(sizeof(uint64_ptr_t));
-  (*s)->val = malloc_perror(sizeof(uint64_t));
+  *s = malloc_perror(1, sizeof(uint64_ptr_t));
+  (*s)->val = malloc_perror(1, sizeof(uint64_t));
   *((*s)->val) = val;
   s = NULL;
 }
@@ -572,7 +572,7 @@ void push_incr_ptys_elts(heap_t *h,
   uint64_t n = h->num_elts;
   void *pty = NULL;
   clock_t t;
-  pty = malloc_perror(pty_size);
+  pty = malloc_perror(1, pty_size);
   t = clock();
   for (i = 0; i < first_half_count; i++){
     new_pty(pty, i);
@@ -605,7 +605,7 @@ void push_decr_ptys_elts(heap_t *h,
   uint64_t n = h->num_elts;
   void *pty = NULL;
   clock_t t;
-  pty = malloc_perror(pty_size);
+  pty = malloc_perror(1, pty_size);
   t = clock();
   for (i = 0; i < first_half_count; i++){
     new_pty(pty, count - i - 1);
@@ -640,9 +640,9 @@ void pop_ptys_elts(heap_t *h,
   uint64_t n = h->num_elts;
   void *pty_prev = NULL, *pty_cur = NULL, *elt = NULL;
   clock_t t;
-  pty_prev = malloc_perror(pty_size);
-  pty_cur = malloc_perror(pty_size);
-  elt = malloc_perror(elt_size);
+  pty_prev = malloc_perror(1, pty_size);
+  pty_cur = malloc_perror(1, pty_size);
+  elt = malloc_perror(1, elt_size);
   t = clock();
   for (i = 0; i < first_half_count; i++){
     if (i == 0){
@@ -706,9 +706,9 @@ void push_pop_free_pty_types(uint64_t n,
   uint64_t i;
   void **elts = NULL;
   heap_t h;
-  elts = malloc_perror(n * sizeof(void *));
+  elts = malloc_perror(n, sizeof(void *));
   for (i = 0; i < n; i++){
-    elts[i] = malloc_perror(elt_size);
+    elts[i] = malloc_perror(1, elt_size);
     new_elt(elts[i], i);
   }
   heap_init(&h, init_count, pty_size, elt_size, ht, cmp_pty, free_elt);
@@ -741,7 +741,7 @@ void push_rev_incr_ptys_elts(heap_t *h,
   uint64_t n = h->num_elts;
   void *pty = NULL;
   clock_t t;
-  pty = malloc_perror(pty_size);
+  pty = malloc_perror(1, pty_size);
   t = clock();
   for (i = 0; i < first_half_count; i++){
     new_pty(pty, i);
@@ -772,7 +772,7 @@ void update_rev_ptys_elts(heap_t *h,
 			  void (*new_pty)(void *, uint64_t)){
   uint64_t i, first_half_count = count / 2;
   uint64_t n = h->num_elts;
-  void *pty = malloc_perror(pty_size);
+  void *pty = malloc_perror(1, pty_size);
   clock_t t;
   t = clock();
   for (i = 0; i < first_half_count; i++){
@@ -806,8 +806,8 @@ void search_ptys_elts(heap_t *h,
   uint64_t i;
   void *pty = NULL, *elt = NULL, *ptr = NULL;
   clock_t t;
-  pty = malloc_perror(pty_size);
-  elt = malloc_perror(elt_size);
+  pty = malloc_perror(1, pty_size);
+  elt = malloc_perror(1, elt_size);
   t = clock();
   for (i = 0; i < count; i++){
     ptr = heap_search(h, elts[i]);
@@ -849,9 +849,9 @@ void update_search_pty_types(uint64_t n,
   uint64_t i;
   void **elts = NULL;
   heap_t h;
-  elts = malloc_perror(n * sizeof(void *));
+  elts = malloc_perror(n, sizeof(void *));
   for (i = 0; i < n; i++){
-    elts[i] = malloc_perror(elt_size);
+    elts[i] = malloc_perror(1, elt_size);
     new_elt(elts[i], i);
   }
   heap_init(&h, init_count, pty_size, elt_size, ht, cmp_pty, free_elt);

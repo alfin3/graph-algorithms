@@ -102,9 +102,9 @@ void graph_uint_wts_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS, sizeof(size_t));
   g->num_es = C_NUM_ES;
-  g->u = malloc_perror(g->num_es * sizeof(size_t));
-  g->v = malloc_perror(g->num_es * sizeof(size_t));
-  g->wts = malloc_perror(g->num_es * g->wt_size);
+  g->u = malloc_perror(g->num_es, sizeof(size_t));
+  g->v = malloc_perror(g->num_es, sizeof(size_t));
+  g->wts = malloc_perror(g->num_es, g->wt_size);
   for (i = 0; i < g->num_es; i++){
     g->u[i] = C_U[i];
     g->v[i] = C_V[i];
@@ -156,8 +156,8 @@ void run_def_uint_prim(const adj_lst_t *a){
   size_t i;
   size_t *dist = NULL;
   size_t *prev = NULL;
-  dist = malloc_perror(a->num_vts * sizeof(size_t));
-  prev = malloc_perror(a->num_vts * sizeof(size_t));
+  dist = malloc_perror(a->num_vts, sizeof(size_t));
+  prev = malloc_perror(a->num_vts, sizeof(size_t));
   for (i = 0; i < a->num_vts; i++){
     prim(a, i, dist, prev, NULL, cmp_uint);
     printf("distances and previous vertices with %lu as start \n", TOLU(i));
@@ -178,8 +178,8 @@ void run_div_uint_prim(const adj_lst_t *a){
   ht_div_t ht_div;
   context_t context;
   heap_ht_t hht;
-  dist = malloc_perror(a->num_vts * sizeof(size_t));
-  prev = malloc_perror(a->num_vts * sizeof(size_t));
+  dist = malloc_perror(a->num_vts, sizeof(size_t));
+  prev = malloc_perror(a->num_vts, sizeof(size_t));
   context.alpha = C_ALPHA_DIV;
   hht.ht = &ht_div;
   hht.context = &context;
@@ -208,8 +208,8 @@ void run_mul_uint_prim(const adj_lst_t *a){
   ht_mul_t ht_mul;
   context_t context;
   heap_ht_t hht;
-  dist = malloc_perror(a->num_vts * sizeof(size_t));
-  prev = malloc_perror(a->num_vts * sizeof(size_t));
+  dist = malloc_perror(a->num_vts, sizeof(size_t));
+  prev = malloc_perror(a->num_vts, sizeof(size_t));
   context.alpha = C_ALPHA_MUL;
   hht.ht = &ht_mul;
   hht.context = &context;
@@ -271,9 +271,9 @@ void graph_double_wts_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS, sizeof(double));
   g->num_es = C_NUM_ES;
-  g->u = malloc_perror(g->num_es * sizeof(size_t));
-  g->v = malloc_perror(g->num_es * sizeof(size_t));
-  g->wts = malloc_perror(g->num_es * g->wt_size);
+  g->u = malloc_perror(g->num_es, sizeof(size_t));
+  g->v = malloc_perror(g->num_es, sizeof(size_t));
+  g->wts = malloc_perror(g->num_es, g->wt_size);
   for (i = 0; i < g->num_es; i++){
     g->u[i] = C_U[i];
     g->v[i] = C_V[i];
@@ -303,8 +303,8 @@ void run_def_double_prim(const adj_lst_t *a){
   size_t i;
   size_t *prev = NULL;
   double *dist = NULL;
-  dist = malloc_perror(a->num_vts * sizeof(double));
-  prev = malloc_perror(a->num_vts * sizeof(size_t));
+  dist = malloc_perror(a->num_vts, sizeof(double));
+  prev = malloc_perror(a->num_vts, sizeof(size_t));
   for (i = 0; i < a->num_vts; i++){
     prim(a, i, dist, prev, NULL, cmp_double);
     printf("distances and previous vertices with %lu as start \n", TOLU(i));
@@ -325,8 +325,8 @@ void run_div_double_prim(const adj_lst_t *a){
   ht_div_t ht_div;
   context_t context;
   heap_ht_t hht;
-  dist = malloc_perror(a->num_vts * sizeof(double));
-  prev = malloc_perror(a->num_vts * sizeof(size_t));
+  dist = malloc_perror(a->num_vts, sizeof(double));
+  prev = malloc_perror(a->num_vts, sizeof(size_t));
   context.alpha = C_ALPHA_DIV;
   hht.ht = &ht_div;
   hht.context = &context;
@@ -355,8 +355,8 @@ void run_mul_double_prim(const adj_lst_t *a){
   ht_mul_t ht_mul;
   context_t context;
   heap_ht_t hht;
-  dist = malloc_perror(a->num_vts * sizeof(double));
-  prev = malloc_perror(a->num_vts * sizeof(size_t));
+  dist = malloc_perror(a->num_vts, sizeof(double));
+  prev = malloc_perror(a->num_vts, sizeof(size_t));
   context.alpha = C_ALPHA_MUL;
   hht.ht = &ht_mul;
   hht.context = &context;
@@ -512,9 +512,9 @@ void run_rand_uint_test(int pow_start, int pow_end){
   context_t context_div, context_mul;
   heap_ht_t hht_div, hht_mul;
   clock_t t_def, t_div, t_mul;
-  rand_start = malloc_perror(C_ITER * sizeof(size_t));
-  dist = malloc_perror(pow_two(pow_end) * sizeof(size_t));
-  prev = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  rand_start = malloc_perror(C_ITER, sizeof(size_t));
+  dist = malloc_perror(pow_two(pow_end), sizeof(size_t));
+  prev = malloc_perror(pow_two(pow_end), sizeof(size_t));
   context_div.alpha = C_ALPHA_DIV;
   hht_div.ht = &ht_div;
   hht_div.context = &context_div;
@@ -675,7 +675,7 @@ int main(int argc, char *argv[]){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror((C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
   memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);

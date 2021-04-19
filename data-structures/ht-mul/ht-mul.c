@@ -172,9 +172,9 @@ void ht_mul_init(ht_mul_t *ht,
   ht->first_prime = find_build_prime(C_FIRST_PRIME_PARTS);
   ht->second_prime = find_build_prime(C_SECOND_PRIME_PARTS);
   ht->alpha = alpha;
-  ht->placeholder = malloc_perror(sizeof(dll_node_t));
+  ht->placeholder = malloc_perror(1, sizeof(dll_node_t));
   placeholder_init(ht->placeholder);
-  ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
+  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
   }
@@ -210,7 +210,7 @@ void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
   first_val = ht->first_prime * std_key; /* mod 2^FULL_BIT */
   second_val = ht->second_prime * std_key; /* mod 2^FULL_BIT */
   /* prepare a hash key and two hash values for storage as a block */
-  key_block = malloc_perror(key_block_size);
+  key_block = malloc_perror(1, key_block_size);
   memcpy(key_block, key, ht->key_size);
   *first_val_ptr(key_block, ht->key_size) = first_val;
   *second_val_ptr(key_block, ht->key_size) = second_val;
@@ -500,7 +500,7 @@ static void ht_grow(ht_mul_t *ht){
   ht->max_num_probes = 1;
   ht->num_elts = 0;
   ht->num_placeholders = 0;
-  ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
+  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     head = &ht->key_elts[i];
     dll_init(head);
@@ -529,7 +529,7 @@ static void ht_clean(ht_mul_t *ht){
   ht->max_num_probes = 1;
   ht->num_elts = 0;
   ht->num_placeholders = 0;
-  ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
+  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     head = &ht->key_elts[i];
     dll_init(head);

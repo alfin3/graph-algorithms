@@ -211,8 +211,8 @@ typedef struct{
 
 void new_uint_ptr(void *elt, size_t val){
   uint_ptr_t **s = elt;
-  *s = malloc_perror(sizeof(uint_ptr_t));
-  (*s)->val = malloc_perror(sizeof(size_t));
+  *s = malloc_perror(1, sizeof(uint_ptr_t));
+  (*s)->val = malloc_perror(1, sizeof(size_t));
   *((*s)->val) = val;
   s = NULL;
 }
@@ -395,15 +395,15 @@ void insert_search_free(size_t num_ins,
   size_t i, j;
   void **keys = NULL, **elts = NULL;
   ht_div_t ht;
-  keys = malloc_perror(num_ins * sizeof(void *));
-  elts = malloc_perror(num_ins * sizeof(void *));
+  keys = malloc_perror(num_ins, sizeof(void *));
+  elts = malloc_perror(num_ins, sizeof(void *));
   for (i = 0; i < num_ins; i++){
-    keys[i] = malloc_perror(key_size);
+    keys[i] = malloc_perror(1, key_size);
     for (j = 0; j < key_size - C_KEY_SIZE_FACTOR; j++){
       *(unsigned char *)byte_ptr(keys[i], j) = RANDOM(); /* mod 2^CHAR_BIT */
     }
     *(size_t *)byte_ptr(keys[i], key_size - C_KEY_SIZE_FACTOR) = i;
-    elts[i] = malloc_perror(elt_size);
+    elts[i] = malloc_perror(1, elt_size);
     new_elt(elts[i], i);
   }
   ht_div_init(&ht, key_size, elt_size, alpha, free_elt);
@@ -442,7 +442,7 @@ void remove_key_elts(ht_div_t *ht,
   size_t i;
   void *ptr = NULL, *elt = NULL;
   clock_t t_first_half, t_second_half;
-  elt = malloc_perror(ht->elt_size);
+  elt = malloc_perror(1, ht->elt_size);
   t_first_half = clock();
   for (i = 0; i < count; i += 2){
     ht_div_remove(ht, keys[i], elt);
@@ -536,15 +536,15 @@ void remove_delete(size_t num_ins,
   size_t i, j;
   void **keys = NULL, **elts = NULL;
   ht_div_t ht;
-  keys = malloc_perror(num_ins * sizeof(void *));
-  elts = malloc_perror(num_ins * sizeof(void *));
+  keys = malloc_perror(num_ins, sizeof(void *));
+  elts = malloc_perror(num_ins, sizeof(void *));
   for (i = 0; i < num_ins; i++){
-    keys[i] = malloc_perror(key_size);
+    keys[i] = malloc_perror(1, key_size);
     for (j = 0; j < key_size - C_KEY_SIZE_FACTOR; j++){
       *(unsigned char *)byte_ptr(keys[i], j) = RANDOM(); /* mod 2^CHAR_BIT */
     }
     *(size_t *)byte_ptr(keys[i], key_size - C_KEY_SIZE_FACTOR) = i;
-    elts[i] = malloc_perror(elt_size);
+    elts[i] = malloc_perror(1, elt_size);
     new_elt(elts[i], i);
   }
   ht_div_init(&ht, key_size, elt_size, alpha, free_elt);
@@ -579,7 +579,7 @@ void run_corner_cases_test(int ins_pow){
   void *key = NULL;
   ht_div_t ht;
   num_ins = pow_two(ins_pow);
-  key = malloc_perror(pow_two(C_CORNER_KEY_POW_END));
+  key = malloc_perror(1, pow_two(C_CORNER_KEY_POW_END));
   for (i = 0; i < pow_two(C_CORNER_KEY_POW_END); i++){
     *(unsigned char *)byte_ptr(key, i) = RANDOM();
   }
@@ -637,7 +637,7 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror((C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
   memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);

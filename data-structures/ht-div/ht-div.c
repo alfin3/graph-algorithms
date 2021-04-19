@@ -143,7 +143,7 @@ void ht_div_init(ht_div_t *ht,
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
   ht->num_elts = 0;
   ht->alpha = alpha;
-  ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
+  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
   }
@@ -263,7 +263,7 @@ static void ht_grow(ht_div_t *ht){
   }
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
   ht->num_elts = 0;
-  ht->key_elts = malloc_perror(ht->count * sizeof(dll_node_t *));
+  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     head = &ht->key_elts[i];
     dll_init(head);

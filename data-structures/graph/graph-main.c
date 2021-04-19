@@ -45,9 +45,9 @@ void uint64_graph_init(graph_t *g){
   uint64_t i;
   graph_base_init(g, num_vts, sizeof(uint64_t));
   g->num_es = 4;
-  g->u = malloc_perror(g->num_es * sizeof(uint64_t));
-  g->v = malloc_perror(g->num_es * sizeof(uint64_t));
-  g->wts = malloc_perror(g->num_es * g->wt_size);
+  g->u = malloc_perror(g->num_es, sizeof(uint64_t));
+  g->v = malloc_perror(g->num_es, sizeof(uint64_t));
+  g->wts = malloc_perror(g->num_es, g->wt_size);
   for (i = 0; i < g->num_es; i++){
     g->u[i] = u[i];
     g->v[i] = v[i];
@@ -66,9 +66,9 @@ void double_graph_init(graph_t *g){
   double wts[] = {4.0, 3.0, 2.0, 1.0};
   graph_base_init(g, num_vts, sizeof(double));
   g->num_es = 4;
-  g->u = malloc_perror(g->num_es * sizeof(uint64_t));
-  g->v = malloc_perror(g->num_es * sizeof(uint64_t));
-  g->wts = malloc_perror(g->num_es * g->wt_size);
+  g->u = malloc_perror(g->num_es, sizeof(uint64_t));
+  g->v = malloc_perror(g->num_es, sizeof(uint64_t));
+  g->wts = malloc_perror(g->num_es, g->wt_size);
   for (i = 0; i < g->num_es; i++){
     g->u[i] = u[i];
     g->v[i] = v[i];
@@ -290,8 +290,8 @@ void complete_graph_init(graph_t *g, uint64_t n){
   uint64_t i, j;
   graph_base_init(g, n, 0);
   g->num_es = num_es;
-  g->u = malloc_perror(g->num_es * sizeof(uint64_t));
-  g->v = malloc_perror(g->num_es * sizeof(uint64_t));
+  g->u = malloc_perror(g->num_es, sizeof(uint64_t));
+  g->v = malloc_perror(g->num_es, sizeof(uint64_t));
   for (i = 0; i < n - 1; i++){
     for (j = i + 1; j < n; j++){
       g->u[ix] = i;

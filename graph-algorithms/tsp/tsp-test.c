@@ -117,9 +117,9 @@ void graph_uint_wts_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS, sizeof(size_t));
   g->num_es = C_NUM_ES;
-  g->u = malloc_perror(g->num_es * sizeof(size_t));
-  g->v = malloc_perror(g->num_es * sizeof(size_t));
-  g->wts = malloc_perror(g->num_es * g->wt_size);
+  g->u = malloc_perror(g->num_es, sizeof(size_t));
+  g->v = malloc_perror(g->num_es, sizeof(size_t));
+  g->wts = malloc_perror(g->num_es, g->wt_size);
   for (i = 0; i < g->num_es; i++){
     g->u[i] = C_U[i];
     g->v[i] = C_V[i];
@@ -275,9 +275,9 @@ void graph_double_wts_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS, sizeof(double));
   g->num_es = C_NUM_ES;
-  g->u = malloc_perror(g->num_es * sizeof(size_t));
-  g->v = malloc_perror(g->num_es * sizeof(size_t));
-  g->wts = malloc_perror(g->num_es * g->wt_size);
+  g->u = malloc_perror(g->num_es, sizeof(size_t));
+  g->v = malloc_perror(g->num_es, sizeof(size_t));
+  g->wts = malloc_perror(g->num_es, g->wt_size);
   for (i = 0; i < g->num_es; i++){
     g->u[i] = C_U[i];
     g->v[i] = C_V[i];
@@ -497,7 +497,7 @@ void run_rand_uint_test(int num_vts_start, int num_vts_end){
   context_mul_t context_mul;
   tsp_ht_t tht_div, tht_mul;
   clock_t t_def, t_div, t_mul;
-  rand_start = malloc_perror(C_ITER * sizeof(size_t));
+  rand_start = malloc_perror(C_ITER, sizeof(size_t));
   context_div.alpha = C_ALPHA_DIV;
   tht_div.ht = &ht_div;
   tht_div.context = &context_div;
@@ -607,7 +607,7 @@ void run_def_rand_uint_test(int num_vts_start, int num_vts_end){
   adj_lst_t a;
   bern_arg_t b;
   clock_t t_def;
-  rand_start = malloc_perror(C_ITER * sizeof(size_t));
+  rand_start = malloc_perror(C_ITER, sizeof(size_t));
   printf("Run a tsp test with a default hash table on directed graphs \n"
 	 "with random size_t non-tour weights in [%lu, %lu]\n",
 	 TOLU(wt_l), TOLU(wt_h));
@@ -675,7 +675,7 @@ void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
   context_mul_t context_mul;
   tsp_ht_t tht_div, tht_mul;
   clock_t t_div, t_mul;
-  rand_start = malloc_perror(C_ITER * sizeof(size_t));
+  rand_start = malloc_perror(C_ITER, sizeof(size_t));
   context_div.alpha = C_ALPHA_DIV;
   tht_div.ht = &ht_div;
   tht_div.context = &context_div;
@@ -829,7 +829,7 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror((C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
   memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);

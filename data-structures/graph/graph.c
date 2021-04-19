@@ -64,17 +64,17 @@ void adj_lst_init(adj_lst_t *a, const graph_t *g){
   a->vts = NULL;
   a->wts = NULL;
   if (a->num_vts > 0){
-    a->vts = malloc_perror(a->num_vts * sizeof(stack_t *));
+    a->vts = malloc_perror(a->num_vts, sizeof(stack_t *));
     if (a->wt_size > 0){
-      a->wts = malloc_perror(a->num_vts * sizeof(stack_t *));
+      a->wts = malloc_perror(a->num_vts, sizeof(stack_t *));
     }
   }
   /* initialize stacks */
   for (i = 0; i < a->num_vts; i++){
-    a->vts[i] = malloc_perror(sizeof(stack_t));
+    a->vts[i] = malloc_perror(1, sizeof(stack_t));
     stack_init(a->vts[i], STACK_INIT_COUNT, sizeof(size_t), NULL);
     if (a->wt_size > 0){
-      a->wts[i] = malloc_perror(sizeof(stack_t));
+      a->wts[i] = malloc_perror(1, sizeof(stack_t));
       stack_init(a->wts[i], STACK_INIT_COUNT, a->wt_size, NULL);
     }
   }

@@ -107,8 +107,8 @@ typedef struct{
 
 void new_int_ptr(void *a, int val){
   int_ptr_t **s = a;
-  (*s) = malloc_perror(sizeof(int_ptr_t));
-  (*s)->val = malloc_perror(sizeof(int));
+  (*s) = malloc_perror(1, sizeof(int_ptr_t));
+  (*s)->val = malloc_perror(1, sizeof(int));
   *((*s)->val) = val;
   s = NULL;
 }
@@ -296,9 +296,9 @@ void prepend_append_free(dll_node_t **head_prep,
   void *elts_prep = NULL, *elts_app = NULL;
   dll_node_t *node_prep = NULL, *node_app = NULL;
   clock_t t_prep, t_app, t_free_prep, t_free_app;
-  keys = malloc_perror(count * sizeof(int));
-  elts_prep = malloc_perror(count * elt_size);
-  elts_app = malloc_perror(count * elt_size);
+  keys = malloc_perror(count, sizeof(int));
+  elts_prep = malloc_perror(count, elt_size);
+  elts_app = malloc_perror(count, elt_size);
   for (i = 0; i < count; i++){
     keys[i] = start_val + i;
     new_elt(elt_ptr(elts_prep, i, elt_size), start_val + i);

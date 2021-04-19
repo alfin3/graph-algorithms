@@ -146,8 +146,8 @@ int tsp(const adj_lst_t *a,
   }
   set_count++; /* + last reached vertex representation */
   set_size = set_count * C_SET_ELT_SIZE;
-  prev_set = calloc_perror(set_size, 1);
-  sum_wt = malloc_perror(wt_size);
+  prev_set = calloc_perror(1, set_size);
+  sum_wt = malloc_perror(1, wt_size);
   prev_set[0] = start;
   memset(dist, 0, wt_size);
   stack_init(&prev_s, 1, set_size, NULL);
@@ -229,10 +229,10 @@ static void build_next(const adj_lst_t *a,
   size_t *prev_set = NULL, *next_set = NULL;
   void *prev_wt = NULL, *next_wt = NULL, *sum_wt = NULL;
   ibit_t ibit;
-  prev_set = malloc_perror(set_size);
-  next_set = malloc_perror(set_size);
-  prev_wt = malloc_perror(wt_size);
-  sum_wt = malloc_perror(wt_size);
+  prev_set = malloc_perror(1, set_size);
+  next_set = malloc_perror(1, set_size);
+  prev_wt = malloc_perror(1, wt_size);
+  sum_wt = malloc_perror(1, wt_size);
   while (prev_s->num_elts > 0){
     stack_pop(prev_s, prev_set);
     tht->remove(tht->ht, prev_set, prev_wt);
@@ -309,7 +309,7 @@ static void ht_def_init(ht_def_t *ht,
   ht->num_vts = c->num_vts;
   ht->key_present = calloc_perror(c->num_vts * pow_two(c->num_vts),
 				  sizeof(boolean_t));
-  ht->elts = malloc_perror(c->num_vts * pow_two(c->num_vts) * elt_size);
+  ht->elts = malloc_perror(c->num_vts * pow_two(c->num_vts), elt_size);
   ht->free_elt = free_elt;
 }
 

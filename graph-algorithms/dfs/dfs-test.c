@@ -111,8 +111,8 @@ void first_graph_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS_FIRST, 0);
   g->num_es = C_NUM_ES_FIRST;
-  g->u = malloc_perror(g->num_es * sizeof(size_t));
-  g->v = malloc_perror(g->num_es * sizeof(size_t));
+  g->u = malloc_perror(g->num_es, sizeof(size_t));
+  g->v = malloc_perror(g->num_es, sizeof(size_t));
   for (i = 0; i < g->num_es; i++){
     g->u[i] = C_U_FIRST[i];
     g->v[i] = C_V_FIRST[i];
@@ -126,8 +126,8 @@ void second_graph_init(graph_t *g){
   size_t i;
   graph_base_init(g, C_NUM_VTS_SECOND, 0);
   g->num_es = C_NUM_ES_SECOND;
-  g->u = malloc_perror(g->num_es * sizeof(size_t));
-  g->v = malloc_perror(g->num_es * sizeof(size_t));
+  g->u = malloc_perror(g->num_es, sizeof(size_t));
+  g->v = malloc_perror(g->num_es, sizeof(size_t));
   for (i = 0; i < g->num_es; i++){
     g->u[i] = C_U_SECOND[i];
     g->v[i] = C_V_SECOND[i];
@@ -198,8 +198,8 @@ void small_graph_helper(const graph_t *g,
   adj_lst_t a;
   adj_lst_init(&a, g);
   build(&a, g);
-  pre = malloc_perror(a.num_vts * sizeof(size_t));
-  post = malloc_perror(a.num_vts * sizeof(size_t));
+  pre = malloc_perror(a.num_vts, sizeof(size_t));
+  post = malloc_perror(a.num_vts, sizeof(size_t));
   for (i = 0; i < a.num_vts; i++){
     dfs(&a, start, pre, post);
     *res *= cmp_arr(pre, ret_pre, a.num_vts);
@@ -239,8 +239,8 @@ void run_max_edges_graph_test(int pow_start, int pow_end){
   size_t *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
-  pre = malloc_perror(pow_two(pow_end) * sizeof(size_t));
-  post = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  pre = malloc_perror(pow_two(pow_end), sizeof(size_t));
+  post = malloc_perror(pow_two(pow_end), sizeof(size_t));
   b.p = C_PROB_ONE;
   printf("Run a dfs test on graphs with n vertices, where "
 	 "2^%d <= n <= 2^%d, and n(n - 1) edges --> ", pow_start, pow_end);
@@ -282,8 +282,8 @@ void run_no_edges_graph_test(int pow_start, int pow_end){
   size_t *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
-  pre = malloc_perror(pow_two(pow_end) * sizeof(size_t));
-  post = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  pre = malloc_perror(pow_two(pow_end), sizeof(size_t));
+  post = malloc_perror(pow_two(pow_end), sizeof(size_t));
   b.p = C_PROB_ZERO;
   printf("Run a dfs test on graphs with n vertices, where "
 	 "2^%d <= n <= 2^%d, and no edges --> ", pow_start, pow_end);
@@ -319,9 +319,9 @@ void run_random_dir_graph_test(int pow_start, int pow_end){
   printf("Run a dfs test on random directed graphs from %d random "
 	 "start vertices in each graph \n", C_ITER);
   fflush(stdout);
-  start = malloc_perror(C_ITER * sizeof(size_t));
-  pre = malloc_perror(pow_two(pow_end) * sizeof(size_t));
-  post = malloc_perror(pow_two(pow_end) * sizeof(size_t));
+  start = malloc_perror(C_ITER, sizeof(size_t));
+  pre = malloc_perror(pow_two(pow_end), sizeof(size_t));
+  post = malloc_perror(pow_two(pow_end), sizeof(size_t));
   for (i = 0; i < C_PROBS_COUNT; i++){
     b.p = C_PROBS[i];
     printf("\tP[an edge is in a graph] = %.2f\n", b.p);
@@ -395,7 +395,7 @@ int main(int argc, char *argv[]){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror((C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror((C_ARGC_MAX - 1), sizeof(size_t));
   memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);

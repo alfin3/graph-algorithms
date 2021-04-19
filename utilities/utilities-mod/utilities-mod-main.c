@@ -195,7 +195,7 @@ void run_mem_mod_test(){
   for (j = 10; j <= 20; j += 10){
     size = pow_two(j); /* KB, MB */
     printf("\tmemory block size: %lu bytes \n", size);
-    block = calloc_perror(size, 1);
+    block = calloc_perror(1, size);
     block[size - 1] = (unsigned char)pow_two(7);
     t = clock();
     mod_n = mem_mod(block, size, n);
@@ -237,7 +237,7 @@ void run_fast_mem_mod_test(){
   for (j = 10; j <= 30; j += 10){
     size = pow_two(j); /* KB, MB, GB */
     printf("\tmemory block size: %lu bytes \n", size);
-    block = calloc_perror(size, 1);
+    block = calloc_perror(1, size);
     block[size - 1] = (unsigned char)pow_two(7);
     t = clock();
     mod_n = fast_mem_mod(block, size, n);
@@ -257,7 +257,7 @@ void run_fast_mem_mod_test(){
   for (j = 10; j <= 30; j += 10){
     size = pow_two(j); /* KB, MB, GB */
     printf("\tmemory block size: %lu bytes \n", size);
-    block = calloc_perror(size, 1);
+    block = calloc_perror(1, size);
     block[size - 1] = (unsigned char)pow_two(7);
     t = clock();
     mod_n = fast_mem_mod(block, size, n);
@@ -276,7 +276,7 @@ void run_fast_mem_mod_test(){
   upper = CT_UINT64_MAX - 1;
   for (i = 0; i < trials; i++){
     size = 1 + DRAND() * (pow_two(10) - 1);
-    block = calloc_perror(size, 1);
+    block = calloc_perror(1, size);
     n = 1 + DRAND() * upper;
     for (k = 0; k < size; k++){
       block[k] = DRAND() * (pow_two(8) - 1);
@@ -337,7 +337,7 @@ void run_mul_ext_test(){
   uint64_t i, trials = 1000000;
   uint64_t upper = pow_two(32) - 1;
   uint64_t a, b, n, h, l;
-  uint64_t *hl = malloc_perror(2 * sizeof(uint64_t));
+  uint64_t *hl = malloc_perror(2, sizeof(uint64_t));
   printf("Run mul_ext random test\n");
   printf("\t0 <= a, b <= 2^32 - 1  --> ");
   for (i = 0; i < trials; i++){

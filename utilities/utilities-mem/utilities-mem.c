@@ -8,12 +8,22 @@
 #include <stdlib.h>
 #include "utilities-mem.h"
 
+static const size_t C_SIZE_MAX = (size_t)-1;
+
 /**
-   Malloc, realloc, and calloc with wrapped error checking.
+   Malloc, realloc, and calloc with wrapped error checking, including
+   integer overflow checking. The latter is also included in calloc_perror
+   because there is no guarantee that a calloc implementation checks for
+   integer overflow.
 */
 
-void *malloc_perror(size_t size){
-  void *ptr = malloc(size);
+void *malloc_perror(size_t num, size_t size){
+  void *ptr = NULL;
+  if (num > C_SIZE_MAX / size){
+    perror("malloc integer overflow");
+    exit(EXIT_FAILURE);
+  }
+  ptr = malloc(num * size);
   if (ptr == NULL){
     perror("malloc failed");
     exit(EXIT_FAILURE);
@@ -21,8 +31,13 @@ void *malloc_perror(size_t size){
   return ptr;
 }
 
-void *realloc_perror(void *ptr, size_t new_size){
-  void *new_ptr = realloc(ptr, new_size);
+void *realloc_perror(void *ptr, size_t num, size_t size){
+  void *new_ptr = NULL;
+  if (num > C_SIZE_MAX / size){
+    perror("realloc integer overflow");
+    exit(EXIT_FAILURE);
+  }
+  new_ptr = realloc(ptr, num * size);
   if (new_ptr == NULL){
     perror("realloc failed");
     exit(EXIT_FAILURE);
@@ -31,7 +46,12 @@ void *realloc_perror(void *ptr, size_t new_size){
 }
 
 void *calloc_perror(size_t num, size_t size){
-  void *ptr = calloc(num, size);
+  void *ptr = NULL;
+  if (num > C_SIZE_MAX / size){
+    perror("calloc integer overflow");
+    exit(EXIT_FAILURE);
+  }
+  ptr = calloc(num, size);
   if (ptr == NULL){
     perror("calloc failed");
     exit(EXIT_FAILURE);

@@ -62,16 +62,16 @@ void dll_prepend(dll_node_t **head,
 		 const void *elt,
 		 size_t key_size,
 		 size_t elt_size){
-  dll_node_t *node = malloc_perror(sizeof(dll_node_t));
+  dll_node_t *node = malloc_perror(1, sizeof(dll_node_t));
   if (key != NULL){
-    node->key = malloc_perror(key_size);
+    node->key = malloc_perror(1, key_size);
     node->key_size = key_size;
     memcpy(node->key, key, key_size);
   }else{
     node->key = NULL;
     node->key_size = key_size;
   }
-  node->elt = malloc_perror(elt_size);
+  node->elt = malloc_perror(1, elt_size);
   node->elt_size = elt_size;
   memcpy(node->elt, elt, elt_size);
   if (*head == NULL){

@@ -66,7 +66,7 @@ void run_geq_leq_bsearch_int_test(){
   uint64_t geq_ix, leq_ix;
   double tot_geq, tot_leq, tot;
   clock_t t_geq, t_leq, t;
-  elts =  malloc_perror(max_count * sizeof(int));
+  elts =  malloc_perror(max_count, sizeof(int));
   printf("Test geq_bsearch and leq_bsearch on random int arrays\n");
   for (ci = 0; ci < num_counts; ci++){
     count = counts[ci];
@@ -147,7 +147,7 @@ void run_geq_leq_bsearch_double_test(){
   double key, *elts = NULL;
   double tot_geq, tot_leq, tot;
   clock_t t_geq, t_leq, t;
-  elts =  malloc_perror(max_count * sizeof(double));
+  elts =  malloc_perror(max_count, sizeof(double));
   printf("Test geq_bsearch and leq_bsearch on random double arrays\n");
   for (ci = 0; ci < num_counts; ci++){
     count = counts[ci];

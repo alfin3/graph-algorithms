@@ -68,8 +68,8 @@ void run_int_corner_test(){
   uint64_t max_count = count_arr[6];
   uint64_t sbase_count_arr[3] = {1, 2, 3};
   uint64_t mbase_count_arr[3] = {2, 3, 4};
-  int *arr_a =  malloc_perror(max_count * sizeof(int));
-  int *arr_b =  malloc_perror(max_count * sizeof(int));
+  int *arr_a =  malloc_perror(max_count, sizeof(int));
+  int *arr_b =  malloc_perror(max_count, sizeof(int));
   printf("Test mergesort_mthread on random integer corner case arrays\n");
   printf("\t# trials:          %d\n", num_iter);
   printf("\tarray counts:      ");
@@ -127,8 +127,8 @@ void run_int_opt_test(){
 				 3000000,
 				 4000000,
 				 10000000};
-  int *arr_a =  malloc_perror(max_count * sizeof(int));
-  int *arr_b =  malloc_perror(max_count * sizeof(int));
+  int *arr_a =  malloc_perror(max_count, sizeof(int));
+  int *arr_b =  malloc_perror(max_count, sizeof(int));
   double tot_m, tot_q, t_m, t_q;
   printf("Test mergesort_mthread performance on random integer arrays\n");
   for (ci = 0; ci < num_counts; ci++){
@@ -186,8 +186,8 @@ void run_double_corner_test(){
   uint64_t max_count = count_arr[6];
   uint64_t sbase_count_arr[3] = {1, 2, 3};
   uint64_t mbase_count_arr[3] = {2, 3, 4};
-  double *arr_a =  malloc_perror(max_count * sizeof(double));
-  double *arr_b =  malloc_perror(max_count * sizeof(double));
+  double *arr_a =  malloc_perror(max_count, sizeof(double));
+  double *arr_b =  malloc_perror(max_count, sizeof(double));
   printf("Test mergesort_mthread on random double corner case arrays\n");
   printf("\t# trials:          %d\n", num_iter);
   printf("\tarray counts:      ");
@@ -245,8 +245,8 @@ void run_double_opt_test(){
 				 3000000,
 				 4000000,
 				 10000000};
-  double *arr_a =  malloc_perror(max_count * sizeof(double));
-  double *arr_b =  malloc_perror(max_count * sizeof(double));
+  double *arr_a =  malloc_perror(max_count, sizeof(double));
+  double *arr_b =  malloc_perror(max_count, sizeof(double));
   double tot_m, tot_q, t_m, t_q;
   printf("Test mergesort_mthread performance on random double arrays\n");
   for (ci = 0; ci < num_counts; ci++){

@@ -51,7 +51,7 @@ void queue_init(queue_t *q,
   q->num_elts = 0;
   q->num_popped_elts = 0;
   q->elt_size = elt_size;
-  q->elts = malloc_perror(init_count * elt_size);
+  q->elts = malloc_perror(init_count, elt_size);
   q->free_elt = free_elt;
 }
 
@@ -131,7 +131,7 @@ static void queue_grow(queue_t *q){
   }else{
     q->count *= 2;
   }
-  q->elts = realloc_perror(q->elts, q->count * q->elt_size);
+  q->elts = realloc_perror(q->elts, q->count, q->elt_size);
 }
 
 /**

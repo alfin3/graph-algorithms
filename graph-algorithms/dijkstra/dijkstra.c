@@ -112,8 +112,8 @@ void dijkstra(const adj_lst_t *a,
   context_t context;
   heap_ht_t hht_def;
   heap_t h;
-  u_wt = malloc_perror(wt_size);
-  sum_wt = malloc_perror(wt_size);
+  u_wt = malloc_perror(1, wt_size);
+  sum_wt = malloc_perror(1, wt_size);
   memset(dist, 0, a->num_vts * wt_size);
   memset(prev, 0xff, a->num_vts * vt_size); /* initialize to C_NREACHED */
   if (hht == NULL){
@@ -173,7 +173,7 @@ static void ht_def_init(ht_def_t *ht,
   ht->elt_size = elt_size;
   ht->count = c->count;
   ht->key_present = calloc_perror(c->count, sizeof(boolean_t));
-  ht->elts = malloc_perror(c->count * elt_size);
+  ht->elts = malloc_perror(c->count, elt_size);
   ht->free_elt = free_elt;
 }
 

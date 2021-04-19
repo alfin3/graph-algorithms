@@ -57,8 +57,8 @@ void uint64_push_pop_helper(stack_t *s,
   uint64_t *pushed = NULL, *popped = NULL;
   uint64_t i;
   clock_t t_push, t_pop;
-  pushed = malloc_perror(num_elts * sizeof(uint64_t));
-  popped = malloc_perror(num_elts * sizeof(uint64_t));
+  pushed = malloc_perror(num_elts, sizeof(uint64_t));
+  popped = malloc_perror(num_elts, sizeof(uint64_t));
   for (i = 0; i < num_elts; i++){
     pushed[i] = init_val + i;
   }
@@ -204,8 +204,8 @@ void uint64_ptr_push_pop_helper(stack_t *s,
   pushed = calloc_perror(num_elts, sizeof(uint64_ptr_t *));
   popped = calloc_perror(num_elts, sizeof(uint64_ptr_t *));
   for (i = 0; i < num_elts; i++){
-    pushed[i] = malloc_perror(sizeof(uint64_ptr_t));
-    pushed[i]->val = malloc_perror(sizeof(uint64_t));
+    pushed[i] = malloc_perror(1, sizeof(uint64_ptr_t));
+    pushed[i]->val = malloc_perror(1, sizeof(uint64_t));
     *(pushed[i]->val) = init_val + i;
   }
   t_push = clock();
@@ -254,8 +254,8 @@ void run_uint64_ptr_first_test(){
     }else{
       res *= (*(*(uint64_ptr_t **)stack_first(&s))->val == init_val + i - 1);
     }
-    pushed = malloc_perror(sizeof(uint64_ptr_t));
-    pushed->val = malloc_perror(sizeof(uint64_t));
+    pushed = malloc_perror(1, sizeof(uint64_ptr_t));
+    pushed->val = malloc_perror(1, sizeof(uint64_t));
     *(pushed->val) = init_val + i;
     stack_push(&s, &pushed);
     res *= (*(*(uint64_ptr_t **)stack_first(&s))->val == init_val + i);
@@ -292,8 +292,8 @@ void run_uint64_ptr_free_test(){
   printf("Run a stack_free test on noncontiguous uint64_ptr_t elements \n");
   printf("\t# elements:       %lu\n", num_elts);
   for (i = 0; i < num_elts; i++){
-    pushed = malloc_perror(sizeof(uint64_ptr_t));
-    pushed->val = malloc_perror(sizeof(uint64_t));
+    pushed = malloc_perror(1, sizeof(uint64_ptr_t));
+    pushed->val = malloc_perror(1, sizeof(uint64_t));
     *(pushed->val) = i;
     stack_push(&s, &pushed);
     pushed = NULL;

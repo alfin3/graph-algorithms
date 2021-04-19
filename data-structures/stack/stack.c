@@ -53,7 +53,7 @@ void stack_init(stack_t *s,
   }
   s->num_elts = 0;
   s->elt_size = elt_size;
-  s->elts = malloc_perror(init_count * elt_size);
+  s->elts = malloc_perror(init_count, elt_size);
   s->free_elt = free_elt;
 }
 
@@ -129,7 +129,7 @@ static void stack_grow(stack_t *s){
   }else{
     s->count *= 2;
   }
-  s->elts = realloc_perror(s->elts, s->count * s->elt_size);
+  s->elts = realloc_perror(s->elts, s->count, s->elt_size);
 }
 
 /**
