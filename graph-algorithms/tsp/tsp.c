@@ -58,7 +58,6 @@ typedef struct{
 
 static const size_t C_SET_ELT_SIZE = sizeof(size_t);
 static const size_t C_SET_ELT_BIT = CHAR_BIT * sizeof(size_t);
-static const size_t C_SIZE_MAX = (size_t)-1;
 
 /* set operations based on a bit array representation */
 static void set_init(ibit_t *ibit, size_t n);
@@ -300,16 +299,17 @@ static void ht_def_init(ht_def_t *ht,
 			void (*free_elt)(void *),
 			void *context){
   context_t *c = context;
-  if (c->num_vts >= C_SET_ELT_BIT ||
-      pow_two(c->num_vts) > C_SIZE_MAX / c->num_vts / elt_size){
+  if (c->num_vts >= C_SET_ELT_BIT){
     fprintf_stderr_exit("default hash table allocation failed", __LINE__);
   }
   ht->key_size = key_size;
   ht->elt_size = elt_size;
   ht->num_vts = c->num_vts;
-  ht->key_present = calloc_perror(c->num_vts * pow_two(c->num_vts),
+  ht->key_present = calloc_perror(mul_sz_perror(c->num_vts,
+						pow_two(c->num_vts)),
 				  sizeof(boolean_t));
-  ht->elts = malloc_perror(c->num_vts * pow_two(c->num_vts), elt_size);
+  ht->elts = malloc_perror(mul_sz_perror(c->num_vts, pow_two(c->num_vts)),
+			   elt_size);
   ht->free_elt = free_elt;
 }
 

@@ -87,7 +87,7 @@ void heap_init(heap_t *h,
   h->num_elts = 0;
   h->pty_size = pty_size;
   h->elt_size = elt_size;
-  h->pty_elts = malloc_perror(init_count, pty_size + elt_size);
+  h->pty_elts = malloc_perror(init_count, add_sz_perror(pty_size, elt_size));
   h->ht = ht;
   h->cmp_pty = cmp_pty;
   h->free_elt = free_elt;
@@ -190,7 +190,7 @@ void heap_free(heap_t *h){
 static void swap(heap_t *h, size_t i, size_t j){
   void *buf = NULL;
   if (i == j) return;
-  buf = malloc_perror(1, h->pty_size + h->elt_size);
+  buf = malloc_perror(1, add_sz_perror(h->pty_size, h->elt_size));
   memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
   memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pty_size + h->elt_size);
   memcpy(pty_ptr(h, j), buf, h->pty_size + h->elt_size);
@@ -225,7 +225,8 @@ static void heap_grow(heap_t *h){
     h->count *= 2;
   }
   h->pty_elts = realloc_perror(h->pty_elts,
-			       h->count, h->pty_size + h->elt_size);
+			       h->count,
+			       add_sz_perror(h->pty_size, h->elt_size));
 }
 
 /**
@@ -233,7 +234,7 @@ static void heap_grow(heap_t *h){
 */
 static void heapify_up(heap_t *h, size_t i){
   size_t ju;
-  void *buf = malloc_perror(1, h->pty_size + h->elt_size);
+  void *buf = malloc_perror(1, add_sz_perror(h->pty_size, h->elt_size));
   memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
   while(i > 0){
     ju = (i - 1) / 2;
@@ -256,7 +257,7 @@ static void heapify_up(heap_t *h, size_t i){
 */
 static void heapify_down(heap_t *h, size_t i){
   size_t jl, jr;
-  void *buf = malloc_perror(1, h->pty_size + h->elt_size);
+  void *buf = malloc_perror(1, add_sz_perror(h->pty_size, h->elt_size));
   memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
   /* 0 <= i <= num_elts - 1 <= SIZE_MAX - 2 */
   while (i + 2 <= h->num_elts - 1 - i){

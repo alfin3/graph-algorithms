@@ -395,7 +395,7 @@ int main(int argc, char *argv[]){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror((C_ARGC_MAX - 1), sizeof(size_t));
+  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
   memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);

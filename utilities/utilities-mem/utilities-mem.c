@@ -11,6 +11,26 @@
 static const size_t C_SIZE_MAX = (size_t)-1;
 
 /**
+   size_t addition and multiplication with wrapped overflow checking.
+*/
+
+size_t add_sz_perror(size_t a, size_t b){
+  if (a > C_SIZE_MAX - b){
+    perror("addition size_t overflow");
+    exit(EXIT_FAILURE);
+  }
+  return a + b;
+}
+
+size_t mul_sz_perror(size_t a, size_t b){
+  if (a > C_SIZE_MAX / b){
+    perror("multiplication size_t overflow");
+    exit(EXIT_FAILURE);
+  }
+  return a * b;
+}
+
+/**
    Malloc, realloc, and calloc with wrapped error checking, including
    integer overflow checking. The latter is also included in calloc_perror
    because there is no guarantee that a calloc implementation checks for
