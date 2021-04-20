@@ -48,7 +48,8 @@ heap-test : $(OBJ)
 heap-test.o                     : heap.h                          \
                                   $(HT_DIV_DIR)ht-div.h           \
                                   $(HT_MUL_DIR)ht-mul.h           \
-                                  $(UTILS_MEM_DIR)utilities-mem.h
+                                  $(UTILS_MEM_DIR)utilities-mem.h \
+                                  $(UTILS_MOD_DIR)utilities-mod.h
 heap.o                          : heap.h                          \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(HT_DIV_DIR)ht-div.o           : $(HT_DIV_DIR)ht-div.h           \
