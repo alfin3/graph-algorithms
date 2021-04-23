@@ -1,14 +1,46 @@
 /**
    heap-test.c
 
-   Tests of a generic dynamically allocated (min) heap with a hash table
-   parameter across i) division- and mutliplication-based hash tables,
-   ii) contiguous and noncontiguous elements, and iii) priority types.
+   Tests of a generic (min) heap with a hash table parameter across 
+   i) division- and mutliplication-based hash tables, ii) contiguous and
+   noncontiguous elements, and iii) priority types.
+
+   The following command line arguments can be used to customize tests:
+   heap-test
+      [0, # bits in size_t - 1) : i s.t. # inserts = 2^i
+      > 0 : a
+      > 0 : b s.t. alpha of division hash table = a / b
+      > 0 : c
+      > 0 : d s.t. alpha of multiplication hash table = c / d < 1.0
+      [0, 1] : on/off push pop free division hash table test
+      [0, 1] : on/off update search division hash table test
+      [0, 1] : on/off push pop free multiplication hash table test
+      [0, 1] : on/off update search multiplication hash table test
+
+   usage examples:
+   ./heap-test
+   ./heap-test 21
+   ./heap-test 20 1 10
+   ./heap-test 20 1 1
+   ./heap-test 20 100 1
+   ./heap-test 20 1 1 1 100 0 0
+   ./heap-test 20 1 1 1 3 0 0
+   ./heap-test 20 1 1 9 10 0 0
+
+   heap-test can be run with any subset of command line arguments in the
+   above-defined order. If the (i + 1)th argument is specified then the ith
+   argument must be specified for i >= 0. Default values are used for the
+   unspecified arguments according to the C_ARGS_DEF array.
+
+   The implementation of tests does not use stdint.h and is portable under
+   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is
+   greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <time.h>
 #include "heap.h"
 #include "ht-div.h"
@@ -18,6 +50,24 @@
 
 #define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
 
+/* input handling */
+const char *C_USAGE =
+  "heap-test \n"
+  "[0, # bits in size_t - 1) : i s.t. # inserts = 2^i \n"
+   "> 0 : a \n"
+   "> 0 : b s.t. alpha of division hash table = a / b \n"
+   "> 0 : c \n"
+   "> 0 : d s.t. alpha of multiplication hash table = c / d < 1.0 \n"
+   "[0, 1] : on/off push pop free division hash table test \n"
+   "[0, 1] : on/off update search division hash table test \n"
+   "[0, 1] : on/off push pop free multiplication hash table test \n"
+   "[0, 1] : on/off update search multiplication hash table test \n";
+const int C_ARGC_MAX = 10;
+const size_t C_ARGS_DEF[9] = {14, 1, 1, 1, 3, 1, 1, 1, 1};
+const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+const float C_ALPHA_MUL_MAX = 1.0;
+
+/* tests */
 const int C_PTY_TYPES_COUNT = 3;
 const char *C_PTY_TYPES[3] = {"size_t", "double", "long double"};
 const size_t C_PTY_SIZES[3] = {sizeof(size_t),
@@ -38,7 +88,6 @@ void (*const C_NEW_PTY_ARR[3])(void *, size_t) = {new_uint,
 						  new_double,
 						  new_long_double};
 const size_t C_H_INIT_COUNT = 1;
-const size_t C_NUM_INS_MAX = (size_t)-1 / 2;
 
 void push_pop_free(size_t n,
 		   size_t pty_size,
@@ -165,8 +214,10 @@ void run_push_pop_free_div_uint_test(int pow_ins, float alpha){
   printf("Run a heap_{push, pop, free} test with a ht_div_t "
 	 "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
-    printf("\tnumber of elements: %lu, priority type: %s\n",
-	   TOLU(n), C_PTY_TYPES[i]);
+    printf("\tnumber of elements:      %lu\n"
+	   "\tload factor upper bound: %.4f\n"
+	   "\tpriority type:           %s\n",
+	   TOLU(n), alpha, C_PTY_TYPES[i]);
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
@@ -201,8 +252,10 @@ void run_update_search_div_uint_test(int pow_ins, float alpha){
   printf("Run a heap_{update, search} test with a ht_div_t "
 	 "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
-    printf("\tnumber of elements: %lu, priority type: %s\n",
-	   TOLU(n), C_PTY_TYPES[i]);
+    printf("\tnumber of elements:      %lu\n"
+	   "\tload factor upper bound: %.4f\n"
+	   "\tpriority type:           %s\n",
+	   TOLU(n), alpha, C_PTY_TYPES[i]);
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
@@ -238,8 +291,10 @@ void run_push_pop_free_mul_uint_test(int pow_ins, float alpha){
   printf("Run a heap_{push, pop, free} test with a ht_mul_t "
 	 "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
-    printf("\tnumber of elements: %lu, priority type: %s\n",
-	   TOLU(n), C_PTY_TYPES[i]);
+    printf("\tnumber of elements:      %lu\n"
+	   "\tload factor upper bound: %.4f\n"
+	   "\tpriority type:           %s\n",
+	   TOLU(n), alpha, C_PTY_TYPES[i]);
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
@@ -275,8 +330,10 @@ void run_update_search_mul_uint_test(int pow_ins, float alpha){
   printf("Run a heap_{update, search} test with a ht_mul_t "
 	 "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
-    printf("\tnumber of elements: %lu, priority type: %s\n",
-	   TOLU(n), C_PTY_TYPES[i]);
+    printf("\tnumber of elements:      %lu\n"
+	   "\tload factor upper bound: %.4f\n"
+	   "\tpriority type:           %s\n",
+	   TOLU(n), alpha, C_PTY_TYPES[i]);
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
@@ -350,8 +407,10 @@ void run_push_pop_free_div_uint_ptr_test(int pow_ins, float alpha){
   printf("Run a heap_{push, pop, free} test with a ht_div_t "
 	 "hash table on noncontiguous uint_ptr_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
-    printf("\tnumber of elements: %lu, priority type: %s\n",
-	   TOLU(n), C_PTY_TYPES[i]);
+    printf("\tnumber of elements:      %lu\n"
+	   "\tload factor upper bound: %.4f\n"
+	   "\tpriority type:           %s\n",
+	   TOLU(n), alpha, C_PTY_TYPES[i]);
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
@@ -386,8 +445,10 @@ void run_update_search_div_uint_ptr_test(int pow_ins, float alpha){
   printf("Run a heap_{update, search} test with a ht_div_t "
 	 "hash table on noncontiguous uint_ptr_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
-    printf("\tnumber of elements: %lu, priority type: %s\n",
-	   TOLU(n), C_PTY_TYPES[i]);
+    printf("\tnumber of elements:      %lu\n"
+	   "\tload factor upper bound: %.4f\n"
+	   "\tpriority type:           %s\n",
+	   TOLU(n), alpha, C_PTY_TYPES[i]);
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
@@ -423,8 +484,10 @@ void run_push_pop_free_mul_uint_ptr_test(int pow_ins, float alpha){
   printf("Run a heap_{push, pop, free} test with a ht_mul_t "
 	 "hash table on noncontiguous uint_ptr_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
-    printf("\tnumber of elements: %lu, priority type: %s\n",
-	   TOLU(n), C_PTY_TYPES[i]);
+    printf("\tnumber of elements:      %lu\n"
+	   "\tload factor upper bound: %.4f\n"
+	   "\tpriority type:           %s\n",
+	   TOLU(n), alpha, C_PTY_TYPES[i]);
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
@@ -460,8 +523,10 @@ void run_update_search_mul_uint_ptr_test(int pow_ins, float alpha){
   printf("Run a heap_{update, search} test with a ht_mul_t "
 	 "hash table on noncontiguous uint_ptr_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
-    printf("\tnumber of elements: %lu, priority type: %s\n",
-	   TOLU(n), C_PTY_TYPES[i]);
+    printf("\tnumber of elements:      %lu\n"
+	   "\tload factor upper bound: %.4f\n"
+	   "\tpriority type:           %s\n",
+	   TOLU(n), alpha, C_PTY_TYPES[i]);
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
@@ -791,17 +856,54 @@ void print_test_result(int res){
   }
 }
 
-int main(){
-  /* ht_div_t hash table */
-  run_push_pop_free_div_uint_test(18, 1.0);
-  run_push_pop_free_div_uint_ptr_test(18, 1.0);
-  run_update_search_div_uint_test(18, 1.0);
-  run_update_search_div_uint_ptr_test(18, 1.0);
-
-  /* ht_mul_t hash table */
-  run_push_pop_free_mul_uint_test(18, 0.4);
-  run_push_pop_free_mul_uint_ptr_test(18, 0.4);
-  run_update_search_mul_uint_test(18, 0.4);
-  run_update_search_mul_uint_ptr_test(18, 0.4);
+int main(int argc, char *argv[]){
+  int i;
+  size_t *args = NULL;
+  float alpha_div, alpha_mul;
+  if (argc > C_ARGC_MAX){
+    fprintf(stderr, "USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  for (i = 1; i < argc; i++){
+    args[i - 1] = atoi(argv[i]);
+  }
+  if (args[0] > C_FULL_BIT - 2 ||
+      args[1] < 1 ||
+      args[2] < 1 ||
+      args[3] < 1 ||
+      args[4] < 1 ||
+      args[5] > 1 ||
+      args[6] > 1 ||
+      args[7] > 1 ||
+      args[8] > 1){
+    fprintf(stderr, "USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  alpha_div = (float)args[1] / args[2];
+  alpha_mul = (float)args[3] / args[4];
+  if (alpha_mul >= C_ALPHA_MUL_MAX){
+    fprintf(stderr, "USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  if (args[5]){
+    run_push_pop_free_div_uint_test(args[0], alpha_div);
+    run_push_pop_free_div_uint_ptr_test(args[0], alpha_div);
+  }
+  if (args[6]){
+    run_update_search_div_uint_test(args[0], alpha_div);
+    run_update_search_div_uint_ptr_test(args[0], alpha_div);
+  }
+  if (args[7]){
+    run_push_pop_free_mul_uint_test(args[0], alpha_mul);
+    run_push_pop_free_mul_uint_ptr_test(args[0], alpha_mul);
+  }
+  if (args[8]){
+    run_update_search_mul_uint_test(args[0], alpha_mul);
+    run_update_search_mul_uint_ptr_test(args[0], alpha_mul);
+  }
+  free(args);
+  args = NULL;
   return 0;
 }
