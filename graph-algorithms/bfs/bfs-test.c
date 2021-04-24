@@ -5,16 +5,16 @@
 
    The following command line arguments can be used to customize tests:
    bfs-test
-   -  [0, # bits in size_t / 2] : a
-   -  [0, # bits in size_t / 2] : b s.t. a <= |V| <= b for max edges test
-   -  [0, # bits in size_t / 2] : c
-   -  [0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test
-   -  [0, # bits in size_t / 2]  : e
-   -  [0, # bits in size_t / 2]  : f s.t. e <= |V| <= f for random graph test
-   -  [0, 1] : on/off for small graph tests
-   -  [0, 1] : on/off for max edges test
-   -  [0, 1] : on/off for no edges test
-   -  [0, 1] : on/off for random graph test
+     [0, # bits in size_t / 2] : a
+     [0, # bits in size_t / 2] : b s.t. 2^a <= V <= 2^b for max edges test
+     [0, # bits in size_t / 2] : c
+     [0, # bits in size_t / 2] : d s.t. 2^c <= V <= 2^d for no edges test
+     [0, # bits in size_t / 2] : e
+     [0, # bits in size_t / 2] : f s.t. 2^e <= V <= 2^f for random graph test
+     [0, 1] : on/off for small graph tests
+     [0, 1] : on/off for max edges test
+     [0, 1] : on/off for no edges test
+     [0, 1] : on/off for random graph test
 
    usage examples: 
    ./bfs-test
@@ -55,11 +55,11 @@
 const char *C_USAGE =
   "bfs-test \n"
   "[0, # bits in size_t / 2] : a \n"
-  "[0, # bits in size_t / 2] : b s.t. a <= |V| <= b for max edges test \n"
+  "[0, # bits in size_t / 2] : b s.t. 2^a <= V <= 2^b for max edges test \n"
   "[0, # bits in size_t / 2] : c \n"
-  "[0, # bits in size_t / 2] : d s.t. c <= |V| <= d for no edges test \n"
-  "[0, # bits in size_t / 2]  : e \n"
-  "[0, # bits in size_t / 2]  : f s.t. e <= |V| <= f for random graph test \n"
+  "[0, # bits in size_t / 2] : d s.t. 2^c <= V <= 2^d for no edges test \n"
+  "[0, # bits in size_t / 2] : e \n"
+  "[0, # bits in size_t / 2] : f s.t. 2^e <= V <= 2^f for random graph test \n"
   "[0, 1] : on/off for small graph tests \n"
   "[0, 1] : on/off for max edges test \n"
   "[0, 1] : on/off for no edges test \n"
