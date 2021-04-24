@@ -832,10 +832,9 @@ void update_search(size_t n,
     if (free_elt != NULL){
       free_elt(elts[i]);
       free_elt(not_heap_elts[i]);
-    }else{
-      free(elts[i]);
-      free(not_heap_elts[i]);
     }
+    free(elts[i]);
+    free(not_heap_elts[i]);
   }
   free(ptys);
   free(elts);
