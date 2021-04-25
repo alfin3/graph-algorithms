@@ -1,8 +1,7 @@
 /**
-   dll-main.c
+   dll-test.c
 
-   Tests of a generic dynamically allocated doubly linked list in a
-   circular representation.  
+   Tests of a generic doubly linked list in a circular representation. 
 */
 
 #include <stdio.h>
@@ -10,12 +9,13 @@
 #include <time.h>
 #include "dll.h"
 #include "utilities-mem.h"
+#include "utilities-mod.h"
 
 void prepend_append_free(dll_node_t **head_prep,
 			 dll_node_t **head_app,
 			 int start_val,
-			 int count,
-			 int elt_size,
+			 int num_ins,
+			 size_t elt_size,
 			 void (*new_elt)(void *, int),
 			 int (*val_elt)(const void *),
 			 void (*free_elt)(void *));
@@ -46,10 +46,11 @@ int cmp_int(const void *a, const void *b){
   }
 }
 
-void run_prepend_append_free_int_test(){
-  int count = 10000000;
+void run_prepend_append_free_int_test(int pow_ins){
+  int num_ins;
   int start_val = 0;
   dll_node_t *head_prep, *head_app; /* uninitialized pointers */
+  num_ins = pow_two(pow_ins);
   dll_init(&head_prep);
   dll_init(&head_app);
   printf("Run dll_{prepend, append, free} test on int keys and int "
@@ -57,11 +58,11 @@ void run_prepend_append_free_int_test(){
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
-	 start_val, start_val, count);
+	 start_val, start_val, num_ins);
   prepend_append_free(&head_prep,
 		      &head_app,
 		      start_val,
-		      count,
+		      num_ins,
 		      sizeof(int),
 		      new_int,
 		      val_int,
@@ -69,24 +70,24 @@ void run_prepend_append_free_int_test(){
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d (repeat test)\n",
-	 start_val, start_val, count);
+	 start_val, start_val, num_ins);
   prepend_append_free(&head_prep,
 		      &head_app,
 		      start_val,
-		      count,
+		      num_ins,
 		      sizeof(int),
 		      new_int,
 		      val_int,
 		      NULL);
-  start_val = count;
+  start_val = num_ins;
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
-	 start_val, start_val, count);
+	 start_val, start_val, num_ins);
   prepend_append_free(&head_prep,
 		      &head_app,
 		      start_val,
-		      count,
+		      num_ins,
 		      sizeof(int),
 		      new_int,
 		      val_int,
@@ -136,10 +137,11 @@ void free_int_ptr(void *a){
   s = NULL;
 }
 
-void run_prepend_append_free_int_ptr_test(){
-  int count = 10000000;
+void run_prepend_append_free_int_ptr_test(int pow_ins){
+  int num_ins;
   int start_val = 0;
   dll_node_t *head_prep, *head_app; /* uninitialized pointers */
+  num_ins = pow_two(pow_ins);
   dll_init(&head_prep);
   dll_init(&head_app);
   printf("Run dll_{prepend, append, free} test on int keys and noncontiguous "
@@ -147,11 +149,11 @@ void run_prepend_append_free_int_ptr_test(){
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
-	 start_val, start_val, count);
+	 start_val, start_val, num_ins);
   prepend_append_free(&head_prep,
 		      &head_app,
 		      start_val,
-		      count,
+		      num_ins,
 		      sizeof(int_ptr_t *),
 		      new_int_ptr,
 		      val_int_ptr,
@@ -159,24 +161,24 @@ void run_prepend_append_free_int_ptr_test(){
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d (repeat test)\n",
-	 start_val, start_val, count);
+	 start_val, start_val, num_ins);
   prepend_append_free(&head_prep,
 		      &head_app,
 		      start_val,
-		      count,
+		      num_ins,
 		      sizeof(int_ptr_t *),
 		      new_int_ptr,
 		      val_int_ptr,
 		      free_int_ptr);
-  start_val = count;
+  start_val = num_ins;
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
-	 start_val, start_val, count);
+	 start_val, start_val, num_ins);
   prepend_append_free(&head_prep,
 		      &head_app,
 		      start_val,
-		      count,
+		      num_ins,
 		      sizeof(int_ptr_t *),
 		      new_int_ptr,
 		      val_int_ptr,
@@ -187,12 +189,12 @@ void run_prepend_append_free_int_ptr_test(){
    Runs a corner cases tests.
 */
 void run_corner_cases_test(){
-  dll_node_t *head_none;
-  dll_node_t *head_one_prep, *head_one_app;
-  dll_node_t *head_two_prep, *head_two_app;
   int res = 1;
   int key, elt;
   int i;
+  dll_node_t *head_none;
+  dll_node_t *head_one_prep, *head_one_app;
+  dll_node_t *head_two_prep, *head_two_app;
   dll_init(&head_none);
   dll_init(&head_one_prep);
   dll_init(&head_one_app);
@@ -284,28 +286,28 @@ void run_corner_cases_test(){
 void prepend_append_free(dll_node_t **head_prep,
 			 dll_node_t **head_app,
 			 int start_val,
-			 int count,
-			 int elt_size,
+			 int num_ins,
+			 size_t elt_size,
 			 void (*new_elt)(void *, int),
 			 int (*val_elt)(const void *),
 			 void (*free_elt)(void *)){
   int res = 1;
-  int sum_val = 2 * start_val + count - 1;
+  int sum_val = 2 * start_val + num_ins - 1;
   int i;
   int *keys = NULL;
   void *elts_prep = NULL, *elts_app = NULL;
   dll_node_t *node_prep = NULL, *node_app = NULL;
   clock_t t_prep, t_app, t_free_prep, t_free_app;
-  keys = malloc_perror(count, sizeof(int));
-  elts_prep = malloc_perror(count, elt_size);
-  elts_app = malloc_perror(count, elt_size);
-  for (i = 0; i < count; i++){
+  keys = malloc_perror(num_ins, sizeof(int));
+  elts_prep = malloc_perror(num_ins, elt_size);
+  elts_app = malloc_perror(num_ins, elt_size);
+  for (i = 0; i < num_ins; i++){
     keys[i] = start_val + i;
     new_elt(elt_ptr(elts_prep, i, elt_size), start_val + i);
     new_elt(elt_ptr(elts_app, i, elt_size), start_val + i);
   }  
   t_prep = clock();
-  for (i = 0; i < count; i++){
+  for (i = 0; i < num_ins; i++){
     dll_prepend(head_prep,
 		&keys[i],
 		elt_ptr(elts_prep, i, elt_size),
@@ -314,7 +316,7 @@ void prepend_append_free(dll_node_t **head_prep,
   }
   t_prep = clock() - t_prep;
   t_app = clock();
-  for (i = 0; i < count; i++){
+  for (i = 0; i < num_ins; i++){
     dll_append(head_app,
 	       &keys[i],
 	       elt_ptr(elts_app, i, elt_size),
@@ -324,7 +326,7 @@ void prepend_append_free(dll_node_t **head_prep,
   t_app = clock() - t_app;
   node_prep = *head_prep;
   node_app = *head_app;
-  for (i = 0; i < count; i++){
+  for (i = 0; i < num_ins; i++){
     res = (*(int *)node_prep->key + *(int *)node_app->key == sum_val);
     res = (val_elt(node_prep->elt) + val_elt(node_app->elt) == sum_val);
     node_prep = node_prep->next;
@@ -375,8 +377,8 @@ void print_test_result(int res){
 }
 
 int main(){
-  run_prepend_append_free_int_test();
-  run_prepend_append_free_int_ptr_test();
+  run_prepend_append_free_int_test(14);
+  run_prepend_append_free_int_ptr_test(14);
   run_corner_cases_test();
   return 0;
 }
