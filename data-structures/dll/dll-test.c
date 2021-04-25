@@ -1,15 +1,51 @@
 /**
    dll-test.c
 
-   Tests of a generic doubly linked list in a circular representation. 
+   Tests of a generic doubly linked list in a circular representation.
+
+   The following command line arguments can be used to customize tests:
+   dll-test
+      [0, # bits in int - 2) : i s.t. # inserts = 2^i
+      [0, 1] : on/off prepend append free int test
+      [0, 1] : on/off prepend append free int_ptr (noncontiguous) test
+      [0, 1] : on/off corner cases test
+
+   usage examples:
+   ./dll-test
+   ./dll-test 23
+   ./dll-test 24 1 0 0
+
+   dll-test can be run with any subset of command line arguments in the
+   above-defined order. If the (i + 1)th argument is specified then the ith
+   argument must be specified for i >= 0. Default values are used for the
+   unspecified arguments according to the C_ARGS_DEF array.
+
+   The implementation of tests does not use stdint.h and is portable under
+   C89/C90.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <limits.h>
 #include <time.h>
 #include "dll.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
+
+/* input handling */
+const char *C_USAGE =
+  "dll-test \n"
+  "[0, # bits in int - 2) : i s.t. # inserts = 2^i \n"
+  "[0, 1] : on/off prepend append free int test \n"
+  "[0, 1] : on/off prepend append free int_ptr (noncontiguous) test \n"
+  "[0, 1] : on/off corner cases test \n";
+const int C_ARGC_MAX = 5;
+const size_t C_ARGS_DEF[4] = {13, 1, 1, 1};
+const size_t C_INT_BIT = CHAR_BIT * sizeof(int);
+
+/* tests */
+const int C_START_VAL = 0;
 
 void prepend_append_free(dll_node_t **head_prep,
 			 dll_node_t **head_app,
@@ -26,8 +62,8 @@ void print_test_result(int res);
 /**
    Run tests of a doubly linked list of integer keys and integer elements. 
    A pointer to an integer is passed as elt in dll_prepend and dll_append,
-   and the integer element is fully copied into the block pointed to by elt
-   in a node. NULL as free_elt is sufficient to delete a node.
+   and the integer is copied into the block pointed to by elt in a node.
+   NULL as free_elt is sufficient to delete a node.
 */
 
 void new_int(void *a, int val){
@@ -48,8 +84,8 @@ int cmp_int(const void *a, const void *b){
 
 void run_prepend_append_free_int_test(int pow_ins){
   int num_ins;
-  int start_val = 0;
-  dll_node_t *head_prep, *head_app; /* uninitialized pointers */
+  int start_val = C_START_VAL;
+  dll_node_t *head_prep, *head_app; /* uninitialized pointers for testing */
   num_ins = pow_two(pow_ins);
   dll_init(&head_prep);
   dll_init(&head_app);
@@ -79,7 +115,7 @@ void run_prepend_append_free_int_test(int pow_ins){
 		      new_int,
 		      val_int,
 		      NULL);
-  start_val = num_ins;
+  start_val += num_ins;
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
@@ -139,8 +175,8 @@ void free_int_ptr(void *a){
 
 void run_prepend_append_free_int_ptr_test(int pow_ins){
   int num_ins;
-  int start_val = 0;
-  dll_node_t *head_prep, *head_app; /* uninitialized pointers */
+  int start_val = C_START_VAL;
+  dll_node_t *head_prep, *head_app; /* uninitialized pointers for testing */
   num_ins = pow_two(pow_ins);
   dll_init(&head_prep);
   dll_init(&head_app);
@@ -170,7 +206,7 @@ void run_prepend_append_free_int_ptr_test(int pow_ins){
 		      new_int_ptr,
 		      val_int_ptr,
 		      free_int_ptr);
-  start_val = num_ins;
+  start_val += num_ins;
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
@@ -205,8 +241,8 @@ void run_corner_cases_test(){
       dll_prepend(&head_one_prep, &i, &i, sizeof(int), sizeof(int));
       dll_append(&head_one_app, &i, &i, sizeof(int), sizeof(int));
     }
-  dll_prepend(&head_two_prep, &i, &i, sizeof(int), sizeof(int));
-  dll_append(&head_two_app, &i, &i, sizeof(int), sizeof(int));
+    dll_prepend(&head_two_prep, &i, &i, sizeof(int), sizeof(int));
+    dll_append(&head_two_app, &i, &i, sizeof(int), sizeof(int));
   }
   /* search */
   key = 0;
@@ -292,7 +328,7 @@ void prepend_append_free(dll_node_t **head_prep,
 			 int (*val_elt)(const void *),
 			 void (*free_elt)(void *)){
   int res = 1;
-  int sum_val = 2 * start_val + num_ins - 1;
+  int sum_val = 2 * start_val + num_ins - 1; /* < 2^{FULL_INT_BIT - 1} - 1 */
   int i;
   int *keys = NULL;
   void *elts_prep = NULL, *elts_app = NULL;
@@ -376,9 +412,36 @@ void print_test_result(int res){
   }
 }
 
-int main(){
-  run_prepend_append_free_int_test(14);
-  run_prepend_append_free_int_ptr_test(14);
-  run_corner_cases_test();
+int main(int argc, char *argv[]){
+  int i;
+  size_t *args = NULL;
+  if (argc > C_ARGC_MAX){
+    fprintf(stderr, "USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  for (i = 1; i < argc; i++){
+    args[i - 1] = atoi(argv[i]);
+  }
+  if (args[0] > C_INT_BIT - 3 ||
+      args[1] > 1 ||
+      args[2] > 1 ||
+      args[3] > 1){
+    fprintf(stderr, "USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  if (args[1]){
+    run_prepend_append_free_int_test(args[0]);
+  }
+  if (args[2]){
+    run_prepend_append_free_int_ptr_test(args[0]);
+  }
+  if (args[3]){
+    run_corner_cases_test();
+  }
+  free(args);
+  args = NULL;
   return 0;
 }
+
