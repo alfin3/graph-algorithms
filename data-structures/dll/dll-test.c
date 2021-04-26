@@ -21,7 +21,7 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90.
+   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is even.
 */
 
 #include <stdio.h>
@@ -328,7 +328,7 @@ void prepend_append_free(dll_node_t **head_prep,
 			 int (*val_elt)(const void *),
 			 void (*free_elt)(void *)){
   int res = 1;
-  int sum_val = 2 * start_val + num_ins - 1; /* < 2^{FULL_INT_BIT - 1} - 1 */
+  int sum_val = 2 * start_val + num_ins - 1; /* < 2^{C_INT_BIT - 1} - 1 */
   int i;
   int *keys = NULL;
   void *elts_prep = NULL, *elts_app = NULL;
