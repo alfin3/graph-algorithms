@@ -2,9 +2,9 @@
 
 Graph algorithms and supporting data structures with generic (any type) edge weights, a hash table parameter, low memory footprint, and general C89/C90 portability across systems without conditional compilation.
 
-Hashing parametrization and generic programming were used to minimize the memory space occupied and used by a program. The implementation provides i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) hashing-based optimization with respect to graph topologies across hardware settings.
+Hashing parametrization and generic programming were used to minimize the memory space occupied and used by a program. The implementation provides i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) parameters for hashing optimization with respect to graph topologies across hardware settings.
 
-The presented approach reflects the perspective that graph problems often reduce to hashing problems, where the distribution of hash values is a function of graph topology, algorithm, and hash function. Information about a graph topology can often be obtained from a problem statement or the prior knowledge of a domain. Based on preliminary data, the provided implementation may motivate the development and evaluation of graph-aware hashing methods.
+The presented approach reflects the perspective that graph problems often reduce to hashing problems, where a graph topology, an algorithm, and a hash function map to a distribution of hash values. Information about a graph topology can often be obtained from a problem statement and/or the prior knowledge of a domain. Based on the preliminary data, the provided implementation may motivate the development and evaluation of graph-aware hashing methods.
 
 Generic division and multiplication-based hash tables are provided and are portable under C89/C90 with the only requirement that `CHAR_BIT * sizeof(size_t)` is greater or equal to 16 and is even.
 
