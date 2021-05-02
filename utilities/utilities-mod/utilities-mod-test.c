@@ -3,6 +3,28 @@
 
    Tests of utility functions in modular arithmetic.
 
+   The following command line arguments can be used to customize tests:
+   utilities-mod-test
+      [0, # bits in size_t) : n for 2^n # trials in tests
+      [0, # bits in size_t) : n for 2^n # trials in memory mod tests
+      [0, # bits in size_t) : a
+      [0, # bits in size_t) : b s.t. 2^a <= size <= 2^b in memory mod tests
+      [0, 1] : pow_mod, mul_mod, mul_mod_pow_two, and sum_mod tests on/off
+      [0, 1] : mem_mod test on/off
+      [0, 1] : fast_mem_mod test on/off
+      [0, 1] : mul_ext, represent_uint, and pow_two tests on/off
+
+   usage examples: 
+   ./utilities-mod-test 20
+   ./utilities-mod-test 20 17 0 15
+   ./utilities-mod-test 20 17 25 25 0 1 1 0
+   ./utilities-mod-test 20 17 30 30 0 0 1 0
+
+   utilities-mod-test can be run with any subset of command line arguments in
+   the above-defined order. If the (i + 1)th argument is specified then the
+   ith argument must be specified for i >= 0. Default values are used for the
+   unspecified arguments according to the C_ARGS_DEF array.
+
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is even.
    Some tests require a little-endian machine, as indicated.
@@ -27,6 +49,20 @@
 #define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
 
 #define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
+
+/* input handling */
+const char *C_USAGE =
+  "utilities-mod-test \n"
+  "[0, # bits in size_t) : n for 2^n # trials in tests \n"
+  "[0, # bits in size_t) : n for 2^n # trials in memory mod tests \n"
+  "[0, # bits in size_t) : a \n"
+  "[0, # bits in size_t) : b s.t. 2^a <= size <= 2^b in memory mod tests \n"
+  "[0, 1] : pow_mod, mul_mod, mul_mod_pow_two, and sum_mod tests on/off \n"
+  "[0, 1] : mem_mod test on/off \n"
+  "[0, 1] : fast_mem_mod test on/off \n"
+  "[0, 1] : mul_ext, represent_uint, and pow_two tests on/off \n";
+const int C_ARGC_MAX = 9;
+const size_t C_ARGS_DEF[8] = {15, 10, 10, 17, 1, 1, 1, 1};
 
 /* tests */
 const unsigned char C_UCHAR_MAX = (unsigned char)-1;
@@ -148,6 +184,49 @@ void run_mul_mod_test(int pow_trials){
   res *= (mul_mod(C_SIZE_MAX - 1, C_SIZE_MAX - 1, C_SIZE_MAX - 1) == 0);
   res *= (mul_mod(C_SIZE_MAX - 1, C_SIZE_MAX - 1, C_SIZE_MAX) == 1);
   res *= (mul_mod(C_SIZE_MAX, C_SIZE_MAX, C_SIZE_MAX) == 0);
+  printf("\tcorner cases --> ");
+  print_test_result(res);
+}
+
+/**
+   Tests mul_mod_pow_two.
+*/
+void run_mul_mod_pow_two_test(int pow_trials){
+  int res = 1;
+  size_t i, trials;
+  size_t a, b;
+  size_t h, l;
+  size_t ret;
+  trials = pow_two(pow_trials);
+  printf("Run mul_mod_pow_two random test\n");
+  for (i = 0; i < trials; i++){
+    a = DRAND() * (pow_two(C_HALF_BIT) - 1);
+    b = DRAND() * (pow_two(C_HALF_BIT) - 1);
+    ret = mul_mod_pow_two(a, b);
+    res *= (ret == a * b);
+  }
+  printf("\t0 <= a, b <= 2^%lu - 1  --> ", TOLU(C_HALF_BIT));
+  print_test_result(res);
+  res = 1;
+  for (i = 0; i < trials; i++){
+    a = 1 + DRAND() * (C_SIZE_MAX - 1);
+    b = 1 + DRAND() * (C_SIZE_MAX - 1);
+    mul_ext(a, b, &h, &l);
+    ret = mul_mod_pow_two(a, b);
+    res *= (ret == l && ret == a * b);
+  }
+  printf("\t0 < a, b <= 2^%lu - 1 --> ", TOLU(C_FULL_BIT));
+  print_test_result(res);
+  res = 1;
+  res *= (mul_mod_pow_two(0, 0) == 0);
+  res *= (mul_mod_pow_two(1, 0) == 0);
+  res *= (mul_mod_pow_two(0, 1) == 0);
+  res *= (mul_mod_pow_two(1, 1) == 1);
+  res *= (mul_mod_pow_two(pow_two(C_HALF_BIT),
+			  pow_two(C_HALF_BIT)) == 0);
+  res *= (mul_mod_pow_two(pow_two(C_FULL_BIT - 1),
+			  pow_two(C_FULL_BIT - 1)) == 0);
+  res *= (mul_mod_pow_two(C_SIZE_MAX, C_SIZE_MAX) == 1);
   printf("\tcorner cases --> ");
   print_test_result(res);
 }
@@ -343,49 +422,6 @@ void run_fast_mem_mod_test(int pow_trials,
 }
 
 /**
-   Tests mul_mod_pow_two.
-*/
-void run_mul_mod_pow_two_test(int pow_trials){
-  int res = 1;
-  size_t i, trials;
-  size_t a, b;
-  size_t h, l;
-  size_t ret;
-  trials = pow_two(pow_trials);
-  printf("Run mul_mod_pow_two random test\n");
-  for (i = 0; i < trials; i++){
-    a = DRAND() * (pow_two(C_HALF_BIT) - 1);
-    b = DRAND() * (pow_two(C_HALF_BIT) - 1);
-    ret = mul_mod_pow_two(a, b);
-    res *= (ret == a * b);
-  }
-  printf("\t0 <= a, b <= 2^%lu - 1  --> ", TOLU(C_HALF_BIT));
-  print_test_result(res);
-  res = 1;
-  for (i = 0; i < trials; i++){
-    a = 1 + DRAND() * (C_SIZE_MAX - 1);
-    b = 1 + DRAND() * (C_SIZE_MAX - 1);
-    mul_ext(a, b, &h, &l);
-    ret = mul_mod_pow_two(a, b);
-    res *= (ret == l && ret == a * b);
-  }
-  printf("\t0 < a, b <= 2^%lu - 1 --> ", TOLU(C_FULL_BIT));
-  print_test_result(res);
-  res = 1;
-  res *= (mul_mod_pow_two(0, 0) == 0);
-  res *= (mul_mod_pow_two(1, 0) == 0);
-  res *= (mul_mod_pow_two(0, 1) == 0);
-  res *= (mul_mod_pow_two(1, 1) == 1);
-  res *= (mul_mod_pow_two(pow_two(C_HALF_BIT),
-			  pow_two(C_HALF_BIT)) == 0);
-  res *= (mul_mod_pow_two(pow_two(C_FULL_BIT - 1),
-			  pow_two(C_FULL_BIT - 1)) == 0);
-  res *= (mul_mod_pow_two(C_SIZE_MAX, C_SIZE_MAX) == 1);
-  printf("\tcorner cases --> ");
-  print_test_result(res);
-}
-
-/**
    Tests mul_ext.
 */
 void run_mul_ext_test(int pow_trials){
@@ -499,16 +535,45 @@ void print_test_result(int res){
   }
 }
 
-int main(){
+int main(int argc, char *argv[]){
+  int i;
+  size_t *args = NULL;
   RGENS_SEED();
-  run_pow_mod_test(20);
-  run_mul_mod_test(20);
-  run_sum_mod_test(20);
-  run_mem_mod_test(20, 10, 17);
-  run_fast_mem_mod_test(10, 10, 17);
-  run_mul_mod_pow_two_test(20);
-  run_mul_ext_test(20);
-  run_represent_uint_test(20);
-  run_pow_two_test();
+  if (argc > C_ARGC_MAX){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  for (i = 1; i < argc; i++){
+    args[i - 1] = atoi(argv[i]);
+  }
+  if (args[0] > C_FULL_BIT - 1 ||
+      args[1] > C_FULL_BIT - 1 ||
+      args[2] > C_FULL_BIT - 1 ||
+      args[3] > C_FULL_BIT - 1 ||
+      args[2] > args[3] ||
+      args[4] > 1 ||
+      args[5] > 1 ||
+      args[6] > 1 ||
+      args[7] > 1){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  if (args[4]){
+    run_pow_mod_test(args[0]);
+    run_mul_mod_test(args[0]);
+    run_mul_mod_pow_two_test(args[0]);
+    run_sum_mod_test(args[0]);
+  }
+  if (args[5]) run_mem_mod_test(args[1], args[2], args[3]);
+  if (args[6]) run_fast_mem_mod_test(args[1], args[2], args[3]);
+  if (args[7]){
+    run_mul_ext_test(args[0]);
+    run_represent_uint_test(args[0]);
+    run_pow_two_test();
+  }
+  free(args);
+  args = NULL;
   return 0;
 }

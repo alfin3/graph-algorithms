@@ -10,11 +10,11 @@
 #include <limits.h>
 #include "utilities-mod.h"
 
-static const size_t CONST_BYTE_BIT = CHAR_BIT;
-static const size_t CONST_FULL_BIT = CHAR_BIT * sizeof(size_t);
-static const size_t CONST_HALF_BIT = CHAR_BIT * sizeof(size_t) / 2;
-static const size_t CONST_LOW_MASK = ((size_t)-1 >>
-				      (CHAR_BIT * sizeof(size_t) / 2));
+static const size_t C_BYTE_BIT = CHAR_BIT;
+static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+static const size_t C_HALF_BIT = CHAR_BIT * sizeof(size_t) / 2;
+static const size_t C_LOW_MASK = ((size_t)-1 >>
+				  (CHAR_BIT * sizeof(size_t) / 2));
 
 /**
    Computes overflow-safe mod n of the kth power in O(logk) time,
@@ -49,24 +49,40 @@ size_t mul_mod(size_t a, size_t b, size_t n){
   /* comparisons for speed up */
   if (n == 1) return 0;
   if (a == 0 || b == 0) return 0;
-  if (a < pow_two(CONST_HALF_BIT) && b < pow_two(CONST_HALF_BIT)){
+  if (a < pow_two(C_HALF_BIT) && b < pow_two(C_HALF_BIT)){
     return (a * b) % n;
   }
-  al = a & CONST_LOW_MASK;
-  bl = b & CONST_LOW_MASK;
-  ah = a >> CONST_HALF_BIT;
-  bh = b >> CONST_HALF_BIT;
+  al = a & C_LOW_MASK;
+  bl = b & C_LOW_MASK;
+  ah = a >> C_HALF_BIT;
+  bh = b >> C_HALF_BIT;
   ah_bh = ah * bh;
-  for (i = 0; i < CONST_HALF_BIT; i++){
+  for (i = 0; i < C_HALF_BIT; i++){
     ah_bh = sum_mod(ah_bh, ah_bh, n);
   }
   ret = sum_mod(ah_bh, ah * bl, n);
   ret = sum_mod(ret, al * bh, n);
-  for (i = 0; i < CONST_HALF_BIT; i++){
+  for (i = 0; i < C_HALF_BIT; i++){
     ret = sum_mod(ret, ret, n);
   }
   ret = sum_mod(ret, al * bl, n);
   return ret;
+}
+
+/**
+   Computes mod 2^{CHAR_BIT * sizeof(size_t)} of a product in an overflow-
+   safe manner, without using wrapping around.
+*/
+size_t mul_mod_pow_two(size_t a, size_t b){
+  size_t al, bl, al_bl;
+  size_t overlap;
+  al = a & C_LOW_MASK;
+  bl = b & C_LOW_MASK;
+  al_bl = al * bl;
+  overlap = ((bl * (a >> C_HALF_BIT) & C_LOW_MASK) +
+	     (al * (b >> C_HALF_BIT) & C_LOW_MASK) +
+	     (al_bl >> C_HALF_BIT));
+  return (overlap << C_HALF_BIT) + (al_bl & C_LOW_MASK);
 }
 
 /**
@@ -103,7 +119,7 @@ size_t mem_mod(const void *s, size_t size, size_t n){
   size_t ret = 0;
   size_t i;
   if (n == 1) return 0;
-  ptwo_inc = mul_mod(pow_two(CONST_BYTE_BIT - 1), 2, n);
+  ptwo_inc = mul_mod(pow_two(C_BYTE_BIT - 1), 2, n);
   for (i = 0; i < size; i++){
     val = *ptr;
     /* comparison for speed up across a large memory block */
@@ -118,8 +134,7 @@ size_t mem_mod(const void *s, size_t size, size_t n){
 
 /**
    Computes mod n of a memory block, treating the block in sizeof(size_t)-
-   byte increments in the little-endian order and inductively applying the
-   following relations:
+   byte increments and inductively applying the following relations:
    if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
    a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
    Given a little-endian machine, the return value is equal to the return
@@ -138,7 +153,7 @@ size_t fast_mem_mod(const void *s, size_t size, size_t n){
     res_size = size % step_size;
   }
   if (size > step_size){
-    ptwo_inc = mul_mod(pow_two(CONST_FULL_BIT - 1), 2, n);
+    ptwo_inc = mul_mod(pow_two(C_FULL_BIT - 1), 2, n);
   } 
   for (i = 0; i < size - res_size; i += step_size){
     val = *ptr;
@@ -156,44 +171,27 @@ size_t fast_mem_mod(const void *s, size_t size, size_t n){
 }
 
 /**
-   Computes mod 2^{8 * sizeof(size_t)} of a product in an overflow-safe
-   manner, without using wrapping around. The explicitly treated overlap
-   does not result in a notable speed cost in performance tests at the -O3
-   optimization level and is preferred over the wrap around product.
-*/
-size_t mul_mod_pow_two(size_t a, size_t b){
-  size_t al, bl, al_bl;
-  size_t overlap;
-  al = a & CONST_LOW_MASK;
-  bl = b & CONST_LOW_MASK;
-  al_bl = al * bl;
-  overlap = ((bl * (a >> CONST_HALF_BIT) & CONST_LOW_MASK) +
-	     (al * (b >> CONST_HALF_BIT) & CONST_LOW_MASK) +
-	     (al_bl >> CONST_HALF_BIT));
-  return (overlap << CONST_HALF_BIT) + (al_bl & CONST_LOW_MASK);
-}
-
-/**
-   Multiplies two numbers in an overflow-safe manner and copy the high and low
-   bits of the product into preallocated blocks pointed to by h and l.
+   Multiplies two numbers in an overflow-safe manner and copies the high and
+   low bits of the product into the preallocated blocks pointed to by h
+   and l.
 */
 void mul_ext(size_t a, size_t b, size_t *h, size_t *l){
   size_t al, bl, ah, bh, al_bl, al_bh;
   size_t overlap;
-  al = a & CONST_LOW_MASK;
-  bl = b & CONST_LOW_MASK;
-  ah = a >> CONST_HALF_BIT;
-  bh = b >> CONST_HALF_BIT;
+  al = a & C_LOW_MASK;
+  bl = b & C_LOW_MASK;
+  ah = a >> C_HALF_BIT;
+  bh = b >> C_HALF_BIT;
   al_bl = al * bl;
   al_bh = al * bh;
-  overlap = ((bl * ah & CONST_LOW_MASK) +
-	     (al_bh & CONST_LOW_MASK) +
-	     (al_bl >> CONST_HALF_BIT));
-  *h = ((overlap >> CONST_HALF_BIT) +
+  overlap = ((bl * ah & C_LOW_MASK) +
+	     (al_bh & C_LOW_MASK) +
+	     (al_bl >> C_HALF_BIT));
+  *h = ((overlap >> C_HALF_BIT) +
 	ah * bh +
-	(ah * bl >> CONST_HALF_BIT) +
-	(al_bh >> CONST_HALF_BIT));
-  *l = (overlap << CONST_HALF_BIT) + (al_bl & CONST_LOW_MASK);
+	(ah * bl >> C_HALF_BIT) +
+	(al_bh >> C_HALF_BIT));
+  *l = (overlap << C_HALF_BIT) + (al_bl & C_LOW_MASK);
 }
 
 /**
@@ -206,12 +204,12 @@ void represent_uint(size_t n, size_t *k, size_t *u){
     c++;
     shift_n <<= 1;
   }
-  *k = CONST_FULL_BIT - c;
+  *k = C_FULL_BIT - c;
   *u = n >> *k;
 }
 
 /**
-   Returns the kth power of 2, where 0 <= k < 8 * sizeof(size_t).
+   Returns the kth power of 2, where 0 <= k < CHAR_BIT * sizeof(size_t).
 */
 size_t pow_two(size_t k){
   return (size_t)1 << k;
