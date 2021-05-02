@@ -2,6 +2,10 @@
    utilities-mod-test.c
 
    Tests of utility functions in modular arithmetic.
+
+   The implementation of tests does not use stdint.h and is portable under
+   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is even.
+   Some tests require a little-endian machine, as indicated.
 */
 
 #include <stdio.h>
@@ -26,11 +30,12 @@
 
 /* tests */
 const unsigned char C_UCHAR_MAX = (unsigned char)-1;
-const size_t C_SIZE_MAX = (size_t)-1;
+const size_t C_SIZE_MAX = (size_t)-1; /* >= 3 */
 const size_t C_BYTE_BIT = CHAR_BIT;
-const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
-const size_t C_HALF_BIT = CHAR_BIT * sizeof(size_t) / 2;
-const size_t C_BASE_MAX = (size_t)1 << (CHAR_BIT / 2); /* >1, <C_SIZE_MAX */
+const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t); /* >= 2 */
+const size_t C_HALF_BIT = CHAR_BIT * sizeof(size_t) / 2; /* >= 1 */
+const size_t C_BASE_MAX = (((size_t)1 << (CHAR_BIT / 2))
+			   + 1); /* >= 2, <= C_SIZE_MAX */
 
 void print_test_result(int res);
 
@@ -40,24 +45,24 @@ void print_test_result(int res);
 void run_pow_mod_test(int pow_trials){
   int res = 1;
   size_t i, trials;
-  size_t base_sq_max = C_SIZE_MAX, k_max = 0, n_max;
+  size_t k_max, n_max;
+  size_t base_sq_max = C_SIZE_MAX;
   size_t j, k;
   size_t a, n;
   size_t r, r_wo;
-  n_max = pow_two(C_HALF_BIT) - 2;
   trials = pow_two(pow_trials);
+  k_max = 1;
+  n_max = pow_two(C_HALF_BIT) - 2; /* >= 0 */
   while (base_sq_max / C_BASE_MAX >= C_BASE_MAX){
     base_sq_max /= C_BASE_MAX;
     k_max++;
   }
   printf("Run pow_mod random test\n ");
-  printf("\t0 <= a <= %lu, 0 <= k <= %lu, 0 < n <= 2^%lu - 1 --> ",
-	 TOLU(C_BASE_MAX), TOLU(k_max), TOLU(C_HALF_BIT));
   for (i = 0; i < trials; i++){
     r_wo = 1;
-    a = RANDOM() % (C_BASE_MAX + 1);
-    k = RANDOM() % (k_max + 1);
-    n = 1 + DRAND() * n_max;
+    a = DRAND() * C_BASE_MAX;
+    k = DRAND() * k_max;
+    n = 1 + DRAND() * n_max; /* >= 1*/
     r = pow_mod(a, k, n);
     for (j = 0; j < k; j++){
       r_wo *= a;
@@ -65,10 +70,10 @@ void run_pow_mod_test(int pow_trials){
     r_wo = r_wo % n;
     res *= (r == r_wo);
   }
+  printf("\t0 <= a <= %lu, 0 <= k <= %lu, 0 < n <= 2^%lu - 1 --> ",
+	 TOLU(C_BASE_MAX), TOLU(k_max), TOLU(C_HALF_BIT));
   print_test_result(res);
   res = 1;
-  printf("\ta = n - 1, 0 <= k < 2^%lu - 1, where 0 = k (mod 2), "
-	 "1 < n <= 2^%lu - 1 --> ", TOLU(C_FULL_BIT), TOLU(C_FULL_BIT));
   k_max = C_SIZE_MAX - 1;
   n_max = C_SIZE_MAX - 2;
   for (i = 0; i < trials; i++){
@@ -81,16 +86,18 @@ void run_pow_mod_test(int pow_trials){
     r = pow_mod(a, k, n);
     res *= (r == 1);
   }
+  printf("\ta = n - 1, 0 <= k < 2^%lu - 1, 1 < n <= 2^%lu - 1, "
+	 "where 0 = k (mod 2) --> ",
+	 TOLU(C_FULL_BIT), TOLU(C_FULL_BIT));
   print_test_result(res);
   res = 1;
-  n_max = C_SIZE_MAX;
   res *= (pow_mod(0, 0, 1) == 0);
   res *= (pow_mod(2, 0, 1) == 0);
   res *= (pow_mod(0, 0, 2) == 1);
   res *= (pow_mod(2, 0, 2) == 1);
-  res *= (pow_mod(n_max, n_max, n_max) == 0);
-  res *= (pow_mod(n_max - 1, n_max, n_max) == n_max - 1);
-  res *= (pow_mod(n_max, n_max - 1, n_max) == 0);
+  res *= (pow_mod(C_SIZE_MAX, C_SIZE_MAX, C_SIZE_MAX) == 0);
+  res *= (pow_mod(C_SIZE_MAX - 1, C_SIZE_MAX, C_SIZE_MAX) == C_SIZE_MAX - 1);
+  res *= (pow_mod(C_SIZE_MAX, C_SIZE_MAX - 1, C_SIZE_MAX) == 0);
   printf("\tcorner cases --> ");
   print_test_result(res);
 }
@@ -134,13 +141,13 @@ void run_mul_mod_test(int pow_trials){
   res *= (mul_mod(0, 1, 2) == 0);
   res *= (mul_mod(0, 2, 2) == 0);
   res *= (mul_mod(1, 1, 2) == 1);
-  res *= (mul_mod(0, n_max - 1, n_max) == 0);
-  res *= (mul_mod(n_max - 1, 0, n_max) == 0);
-  res *= (mul_mod(n_max - 1, 1, n_max) == n_max - 1);
-  res *= (mul_mod(1, n_max - 1, n_max) == n_max - 1);
-  res *= (mul_mod(n_max - 1, n_max - 1, n_max - 1) == 0);
-  res *= (mul_mod(n_max - 1, n_max - 1, n_max) == 1);
-  res *= (mul_mod(n_max, n_max, n_max) == 0);
+  res *= (mul_mod(0, C_SIZE_MAX - 1, C_SIZE_MAX) == 0);
+  res *= (mul_mod(C_SIZE_MAX - 1, 0, C_SIZE_MAX) == 0);
+  res *= (mul_mod(C_SIZE_MAX - 1, 1, C_SIZE_MAX) == C_SIZE_MAX - 1);
+  res *= (mul_mod(1, C_SIZE_MAX - 1, C_SIZE_MAX) == C_SIZE_MAX - 1);
+  res *= (mul_mod(C_SIZE_MAX - 1, C_SIZE_MAX - 1, C_SIZE_MAX - 1) == 0);
+  res *= (mul_mod(C_SIZE_MAX - 1, C_SIZE_MAX - 1, C_SIZE_MAX) == 1);
+  res *= (mul_mod(C_SIZE_MAX, C_SIZE_MAX, C_SIZE_MAX) == 0);
   printf("\tcorner cases --> ");
   print_test_result(res);
 }
@@ -167,7 +174,7 @@ void run_sum_mod_test(int pow_trials){
     r_wo = (a + b) % n;
     res *= (r == r_wo);
   }
-  printf("\ta, b <= 2^%lu - 1 (mod n), 0 < n <= 2^%lu - 1 --> ",
+  printf("\ta, b <= 2^%lu - 1, 0 < n <= 2^%lu - 1 --> ",
 	 TOLU(C_FULL_BIT - 1), TOLU(C_FULL_BIT));
   print_test_result(res);
   res = 1;
@@ -184,7 +191,8 @@ void run_sum_mod_test(int pow_trials){
   res *= (sum_mod(1, 0, 2) == 1);
   res *= (sum_mod(0, 1, 2) == 1);
   res *= (sum_mod(1, 1, 2) == 0);
-  res *= (sum_mod(n_max - 1, n_max - 1, n_max) == n_max - 2);
+  res *= (sum_mod(C_SIZE_MAX - 1, C_SIZE_MAX - 1, C_SIZE_MAX) ==
+	  C_SIZE_MAX - 2);
   printf("\tcorner cases --> ");
   print_test_result(res);
 }
@@ -195,26 +203,27 @@ void run_sum_mod_test(int pow_trials){
 void run_mem_mod_test(int pow_trials,
 		      int pow_size_start,
 		      int pow_size_end){
+  unsigned char *block = NULL;
   int res = 1;
   int j;
-  unsigned char *block = NULL;
   size_t i, trials;
-  size_t max = C_SIZE_MAX - 1;
   size_t num, n, mod_n;
   size_t size;
   clock_t t;
   trials = pow_two(pow_trials);
   size = sizeof(size_t);
-  printf("Run mem_mod in a random test, size = %lu bytes  --> ", TOLU(size));
+  printf("Run mem_mod in a random test (little endian req.), "
+	 "size = %lu bytes  --> ",
+	 TOLU(size));
   for (i = 0; i < trials; i++){
-    num = DRAND() * max;
-    n = 1 + DRAND() * max;
+    num = DRAND() * C_SIZE_MAX;
+    n = 1 + DRAND() * (C_SIZE_MAX - 1);
     res *= (num % n == mem_mod(&num, size, n));
   }
   print_test_result(res);
   res = 1;
   printf("Run mem_mod on large memory blocks \n");
-  n = 1 + DRAND() * max;
+  n = 1 + DRAND() * (C_SIZE_MAX - 1);
   for (j = pow_size_start; j <= pow_size_end; j++){
     size = pow_two(j) + 1;
     block = calloc_perror(1, size);
@@ -223,7 +232,7 @@ void run_mem_mod_test(int pow_trials,
     mod_n = mem_mod(block, size, n);
     t = clock() - t;
     res = (mod_n == pow_mod(mul_mod(pow_two(C_BYTE_BIT - 1), 2, n),
-			    pow_two(j),
+			    size - 1,
 			    n));
     printf("\tblock size:  %lu bytes \n", TOLU(size));
     printf("\truntime:     %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
@@ -236,8 +245,7 @@ void run_mem_mod_test(int pow_trials,
 }
 
 /**
-   Tests fast_mem_mod. A little-endian machine is assumed for the comparison
-   test.
+   Tests fast_mem_mod.
 */
 void run_fast_mem_mod_test(int pow_trials,
 			   int pow_size_start,
@@ -246,7 +254,6 @@ void run_fast_mem_mod_test(int pow_trials,
   int j;
   unsigned char *block = NULL;
   size_t i, trials;
-  size_t max = C_SIZE_MAX - 1;
   size_t num, n, mod_n;
   size_t k, size;
   clock_t t;
@@ -255,16 +262,16 @@ void run_fast_mem_mod_test(int pow_trials,
   printf("Run fast_mem_mod in a random test, size = %lu bytes  --> ",
 	 TOLU(size));
   for (i = 0; i < trials; i++){
-    num = DRAND() * max;
-    n = 1 + DRAND() * max;
+    num = DRAND() * C_SIZE_MAX;
+    n = 1 + DRAND() * (C_SIZE_MAX - 1);
     res *= (num % n == fast_mem_mod(&num, size, n));
   }
   print_test_result(res);
   res = 1;
-  printf("Run fast_mem_mod on large memory blocks, n <= 2^%lu - 1 \n",
+  printf("Run fast_mem_mod on large memory blocks, "
+	 "0 < n <= 2^%lu - 1 \n",
 	 TOLU(C_HALF_BIT));
-  max = pow_two(C_HALF_BIT) - 2;
-  n = 1 + DRAND() * max;
+  n = 1 + DRAND() * (pow_two(C_HALF_BIT) - 2);
   for (j = pow_size_start; j <= pow_size_end; j++){
     size = pow_two(j) + 1;
     block = calloc_perror(1, size);
@@ -273,7 +280,7 @@ void run_fast_mem_mod_test(int pow_trials,
     mod_n = fast_mem_mod(block, size, n);
     t = clock() - t;
     res = (mod_n == pow_mod(mul_mod(pow_two(C_BYTE_BIT - 1), 2, n),
-			    pow_two(j),
+			    size - 1,
 			    n));
     printf("\tblock size:  %lu bytes \n", TOLU(size));
     printf("\truntime:     %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
@@ -286,8 +293,7 @@ void run_fast_mem_mod_test(int pow_trials,
   printf("Run fast_mem_mod on large memory blocks, "
 	 "2^%lu - 1 < n <= 2^%lu - 1 \n",
 	 TOLU(C_HALF_BIT), TOLU(C_FULL_BIT));
-  max = C_SIZE_MAX;
-  n = pow_two(C_HALF_BIT) + DRAND() * (max - pow_two(C_HALF_BIT));
+  n = pow_two(C_HALF_BIT) + DRAND() * (C_SIZE_MAX - pow_two(C_HALF_BIT));
   for (j = pow_size_start; j <= pow_size_end; j++){
     size = pow_two(j) + 1;
     block = calloc_perror(1, size);
@@ -296,7 +302,7 @@ void run_fast_mem_mod_test(int pow_trials,
     mod_n = fast_mem_mod(block, size, n);
     t = clock() - t;
     res = (mod_n == pow_mod(mul_mod(pow_two(C_BYTE_BIT - 1), 2, n),
-			    pow_two(j),
+			    size - 1,
 			    n));
     printf("\tblock size:  %lu bytes \n", TOLU(size));
     printf("\truntime:     %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
@@ -305,15 +311,27 @@ void run_fast_mem_mod_test(int pow_trials,
     res = 1;
     free(block);
     block = NULL;
-  } 
-  printf("Run fast_mem_mod and mem_mod comparison on random blocks "
-	 "of random size (little endian machine req.) --> ");
+  }
+  printf("Run fast_mem_mod and mem_mod comparison on non-random blocks "
+	 "of random size --> ");
   fflush(stdout);
-  max = C_SIZE_MAX - 1;
   for (i = 0; i < trials; i++){
     size = 1 + RANDOM() % C_UCHAR_MAX;
-    block = calloc_perror(1, size);
-    n = 1 + DRAND() * max;
+    block = malloc_perror(1, size);
+    memset(block, C_UCHAR_MAX, size);
+    n = 1 + DRAND() * (C_SIZE_MAX - 1); 
+    res *= (fast_mem_mod(block, size, n) == mem_mod(block, size, n));
+    free(block);
+    block = NULL;
+  }
+  print_test_result(res);
+  printf("Run fast_mem_mod and mem_mod comparison on random blocks "
+	 "of random size (little endian req.) --> ");
+  fflush(stdout);
+  for (i = 0; i < trials; i++){
+    size = 1 + RANDOM() % C_UCHAR_MAX;
+    block = malloc_perror(1, size);
+    n = 1 + DRAND() * (C_SIZE_MAX - 1);
     for (k = 0; k < size; k++){
       block[k] = DRAND() * C_UCHAR_MAX;
     }  
@@ -330,24 +348,23 @@ void run_fast_mem_mod_test(int pow_trials,
 void run_mul_mod_pow_two_test(int pow_trials){
   int res = 1;
   size_t i, trials;
-  size_t max;
-  size_t a, b, h, l, ret;
+  size_t a, b;
+  size_t h, l;
+  size_t ret;
   trials = pow_two(pow_trials);
-  max = pow_two(C_HALF_BIT) - 1;
   printf("Run mul_mod_pow_two random test\n");
   for (i = 0; i < trials; i++){
-    a = DRAND() * max;
-    b = DRAND() * max;
+    a = DRAND() * (pow_two(C_HALF_BIT) - 1);
+    b = DRAND() * (pow_two(C_HALF_BIT) - 1);
     ret = mul_mod_pow_two(a, b);
     res *= (ret == a * b);
   }
   printf("\t0 <= a, b <= 2^%lu - 1  --> ", TOLU(C_HALF_BIT));
   print_test_result(res);
   res = 1;
-  max = C_SIZE_MAX - 1;
   for (i = 0; i < trials; i++){
-    a = 1 + DRAND() * max;
-    b = 1 + DRAND() * max;
+    a = 1 + DRAND() * (C_SIZE_MAX - 1);
+    b = 1 + DRAND() * (C_SIZE_MAX - 1);
     mul_ext(a, b, &h, &l);
     ret = mul_mod_pow_two(a, b);
     res *= (ret == l && ret == a * b);
@@ -374,16 +391,15 @@ void run_mul_mod_pow_two_test(int pow_trials){
 void run_mul_ext_test(int pow_trials){
   int res = 1;
   size_t i, trials;
-  size_t max;
-  size_t a, b, n, h, l;
+  size_t a, b, n;
+  size_t h, l;
   size_t *hl = NULL;
   trials = pow_two(pow_trials);
-  max = pow_two(C_HALF_BIT) - 1;
   hl = malloc_perror(2, sizeof(size_t));
   printf("Run mul_ext random test\n");
   for (i = 0; i < trials; i++){
-    a = DRAND() * max;
-    b = DRAND() * max;
+    a = DRAND() * (pow_two(C_HALF_BIT) - 1);
+    b = DRAND() * (pow_two(C_HALF_BIT) - 1);
     mul_ext(a, b, &h, &l);
     res *= (h == 0);
     res *= (l == a * b);
@@ -391,15 +407,14 @@ void run_mul_ext_test(int pow_trials){
   printf("\t0 <= a, b <= 2^%lu - 1  --> ", TOLU(C_HALF_BIT));
   print_test_result(res);
   res = 1;
-  max = C_SIZE_MAX - 1;
   for (i = 0; i < trials; i++){
-    a = 1 + DRAND() * max;
-    b = 1 + DRAND() * max;
-    n = 1 + DRAND() * max;
+    a = 1 + DRAND() * (C_SIZE_MAX - 1);
+    b = 1 + DRAND() * (C_SIZE_MAX - 1);
+    n = 1 + DRAND() * (C_SIZE_MAX - 1);
     mul_ext(a, b, &h, &l);
     hl[0] = l;
     hl[1] = h;
-    res *= (mem_mod(hl, 2 * sizeof(size_t), n) == mul_mod(a, b, n));
+    res *= (fast_mem_mod(hl, 2 * sizeof(size_t), n) == mul_mod(a, b, n));
   }
   printf("\t0 < a, b <= 2^%lu - 1 --> ", TOLU(C_FULL_BIT));
   print_test_result(res);
@@ -434,7 +449,9 @@ void run_represent_uint_test(int pow_trials){
   printf("Run represent_uint odds test --> ");
   for (i = 0; i < trials; i++){
     n = RANDOM();
-    if (!(n & 1)) n++;
+    while (!(n & 1)){
+      n = RANDOM();
+    }
     represent_uint(n, &k, &u);
     res *= (k == 0 && u == n);
   }
