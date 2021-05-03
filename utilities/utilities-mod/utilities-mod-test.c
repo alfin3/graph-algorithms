@@ -6,9 +6,9 @@
    The following command line arguments can be used to customize tests:
    utilities-mod-test
       [0, # bits in size_t) : n for 2^n # trials in tests
-      [0, # bits in size_t) : n for 2^n # trials in memory mod tests
+      [0, # bits in size_t) : n for 2^n # trials in mem mod tests
       [0, # bits in size_t) : a
-      [0, # bits in size_t) : b s.t. 2^a <= size <= 2^b in memory mod tests
+      [0, # bits in size_t) : b s.t. 2^a <= size - 1 <= 2^b in mem mod tests
       [0, 1] : pow_mod, mul_mod, mul_mod_pow_two, and sum_mod tests on/off
       [0, 1] : mem_mod test on/off
       [0, 1] : fast_mem_mod test on/off
@@ -54,15 +54,15 @@
 const char *C_USAGE =
   "utilities-mod-test \n"
   "[0, # bits in size_t) : n for 2^n # trials in tests \n"
-  "[0, # bits in size_t) : n for 2^n # trials in memory mod tests \n"
+  "[0, # bits in size_t) : n for 2^n # trials in mem mod tests \n"
   "[0, # bits in size_t) : a \n"
-  "[0, # bits in size_t) : b s.t. 2^a <= size <= 2^b in memory mod tests \n"
+  "[0, # bits in size_t) : b s.t. 2^a <= size - 1 <= 2^b in mem mod tests \n"
   "[0, 1] : pow_mod, mul_mod, mul_mod_pow_two, and sum_mod tests on/off \n"
   "[0, 1] : mem_mod test on/off \n"
   "[0, 1] : fast_mem_mod test on/off \n"
   "[0, 1] : mul_ext, represent_uint, and pow_two tests on/off \n";
 const int C_ARGC_MAX = 9;
-const size_t C_ARGS_DEF[8] = {15, 10, 10, 17, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[8] = {15, 10, 10, 15, 1, 1, 1, 1};
 
 /* tests */
 const unsigned char C_UCHAR_MAX = (unsigned char)-1;
@@ -289,6 +289,7 @@ void run_mem_mod_test(int pow_trials,
   size_t num, n, mod_n;
   size_t size;
   clock_t t;
+  block = calloc_perror(1, add_sz_perror(pow_two(pow_size_end), 1));
   trials = pow_two(pow_trials);
   size = sizeof(size_t);
   printf("Run mem_mod in a random test (little endian req.), "
@@ -305,8 +306,7 @@ void run_mem_mod_test(int pow_trials,
   n = 1 + DRAND() * (C_SIZE_MAX - 1);
   for (j = pow_size_start; j <= pow_size_end; j++){
     size = pow_two(j) + 1;
-    block = calloc_perror(1, size);
-    block[size - 1] = (unsigned char)1;
+    block[size - 1] = 1;
     t = clock();
     mod_n = mem_mod(block, size, n);
     t = clock() - t;
@@ -318,9 +318,10 @@ void run_mem_mod_test(int pow_trials,
     printf("\tcorrectness: ");
     print_test_result(res);
     res = 1;
-    free(block);
-    block = NULL;
-  } 
+    block[size - 1] = 0;
+  }
+  free(block);
+  block = NULL;
 }
 
 /**
@@ -347,14 +348,14 @@ void run_fast_mem_mod_test(int pow_trials,
   }
   print_test_result(res);
   res = 1;
+  block = calloc_perror(1, add_sz_perror(pow_two(pow_size_end), 1));
   printf("Run fast_mem_mod on large memory blocks, "
 	 "0 < n <= 2^%lu - 1 \n",
 	 TOLU(C_HALF_BIT));
   n = 1 + DRAND() * (pow_two(C_HALF_BIT) - 2);
   for (j = pow_size_start; j <= pow_size_end; j++){
     size = pow_two(j) + 1;
-    block = calloc_perror(1, size);
-    block[size - 1] = (unsigned char)1;
+    block[size - 1] = 1;
     t = clock();
     mod_n = fast_mem_mod(block, size, n);
     t = clock() - t;
@@ -366,8 +367,7 @@ void run_fast_mem_mod_test(int pow_trials,
     printf("\tcorrectness: ");
     print_test_result(res);
     res = 1;
-    free(block);
-    block = NULL;
+    block[size - 1] = 0;
   }
   printf("Run fast_mem_mod on large memory blocks, "
 	 "2^%lu - 1 < n <= 2^%lu - 1 \n",
@@ -375,8 +375,7 @@ void run_fast_mem_mod_test(int pow_trials,
   n = pow_two(C_HALF_BIT) + DRAND() * (C_SIZE_MAX - pow_two(C_HALF_BIT));
   for (j = pow_size_start; j <= pow_size_end; j++){
     size = pow_two(j) + 1;
-    block = calloc_perror(1, size);
-    block[size - 1] = (unsigned char)1;
+    block[size - 1] = 1;
     t = clock();
     mod_n = fast_mem_mod(block, size, n);
     t = clock() - t;
@@ -388,37 +387,35 @@ void run_fast_mem_mod_test(int pow_trials,
     printf("\tcorrectness: ");
     print_test_result(res);
     res = 1;
-    free(block);
-    block = NULL;
+    block[size - 1] = 0;
   }
+  free(block);
+  block = NULL;
   printf("Run fast_mem_mod and mem_mod comparison on non-random blocks "
-	 "of random size --> ");
+	 "--> ");
   fflush(stdout);
+  block = malloc_perror(1, trials);
+  memset(block, C_UCHAR_MAX, trials);
   for (i = 0; i < trials; i++){
-    size = 1 + RANDOM() % C_UCHAR_MAX;
-    block = malloc_perror(1, size);
-    memset(block, C_UCHAR_MAX, size);
+    size = i + 1;
     n = 1 + DRAND() * (C_SIZE_MAX - 1); 
     res *= (fast_mem_mod(block, size, n) == mem_mod(block, size, n));
-    free(block);
-    block = NULL;
   }
   print_test_result(res);
   printf("Run fast_mem_mod and mem_mod comparison on random blocks "
-	 "of random size (little endian req.) --> ");
+	 "(little endian req.) --> ");
   fflush(stdout);
   for (i = 0; i < trials; i++){
-    size = 1 + RANDOM() % C_UCHAR_MAX;
-    block = malloc_perror(1, size);
+    size = i + 1;
     n = 1 + DRAND() * (C_SIZE_MAX - 1);
     for (k = 0; k < size; k++){
       block[k] = DRAND() * C_UCHAR_MAX;
     }  
     res *= (fast_mem_mod(block, size, n) == mem_mod(block, size, n));
-    free(block);
-    block = NULL;
   }
   print_test_result(res);
+  free(block);
+  block = NULL;
 }
 
 /**
@@ -471,6 +468,8 @@ void run_mul_ext_test(int pow_trials){
   res *= (h == C_SIZE_MAX - 1 && l == 1);
   printf("\tcorner cases --> ");
   print_test_result(res);
+  free(hl);
+  hl = NULL;
 }
 
 /**
