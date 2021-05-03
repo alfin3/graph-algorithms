@@ -1,8 +1,9 @@
 /**
    utilities-mod.c
 
-   Utility functions in modular arithmetic. The provided implementations
-   assume that CHAR_BIT * sizeof(size_t) is even.
+   Utility functions in modular arithmetic. The utility functions are
+   integer overflow-safe. The provided implementations assume that 
+   CHAR_BIT * sizeof(size_t) is even.
 */
 
 #include <stdio.h>
@@ -209,8 +210,13 @@ void represent_uint(size_t n, size_t *k, size_t *u){
 }
 
 /**
-   Returns the kth power of 2, where 0 <= k < CHAR_BIT * sizeof(size_t).
+   Returns the kth power of 2, if 0 <= k < CHAR_BIT * sizeof(size_t).
+   Exits with an error otherwise.
 */
 size_t pow_two(size_t k){
+  if (k >= C_FULL_BIT){
+    perror("pow_two size_t overflow");
+    exit(EXIT_FAILURE);
+  }
   return (size_t)1 << k;
 } 

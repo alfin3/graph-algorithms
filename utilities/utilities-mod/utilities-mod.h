@@ -2,6 +2,8 @@
    utilities-mod.h
 
    Declarations of accessible utility functions in modular arithmetic.
+   The utility functions are integer overflow-safe. The provided
+   implementations assume that CHAR_BIT * sizeof(size_t) is even.
 */
 
 #ifndef UTILITIES_MOD_H  
@@ -57,7 +59,8 @@ void mul_ext(size_t a, size_t b, size_t *h, size_t *l);
 void represent_uint(size_t n, size_t *k, size_t *u);
 
 /**
-   Returns the kth power of 2, where 0 <= k < CHAR_BIT * sizeof(size_t).
+   Returns the kth power of 2, if 0 <= k < CHAR_BIT * sizeof(size_t).
+   Exits with an error otherwise.
 */
 size_t pow_two(size_t k);
 

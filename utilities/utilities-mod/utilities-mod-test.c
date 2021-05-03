@@ -1,7 +1,7 @@
 /**
    utilities-mod-test.c
 
-   Tests of utility functions in modular arithmetic.
+   Tests of integer overflow-safe utility functions in modular arithmetic.
 
    The following command line arguments can be used to customize tests:
    utilities-mod-test
