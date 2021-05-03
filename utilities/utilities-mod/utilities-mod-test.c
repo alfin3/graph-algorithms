@@ -16,9 +16,9 @@
 
    usage examples: 
    ./utilities-mod-test 20
-   ./utilities-mod-test 20 17 0 15
-   ./utilities-mod-test 20 17 25 25 0 1 1 0
-   ./utilities-mod-test 20 17 30 30 0 0 1 0
+   ./utilities-mod-test 20 11 0 15
+   ./utilities-mod-test 20 11 25 25 0 1 1 0
+   ./utilities-mod-test 20 11 30 30 0 0 1 0
 
    utilities-mod-test can be run with any subset of command line arguments in
    the above-defined order. If the (i + 1)th argument is specified then the
