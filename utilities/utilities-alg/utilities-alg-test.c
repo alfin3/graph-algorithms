@@ -62,7 +62,7 @@ const size_t C_ARGS_DEF[5] = {10, 10, 15, 1, 1};
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* tests */
-const size_t C_NRAND_COUNT = 10;
+const size_t C_NRAND_COUNT_MAX = 100;
 const double C_HALF_PROB = 0.5;
 
 void *elt_ptr(const void *elts, size_t i, size_t elt_size);
@@ -115,7 +115,7 @@ void run_geq_leq_bsearch_int_test(int pow_trials,
   clock_t t_geq, t_leq, t;
   trials = pow_two(pow_trials);
   elts = malloc_perror(pow_two(pow_count_end), elt_size);
-  nrand_elts = malloc_perror(C_NRAND_COUNT, elt_size);
+  nrand_elts = malloc_perror(C_NRAND_COUNT_MAX, elt_size);
   printf("Test geq_bsearch and leq_bsearch on random int arrays\n");
   for (i = pow_count_start; i <= pow_count_end; i++){
     count = pow_two(i);
@@ -155,33 +155,35 @@ void run_geq_leq_bsearch_int_test(int pow_trials,
     printf("\t\t\tcorrectness: ");
     print_test_result(res);
   }
-  printf("\tnon-random array\n");
+  printf("\tnon-random array and corner cases\n");
   res = 1;
-  for (j = 0; j < C_NRAND_COUNT; j++){
+  for (j = 0; j < C_NRAND_COUNT_MAX; j++){
     if (j == 0){
       nrand_elts[j] = 1;
     }else{
       nrand_elts[j] = nrand_elts[j - 1] + 2; /* odd elements */
     }
   }
-  for (j = 0; j <= C_NRAND_COUNT; j++){
-    key = 2 * j; /* even keys */
-    geq_ix = geq_bsearch(&key,
-			 nrand_elts,
-			 C_NRAND_COUNT,
-			 elt_size,
-			 cmp_int);
-    leq_ix = leq_bsearch(&key,
-			 nrand_elts,
-			 C_NRAND_COUNT,
-			 elt_size,
-			 cmp_int);
-    if (j == 0){
-      res *= (geq_ix == 0 && leq_ix == C_NRAND_COUNT);
-    }else if (j == C_NRAND_COUNT){
-      res *= (geq_ix == C_NRAND_COUNT && leq_ix == C_NRAND_COUNT - 1);
-    }else{
-      res *= (geq_ix == j && leq_ix == j - 1);
+  for (count = 1; count <= C_NRAND_COUNT_MAX; count++){
+    for (j = 0; j <= count; j++){
+      key = 2 * j; /* even keys */
+      geq_ix = geq_bsearch(&key,
+			   nrand_elts,
+			   count,
+			   elt_size,
+			   cmp_int);
+      leq_ix = leq_bsearch(&key,
+			   nrand_elts,
+			   count,
+			   elt_size,
+			   cmp_int);
+      if (j == 0){
+	res *= (geq_ix == 0 && leq_ix == count);
+      }else if (j == count){
+	res *= (geq_ix == count && leq_ix == count - 1);
+      }else{
+	res *= (geq_ix == j && leq_ix == j - 1);
+      }
     }
   }
   printf("\t\t\tcorrectness: ");
@@ -207,7 +209,7 @@ void run_geq_leq_bsearch_double_test(int pow_trials,
   clock_t t_geq, t_leq, t;
   trials = pow_two(pow_trials);
   elts = malloc_perror(pow_two(pow_count_end), elt_size);
-  nrand_elts = malloc_perror(C_NRAND_COUNT, elt_size);
+  nrand_elts = malloc_perror(C_NRAND_COUNT_MAX, elt_size);
   printf("Test geq_bsearch and leq_bsearch on random double arrays\n");
   for (i = pow_count_start; i <= pow_count_end; i++){
     count = pow_two(i);
@@ -247,32 +249,35 @@ void run_geq_leq_bsearch_double_test(int pow_trials,
     printf("\t\t\tcorrectness: ");
     print_test_result(res);
   }
-  printf("\tnon-random array\n");
-  for (j = 0; j < C_NRAND_COUNT; j++){
+  printf("\tnon-random array and corner cases\n");
+  res = 1;
+  for (j = 0; j < C_NRAND_COUNT_MAX; j++){
     if (j == 0){
       nrand_elts[j] = 1;
     }else{
       nrand_elts[j] = nrand_elts[j - 1] + 2;
     }
   }
-  for (j = 0; j <= C_NRAND_COUNT; j++){
-    key = 2 * j;
-    geq_ix = geq_bsearch(&key,
-			 nrand_elts,
-			 C_NRAND_COUNT,
-			 elt_size,
-			 cmp_double);
-    leq_ix = leq_bsearch(&key,
-			 nrand_elts,
-			 C_NRAND_COUNT,
-			 elt_size,
-			 cmp_double);
-    if (j == 0){
-      res *= (geq_ix == 0 && leq_ix == C_NRAND_COUNT);
-    }else if (j == C_NRAND_COUNT){
-      res *= (geq_ix == C_NRAND_COUNT && leq_ix == C_NRAND_COUNT - 1);
-    }else{
-      res *= (geq_ix == j && leq_ix == j - 1);
+  for (count = 1; count <= C_NRAND_COUNT_MAX; count++){
+    for (j = 0; j <= count; j++){
+      key = 2 * j;
+      geq_ix = geq_bsearch(&key,
+			   nrand_elts,
+			   count,
+			   elt_size,
+			   cmp_double);
+      leq_ix = leq_bsearch(&key,
+			   nrand_elts,
+			   count,
+			   elt_size,
+			   cmp_double);
+      if (j == 0){
+	res *= (geq_ix == 0 && leq_ix == count);
+      }else if (j == count){
+	res *= (geq_ix == count && leq_ix == count - 1);
+      }else{
+	res *= (geq_ix == j && leq_ix == j - 1);
+      }
     }
   }
   printf("\t\t\tcorrectness: ");
