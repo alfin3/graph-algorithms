@@ -3,6 +3,35 @@
 
    Optimization and correctness tests of a generic merge sort algorithm with
    parallel sorting and parallel merging.
+
+   The following command line arguments can be used to customize tests:
+   mergesort-pthread-test
+      [0, # bits in size_t) : a
+      [0, # bits in size_t) : b s.t. 2^a <= count <= 2^b
+      [0, # bits in size_t) : c
+      [0, # bits in size_t) : d s.t. 2^c <= sort base case bound <= 2^d
+      [1, # bits in size_t) : e
+      [1, # bits in size_t) : f s.t. 2^e <= merge base case bound <= 2^f
+      [0, 1] : int corner test on/off
+      [0, 1] : int performance test on/off
+      [0, 1] : double corner test on/off
+      [0, 1] : double performance test on/off
+
+   usage examples: 
+   ./mergesort-pthread-test
+   ./mergesort-pthread-test 17 17
+   ./mergesort-pthread-test 20 20 15 20 15 20
+   ./mergesort-pthread-test 20 20 15 20 15 20 0 1 0 1
+
+   mergesort-pthread-test can be run with any subset of command line
+   arguments in the above-defined order. If the (i + 1)th argument is
+   specified then the ith argument must be specified for i >= 0. Default
+   values are used for the unspecified arguments according to the
+   C_ARGS_DEF array.
+
+   The implementation of tests does not use stdint.h and is portable under
+   C89/C90 with the requirements that CHAR_BIT * sizeof(size_t) is even and
+   pthreads API is available.
 */
 
 #define _POSIX_C_SOURCE 200112L
@@ -11,6 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <time.h>
 #include <sys/time.h>
 #include "mergesort-pthread.h"
@@ -28,6 +58,23 @@
 #define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
 
 #define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
+
+/* input handling */
+const char *C_USAGE =
+  "mergesort-pthread-test \n"
+  "[0, # bits in size_t) : a \n"
+  "[0, # bits in size_t) : b s.t. 2^a <= count <= 2^b \n"
+  "[0, # bits in size_t) : c \n"
+  "[0, # bits in size_t) : d s.t. 2^c <= sort base case bound <= 2^d \n"
+  "[1, # bits in size_t) : e \n"
+  "[1, # bits in size_t) : f s.t. 2^e <= merge base case bound <= 2^f \n"
+  "[0, 1] : int corner test on/off \n"
+  "[0, 1] : int performance test on/off \n"
+  "[0, 1] : double corner test on/off \n"
+  "[0, 1] : double performance test on/off \n";
+const int C_ARGC_MAX = 11;
+const size_t C_ARGS_DEF[10] = {15, 15, 10, 15, 10, 15, 1, 1, 1, 1};
+const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* corner cases */
 const size_t C_CORNER_TRIALS = 10;
@@ -298,11 +345,52 @@ void print_test_result(int res){
   }
 }
 
-int main(){
+int main(int argc, char *argv[]){
+  int i;
+  size_t *args = NULL;
   RGENS_SEED();
-  run_int_corner_test();
-  run_int_opt_test(20, 20, 15, 20, 15, 20);
-  run_double_corner_test();
-  run_double_opt_test(20, 20, 15, 20, 15, 20);
+  if (argc > C_ARGC_MAX){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  for (i = 1; i < argc; i++){
+    args[i - 1] = atoi(argv[i]);
+  }
+  if (args[0] > C_FULL_BIT - 1 ||
+      args[1] > C_FULL_BIT - 1 ||
+      args[2] > C_FULL_BIT - 1 ||
+      args[3] > C_FULL_BIT - 1 ||
+      args[4] > C_FULL_BIT - 1 ||
+      args[5] > C_FULL_BIT - 1 ||
+      args[4] < 1 ||
+      args[5] < 1 ||
+      args[0] > args[1] ||
+      args[2] > args[3] ||
+      args[4] > args[5] ||
+      args[6] > 1 ||
+      args[7] > 1 ||
+      args[8] > 1 ||
+      args[9] > 1){
+    printf("USAGE:\n%s", C_USAGE);
+    exit(EXIT_FAILURE);
+  }
+  if (args[6]) run_int_corner_test();
+  if (args[7]) run_int_opt_test(args[0],
+				args[1],
+				args[2],
+				args[3],
+				args[4],
+				args[5]);
+  if (args[8]) run_double_corner_test();
+  if (args[9]) run_double_opt_test(args[0],
+				   args[1],
+				   args[2],
+				   args[3],
+				   args[4],
+				   args[5]);
+  free(args);
+  args = NULL;
   return 0;
 }
