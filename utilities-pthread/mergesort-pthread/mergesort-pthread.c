@@ -34,8 +34,8 @@
 #include <pthread.h>
 #include "mergesort-pthread.h"
 #include "utilities-alg.h"
-#include "utilities-pthread.h"
 #include "utilities-mem.h"
+#include "utilities-pthread.h"
 
 typedef struct{
   size_t p, r;

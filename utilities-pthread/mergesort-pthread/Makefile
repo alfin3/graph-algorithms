@@ -39,7 +39,7 @@ OBJ = mergesort-pthread-test.o             \
       $(UTILS_MOD_DIR)utilities-mod.o      \
       $(UTILS_PTHD_DIR)utilities-pthread.o
 
-mergesort-pthread : $(OBJ)
+mergesort-pthread-test : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 mergesort-pthread-test.o             : mergesort-pthread.h                  \
@@ -47,8 +47,8 @@ mergesort-pthread-test.o             : mergesort-pthread.h                  \
                                        $(UTILS_MOD_DIR)utilities-mod.h
 mergesort-pthread.o                  : mergesort-pthread.h                  \
                                        $(UTILS_ALG_DIR)utilities-alg.h      \
-                                       $(UTILS_PTHD_DIR)utilities-pthread.h \
-                                       $(UTILS_MEM_DIR)utilities-mem.h
+                                       $(UTILS_MEM_DIR)utilities-mem.h      \
+                                       $(UTILS_PTHD_DIR)utilities-pthread.h
 $(UTILS_ALG_DIR)utilities-alg.o      : $(UTILS_ALG_DIR)utilities-alg.h      \
                                        $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o      : $(UTILS_MEM_DIR)utilities-mem.h
@@ -60,4 +60,4 @@ $(UTILS_PTHD_DIR)utilities-pthread.o : $(UTILS_PTHD_DIR)utilities-pthread.h
 clean :
 	rm $(OBJ)
 clean-all : 
-	rm -f mergesort-pthread $(OBJ)
+	rm -f mergesort-pthread-test $(OBJ)
