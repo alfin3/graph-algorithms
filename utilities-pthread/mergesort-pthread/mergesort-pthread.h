@@ -1,5 +1,5 @@
 /**
-   mergesort-mthread.h
+   mergesort-pthread.h
 
    Declarations of accessible functions and macro definitions for optimizing
    and running a generic merge sort algorithm with parallel sorting and
@@ -20,10 +20,10 @@
    of 10M random integer or double elements.
 */
 
-#ifndef MERGESORT_MTHREAD_H  
-#define MERGESORT_MTHREAD_H
+#ifndef MERGESORT_PTHREAD_H  
+#define MERGESORT_PTHREAD_H
 
-#include <stdlib.h>
+#include <stddef.h>
 
 /**
    Sorts a given array pointed to by elts in ascending order according to
@@ -46,7 +46,7 @@
                  than the element pointed to by the second, and zero integer
                  value if the two elements are equal
 */
-void mergesort_mthread(void *elts,
+void mergesort_pthread(void *elts,
 		       size_t count,
 		       size_t elt_size,
 		       size_t sbase_count,
@@ -60,6 +60,6 @@ void mergesort_mthread(void *elts,
    0, then each recursive call results in the creation of a new thread. The
    macro is used as size_t.
 */
-#define MERGESORT_MTHREAD_MAX_ONTHREAD_REC (20)
+#define MERGESORT_PTHREAD_MAX_ONTHREAD_REC (20)
 
 #endif

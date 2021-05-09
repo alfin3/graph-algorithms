@@ -1,5 +1,5 @@
 /**
-   utilities-concur.h
+   utilities-pthread.h
 
    Declarations of accessible utility functions for concurrency, including
    1) pthread functions with wrapped error checking, and
@@ -8,8 +8,8 @@
    (Version 2.2.1) with modifications.
 */
 
-#ifndef UTILITIES_CONCUR_H
-#define UTILITIES_CONCUR_H
+#ifndef UTILITIES_PTHREAD_H
+#define UTILITIES_PTHREAD_H
 
 #include <pthread.h>
 

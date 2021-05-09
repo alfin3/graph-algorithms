@@ -1,5 +1,5 @@
 /**
-   mergesort-mthread.c
+   mergesort-pthread.c
 
    Functions for optimizing and running a generic merge sort algorithm
    with parallel sorting and parallel merging. 
@@ -25,11 +25,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <pthread.h>
-#include "mergesort-mthread.h"
+#include "mergesort-pthread.h"
 #include "utilities-alg.h"
-#include "utilities-concur.h"
+#include "utilities-pthread.h"
 #include "utilities-mem.h"
 
 typedef struct{
@@ -52,7 +51,7 @@ typedef struct{
   int (*cmp)(const void *, const void *);
 } merge_arg_t;
 
-const size_t NR = SIZE_MAX; /* cannot be reached as array index */
+const size_t C_SIZE_MAX = (size_t)-1; /* cannot be reached as array index */
 
 static void *mergesort_thread(void *arg);
 static void *merge_thread(void *arg);
@@ -80,7 +79,7 @@ static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
                  than the element pointed to by the second, and zero integer
                  value if the two elements are equal
 */
-void mergesort_mthread(void *elts,
+void mergesort_pthread(void *elts,
 		       size_t count,
 		       size_t elt_size,
 		       size_t sbase_count,
@@ -103,7 +102,7 @@ void mergesort_mthread(void *elts,
    Enters a mergesort thread that spawns mergesort threads recursively.
    The total number of threads is reduced and an additional speedup is
    provided by placing O(logn) recursive calls on a thread stack, with the
-   tightness of the bound set by MERGESORT_MTHREAD_MAX_ONTHREAD_REC.
+   tightness of the bound set by MERGESORT_PTHREAD_MAX_ONTHREAD_REC.
 */
 static void *mergesort_thread(void *arg){
   mergesort_arg_t *msa = arg;
@@ -136,7 +135,7 @@ static void *mergesort_thread(void *arg){
     child_msas[1].elts = msa->elts;
     child_msas[1].cmp = msa->cmp;
     thread_create_perror(&child_ids[0], mergesort_thread, &child_msas[0]);
-    if (msa->num_onthread_rec < MERGESORT_MTHREAD_MAX_ONTHREAD_REC){
+    if (msa->num_onthread_rec < MERGESORT_PTHREAD_MAX_ONTHREAD_REC){
       /* keep putting mergesort_thread calls on the current thread stack */
       child_msas[1].num_onthread_rec = msa->num_onthread_rec + 1;
       mergesort_thread(&child_msas[1]);
@@ -178,8 +177,8 @@ static void *merge_thread(void *arg){
   merge_arg_t child_mas[2];
   pthread_t child_ids[2];
   size_t aq, bq, ix;
-  if ((ma->ap == NR && ma->ar == NR) ||
-      (ma->bp == NR && ma->br == NR) ||
+  if ((ma->ap == C_SIZE_MAX && ma->ar == C_SIZE_MAX) ||
+      (ma->bp == C_SIZE_MAX && ma->br == C_SIZE_MAX) ||
       (ma->ar - ma->ap) + (ma->br - ma->bp) + 2 <= ma->mbase_count){
     merge(ma);
     return NULL;
@@ -199,16 +198,16 @@ static void *merge_thread(void *arg){
 		     ma->elt_size,
 		     ma->cmp);
     if (ix == ma->br - ma->bp + 1){
-      child_mas[0].bp = NR;
-      child_mas[0].br = NR;
+      child_mas[0].bp = C_SIZE_MAX;
+      child_mas[0].br = C_SIZE_MAX;
       child_mas[1].bp = ma->bp;
       child_mas[1].br = ma->br;
       child_mas[1].cs = ma->cs + (aq - ma->ap + 1);
     }else if (ix == ma->br - ma->bp){
       child_mas[0].bp = ma->bp;
       child_mas[0].br = ma->br;
-      child_mas[1].bp = NR;
-      child_mas[1].br = NR;
+      child_mas[1].bp = C_SIZE_MAX;
+      child_mas[1].br = C_SIZE_MAX;
       child_mas[1].cs = ma->cs + (aq - ma->ap) + (ma->br - ma->bp) + 2;
     }else{
       child_mas[0].bp = ma->bp;
@@ -230,16 +229,16 @@ static void *merge_thread(void *arg){
 		     ma->elt_size,
 		     ma->cmp);
     if (ix == ma->ar - ma->ap + 1){
-      child_mas[0].ap = NR;
-      child_mas[0].ar = NR;
+      child_mas[0].ap = C_SIZE_MAX;
+      child_mas[0].ar = C_SIZE_MAX;
       child_mas[1].ap = ma->ap;
       child_mas[1].ar = ma->ar;
       child_mas[1].cs = ma->cs + (bq - ma->bp + 1);
     }else if (ix == ma->ar - ma->ap){
       child_mas[0].ap = ma->ap;
       child_mas[0].ar = ma->ar;
-      child_mas[1].ap = NR;
-      child_mas[1].ar = NR;
+      child_mas[1].ap = C_SIZE_MAX;
+      child_mas[1].ar = C_SIZE_MAX;
       child_mas[1].cs = ma->cs + (ma->ar - ma->ap) + (bq - ma->bp) + 2;
     }else{
       child_mas[0].ap = ma->ap;
@@ -264,7 +263,7 @@ static void *merge_thread(void *arg){
 
   /* recursion */
   thread_create_perror(&child_ids[0], merge_thread, &child_mas[0]);
-  if (ma->num_onthread_rec < MERGESORT_MTHREAD_MAX_ONTHREAD_REC){
+  if (ma->num_onthread_rec < MERGESORT_PTHREAD_MAX_ONTHREAD_REC){
     /* keep putting merge_thread calls on the current thread stack */
     child_mas[1].num_onthread_rec = ma->num_onthread_rec + 1;
     merge_thread(&child_mas[1]);
@@ -284,12 +283,12 @@ static void *merge_thread(void *arg){
 static void merge(merge_arg_t *ma){
   size_t first_ix, second_ix, cat_ix;
   size_t elt_size = ma->elt_size;
-  if (ma->ap == NR && ma->ar == NR){
+  if (ma->ap == C_SIZE_MAX && ma->ar == C_SIZE_MAX){
     /* a is empty */
     memcpy(elt_ptr(ma->cat_elts, ma->cs, elt_size),
 	   elt_ptr(ma->elts, ma->bp, elt_size),
 	   (ma->br - ma->bp + 1) * elt_size);
-  }else if (ma->bp == NR && ma->br == NR){
+  }else if (ma->bp == C_SIZE_MAX && ma->br == C_SIZE_MAX){
     /* b is empty */
     memcpy(elt_ptr(ma->cat_elts, ma->cs, elt_size),
 	   elt_ptr(ma->elts, ma->ap, elt_size),

@@ -1,5 +1,5 @@
 /**
-   utilities-concur.c
+   utilities-pthread.c
 
    Utility functions for concurrency, including
    1) pthread functions with wrapped error checking, and
@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include "utilities-concur.h"
+#include "utilities-pthread.h"
 
 /**
    Create a thread with default attributes and error checking. Join a thread

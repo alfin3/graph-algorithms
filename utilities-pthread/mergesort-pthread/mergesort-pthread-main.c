@@ -1,5 +1,5 @@
 /**
-   mergesort-mthread-main.c
+   mergesort-pthread-main.c
 
    Optimization and correctness tests of a generic merge sort algorithm with
    parallel sorting and parallel merging. 
@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
-#include "mergesort-mthread.h"
+#include "mergesort-pthread.h"
 #include "utilities-mem.h"
 
 /**
@@ -56,7 +56,7 @@ int cmp_double_fn(const void *a, const void *b){
 }
 
 /**
-   Runs a mergesort_mthread corner cases test on random integer arrays.
+   Runs a mergesort_pthread corner cases test on random integer arrays.
 */
 void run_int_corner_test(){
   int res = 1;
@@ -70,7 +70,7 @@ void run_int_corner_test(){
   uint64_t mbase_count_arr[3] = {2, 3, 4};
   int *arr_a =  malloc_perror(max_count, sizeof(int));
   int *arr_b =  malloc_perror(max_count, sizeof(int));
-  printf("Test mergesort_mthread on random integer corner case arrays\n");
+  printf("Test mergesort_pthread on random integer corner case arrays\n");
   printf("\t# trials:          %d\n", num_iter);
   printf("\tarray counts:      ");
   print_uint64_elts(count_arr, num_counts);
@@ -87,7 +87,7 @@ void run_int_corner_test(){
 			RANDOM() % count_arr[ci]); /* % to repeat vals */
 	  }
 	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(int));
-	  mergesort_mthread(arr_a,
+	  mergesort_pthread(arr_a,
 			    count_arr[ci],
 			    sizeof(int),
 			    sbase_count_arr[si],
@@ -110,7 +110,7 @@ void run_int_corner_test(){
 }
 
 /**
-   Runs a test comparing mergesort_mthread vs. qsort performance on random 
+   Runs a test comparing mergesort_pthread vs. qsort performance on random 
    integer arrays across sort and merge base count bounds.
 */
 void run_int_opt_test(){
@@ -130,7 +130,7 @@ void run_int_opt_test(){
   int *arr_a =  malloc_perror(max_count, sizeof(int));
   int *arr_b =  malloc_perror(max_count, sizeof(int));
   double tot_m, tot_q, t_m, t_q;
-  printf("Test mergesort_mthread performance on random integer arrays\n");
+  printf("Test mergesort_pthread performance on random integer arrays\n");
   for (ci = 0; ci < num_counts; ci++){
     printf("\t# trials: %d, array count: %lu\n", num_iter, count_arr[ci]);
     for (si = 0; si < num_sbase_counts; si++){
@@ -146,7 +146,7 @@ void run_int_opt_test(){
 	  }
 	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(int));
 	  t_m = timer();
-	  mergesort_mthread(arr_a,
+	  mergesort_pthread(arr_a,
 			    count_arr[ci],
 			    sizeof(int),
 			    sbase_count_arr[si],
@@ -162,7 +162,7 @@ void run_int_opt_test(){
 	    res *= (cmp_int_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
-	printf("\t\t\tave mthread mergesort: %.6f seconds\n",
+	printf("\t\t\tave pthread mergesort: %.6f seconds\n",
 	       tot_m / num_iter);
 	printf("\t\t\tave qsort:             %.6f seconds\n",
 	       tot_q / num_iter);
@@ -174,7 +174,7 @@ void run_int_opt_test(){
 }
 
 /**
-   Runs a mergesort_mthread corner cases test on random double arrays.
+   Runs a mergesort_pthread corner cases test on random double arrays.
 */
 void run_double_corner_test(){
   int res = 1;
@@ -188,7 +188,7 @@ void run_double_corner_test(){
   uint64_t mbase_count_arr[3] = {2, 3, 4};
   double *arr_a =  malloc_perror(max_count, sizeof(double));
   double *arr_b =  malloc_perror(max_count, sizeof(double));
-  printf("Test mergesort_mthread on random double corner case arrays\n");
+  printf("Test mergesort_pthread on random double corner case arrays\n");
   printf("\t# trials:          %d\n", num_iter);
   printf("\tarray counts:      ");
   print_uint64_elts(count_arr, num_counts);
@@ -204,7 +204,7 @@ void run_double_corner_test(){
 	    arr_a[j] = DRAND() - DRAND();
 	  }
 	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(double));
-	  mergesort_mthread(arr_a,
+	  mergesort_pthread(arr_a,
 			    count_arr[ci],
 			    sizeof(double),
 			    sbase_count_arr[si],
@@ -228,7 +228,7 @@ void run_double_corner_test(){
 }
 
 /**
-   Runs a test comparing mergesort_mthread vs. qsort performance on random 
+   Runs a test comparing mergesort_pthread vs. qsort performance on random 
    double arrays across sort and merge base count bounds.
 */
 void run_double_opt_test(){
@@ -248,7 +248,7 @@ void run_double_opt_test(){
   double *arr_a =  malloc_perror(max_count, sizeof(double));
   double *arr_b =  malloc_perror(max_count, sizeof(double));
   double tot_m, tot_q, t_m, t_q;
-  printf("Test mergesort_mthread performance on random double arrays\n");
+  printf("Test mergesort_pthread performance on random double arrays\n");
   for (ci = 0; ci < num_counts; ci++){
     printf("\t# trials: %d, array count: %lu\n", num_iter, count_arr[ci]);
     for (si = 0; si < num_sbase_counts; si++){
@@ -263,7 +263,7 @@ void run_double_opt_test(){
 	  }
 	  memcpy(arr_b, arr_a, count_arr[ci] * sizeof(double));
 	  t_m = timer();
-	  mergesort_mthread(arr_a,
+	  mergesort_pthread(arr_a,
 			    count_arr[ci],
 			    sizeof(double),
 			    sbase_count_arr[si],
@@ -280,7 +280,7 @@ void run_double_opt_test(){
 	    res *= (cmp_double_fn(&arr_a[j], &arr_b[j]) == 0);
 	  }
 	}
-	printf("\t\t\tave mthread mergesort: %.6f seconds\n",
+	printf("\t\t\tave pthread mergesort: %.6f seconds\n",
 	       tot_m / num_iter);
 	printf("\t\t\tave qsort:             %.6f seconds\n",
 	       tot_q / num_iter);
