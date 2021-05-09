@@ -7,16 +7,22 @@
    The algorithm provides \Theta(n/log^{2}n) theoretical parallelism within
    the dynamic multithreading model.
 
-   The implementation provides base case upper bound parameters for setting
-   the conditions for switching from parallel sorting to serial sorting and
-   from parallel merging to serial merging during recursion, thereby enabling
-   the optimization of the actual parallelism and concurrency-associated
-   overhead across input ranges and hardware settings.
+   The implementation provides i) a set of parameters for setting the
+   constant base case upper bounds for switching from parallel sorting to
+   serial sorting and from parallel merging to serial merging during
+   recursion, and ii) a macro for setting the constant upper bound for the
+   number of recursive calls placed on the stack of a thread across sorting
+   and merging operations, thereby enabling the optimization of the
+   parallelism and concurrency-associated overhead across input ranges
+   and hardware settings. The provided parametrization of multithreading
+   is based on the common parametrization of serial mergesort, where the
+   recursion depth is limited by switching to a base case non-recursive
+   sort algorithm.
 
    On a 4-core machine, the optimization of the base case upper bound
-   parameters, demonstrated in the accompanying tests, resulted in a speedup
-   of approximately 2.6X in comparison to serial qsort (stdlib.h) on arrays
-   of 10M random integer or double elements.
+   parameters resulted in a speedup of approximately 2.6X in comparison
+   to serial qsort (stdlib.h) on arrays of 10M random integer or double
+   elements.
 */
 
 #define _POSIX_C_SOURCE 200112L
