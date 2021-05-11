@@ -70,21 +70,22 @@ static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
    cmp. The array contains count elements of elt_size bytes. The first
    thread entry is placed on the thread stack of the caller.
    elts        : pointer to the array to sort
-   count       : number of elements in the array
+   count       : > 0, < 2^{CHAR_BIT * sizeof(size_t) - 1} count of elements
+                 in the array
    elt_size    : size of each element in the array in bytes
-   sbase_count : >0 base case upper bound for parallel sorting; if the count
+   sbase_count : > 0 base case upper bound for parallel sorting; if the count
                  of an unsorted subarray is less or equal to sbase_count,
                  then the subarray is sorted with serial sort routine (qsort)
-   mbase_count : >1 base case upper bound for parallel merging; if the sum of
-                 the counts of two sorted subarrays is less or equal to
+   mbase_count : > 1 base case upper bound for parallel merging; if the sum
+                 of the counts of two sorted subarrays is less or equal to
                  mbase_count, then the two subarrays are merged with a serial
                  merge routine
    cmp         : comparison function which returns a negative integer value
                  if the element pointed to by the first argument is less than
-                 the element pointed to by the second, a positive integer value
-                 if the element pointed to by the first argument is greater
-                 than the element pointed to by the second, and zero integer
-                 value if the two elements are equal
+                 the element pointed to by the second, a positive integer
+                 value if the element pointed to by the first argument is
+                 greater than the element pointed to by the second, and zero
+                 integer value if the two elements are equal
 */
 void mergesort_pthread(void *elts,
 		       size_t count,
@@ -114,11 +115,11 @@ void mergesort_pthread(void *elts,
    tightness of the bound set by MERGESORT_PTHREAD_MAX_ONTHREAD_REC.
 */
 static void *mergesort_thread(void *arg){
+  size_t q;
   mergesort_arg_t *msa = arg;
   mergesort_arg_t child_msas[2];
   pthread_t child_ids[2];
   merge_arg_t ma;
-  size_t q;
   if (msa->r - msa->p + 1 <= msa->sbase_count){
     qsort(elt_ptr(msa->elts, msa->p, msa->elt_size),
 	  msa->r - msa->p + 1,
@@ -182,10 +183,10 @@ static void *mergesort_thread(void *arg){
    Merges two sorted subarrays in a parallel manner.
 */
 static void *merge_thread(void *arg){
+  size_t aq, bq, ix;
   merge_arg_t *ma = arg;
   merge_arg_t child_mas[2];
   pthread_t child_ids[2];
-  size_t aq, bq, ix;
   if ((ma->ap == C_SIZE_MAX && ma->ar == C_SIZE_MAX) ||
       (ma->bp == C_SIZE_MAX && ma->br == C_SIZE_MAX) ||
       (ma->ar - ma->ap) + (ma->br - ma->bp) + 2 <= ma->mbase_count){

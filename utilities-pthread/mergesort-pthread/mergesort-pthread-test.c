@@ -6,8 +6,8 @@
 
    The following command line arguments can be used to customize tests:
    mergesort-pthread-test
-      [0, # bits in size_t) : a
-      [0, # bits in size_t) : b s.t. 2^a <= count <= 2^b
+      [0, # bits in size_t - 1) : a
+      [0, # bits in size_t - 1) : b s.t. 2^a <= count <= 2^b
       [0, # bits in size_t) : c
       [0, # bits in size_t) : d s.t. 2^c <= sort base case bound <= 2^d
       [1, # bits in size_t) : e
@@ -62,8 +62,8 @@
 /* input handling */
 const char *C_USAGE =
   "mergesort-pthread-test \n"
-  "[0, # bits in size_t) : a \n"
-  "[0, # bits in size_t) : b s.t. 2^a <= count <= 2^b \n"
+  "[0, # bits in size_t - 1) : a \n"
+  "[0, # bits in size_t - 1) : b s.t. 2^a <= count <= 2^b \n"
   "[0, # bits in size_t) : c \n"
   "[0, # bits in size_t) : d s.t. 2^c <= sort base case bound <= 2^d \n"
   "[1, # bits in size_t) : e \n"
@@ -358,8 +358,8 @@ int main(int argc, char *argv[]){
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
-  if (args[0] > C_FULL_BIT - 1 ||
-      args[1] > C_FULL_BIT - 1 ||
+  if (args[0] > C_FULL_BIT - 2 ||
+      args[1] > C_FULL_BIT - 2 ||
       args[2] > C_FULL_BIT - 1 ||
       args[3] > C_FULL_BIT - 1 ||
       args[4] > C_FULL_BIT - 1 ||
