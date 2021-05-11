@@ -55,3 +55,11 @@ The implementation is based on a division method for hashing and a chaining meth
 `./utilities/utilities-mod/`
 
 Utility functions in the area of modular arithmetic generalized to size_t. mem_mod computes the modulo operation on a memory block by treating each byte of the block in the little-endian order and inductively applying modular arithmetic relations, without requiring a little-endian machine. fast_mem_mod treats a memory block in sizeof(size_t)-byte increments. Given a little-endian machine, the result is equal to the return value of mem_mod. The implementation requires that `CHAR_BIT * sizeof(size_t)` is even.
+
+`./utilities-pthread/mergesort-pthread/`
+
+A merge sort algorithm with parallel sorting and parallel merging for sorting arrays of generic elements with \Theta(n/log^{2}n) theoretical parallelism within the dynamic multithreading model.
+
+The implementation provides i) a set of parameters for setting the constant base case upper bounds for switching from parallel sorting to serial sorting and from parallel merging to serial merging during recursion, and ii) a macro for setting the constant upper bound for the number of recursive calls placed on the stack of a thread across sorting and merging operations, thereby enabling the optimization of the parallelism and concurrency-associated overhead across input ranges and hardware settings. 
+
+
