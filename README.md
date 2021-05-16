@@ -2,7 +2,7 @@
 
 Graph algorithms and supporting data structures with generic (any type) edge weights, a hash table parameter, low memory footprint, and general C89/C90 portability across systems without conditional compilation.
 
-Hashing parametrization and generic programming were used to minimize the memory space occupied and used by a program. The implementation provides i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) parameters for hashing optimization with respect to graph topologies across hardware settings.
+Hashing parametrization and generic programming were used to minimize the memory space occupied and used by a program. The implementation provides i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) parameters for hashing optimization with respect to graph topologies across hardware settings. The modularity of the implementation provides avenues for parametrizing the multithreading across the dependency tree of data structures, including the hash tables, which is work in progress.
 
 The presented approach reflects the perspective that graph problems often reduce to hashing problems, where an ordered set of a graph topology, an algorithm, and a hash function maps to a distribution of hash values. Information about a graph topology can often be obtained from a problem statement and/or the prior knowledge of a domain. Additional information, such as the indegree of each vertex in a graph or a subset of vertices, can be stored at the time of graph construction. Based on the preliminary data, the provided implementation may motivate the development and evaluation of graph-aware hashing methods.
 
