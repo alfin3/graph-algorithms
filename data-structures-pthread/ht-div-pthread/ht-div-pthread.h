@@ -1,6 +1,17 @@
 /**
    ht-div-pthread.h
 
+   The hash table does not spawn new threads, except during doubling when
+   all but one user threads are blocked.
+   
+   Hash table state guarantees:
+     - the final state of the hash table is guaranteed with respect to
+       concurrent insert, remove, and/or delete ops if there is no key
+       overlap between threads
+     - if insert ops are called by more than one thread and keys overlap,
+       then the implementation guarantees the final hash table state
+       according to the insertion predicate (e.g. element max, or
+       element min), unless it is NULL
 */
 
 #ifndef HT_DIV_PTHREAD_H  
