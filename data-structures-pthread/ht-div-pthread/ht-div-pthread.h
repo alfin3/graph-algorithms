@@ -17,8 +17,13 @@
 #ifndef HT_DIV_PTHREAD_H  
 #define HT_DIV_PTHREAD_H
 
+#define _XOPEN_SOURCE 600
+
 #include <stddef.h>
+#include <pthread.h>
 #include "dll.h"
+
+typedef enum{FALSE, TRUE} boolean_t;
 
 typedef struct{
   /* hash table */
@@ -33,13 +38,15 @@ typedef struct{
   void (*free_elt)(void *);
 
   /* thread synchronization */
-  size_t num_in_threads; /* # admitted threads through the main gate */
-  size_t num_key_locks; /* # locks across key_elts array */
-  boolean_t one_in;
-  boolean_t all_in;
-  pthread_mutex_t in_lock; /* main gate lock */
-  pthread_cond_t in_cond; /* main gate condition variable */
-  pthread_mutex_t *key_locks;
+  size_t num_elts;
+  size_t num_in_threads; /* passed gate_lock's first critical section */
+  size_t num_key_locks; /* -> probability of waiting at a slot */
+  size_t num_grow_threads;
+  boolean_t gate_open;
+  pthread_mutex_t gate_lock;
+  pthread_mutex_t *key_locks; /* locks, each covering a sector of key_elts */
+  pthread_cond_t gate_open_cond;
+  pthread_cond_t grow_cond;
   int (*is_ins)(const void *, const void *); /* predicate for insert */
 } ht_div_pthread_t;
 
@@ -50,6 +57,7 @@ void ht_div_pthread_init(ht_div_pthread_t *ht,
 			 size_t key_size,
 			 size_t elt_size,
 			 size_t num_key_locks,
+			 size_t num_grow_threads,
 			 float alpha,
 			 void (*free_elt)(void *),
 			 int (*is_ins)(const void *, const void *));
