@@ -95,6 +95,14 @@ void cond_signal_perror(pthread_cond_t *cond){
   }
 }
 
+void cond_broadcast_perror(pthread_cond_t *cond){
+  int err = pthread_cond_broadcast(cond);
+  if (err != 0){
+    perror("pthread_cond_broadcast failed");
+    exit(EXIT_FAILURE);
+  }
+}
+
 /**
    Initialize, wait on, and signal a semaphore with error checking
    provided by mutex and condition variable operations.

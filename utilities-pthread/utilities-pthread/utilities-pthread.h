@@ -53,6 +53,8 @@ void cond_wait_perror(pthread_cond_t *cond, pthread_mutex_t *mutex);
 
 void cond_signal_perror(pthread_cond_t *cond);
 
+void cond_broadcast_perror(pthread_cond_t *cond);
+
 /**
    Initialize, wait on, and signal a semaphore with error checking
    provided by mutex and condition variable operations.
