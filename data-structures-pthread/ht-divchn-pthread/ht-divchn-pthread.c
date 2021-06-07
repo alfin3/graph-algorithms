@@ -1,5 +1,5 @@
 /**
-   ht-div-pthread.c
+   ht-divchn-pthread.c
 */
 
 #define _XOPEN_SOURCE 600
@@ -9,7 +9,7 @@
 #include <string.h>
 #include <limits.h>
 #include <pthread.h>
-#include "ht-div-pthread.h"
+#include "ht-divchn-pthread.h"
 #include "dll.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
@@ -88,9 +88,9 @@ static const size_t C_BUILD_SHIFT = 16;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_SIZE_MAX = (size_t)-1;
 
-static size_t hash(const ht_div_t *ht, const void *key);
-static void ht_grow(ht_div_t *ht);
-static void copy_reinsert(ht_div_t *ht, const dll_node_t *node);
+static size_t hash(const ht_divchn_pthread_t *ht, const void *key);
+static void ht_grow(ht_divchn_pthread_t *ht);
+static void copy_reinsert(ht_divchn_pthread_t *ht, const dll_node_t *node);
 static int is_overflow(size_t start, size_t count);
 static size_t build_prime(size_t start, size_t count);
 
@@ -100,7 +100,7 @@ static size_t build_prime(size_t start, size_t count);
    num_grow_threads >= 1
    Call before insert, delete or remove threads are created.
 */
-void ht_div_pthread_init(ht_div_pthread_t *ht,
+void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			 size_t key_size,
 			 size_t elt_size,
 			 size_t num_key_locks,
@@ -144,14 +144,15 @@ void ht_div_pthread_init(ht_div_pthread_t *ht,
    in the hash table, associates the key with the new element. The key and
    elt parameters are not NULL.
 */
-void ht_div_pthread_insert(ht_div_pthread_t *ht,
-			   const void *key,
-			   const void *elt){
+void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
+			      const void *key,
+			      const void *elt){
   size_t ix, lock_ix;
+  boolean_t increased = FALSE;
   dll_node_t **head = NULL, *node = NULL;
   /* first critical section : go through gate or wait */
   mutex_lock_perror(&ht->gate_lock);
-  while (ht->gate_open == FALSE){
+  while (!ht->gate_open){
     cond_wait_perror(&ht->gate_open_cond, &ht->gate_lock);
   }
   ht->num_in_threads++;
@@ -166,9 +167,7 @@ void ht_div_pthread_insert(ht_div_pthread_t *ht,
   if (node == NULL){
     dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
     mutex_unlock_perror(&ht->key_locks[lock_ix]);
-    mutex_lock_perror(&ht->gate_lock);
-    ht->num_elts++;
-    mutex_unlock_perror(&ht->gate_lock);
+    increased = TRUE;
   }else{
     dll_delete(head, node, ht->free_elt);
     dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
@@ -179,8 +178,8 @@ void ht_div_pthread_insert(ht_div_pthread_t *ht,
   if (ht->count_ix != C_SIZE_MAX &&
       ht->count_ix != C_LAST_PRIME_IX){
     mutex_lock_perror(&ht->gate_lock);
-    if ((float)ht->num_elts / ht->count > ht->alpha &&
-	ht->gate_open = TRUE){
+    if (increased) ht->num_elts++;
+    if ((float)ht->num_elts / ht->count > ht->alpha && ht->gate_open){
       ht->gate_open = FALSE;
       /* wait for threads that passed first critical section to finish */
       while (ht->num_in_threads > 1){
@@ -191,14 +190,14 @@ void ht_div_pthread_insert(ht_div_pthread_t *ht,
       mutex_lock_perror(&ht->gate_lock);
       ht->gate_open = TRUE;
       cond_broadcast_perror(&ht->cond_gate_open);
-      ht->num_in_threads--;
     }else{
-      ht->num_in_threads--;
-      if (ht->gate_open = FALSE) cond_signal_perror(&ht->cond_grow);
+      if (!ht->gate_open) cond_signal_perror(&ht->cond_grow);
     }
+    ht->num_in_threads--;
     mutex_unlock_perror(&ht->gate_lock);
   }else{
     mutex_lock_perror(&ht->gate_lock);
+    if (increased) ht->num_elts++;
     ht->num_in_threads--;
     mutex_unlock_perror(&ht->gate_lock);
   }
@@ -207,12 +206,15 @@ void ht_div_pthread_insert(ht_div_pthread_t *ht,
 /**
    
 */
-void ht_div_pthread_remove(ht_div_pthread_t *ht, const void *key, void *elt){
+void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
+			      const void *key,
+			      void *elt){
   size_t ix;
+  boolean_t removed = FALSE;
   dll_node_t **head = NULL, *node = NULL;
   /* first critical section : go through gate or wait */
   mutex_lock_perror(&ht->gate_lock);
-  while (ht->gate_open == FALSE){
+  while (!ht->gate_open){
     cond_wait_perror(&ht->gate_open_cond, &ht->gate_lock);
   }
   ht->num_in_threads++;
@@ -229,29 +231,29 @@ void ht_div_pthread_remove(ht_div_pthread_t *ht, const void *key, void *elt){
     /* if an element is noncontiguous, only the pointer to it is deleted */
     dll_delete(head, node, NULL);
     mutex_unlock_perror(&ht->key_locks[lock_ix]);
-    mutex_lock_perror(&ht->gate_lock);
-    ht->num_elts--;
-    mutex_unlock_perror(&ht->gate_lock);
+    removed = TRUE;
   }else{
     mutex_unlock_perror(&ht->key_locks[lock_ix]);
   }
 
   /* finish */
   mutex_lock_perror(&ht->gate_lock);
+  if (removed) ht->num_elts--;
+  if (!ht->gate_open) cond_signal_perror(&ht->cond_grow);
   ht->num_in_threads--;
-  if (ht->gate_open = FALSE) cond_signal_perror(&ht->cond_grow);
   mutex_unlock_perror(&ht->gate_lock);
 }
 
 /**
 
 */
-void ht_div_pthread_delete(ht_div_pthread_t *ht, const void *key){
+void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht, const void *key){
   size_t ix;
+  boolean_t deleted = FALSE;
   dll_node_t **head = NULL, *node = NULL;
   mutex_lock_perror(&ht->gate_lock);
   /* first critical section : go through gate or wait */
-  while (ht->gate_open == FALSE){
+  while (!ht->gate_open){
     cond_wait_perror(&ht->gate_open_cond, &ht->gate_lock);
   }
   ht->num_in_threads++;
@@ -266,24 +268,23 @@ void ht_div_pthread_delete(ht_div_pthread_t *ht, const void *key){
   if (node != NULL){
     dll_delete(head, node, ht->free_elt);
     mutex_unlock_perror(&ht->key_locks[lock_ix]);
-    mutex_lock_perror(&ht->gate_lock);
-    ht->num_elts--;
-    mutex_unlock_perror(&ht->gate_lock);
+    deleted = TRUE;
   }else{
     mutex_unlock_perror(&ht->key_locks[lock_ix]);
   }
 
   /* finish */
   mutex_lock_perror(&ht->gate_lock);
+  if (deleted) ht->num_elts--;
+  if (!ht->gate_open) cond_signal_perror(&ht->cond_grow);
   ht->num_in_threads--;
-  if (ht->gate_open = FALSE) cond_signal_perror(&ht->cond_grow);
   mutex_unlock_perror(&ht->gate_lock);
 }
 
 /**
    Call after insert, delete and remove threads are joined with main.
 */
-void ht_div_pthread_free(ht_div_pthread_t *ht){
+void ht_divchn_pthread_free(ht_divchn_pthread_t *ht){
   size_t i;
   for (i = 0; i < ht->count; i++){
     dll_free(&ht->key_elts[i], ht->free_elt);
@@ -299,7 +300,7 @@ void ht_div_pthread_free(ht_div_pthread_t *ht){
 /**
    Maps a hash key to a slot index in a hash table with a division method. 
 */
-static size_t hash(const ht_div_t *ht, const void *key){
+static size_t hash(const ht_divchn_pthread_t *ht, const void *key){
   return fast_mem_mod(key, ht->key_size, ht->count); 
 }
 
@@ -311,7 +312,7 @@ static size_t hash(const ht_div_t *ht, const void *key){
    representable as size_t on a given system.
    Run when guaranteed that only the calling thread can make changes to ht.
 */
-static void ht_grow(ht_div_t *ht){
+static void ht_grow(ht_divchn_pthread_t *ht){
   size_t i, prev_count = ht->count;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL;
@@ -345,9 +346,10 @@ static void ht_grow(ht_div_t *ht){
 
 /**
    Reinserts a copy of a node into a new hash table during an ht_grow 
-   operation. In contrast to ht_div_insert, no search is performed.
+   operation. In contrast to ht_divchn_pthread_insert, no search is
+   performed.
 */
-static void copy_reinsert(ht_div_t *ht, const dll_node_t *node){
+static void copy_reinsert(ht_divchn_pthread_t *ht, const dll_node_t *node){
   dll_prepend(&ht->key_elts[hash(ht, node->key)],
 	      node->key,
 	      node->elt,

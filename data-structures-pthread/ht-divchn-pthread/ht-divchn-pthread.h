@@ -1,5 +1,5 @@
 /**
-   ht-div-pthread.h
+   ht-divchn-pthread.h
 
    The hash table does not spawn new threads, except during doubling when
    all but one user threads are blocked.
@@ -14,8 +14,8 @@
        element min), unless it is NULL
 */
 
-#ifndef HT_DIV_PTHREAD_H  
-#define HT_DIV_PTHREAD_H
+#ifndef HT_DIVCHN_PTHREAD_H  
+#define HT_DIVCHN_PTHREAD_H
 
 #define _XOPEN_SOURCE 600
 
@@ -48,12 +48,12 @@ typedef struct{
   pthread_cond_t gate_open_cond;
   pthread_cond_t grow_cond;
   int (*is_ins)(const void *, const void *); /* predicate for insert */
-} ht_div_pthread_t;
+} ht_divchn_pthread_t;
 
 /**
    Initializes a hash table.
 */
-void ht_div_pthread_init(ht_div_pthread_t *ht,
+void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			 size_t key_size,
 			 size_t elt_size,
 			 size_t num_key_locks,
@@ -62,14 +62,16 @@ void ht_div_pthread_init(ht_div_pthread_t *ht,
 			 void (*free_elt)(void *),
 			 int (*is_ins)(const void *, const void *));
 
-void ht_div_pthread_insert(ht_div_pthread_t *ht,
-			   const void *key,
-			   const void *elt);
+void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
+			      const void *key,
+			      const void *elt);
 
-void ht_div_pthread_remove(ht_div_pthread_t *ht, const void *key, void *elt);
+void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
+			      const void *key,
+			      void *elt);
 
-void ht_div_pthread_delete(ht_div_pthread_t *ht, const void *key);
+void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht, const void *key);
 
-void ht_div_pthread_free(ht_div_pthread_t *ht);
+void ht_divchn_pthread_free(ht_divchn_pthread_t *ht);
 
 #endif
