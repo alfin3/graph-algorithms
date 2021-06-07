@@ -179,7 +179,8 @@ void ht_div_pthread_insert(ht_div_pthread_t *ht,
   if (ht->count_ix != C_SIZE_MAX &&
       ht->count_ix != C_LAST_PRIME_IX){
     mutex_lock_perror(&ht->gate_lock);
-    if ((float)ht->num_elts / ht->count > ht->alpha){
+    if ((float)ht->num_elts / ht->count > ht->alpha &&
+	ht->gate_open = TRUE){
       ht->gate_open = FALSE;
       /* wait for threads that passed first critical section to finish */
       while (ht->num_in_threads > 1){
