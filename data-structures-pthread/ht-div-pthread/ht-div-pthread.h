@@ -38,10 +38,10 @@ typedef struct{
   void (*free_elt)(void *);
 
   /* thread synchronization */
-  size_t num_elts;
   size_t num_in_threads; /* passed gate_lock's first critical section */
-  size_t num_key_locks; /* -> probability of waiting at a slot */
   size_t num_grow_threads;
+  size_t key_locks_count; /* -> probability of waiting at a slot */
+  size_t key_seg_count; 
   boolean_t gate_open;
   pthread_mutex_t gate_lock;
   pthread_mutex_t *key_locks; /* locks, each covering a sector of key_elts */
@@ -65,8 +65,6 @@ void ht_div_pthread_init(ht_div_pthread_t *ht,
 void ht_div_pthread_insert(ht_div_pthread_t *ht,
 			   const void *key,
 			   const void *elt);
-
-void *ht_div_pthread_search(const ht_div_pthread_t *ht, const void *key);
 
 void ht_div_pthread_remove(ht_div_pthread_t *ht, const void *key, void *elt);
 
