@@ -4,6 +4,7 @@
 
 #define _XOPEN_SOURCE 600
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,8 +15,6 @@
 #include "utilities-mem.h"
 #include "utilities-mod.h"
 #include "utilities-pthread.h"
-
-typedef enum{FALSE, TRUE} boolean_t;
 
 /**
    An array of primes in the increasing order, approximately doubling in 
@@ -98,16 +97,16 @@ static size_t build_prime(size_t start, size_t count);
    Initializes a hash table. 
    num_key_locks >= 1
    num_grow_threads >= 1
-   Call before insert, delete or remove threads are created.
+   Call and return before any thread calls insert, delete and remove.
 */
 void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
-			 size_t key_size,
-			 size_t elt_size,
-			 size_t num_key_locks,
-			 size_t num_grow_threads,
-			 float alpha,
-			 void (*free_elt)(void *),
-			 int (*is_ins)(const void *, const void *)){
+			    size_t key_size,
+			    size_t elt_size,
+			    size_t num_key_locks,
+			    size_t num_grow_threads,
+			    float alpha,
+			    void (*free_elt)(void *),
+			    int (*is_ins)(const void *, const void *)){
   size_t i;
   /* hash table */
   ht->key_size = key_size;
@@ -189,9 +188,9 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
       ht_grow(ht); /* no lock; no changes by another thread possible */
       mutex_lock_perror(&ht->gate_lock);
       ht->gate_open = TRUE;
-      cond_broadcast_perror(&ht->cond_gate_open);
+      cond_broadcast_perror(&ht->gate_open_cond);
     }else{
-      if (!ht->gate_open) cond_signal_perror(&ht->cond_grow);
+      if (!ht->gate_open) cond_signal_perror(&ht->grow_cond);
     }
     ht->num_in_threads--;
     mutex_unlock_perror(&ht->gate_lock);
@@ -204,12 +203,29 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 }
 
 /**
+   Call after all threads completed insert, delete and remove operations on 
+   ht. This is a non-modifying query operation and has no synchronization
+   overhead due to lack of race conditions.
+*/
+void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
+			       const void *key){
+  dll_node_t *node = dll_search_key(&ht->key_elts[hash(ht, key)],
+				     key,
+				     ht->key_size);
+  if (node == NULL){
+    return NULL;
+  }else{
+    return node->elt;
+  }
+}
+
+/**
    
 */
 void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
 			      const void *key,
 			      void *elt){
-  size_t ix;
+  size_t ix, lock_ix;
   boolean_t removed = FALSE;
   dll_node_t **head = NULL, *node = NULL;
   /* first critical section : go through gate or wait */
@@ -239,7 +255,7 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
   /* finish */
   mutex_lock_perror(&ht->gate_lock);
   if (removed) ht->num_elts--;
-  if (!ht->gate_open) cond_signal_perror(&ht->cond_grow);
+  if (!ht->gate_open) cond_signal_perror(&ht->grow_cond);
   ht->num_in_threads--;
   mutex_unlock_perror(&ht->gate_lock);
 }
@@ -248,7 +264,7 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
 
 */
 void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht, const void *key){
-  size_t ix;
+  size_t ix, lock_ix;
   boolean_t deleted = FALSE;
   dll_node_t **head = NULL, *node = NULL;
   mutex_lock_perror(&ht->gate_lock);
@@ -276,13 +292,14 @@ void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht, const void *key){
   /* finish */
   mutex_lock_perror(&ht->gate_lock);
   if (deleted) ht->num_elts--;
-  if (!ht->gate_open) cond_signal_perror(&ht->cond_grow);
+  if (!ht->gate_open) cond_signal_perror(&ht->grow_cond);
   ht->num_in_threads--;
   mutex_unlock_perror(&ht->gate_lock);
 }
 
 /**
-   Call after insert, delete and remove threads are joined with main.
+   Call after all threads completed insert, delete and remove operations on
+   ht.
 */
 void ht_divchn_pthread_free(ht_divchn_pthread_t *ht){
   size_t i;

@@ -66,6 +66,9 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 			      const void *key,
 			      const void *elt);
 
+void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
+			       const void *key);
+
 void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
 			      const void *key,
 			      void *elt);
