@@ -28,8 +28,6 @@
 #include "dll.h"
 #include "utilities-mem.h"
 
-static void dll_free_key_elt(dll_node_t *node, void (*free_elt)(void *));
-
 /**
    Initializes an empty doubly linked list by setting a head pointer to NULL.
    head        : pointer to a preallocated block of the size of a head pointer
@@ -61,16 +59,18 @@ void dll_prepend(dll_node_t **head,
 		 const void *elt,
 		 size_t key_size,
 		 size_t elt_size){
-  dll_node_t *node = malloc_perror(1, sizeof(dll_node_t));
   /* allocate a single block to reduce admin and alignment bytes */
-  node->elt = malloc_perror(1, add_sz_perror(elt_size, key_size));
+  dll_node_t *node = malloc_perror(1, add_sz_perror(sizeof(dll_node_t),
+						    add_sz_perror(elt_size,
+								  key_size)));
+  node->elt = (char *)node + sizeof(dll_node_t);
+  memcpy(node->elt, elt, elt_size);
   if (key != NULL){
     node->key = (char *)node->elt + elt_size;
     memcpy(node->key, key, key_size);
   }else{
     node->key = NULL;
   }
-  memcpy(node->elt, elt, elt_size);
   if (*head == NULL){
     node->next = node;
     node->prev = node;
@@ -184,13 +184,13 @@ void dll_delete(dll_node_t **head,
   if (*head == NULL || node == NULL){
     return;
   }else if (node->prev == node && node->next == node){
-    dll_free_key_elt(node, free_elt);
+    if (free_elt != NULL) free_elt(node->elt);
     *head = NULL;
     free(node);
     node = NULL;
   }else{
     /* at least two nodes */
-    dll_free_key_elt(node, free_elt);
+    if (free_elt != NULL) free_elt(node->elt);
     node->next->prev = node->prev;
     node->prev->next = node->next;
     if (*head == node){
@@ -201,15 +201,6 @@ void dll_delete(dll_node_t **head,
   }
 }
 
-static void dll_free_key_elt(dll_node_t *node, void (*free_elt)(void *)){
-  if (free_elt != NULL){
-    free_elt(node->elt);
-  }
-  free(node->elt); /* element (pointer) and key block */
-  node->key = NULL;
-  node->elt = NULL;
-}
-
 /**
    Frees a doubly linked list. Please see the parameter specification in
    dll_delete.
@@ -218,12 +209,12 @@ void dll_free(dll_node_t **head, void (*free_elt)(void *)){
   dll_node_t *node = *head, *next_node = NULL;
   if (node != NULL){
     next_node = node->next;
-    dll_free_key_elt(node, free_elt);
+    if (free_elt != NULL) free_elt(node->elt);
     free(node);
     node = next_node;
     while(node != *head){
       next_node = node->next;
-      dll_free_key_elt(node, free_elt);
+      if (free_elt != NULL) free_elt(node->elt);
       free(node);
       node = next_node;
     }
