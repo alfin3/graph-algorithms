@@ -312,8 +312,6 @@ void ht_mul_free(ht_mul_t *ht){
    preallocated block of size sizeof(dll_node_t).
 */
 static void placeholder_init(dll_node_t *node){
-  node->key_size = 0;
-  node->elt_size = 1;
   node->key = NULL; /* element in ht cannot have node->key == NULL */
   node->elt = calloc_perror(1, 1); /* for consistency purposes */
   node->next = node;

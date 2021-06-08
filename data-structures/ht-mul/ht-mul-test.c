@@ -607,6 +607,7 @@ void run_corner_cases_test(int ins_pow){
   res *= (ht_mul_search(&ht, &C_CORNER_KEY_A) == NULL);
   res *= (ht_mul_search(&ht, &C_CORNER_KEY_B) == NULL);
   print_test_result(res);
+  free_ht(&ht);
 }
 
 /**
