@@ -63,8 +63,9 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			 int (*is_ins)(const void *, const void *));
 
 void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
-			      const void *key,
-			      const void *elt);
+			      const void *batch_keys,
+			      const void *batch_elts,
+			      size_t batch_count);
 
 void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
 			       const void *key);

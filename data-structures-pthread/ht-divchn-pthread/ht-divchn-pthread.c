@@ -92,6 +92,7 @@ static void ht_grow(ht_divchn_pthread_t *ht);
 static void copy_reinsert(ht_divchn_pthread_t *ht, const dll_node_t *node);
 static int is_overflow(size_t start, size_t count);
 static size_t build_prime(size_t start, size_t count);
+static void *ptr(const void *block, size_t i, size_t size);
 
 /**
    Initializes a hash table. 
@@ -126,6 +127,12 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
   ht->num_grow_threads = num_grow_threads;
   ht->key_locks_count = add_sz_perror(num_key_locks, 1); /* one extra lock */
   ht->key_seg_count = ht->count / num_key_locks;
+  /*printf("init grow ht->count : %lu, "
+	 "key_locks_count : %lu, "
+	 "key_seg_count : %lu\n",
+	 ht->count,
+	 ht->key_locks_count,
+	 ht->key_seg_count);*/
   ht->gate_open = TRUE;
   mutex_init_perror(&ht->gate_lock);
   ht->key_locks = malloc_perror(ht->key_locks_count,
@@ -143,11 +150,15 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
    in the hash table, associates the key with the new element. The key and
    elt parameters are not NULL.
 */
+
+
+
 void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
-			      const void *key,
-			      const void *elt){
-  size_t ix, lock_ix;
-  boolean_t increased = FALSE;
+			      const void *batch_keys,
+			      const void *batch_elts,
+			      size_t batch_count){
+  size_t i, ix, lock_ix;
+  size_t increased = 0;
   dll_node_t **head = NULL, *node = NULL;
   /* first critical section : go through gate or wait */
   mutex_lock_perror(&ht->gate_lock);
@@ -158,26 +169,39 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
   mutex_unlock_perror(&ht->gate_lock);
 
   /* insert , TODO incorporate is_ins*/
-  ix = hash(ht, key);
-  head = &ht->key_elts[ix];
-  lock_ix = ix / ht->key_seg_count;
-  mutex_lock_perror(&ht->key_locks[lock_ix]);
-  node = dll_search_key(head, key, ht->key_size);
-  if (node == NULL){
-    dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
-    mutex_unlock_perror(&ht->key_locks[lock_ix]);
-    increased = TRUE;
-  }else{
-    dll_delete(head, node, ht->free_elt);
-    dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
-    mutex_unlock_perror(&ht->key_locks[lock_ix]);
+  for (i = 0; i < batch_count; i++){
+    ix = hash(ht, ptr(batch_keys, i, ht->key_size));
+    head = &ht->key_elts[ix];
+    lock_ix = ix / ht->key_seg_count;
+    if (lock_ix >= ht->key_locks_count) lock_ix = ht->key_locks_count - 1;
+    mutex_lock_perror(&ht->key_locks[lock_ix]);
+    node = dll_search_key(head,
+			  ptr(batch_keys, i, ht->key_size),
+			  ht->key_size);
+    if (node == NULL){
+      dll_prepend(head,
+		  ptr(batch_keys, i, ht->key_size),
+		  ptr(batch_elts, i, ht->elt_size),
+		  ht->key_size,
+		  ht->elt_size);
+      mutex_unlock_perror(&ht->key_locks[lock_ix]);
+      increased++;
+    }else{
+      dll_delete(head, node, ht->free_elt);
+      dll_prepend(head,
+		  ptr(batch_keys, i, ht->key_size),
+		  ptr(batch_elts, i, ht->elt_size),
+		  ht->key_size,
+		  ht->elt_size);
+      mutex_unlock_perror(&ht->key_locks[lock_ix]);
+    }
   }
 
   /* grow ht if needed, and finish */
   if (ht->count_ix != C_SIZE_MAX &&
       ht->count_ix != C_LAST_PRIME_IX){
     mutex_lock_perror(&ht->gate_lock);
-    if (increased) ht->num_elts++;
+    ht->num_elts += increased;
     if ((float)ht->num_elts / ht->count > ht->alpha && ht->gate_open){
       ht->gate_open = FALSE;
       /* wait for threads that passed first critical section to finish */
@@ -348,6 +372,12 @@ static void ht_grow(ht_divchn_pthread_t *ht){
     dll_init(head);
   }
   ht->key_seg_count = ht->count / (ht->key_locks_count - 1);
+  /*printf("after grow ht->count : %lu, "
+	 "key_locks_count : %lu, "
+	 "key_seg_count : %lu\n",
+	 ht->count,
+	 ht->key_locks_count,
+	 ht->key_seg_count);*/
   for (i = 0; i < prev_count; i++){
     head = &prev_key_elts[i];
     while (*head != NULL){
@@ -403,4 +433,8 @@ static size_t build_prime(size_t start, size_t count){
     p |= n_shift;
   }
   return p;
+}
+
+static void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
 }
