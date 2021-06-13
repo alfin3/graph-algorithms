@@ -34,8 +34,8 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even.
+   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
+   is greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
@@ -44,7 +44,6 @@
 #include <limits.h>
 #include <time.h>
 #include "ht-mul.h"
-#include "dll.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
 
@@ -166,6 +165,7 @@ void run_insert_search_free_uint_test(int ins_pow,
     }
   }
 }
+
 /**
    Runs a ht_mul_{remove, delete} test on distinct keys and size_t
    elements across key sizes >= C_KEY_SIZE_FACTOR and load factor upper
@@ -210,7 +210,7 @@ void run_remove_delete_uint_test(int ins_pow,
    non-random C_KEY_SIZE_FACTOR-sized block inside the key. A pointer to a
    pointer to an element is passed as elt in ht_mul_insert, and the pointer
    to the element is copied into the hash table. An element-specific
-   free_elt is necessary to delete the element.
+   free_elt is necessary to delete the element (see specification).
 */
 
 typedef struct{

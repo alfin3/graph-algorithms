@@ -25,8 +25,8 @@
    within a contiguous or noncontiguous block of memory.
 
    The implementation does not use stdint.h and is portable under C89/C90
-   with the only requirement that CHAR_BIT * sizeof(size_t) is greater or
-   equal to 16 and is even.
+   and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
+   greater or equal to 16 and is even.
 */
 
 #ifndef HT_MUL_H  
@@ -37,12 +37,12 @@
 typedef enum{FALSE, TRUE} boolean_t;
 
 typedef struct{
-  boolean_t is_ph; /* must be first */
+  boolean_t is_ph;
   size_t fval;
   size_t sval;
   void *key;
   void *elt;
-} key_elt_t; /* first and second hash values, key and element */
+} key_elt_t; /* first and second hash values, key and element pointers */
 
 typedef struct{
   size_t key_size;
@@ -67,9 +67,10 @@ typedef struct{
    ht          : a pointer to a preallocated block of size sizeof(ht_mul_t).
    key_size    : size of a key object
    elt_size    : - size of an element, if the element is within a contiguous
-                 memory block,
+                 memory block and a copy of the element is inserted,
                  - size of a pointer to an element, if the element is within
-                 a noncontiguous memory block
+                 a noncontiguous memory block or a pointer to a contiguous
+                 element is inserted
    alpha       : a load factor upper bound that is > 0.0 and < 1.0
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
@@ -79,17 +80,14 @@ typedef struct{
                  - otherwise rdc_key is applied to a key prior to hashing;
                  the first argument points to a key and the second argument
                  provides the size of the key
-   free_elt    : - if an element is within a contiguous memory block,
-                 as reflected by elt_size, and a pointer to the element is 
-                 passed as elt in ht_mul_insert, then the element is
-                 fully copied into a hash table, and NULL as free_elt is
-                 sufficient to delete the element,
-                 - if an element is within a noncontiguous memory block,
-                 and a pointer to a pointer to the element is passed
-                 as elt in ht_mul_insert, then the pointer to the
-                 element is copied into the hash table, and an element-
-                 specific free_elt, taking a pointer to a pointer to an
-                 element as its argument, is necessary to delete the element
+   free_elt    : - if an element is within a contiguous memory block and
+                 a copy of the element was inserted, then NULL as free_elt
+                 is sufficient to delete the element,
+                 - if an element is within a noncontiguous memory block or
+                 a pointer to a contiguous element was inserted, then an
+                 element-specific free_elt, taking a pointer to a pointer to an
+                 element as its argument and leaving a block of size elt_size
+                 pointed to by the argument, is necessary to delete the element
 */
 void ht_mul_init(ht_mul_t *ht,
 		 size_t key_size,

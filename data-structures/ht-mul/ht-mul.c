@@ -24,8 +24,8 @@
    within a contiguous or noncontiguous block of memory.
 
    The implementation does not use stdint.h and is portable under C89/C90
-   with the only requirement that CHAR_BIT * sizeof(size_t) is greater or
-   equal to 16 and is even.
+   and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
+   greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
@@ -112,10 +112,14 @@ static void ph_free(key_elt_t *ke);
 /* key element handling */
 static key_elt_t *key_elt_new(size_t fval,
 			      size_t sval,
-			      size_t key_size,
-			      size_t elt_size,
 			      const void *key,
-			      const void *elt);
+			      const void *elt,
+			      size_t key_size,
+			      size_t elt_size);
+static void key_elt_update(key_elt_t *ke,
+			   const void *elt,
+			   size_t elt_size,
+			   void (*free_elt)(void *));
 static void key_elt_free(key_elt_t* ke, void (*free_elt)(void *));
 
 /* hashing */
@@ -123,10 +127,8 @@ static size_t find_build_prime(const size_t *parts);
 static size_t convert_std_key(const ht_mul_t *ht, const void *key);
 static size_t adjust_dist(size_t dist);
 
-/* hash table operations */
+/* hash table operations and maintenance*/
 static key_elt_t **search(const ht_mul_t *ht, const void *key);
-
-/* hash table maintenance */
 static void ht_grow(ht_mul_t *ht);
 static void ht_clean(ht_mul_t *ht);
 static void reinsert(ht_mul_t *ht, const key_elt_t *prev_ke);
@@ -136,9 +138,10 @@ static void reinsert(ht_mul_t *ht, const key_elt_t *prev_ke);
    ht          : a pointer to a preallocated block of size sizeof(ht_mul_t).
    key_size    : size of a key object
    elt_size    : - size of an element, if the element is within a contiguous
-                 memory block,
+                 memory block and a copy of the element is inserted,
                  - size of a pointer to an element, if the element is within
-                 a noncontiguous memory block
+                 a noncontiguous memory block or a pointer to a contiguous
+                 element is inserted
    alpha       : a load factor upper bound that is > 0.0 and < 1.0
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
@@ -148,17 +151,14 @@ static void reinsert(ht_mul_t *ht, const key_elt_t *prev_ke);
                  - otherwise rdc_key is applied to a key prior to hashing;
                  the first argument points to a key and the second argument
                  provides the size of the key
-   free_elt    : - if an element is within a contiguous memory block,
-                 as reflected by elt_size, and a pointer to the element is 
-                 passed as elt in ht_mul_insert, then the element is
-                 fully copied into a hash table, and NULL as free_elt is
-                 sufficient to delete the element,
-                 - if an element is within a noncontiguous memory block,
-                 and a pointer to a pointer to the element is passed
-                 as elt in ht_mul_insert, then the pointer to the
-                 element is copied into the hash table, and an element-
-                 specific free_elt, taking a pointer to a pointer to an
-                 element as its argument, is necessary to delete the element
+   free_elt    : - if an element is within a contiguous memory block and
+                 a copy of the element was inserted, then NULL as free_elt
+                 is sufficient to delete the element,
+                 - if an element is within a noncontiguous memory block or
+                 a pointer to a contiguous element was inserted, then an
+                 element-specific free_elt, taking a pointer to a pointer to an
+                 element as its argument and leaving a block of size elt_size
+                 pointed to by the argument, is necessary to delete the element
 */
 void ht_mul_init(ht_mul_t *ht,
 		 size_t key_size,
@@ -217,7 +217,7 @@ void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
   while (*ke != NULL){
     if (!is_ph(*ke) &&
 	memcmp((*ke)->key, key, ht->key_size) == 0){
-      memcpy((*ke)->elt, elt, ht->elt_size);
+      key_elt_update(*ke, elt, ht->elt_size, ht->free_elt);
       return;
     }
     ix = sum_mod(dist, ix, ht->count);
@@ -227,7 +227,7 @@ void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
       ht->max_num_probes++;
     }
   }
-  *ke = key_elt_new(fval, sval, ht->key_size, ht->elt_size, key, elt);
+  *ke = key_elt_new(fval, sval, key, elt, ht->key_size, ht->elt_size);
   ht->num_elts++;
 }
 
@@ -301,6 +301,7 @@ void ht_mul_free(ht_mul_t *ht){
 /**
    Create, test, and free a placeholder.
 */
+
 static key_elt_t *ph_new(){
   key_elt_t *ke = malloc_perror(1, sizeof(key_elt_t));
   ke->is_ph = TRUE;
@@ -323,12 +324,13 @@ static void ph_free(key_elt_t *ke){
 /**
    Create and free a key element.
 */
+
 static key_elt_t *key_elt_new(size_t fval,
 			      size_t sval,
-			      size_t key_size,
-			      size_t elt_size,
 			      const void *key,
-			      const void *elt){
+			      const void *elt,
+			      size_t key_size,
+			      size_t elt_size){
   key_elt_t *ke =
     malloc_perror(1, add_sz_perror(sizeof(key_elt_t),
 				   add_sz_perror(key_size, elt_size)));
@@ -340,6 +342,14 @@ static key_elt_t *key_elt_new(size_t fval,
   memcpy(ke->key, key, key_size);
   memcpy(ke->elt, elt, elt_size);
   return ke;
+}
+
+static void key_elt_update(key_elt_t *ke,
+			   const void *elt,
+			   size_t elt_size,
+			   void (*free_elt)(void *)){
+  if (free_elt != NULL) free_elt(ke->elt);
+  memcpy(ke->elt, elt, elt_size);
 }
 
 static void key_elt_free(key_elt_t *ke, void (*free_elt)(void *)){
@@ -454,8 +464,9 @@ static size_t adjust_dist(size_t dist){
 }
 
 /**
-   If a key is present in a hash table, returns a head pointer to the dll
-   with a single node containing the key, otherwise returns NULL.
+   If a key is present in a hash table, returns a pointer to a slot
+   in the key_elts array that stores a pointer to key_elt_t with the
+   key, otherwise returns NULL.
 */
 static key_elt_t **search(const ht_mul_t *ht, const void *key){
   size_t num_probes = 1;
