@@ -33,7 +33,16 @@
 #define HT_MUL_H
 
 #include <stddef.h>
-#include "dll.h"
+
+typedef enum{FALSE, TRUE} boolean_t;
+
+typedef struct{
+  boolean_t is_ph; /* must be first */
+  size_t fval;
+  size_t sval;
+  void *key;
+  void *elt;
+} key_elt_t; /* first and second hash values, key and element */
 
 typedef struct{
   size_t key_size;
@@ -43,12 +52,12 @@ typedef struct{
   size_t max_count;
   size_t max_num_probes;
   size_t num_elts;
-  size_t num_placeholders;
-  size_t first_prime; /* >2^{n - 1}, <2^{n}, n = CHAR_BIT * sizeof(size_t) */
-  size_t second_prime; /* >2^{n - 1}, <2^{n}, n = CHAR_BIT * sizeof(size_t) */
+  size_t num_phs;
+  size_t fprime; /* >2^{n - 1}, <2^{n}, n = CHAR_BIT * sizeof(size_t) */
+  size_t sprime; /* >2^{n - 1}, <2^{n}, n = CHAR_BIT * sizeof(size_t) */
   float alpha;
-  dll_node_t *placeholder; /* node with node->key == NULL */
-  dll_node_t **key_elts; /* array of pointers to dlls, each with <= 1 node */
+  key_elt_t *ph;
+  key_elt_t **key_elts;
   size_t (*rdc_key)(const void *, size_t);
   void (*free_elt)(void *);
 } ht_mul_t;

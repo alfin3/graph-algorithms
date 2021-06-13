@@ -33,7 +33,6 @@
 #include <string.h>
 #include <limits.h>
 #include "ht-mul.h"
-#include "dll.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
 
@@ -105,10 +104,19 @@ static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_FULL_SIZE = sizeof(size_t);
 static const size_t C_INIT_LOG_COUNT = 8;
 
-/* placeholder object handling */
-static void placeholder_init(dll_node_t *node);
-static int is_placeholder(const dll_node_t *node);
-static void placeholder_free(dll_node_t *node);
+/* placeholder handling */
+static key_elt_t *ph_new();
+static int is_ph(const key_elt_t *ke);
+static void ph_free(key_elt_t *ke);
+
+/* key element handling */
+static key_elt_t *key_elt_new(size_t fval,
+			      size_t sval,
+			      size_t key_size,
+			      size_t elt_size,
+			      const void *key,
+			      const void *elt);
+static void key_elt_free(key_elt_t* ke, void (*free_elt)(void *));
 
 /* hashing */
 static size_t find_build_prime(const size_t *parts);
@@ -116,14 +124,12 @@ static size_t convert_std_key(const ht_mul_t *ht, const void *key);
 static size_t adjust_dist(size_t dist);
 
 /* hash table operations */
-static dll_node_t **search(const ht_mul_t *ht, const void *key);
-static size_t *first_val_ptr(const void *key_block, size_t key_size);
-static size_t *second_val_ptr(const void *key_block, size_t key_size);
+static key_elt_t **search(const ht_mul_t *ht, const void *key);
 
 /* hash table maintenance */
 static void ht_grow(ht_mul_t *ht);
 static void ht_clean(ht_mul_t *ht);
-static void reinsert(ht_mul_t *ht, const dll_node_t *node);
+static void reinsert(ht_mul_t *ht, const key_elt_t *prev_ke);
 
 /**
    Initializes a hash table. 
@@ -168,15 +174,14 @@ void ht_mul_init(ht_mul_t *ht,
   ht->max_count = pow_two(C_FULL_BIT - 1);
   ht->max_num_probes = 1; /* at least one probe */
   ht->num_elts = 0;
-  ht->num_placeholders = 0;
-  ht->first_prime = find_build_prime(C_FIRST_PRIME_PARTS);
-  ht->second_prime = find_build_prime(C_SECOND_PRIME_PARTS);
+  ht->num_phs = 0;
+  ht->fprime = find_build_prime(C_FIRST_PRIME_PARTS);
+  ht->sprime = find_build_prime(C_SECOND_PRIME_PARTS);
   ht->alpha = alpha;
-  ht->placeholder = malloc_perror(1, sizeof(dll_node_t));
-  placeholder_init(ht->placeholder);
-  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
+  ht->ph = ph_new();
+  ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
   for (i = 0; i < ht->count; i++){
-    dll_init(&ht->key_elts[i]);
+    ht->key_elts[i] = NULL;
   }
   ht->rdc_key = rdc_key;
   ht->free_elt = free_elt;
@@ -190,15 +195,12 @@ void ht_mul_init(ht_mul_t *ht,
 void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
   size_t num_probes = 1;
   size_t std_key;
-  size_t first_val, second_val;
+  size_t fval, sval;
   size_t ix, dist;
-  size_t key_block_size = ht->key_size + 2 * C_FULL_SIZE;
-  void *key_block = NULL;
-  dll_node_t **head = NULL;
-  while ((float)(ht->num_elts + ht->num_placeholders) / ht->count >
-	 ht->alpha){
+  key_elt_t **ke = NULL;
+  while ((float)(ht->num_elts + ht->num_phs) / ht->count > ht->alpha){
     /* clean or grow if E[# keys in a slot] > alpha */
-    if (ht->num_elts < ht->num_placeholders){
+    if (ht->num_elts < ht->num_phs){
       ht_clean(ht);
     }else if (ht->count < ht->max_count){
       ht_grow(ht);
@@ -207,36 +209,26 @@ void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
     }
   }
   std_key = convert_std_key(ht, key);
-  first_val = ht->first_prime * std_key; /* mod 2^FULL_BIT */
-  second_val = ht->second_prime * std_key; /* mod 2^FULL_BIT */
-  /* prepare a hash key and two hash values for storage as a block */
-  key_block = malloc_perror(1, key_block_size);
-  memcpy(key_block, key, ht->key_size);
-  *first_val_ptr(key_block, ht->key_size) = first_val;
-  *second_val_ptr(key_block, ht->key_size) = second_val;
-  ix = first_val >> (C_FULL_BIT - ht->log_count);
-  dist = adjust_dist(second_val >> (C_FULL_BIT - ht->log_count));
-  head = &ht->key_elts[ix];
-  while (*head != NULL){
-    if (!is_placeholder(*head) &&
-	dll_search_key(head, key, ht->key_size) != NULL){
-      dll_delete(head, *head, ht->free_elt);
-      dll_prepend(head, key_block, elt, key_block_size, ht->elt_size);
-      free(key_block);
-      key_block = NULL;
+  fval = ht->fprime * std_key; /* mod 2^FULL_BIT */
+  sval = ht->sprime * std_key; /* mod 2^FULL_BIT */
+  ix = fval >> (C_FULL_BIT - ht->log_count);
+  dist = adjust_dist(sval >> (C_FULL_BIT - ht->log_count));
+  ke = &ht->key_elts[ix];
+  while (*ke != NULL){
+    if (!is_ph(*ke) &&
+	memcmp((*ke)->key, key, ht->key_size) == 0){
+      memcpy((*ke)->elt, elt, ht->elt_size);
       return;
     }
     ix = sum_mod(dist, ix, ht->count);
-    head = &ht->key_elts[ix];
+    ke = &ht->key_elts[ix];
     num_probes++;
     if (num_probes > ht->max_num_probes){
       ht->max_num_probes++;
     }
   }
-  dll_prepend(head, key_block, elt, key_block_size, ht->elt_size);
+  *ke = key_elt_new(fval, sval, ht->key_size, ht->elt_size, key, elt);
   ht->num_elts++;
-  free(key_block);
-  key_block = NULL;
 }
 
 /**
@@ -244,9 +236,9 @@ void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
    element, otherwise returns NULL. The key parameter is not NULL.
 */
 void *ht_mul_search(const ht_mul_t *ht, const void *key){
-  dll_node_t **head = search(ht, key);
-  if (head != NULL){
-    return (*head)->elt;
+  key_elt_t **ke = search(ht, key);
+  if (ke != NULL){
+    return (*ke)->elt;
   }else{
     return NULL;
   }
@@ -259,14 +251,14 @@ void *ht_mul_search(const ht_mul_t *ht, const void *key){
    The key and elt parameters are not NULL.
 */
 void ht_mul_remove(ht_mul_t *ht, const void *key, void *elt){
-  dll_node_t **head = search(ht, key);
-  if (head != NULL){
-    memcpy(elt, (*head)->elt, ht->elt_size);
+  key_elt_t **ke = search(ht, key);
+  if (ke != NULL){
+    memcpy(elt, (*ke)->elt, ht->elt_size);
     /* if an element is noncontiguous, only the pointer to it is deleted */
-    dll_delete(head, *head, NULL);
-    *head = ht->placeholder;
+    key_elt_free(*ke, NULL);
+    *ke = ht->ph;
     ht->num_elts--;
-    ht->num_placeholders++;
+    ht->num_phs++;
   }
 }
 
@@ -275,12 +267,12 @@ void ht_mul_remove(ht_mul_t *ht, const void *key, void *elt){
    according to free_elt. The key parameter is not NULL.
 */
 void ht_mul_delete(ht_mul_t *ht, const void *key){
-  dll_node_t **head = search(ht, key);
-  if (head != NULL){
-    dll_delete(head, *head, ht->free_elt);
-    *head = ht->placeholder;
+  key_elt_t **ke = search(ht, key);
+  if (ke != NULL){
+    key_elt_free(*ke, ht->free_elt);
+    *ke = ht->ph;
     ht->num_elts--;
-    ht->num_placeholders++;
+    ht->num_phs++;
   }
 }
 
@@ -290,52 +282,70 @@ void ht_mul_delete(ht_mul_t *ht, const void *key){
 */
 void ht_mul_free(ht_mul_t *ht){
   size_t i;
-  dll_node_t **head = NULL;
+  key_elt_t **ke = NULL;
   for (i = 0; i < ht->count; i++){
-    head = &ht->key_elts[i];
-    if (*head != NULL && !is_placeholder(*head)){
-      dll_free(head, ht->free_elt);
+    ke = &ht->key_elts[i];
+    if (*ke != NULL && !is_ph(*ke)){
+      key_elt_free(*ke, ht->free_elt);
     }
   }
+  ph_free(ht->ph);
   free(ht->key_elts);
-  placeholder_free(ht->placeholder);
-  free(ht->placeholder);
+  ht->ph = NULL;
   ht->key_elts = NULL;
-  ht->placeholder = NULL;
-  head = NULL;
+  ke = NULL;
 }
 
 /** Helper functions */
 
 /**
-   Initializes a placeholder node. The node parameter points to a
-   preallocated block of size sizeof(dll_node_t).
+   Create, test, and free a placeholder.
 */
-static void placeholder_init(dll_node_t *node){
-  node->key = NULL; /* element in ht cannot have node->key == NULL */
-  node->elt = calloc_perror(1, 1); /* for consistency purposes */
-  node->next = node;
-  node->prev = node;
+static key_elt_t *ph_new(){
+  key_elt_t *ke = malloc_perror(1, sizeof(key_elt_t));
+  ke->is_ph = TRUE;
+  ke->fval = 0;
+  ke->sval = 0;
+  ke->key = NULL;
+  ke->elt = NULL;
+  return ke;
+}
+
+static int is_ph(const key_elt_t *ke){
+  return ke->is_ph;
+}
+
+static void ph_free(key_elt_t *ke){
+  free(ke);
+  ke = NULL;
 }
 
 /**
-   Tests if a node is a placeholder node.
+   Create and free a key element.
 */
-static int is_placeholder(const dll_node_t *node){
-  if (node->key == NULL){
-    return 1;
-  }else{
-    return 0;
-  }
+static key_elt_t *key_elt_new(size_t fval,
+			      size_t sval,
+			      size_t key_size,
+			      size_t elt_size,
+			      const void *key,
+			      const void *elt){
+  key_elt_t *ke =
+    malloc_perror(1, add_sz_perror(sizeof(key_elt_t),
+				   add_sz_perror(key_size, elt_size)));
+  ke->is_ph = FALSE;
+  ke->fval = fval;
+  ke->sval = sval;
+  ke->key = (char *)ke + sizeof(key_elt_t);
+  ke->elt = (char *)ke + sizeof(key_elt_t) + key_size;
+  memcpy(ke->key, key, key_size);
+  memcpy(ke->elt, elt, elt_size);
+  return ke;
 }
 
-/**
-   Frees a placeholder node and leaves a block of size sizeof(dll_node_t) 
-   pointed to by the node parameter.
-*/
-static void placeholder_free(dll_node_t *node){
-  free(node->elt);
-  node->elt = NULL;
+static void key_elt_free(key_elt_t *ke, void (*free_elt)(void *)){
+  if (free_elt != NULL) free_elt(ke->elt);
+  free(ke);
+  ke = NULL;
 }
 
 /**
@@ -447,41 +457,29 @@ static size_t adjust_dist(size_t dist){
    If a key is present in a hash table, returns a head pointer to the dll
    with a single node containing the key, otherwise returns NULL.
 */
-static dll_node_t **search(const ht_mul_t *ht, const void *key){
+static key_elt_t **search(const ht_mul_t *ht, const void *key){
   size_t num_probes = 1;
-  size_t std_key, first_val, second_val, ix, dist;
-  dll_node_t **head = NULL;
+  size_t std_key, fval, sval, ix, dist;
+  key_elt_t **ke = NULL;
   std_key = convert_std_key(ht, key);
-  first_val = ht->first_prime * std_key; /* mod 2^FULL_BIT */
-  second_val = ht->second_prime * std_key; /* mod 2^FULL_BIT */
-  ix = first_val >> (C_FULL_BIT - ht->log_count);
-  dist = adjust_dist(second_val >> (C_FULL_BIT - ht->log_count));
-  head = &ht->key_elts[ix];
-  while (*head != NULL){
-    if (!is_placeholder(*head) &&
-	dll_search_key(head, key, ht->key_size) != NULL){
-      return head;
+  fval = ht->fprime * std_key; /* mod 2^FULL_BIT */
+  sval = ht->sprime * std_key; /* mod 2^FULL_BIT */
+  ix = fval >> (C_FULL_BIT - ht->log_count);
+  dist = adjust_dist(sval >> (C_FULL_BIT - ht->log_count));
+  ke = &ht->key_elts[ix];
+  while (*ke != NULL){
+    if (!is_ph(*ke) &&
+	memcmp((*ke)->key, key, ht->key_size) == 0){
+      return ke;
     }else if (num_probes == ht->max_num_probes){
       break;
     }else{
       ix = sum_mod(dist, ix, ht->count);
-      head = &ht->key_elts[ix];
+      ke = &ht->key_elts[ix];
       num_probes++;
     }
   }
   return NULL;
-}
-
-/**
-   Compute pointers to the first and second hash values in a key block.
-   In a key block, a hash key must be followed by two hash values.
-*/
-static size_t *first_val_ptr(const void* key_block, size_t key_size){
-  return (size_t *)((char *)key_block + key_size);
-}
-
-static size_t *second_val_ptr(const void* key_block, size_t key_size){
-  return (size_t *)((char *)key_block + key_size + C_FULL_SIZE);
 }
 
 /**
@@ -490,28 +488,27 @@ static size_t *second_val_ptr(const void* key_block, size_t key_size){
 */
 static void ht_grow(ht_mul_t *ht){
   size_t i, prev_count = ht->count;
-  dll_node_t **prev_key_elts = ht->key_elts;
-  dll_node_t **head = NULL;
+  key_elt_t **prev_key_elts = ht->key_elts;
+  key_elt_t **ke = NULL;
   if (ht->count == ht->max_count) return;
   ht->log_count++;
   ht->count *= 2;
   ht->max_num_probes = 1;
   ht->num_elts = 0;
-  ht->num_placeholders = 0;
-  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
+  ht->num_phs = 0;
+  ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
   for (i = 0; i < ht->count; i++){
-    head = &ht->key_elts[i];
-    dll_init(head);
+    ht->key_elts[i] = NULL;
   }
   for (i = 0; i < prev_count; i++){
-    head = &prev_key_elts[i];
-    if (*head != NULL && !is_placeholder(*head)){
-      reinsert(ht, *head);
+    ke = &prev_key_elts[i];
+    if (*ke != NULL && !is_ph(*ke)){
+      reinsert(ht, *ke);
     }
   }
   free(prev_key_elts);
   prev_key_elts = NULL;
-  head = NULL;
+  ke = NULL;
 }
 
 /**
@@ -522,25 +519,24 @@ static void ht_grow(ht_mul_t *ht){
 */
 static void ht_clean(ht_mul_t *ht){
   size_t i;
-  dll_node_t **prev_key_elts = ht->key_elts;
-  dll_node_t **head = NULL;
+  key_elt_t **prev_key_elts = ht->key_elts;
+  key_elt_t **ke = NULL;
   ht->max_num_probes = 1;
   ht->num_elts = 0;
-  ht->num_placeholders = 0;
-  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
+  ht->num_phs = 0;
+  ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
   for (i = 0; i < ht->count; i++){
-    head = &ht->key_elts[i];
-    dll_init(head);
+    ht->key_elts[i] = NULL;
   }
   for (i = 0; i < ht->count; i++){
-    head = &prev_key_elts[i];
-    if (*head != NULL && !is_placeholder(*head)){
-      reinsert(ht, *head);
+    ke = &prev_key_elts[i];
+    if (*ke != NULL && !is_ph(*ke)){
+      reinsert(ht, *ke);
     }
   }
   free(prev_key_elts);
   prev_key_elts = NULL;
-  head = NULL;
+  ke = NULL;
 }
 
 /**
@@ -548,23 +544,21 @@ static void ht_clean(ht_mul_t *ht){
    ht_grow and ht_clean operations by recomputing the hash values with 
    bit shifting and without multiplication.
 */
-static void reinsert(ht_mul_t *ht, const dll_node_t *node){
+static void reinsert(ht_mul_t *ht, const key_elt_t *prev_ke){
   size_t num_probes = 1;
-  size_t first_val, second_val, ix, dist;
-  dll_node_t **head = NULL;
-  first_val = *first_val_ptr(node->key, ht->key_size);
-  second_val = *second_val_ptr(node->key, ht->key_size);
-  ix = first_val >> (C_FULL_BIT - ht->log_count);
-  dist = adjust_dist(second_val >> (C_FULL_BIT - ht->log_count));
-  head = &ht->key_elts[ix];
-  while (*head != NULL){
+  size_t ix, dist;
+  key_elt_t **ke = NULL;
+  ix = prev_ke->fval >> (C_FULL_BIT - ht->log_count);
+  dist = adjust_dist(prev_ke->sval >> (C_FULL_BIT - ht->log_count));
+  ke = &ht->key_elts[ix];
+  while (*ke != NULL){
     ix = sum_mod(dist, ix, ht->count);
-    head = &ht->key_elts[ix];
+    ke = &ht->key_elts[ix];
     num_probes++;
     if (num_probes > ht->max_num_probes){
       ht->max_num_probes++;
     }
   }
-  *head = (dll_node_t *)node;
+  *ke = (key_elt_t *)prev_ke;
   ht->num_elts++;
 }
