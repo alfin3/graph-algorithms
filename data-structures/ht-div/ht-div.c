@@ -113,21 +113,19 @@ static size_t build_prime(size_t start, size_t count);
    ht          : a pointer to a preallocated block of size sizeof(ht_div_t).
    key_size    : size of a key object
    elt_size    : - size of an element, if the element is within a contiguous
-                 memory block,
+                 memory block and a copy of the element is inserted,
                  - size of a pointer to an element, if the element is within
-                 a noncontiguous memory block
+                 a noncontiguous memory block or a pointer to a contiguous
+                 element is inserted
    alpha       : > 0.0, a load factor upper bound
-   free_elt    : - if an element is within a contiguous memory block,
-                 as reflected by elt_size, and a pointer to the element is 
-                 passed as elt in ht_div_insert, then the element is
-                 fully copied into a hash table, and NULL as free_elt is
-                 sufficient to delete the element,
-                 - if an element is within a noncontiguous memory block, and
-                 a pointer to a pointer to the element is passed as elt in
-                 ht_div_insert, then the pointer to the element is copied into
-                 the hash table, and an element-specific free_elt, taking a
-                 pointer to a pointer to an element as its argument, is
-                 necessary to delete the element
+   free_elt    : - if an element is within a contiguous memory block and
+                 a copy of the element was inserted, then NULL as free_elt
+                 is sufficient to delete the element,
+                 - if an element is within a noncontiguous memory block or
+                 a pointer to a contiguous element was inserted, then an
+                 element-specific free_elt, taking a pointer to a pointer to an
+                 element as its argument and leaving a block of size elt_size
+                 pointed to by the argument, is necessary to delete the element
 */
 void ht_div_init(ht_div_t *ht,
 		 size_t key_size,
@@ -192,9 +190,9 @@ void *ht_div_search(const ht_div_t *ht, const void *key){
 
 /**
    Removes a key and the associated element from a hash table by copying 
-   the element into a block of size elt_size pointed to by elt. If the key is
-   not in the hash table, leaves the block pointed to by elt unchanged.
-   The key and elt parameters are not NULL.
+   the element or its pointer into a block of size elt_size pointed to
+   by elt. If the key is not in the hash table, leaves the block pointed
+   to by elt unchanged. The key and elt parameters are not NULL.
 */
 void ht_div_remove(ht_div_t *ht, const void *key, void *elt){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
@@ -222,7 +220,7 @@ void ht_div_delete(ht_div_t *ht, const void *key){
 
 /**
    Frees a hash table and leaves a block of size sizeof(ht_div_t)
-   pointed to by the ht parameter.
+   pointed to by ht.
 */
 void ht_div_free(ht_div_t *ht){
   size_t i;

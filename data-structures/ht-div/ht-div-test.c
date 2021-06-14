@@ -33,8 +33,8 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even.
+   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
+   is greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
@@ -202,7 +202,7 @@ void run_remove_delete_uint_test(int ins_pow,
    non-random C_KEY_SIZE_FACTOR-sized block inside the key. A pointer to a
    pointer to an element is passed as elt in ht_div_insert, and the pointer
    to the element is copied into the hash table. An element-specific
-   free_elt is necessary to delete the element.
+   free_elt is necessary to delete the element (see specification).
 */
 
 typedef struct{
