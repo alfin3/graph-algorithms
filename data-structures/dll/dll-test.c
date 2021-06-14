@@ -21,7 +21,8 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is even.
+   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
+   is even.
 */
 
 #include <stdio.h>
@@ -61,7 +62,7 @@ void print_test_result(int res);
 
 /**
    Run tests of a doubly linked list of integer keys and integer elements. 
-   A pointer to an integer is passed as elt in dll_prepend and dll_append,
+   A pointer to an integer is passed as elt in prepend and append ops,
    and the integer is copied into the block pointed to by elt in a node.
    NULL as free_elt is sufficient to delete a node.
 */
@@ -89,7 +90,7 @@ void run_prepend_append_free_int_test(int pow_ins){
   num_ins = pow_two(pow_ins);
   dll_init(&head_prep);
   dll_init(&head_app);
-  printf("Run dll_{prepend, append, free} test on int keys and int "
+  printf("Run prepend, append, free test on int keys and int "
 	 "elements\n");
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
@@ -133,7 +134,7 @@ void run_prepend_append_free_int_test(int pow_ins){
 /**
    Run tests of a doubly linked list of integer keys and int_ptr_t elements. 
    A pointer to a pointer to an int_ptr_t element is passed as elt in 
-   dll_prepend and dll_append and the pointer to the int_ptr_t element is
+   prepend and append ops and the pointer to the int_ptr_t element is
    copied into the block pointed to by elt in a node. A int_ptr_t-specific
    free_elt is necessary to delete a node.
 */
@@ -180,7 +181,7 @@ void run_prepend_append_free_int_ptr_test(int pow_ins){
   num_ins = pow_two(pow_ins);
   dll_init(&head_prep);
   dll_init(&head_app);
-  printf("Run dll_{prepend, append, free} test on int keys and noncontiguous "
+  printf("Run prepend, append, free test on int keys and noncontiguous "
          "int_ptr_t elements \n");
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
@@ -238,11 +239,11 @@ void run_corner_cases_test(){
   dll_init(&head_two_app);
   for (i = 0; i < 2; i++){
     if (i < 1){
-      dll_prepend(&head_one_prep, &i, &i, sizeof(int), sizeof(int));
-      dll_append(&head_one_app, &i, &i, sizeof(int), sizeof(int));
+      dll_prepend_new(&head_one_prep, &i, &i, sizeof(int), sizeof(int));
+      dll_append_new(&head_one_app, &i, &i, sizeof(int), sizeof(int));
     }
-    dll_prepend(&head_two_prep, &i, &i, sizeof(int), sizeof(int));
-    dll_append(&head_two_app, &i, &i, sizeof(int), sizeof(int));
+    dll_prepend_new(&head_two_prep, &i, &i, sizeof(int), sizeof(int));
+    dll_append_new(&head_two_app, &i, &i, sizeof(int), sizeof(int));
   }
   /* search */
   key = 0;
@@ -344,20 +345,20 @@ void prepend_append_free(dll_node_t **head_prep,
   }  
   t_prep = clock();
   for (i = 0; i < num_ins; i++){
-    dll_prepend(head_prep,
-		&keys[i],
-		elt_ptr(elts_prep, i, elt_size),
-		sizeof(int),
-		elt_size);
+    dll_prepend_new(head_prep,
+		    &keys[i],
+		    elt_ptr(elts_prep, i, elt_size),
+		    sizeof(int),
+		    elt_size);
   }
   t_prep = clock() - t_prep;
   t_app = clock();
   for (i = 0; i < num_ins; i++){
-    dll_append(head_app,
-	       &keys[i],
-	       elt_ptr(elts_app, i, elt_size),
-	       sizeof(int),
-	       elt_size);
+    dll_append_new(head_app,
+		   &keys[i],
+		   elt_ptr(elts_app, i, elt_size),
+		   sizeof(int),
+		   elt_size);
   }
   t_app = clock() - t_app;
   node_prep = *head_prep;
