@@ -180,7 +180,7 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 			  ptr(batch_keys, i, ht->key_size),
 			  ht->key_size);
     if (node == NULL){
-      dll_prepend(head,
+      dll_prepend_new(head,
 		  ptr(batch_keys, i, ht->key_size),
 		  ptr(batch_elts, i, ht->elt_size),
 		  ht->key_size,
@@ -188,12 +188,8 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
       mutex_unlock_perror(&ht->key_locks[lock_ix]);
       increased++;
     }else{
-      dll_delete(head, node, ht->free_elt);
-      dll_prepend(head,
-		  ptr(batch_keys, i, ht->key_size),
-		  ptr(batch_elts, i, ht->elt_size),
-		  ht->key_size,
-		  ht->elt_size);
+      if (ht->free_elt != NULL) ht->free_elt(node->elt);
+      memcpy(node->elt, ptr(batch_elts, i, ht->elt_size), ht->elt_size);
       mutex_unlock_perror(&ht->key_locks[lock_ix]);
     }
   }
@@ -364,8 +360,8 @@ typedef struct{
 
 static void *reinsert_thread(void *arg){
   size_t i, ix, lock_ix;
-  size_t num_ins = 0;
-  dll_node_t **head = NULL;
+  /*size_t num_ins = 0;*/
+  dll_node_t **head = NULL, *node = NULL;
   reinsert_arg_t *ra = arg;
   /*printf("thread entered, "
 	 "start : %lu, "
@@ -381,21 +377,17 @@ static void *reinsert_thread(void *arg){
   for (i = 0; i < ra->count; i++){
     head = &ra->prev_key_elts[ra->start + i];
     while (*head != NULL){
-      ix = hash(ra->ht, (*head)->key);
+      node = *head;
+      dll_remove(head, node);
+      ix = hash(ra->ht, node->key);
       lock_ix = ix / ra->ht->key_seg_count;
       if (lock_ix >= ra->ht->key_locks_count){
 	lock_ix = ra->ht->key_locks_count - 1;
       }
       mutex_lock_perror(&ra->ht->key_locks[lock_ix]);
-      dll_prepend(&ra->ht->key_elts[ix],
-		  (*head)->key,
-		  (*head)->elt,
-		  ra->ht->key_size,
-		  ra->ht->elt_size);
+      dll_prepend(&ra->ht->key_elts[ix], node);
       mutex_unlock_perror(&ra->ht->key_locks[lock_ix]);
-      num_ins++;
-      /* if an element is noncontiguous, only the pointer to it is deleted */
-      dll_delete(head, *head, NULL); /* no race condition on prev array */
+      /* num_ins++; */
     }
   }
   /*printf("thread finished, "
