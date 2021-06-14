@@ -119,8 +119,11 @@ dll_node_t *dll_search_key(dll_node_t **head,
                  a noncontiguous memory block or a pointer to a contiguous
                  element was prepended or appended
    cmp_elt     : comparison function which returns a zero integer value iff
-                 the two elements pointed to by the first and the second 
-                 arguments are equal
+                 the two elements accessed through the first and the second 
+                 arguments are equal; each argument is a pointer to an
+                 elt_size block that stores an element or a pointer to an
+                 element (see specification of dll_prepend_new)
+                 
 */
 dll_node_t *dll_search_elt(dll_node_t **head,
 			   const void *elt,
