@@ -19,8 +19,8 @@
    memory block.
 
    The implementation does not use stdint.h and is portable under C89/C90
-   with the only requirement that CHAR_BIT * sizeof(size_t) is greater or
-   equal to 16 and is even.
+   and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
+   greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
@@ -105,7 +105,6 @@ static const size_t C_SIZE_MAX = (size_t)-1;
 
 static size_t hash(const ht_div_t *ht, const void *key);
 static void ht_grow(ht_div_t *ht);
-static void copy_reinsert(ht_div_t *ht, const dll_node_t *node);
 static int is_overflow(size_t start, size_t count);
 static size_t build_prime(size_t start, size_t count);
 
@@ -168,11 +167,11 @@ void ht_div_insert(ht_div_t *ht, const void *key, const void *elt){
   head = &ht->key_elts[ix];
   node = dll_search_key(head, key, ht->key_size);
   if (node == NULL){
-    dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
+    dll_prepend_new(head, key, elt, ht->key_size, ht->elt_size);
     ht->num_elts++;
   }else{
-    dll_delete(head, node, ht->free_elt);
-    dll_prepend(head, key, elt, ht->key_size, ht->elt_size);
+    if (ht->free_elt != NULL) ht->free_elt(node->elt);
+    memcpy(node->elt, elt, ht->elt_size);
   }   
 }
 
@@ -253,7 +252,7 @@ static size_t hash(const ht_div_t *ht, const void *key){
 static void ht_grow(ht_div_t *ht){
   size_t i, prev_count = ht->count;
   dll_node_t **prev_key_elts = ht->key_elts;
-  dll_node_t **head = NULL;
+  dll_node_t **head = NULL, *node = NULL;
   ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
   if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
   if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
@@ -265,33 +264,21 @@ static void ht_grow(ht_div_t *ht){
   ht->num_elts = 0;
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
-    head = &ht->key_elts[i];
-    dll_init(head);
+    dll_init(&ht->key_elts[i]);
   }
   for (i = 0; i < prev_count; i++){
     head = &prev_key_elts[i];
     while (*head != NULL){
-      copy_reinsert(ht, *head);
-      /* if an element is noncontiguous, only the pointer to it is deleted */
-      dll_delete(head, *head, NULL);
+      node = *head;
+      dll_remove(head, node);
+      dll_append(&ht->key_elts[hash(ht, node->key)], node);
+      ht->num_elts++;
     }
   }
   free(prev_key_elts);
   prev_key_elts = NULL;
   head = NULL;
-}
-
-/**
-   Reinserts a copy of a node into a new hash table during an ht_grow 
-   operation. In contrast to ht_div_insert, no search is performed.
-*/
-static void copy_reinsert(ht_div_t *ht, const dll_node_t *node){
-  dll_prepend(&ht->key_elts[hash(ht, node->key)],
-	      node->key,
-	      node->elt,
-	      ht->key_size,
-	      ht->elt_size);
-  ht->num_elts++;   
+  node = NULL;
 }
 
 /**
