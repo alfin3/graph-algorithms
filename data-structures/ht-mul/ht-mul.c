@@ -246,9 +246,9 @@ void *ht_mul_search(const ht_mul_t *ht, const void *key){
 
 /**
    Removes a key and its associated element from a hash table by copying 
-   the element into a block of size elt_size pointed to by elt. If the key is
-   not in the hash table, leaves the block pointed to by elt unchanged.
-   The key and elt parameters are not NULL.
+   the element or its pointer into a block of size elt_size pointed to
+   by elt. If the key is not in the hash table, leaves the block pointed
+   to by elt unchanged. The key and elt parameters are not NULL.
 */
 void ht_mul_remove(ht_mul_t *ht, const void *key, void *elt){
   key_elt_t **ke = search(ht, key);
