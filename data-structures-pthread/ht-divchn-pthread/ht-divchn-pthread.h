@@ -35,32 +35,33 @@ typedef struct{
   size_t num_elts;
   float alpha;
   dll_node_t **key_elts; /* array of pointers to nodes */
-  void (*free_elt)(void *);
 
   /* thread synchronization */
   size_t num_in_threads; /* passed gate_lock's first critical section */
   size_t num_grow_threads;
   size_t key_locks_count; /* -> probability of waiting at a slot */
-  size_t key_seg_count; 
   boolean_t gate_open;
   pthread_mutex_t gate_lock;
-  pthread_mutex_t *key_locks; /* locks, each covering a sector of key_elts */
+  pthread_mutex_t *key_locks; /* locks, each covering a subset of slots */
   pthread_cond_t gate_open_cond;
   pthread_cond_t grow_cond;
-  int (*is_ins)(const void *, const void *); /* predicate for insert */
+
+  /* function pointers */
+  void (*ins_elt)(void *, const void *, size_t); /* e.g. min, conditional */
+  void (*free_elt)(void *);
 } ht_divchn_pthread_t;
 
 /**
    Initializes a hash table.
 */
 void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
-			 size_t key_size,
-			 size_t elt_size,
-			 size_t num_key_locks,
-			 size_t num_grow_threads,
-			 float alpha,
-			 void (*free_elt)(void *),
-			 int (*is_ins)(const void *, const void *));
+			    size_t key_size,
+			    size_t elt_size,
+			    size_t num_key_locks,
+			    size_t num_grow_threads,
+			    float alpha,
+			    void (*ins_elt)(void *, const void *, size_t),
+			    void (*free_elt)(void *));
 
 void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,
@@ -71,10 +72,13 @@ void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
 			       const void *key);
 
 void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
-			      const void *key,
-			      void *elt);
+			      const void *batch_keys,
+			      void *batch_elts,
+			      size_t batch_count);
 
-void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht, const void *key);
+void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
+			      const void *batch_keys,
+			      size_t batch_count);
 
 void ht_divchn_pthread_free(ht_divchn_pthread_t *ht);
 

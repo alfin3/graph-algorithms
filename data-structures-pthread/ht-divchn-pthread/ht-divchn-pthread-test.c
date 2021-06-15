@@ -259,15 +259,6 @@ void *insert_thread(void *arg){
   size_t i;
   size_t batch_count = 1000;
   insert_arg_t *ia = arg;
-  /*printf("thread entered, "
-	 "ht->count : %lu, "
-	 "ht->num_elts : %lu, "
-	 "start : %lu, "
-	 "count : %lu\n",
-	 TOLU(ia->ht->count),
-	 TOLU(ia->ht->num_elts),
-	 TOLU(ia->start),
-	 TOLU(ia->count));*/
   for (i = 0; i < ia->count; i += batch_count){
     if (ia->count - i < batch_count){
       ht_divchn_pthread_insert(ia->ht,
@@ -289,11 +280,6 @@ void *insert_thread(void *arg){
 			       batch_count);
     }
   }
-  /*printf("thread finished, "
-	 "ht->count : %lu, "
-	 "ht->num_elts : %lu\n",
-	 TOLU(ia->ht->count),
-	 TOLU(ia->ht->num_elts));*/
   return NULL;
 }
 
@@ -428,8 +414,8 @@ void insert_search_free(size_t num_ins,
 			 500,
 			 4,
 			 alpha,
-			 free_elt,
-			 NULL);
+			 NULL,
+			 free_elt);
   insert_keys_elts(&ht,
 		   keys,
 		   elts,
@@ -488,7 +474,7 @@ void run_corner_cases_test(int ins_pow){
     res *= (ht.count == C_CORNER_HT_COUNT);
     res *= (ht.num_elts == 1);
     res *= (*(size_t *)ht_divchn_pthread_search(&ht, key) == elt);
-    ht_divchn_pthread_delete(&ht, key);
+    ht_divchn_pthread_delete(&ht, key, 1);
     res *= (ht.count == C_CORNER_HT_COUNT);
     res *= (ht.num_elts == 0);
     res *= (ht_divchn_pthread_search(&ht, key) == NULL);

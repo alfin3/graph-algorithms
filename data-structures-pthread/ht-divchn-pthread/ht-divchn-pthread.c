@@ -107,8 +107,8 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			    size_t num_key_locks,
 			    size_t num_grow_threads,
 			    float alpha,
-			    void (*free_elt)(void *),
-			    int (*is_ins)(const void *, const void *)){
+			    void (*ins_elt)(void *, const void *, size_t),
+			    void (*free_elt)(void *)){
   size_t i;
   /* hash table */
   ht->key_size = key_size;
@@ -122,18 +122,10 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
   }
-  ht->free_elt = free_elt;
   /* thread synchronization */
   ht->num_in_threads = 0;
   ht->num_grow_threads = num_grow_threads;
-  ht->key_locks_count = add_sz_perror(num_key_locks, 1); /* one extra lock */
-  ht->key_seg_count = ht->count / num_key_locks;
-  /*printf("init ht->count : %lu, "
-	 "key_locks_count : %lu, "
-	 "key_seg_count : %lu\n",
-	 ht->count,
-	 ht->key_locks_count,
-	 ht->key_seg_count);*/
+  ht->key_locks_count = num_key_locks;
   ht->gate_open = TRUE;
   mutex_init_perror(&ht->gate_lock);
   ht->key_locks = malloc_perror(ht->key_locks_count,
@@ -143,7 +135,9 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
   }
   cond_init_perror(&ht->gate_open_cond);
   cond_init_perror(&ht->grow_cond);
-  ht->is_ins = is_ins;
+  /* function pointers */
+  ht->ins_elt = ins_elt;
+  ht->free_elt = free_elt;
 }
 
 /**
@@ -151,9 +145,6 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
    in the hash table, associates the key with the new element. The key and
    elt parameters are not NULL.
 */
-
-
-
 void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,
 			      const void *batch_elts,
@@ -169,27 +160,32 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
   ht->num_in_threads++;
   mutex_unlock_perror(&ht->gate_lock);
 
-  /* insert , TODO incorporate is_ins*/
+  /* insert */
   for (i = 0; i < batch_count; i++){
     ix = hash(ht, ptr(batch_keys, i, ht->key_size));
     head = &ht->key_elts[ix];
-    lock_ix = ix / ht->key_seg_count;
-    if (lock_ix >= ht->key_locks_count) lock_ix = ht->key_locks_count - 1;
+    lock_ix = ix % ht->key_locks_count;
     mutex_lock_perror(&ht->key_locks[lock_ix]);
     node = dll_search_key(head,
 			  ptr(batch_keys, i, ht->key_size),
 			  ht->key_size);
     if (node == NULL){
       dll_prepend_new(head,
-		  ptr(batch_keys, i, ht->key_size),
-		  ptr(batch_elts, i, ht->elt_size),
-		  ht->key_size,
-		  ht->elt_size);
+		      ptr(batch_keys, i, ht->key_size),
+		      ptr(batch_elts, i, ht->elt_size),
+		      ht->key_size,
+		      ht->elt_size);
       mutex_unlock_perror(&ht->key_locks[lock_ix]);
       increased++;
     }else{
-      if (ht->free_elt != NULL) ht->free_elt(node->elt);
-      memcpy(node->elt, ptr(batch_elts, i, ht->elt_size), ht->elt_size);
+      if (ht->ins_elt != NULL){
+	ht->ins_elt(node->elt,
+		    ptr(batch_elts, i, ht->elt_size),
+		    ht->elt_size);
+      }else{
+	if (ht->free_elt != NULL) ht->free_elt(node->elt);
+	memcpy(node->elt, ptr(batch_elts, i, ht->elt_size), ht->elt_size);
+      }
       mutex_unlock_perror(&ht->key_locks[lock_ix]);
     }
   }
@@ -244,10 +240,11 @@ void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
    
 */
 void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
-			      const void *key,
-			      void *elt){
-  size_t ix, lock_ix;
-  boolean_t removed = FALSE;
+			      const void *batch_keys,
+			      void *batch_elts,
+			      size_t batch_count){
+  size_t i, ix, lock_ix;
+  size_t removed = 0;
   dll_node_t **head = NULL, *node = NULL;
   /* first critical section : go through gate or wait */
   mutex_lock_perror(&ht->gate_lock);
@@ -256,36 +253,40 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
   }
   ht->num_in_threads++;
   mutex_unlock_perror(&ht->gate_lock);
-
   /* remove */
-  ix = hash(ht, key);
-  head = &ht->key_elts[ix];
-  lock_ix = ix / ht->key_seg_count;
-  mutex_lock_perror(&ht->key_locks[lock_ix]);
-  node = dll_search_key(head, key, ht->key_size);
-  if (node != NULL){
-    memcpy(elt, node->elt, ht->elt_size);
-    /* if an element is noncontiguous, only the pointer to it is deleted */
-    dll_delete(head, node, NULL);
-    mutex_unlock_perror(&ht->key_locks[lock_ix]);
-    removed = TRUE;
-  }else{
-    mutex_unlock_perror(&ht->key_locks[lock_ix]);
+  for (i = 0; i < batch_count; i++){
+    ix = hash(ht, ptr(batch_keys, i, ht->key_size));
+    head = &ht->key_elts[ix];
+    lock_ix = ix % ht->key_locks_count;
+    mutex_lock_perror(&ht->key_locks[lock_ix]);
+    node = dll_search_key(head,
+			  ptr(batch_keys, i, ht->key_size),
+			  ht->key_size);
+    if (node != NULL){
+      memcpy(ptr(batch_elts, i, ht->elt_size), node->elt, ht->elt_size);
+      /* if an element is noncontiguous, only the pointer to it is deleted */
+      dll_delete(head, node, NULL);
+      mutex_unlock_perror(&ht->key_locks[lock_ix]);
+      removed++;
+    }else{
+      mutex_unlock_perror(&ht->key_locks[lock_ix]);
+    }
   }
-
   /* finish */
   mutex_lock_perror(&ht->gate_lock);
-  if (removed) ht->num_elts--;
-  if (!ht->gate_open) cond_signal_perror(&ht->grow_cond);
+  ht->num_elts -= removed;
   ht->num_in_threads--;
+  if (!ht->gate_open) cond_signal_perror(&ht->grow_cond);
   mutex_unlock_perror(&ht->gate_lock);
 }
 
 /**
 
 */
-void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht, const void *key){
-  size_t ix, lock_ix;
+void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
+			      const void *batch_keys,
+			      size_t batch_count){
+  size_t i, ix, lock_ix;
   boolean_t deleted = FALSE;
   dll_node_t **head = NULL, *node = NULL;
   mutex_lock_perror(&ht->gate_lock);
@@ -295,26 +296,28 @@ void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht, const void *key){
   }
   ht->num_in_threads++;
   mutex_unlock_perror(&ht->gate_lock);
-
   /* delete */
-  ix = hash(ht, key);
-  head = &ht->key_elts[ix];
-  lock_ix = ix / ht->key_seg_count;
-  mutex_lock_perror(&ht->key_locks[lock_ix]);
-  node = dll_search_key(head, key, ht->key_size);
-  if (node != NULL){
-    dll_delete(head, node, ht->free_elt);
-    mutex_unlock_perror(&ht->key_locks[lock_ix]);
-    deleted = TRUE;
-  }else{
-    mutex_unlock_perror(&ht->key_locks[lock_ix]);
+  for (i = 0; i < batch_count; i++){
+    ix = hash(ht, ptr(batch_keys, i, ht->key_size));
+    head = &ht->key_elts[ix];
+    lock_ix = ix % ht->key_locks_count;
+    mutex_lock_perror(&ht->key_locks[lock_ix]);
+    node = dll_search_key(head,
+			  ptr(batch_keys, i, ht->key_size),
+			  ht->key_size);
+    if (node != NULL){
+      dll_delete(head, node, ht->free_elt);
+      mutex_unlock_perror(&ht->key_locks[lock_ix]);
+      deleted++;
+    }else{
+      mutex_unlock_perror(&ht->key_locks[lock_ix]);
+    }
   }
-
   /* finish */
   mutex_lock_perror(&ht->gate_lock);
-  if (deleted) ht->num_elts--;
-  if (!ht->gate_open) cond_signal_perror(&ht->grow_cond);
+  ht->num_elts -= deleted;
   ht->num_in_threads--;
+  if (!ht->gate_open) cond_signal_perror(&ht->grow_cond);
   mutex_unlock_perror(&ht->gate_lock);
 }
 
@@ -343,7 +346,7 @@ static size_t hash(const ht_divchn_pthread_t *ht, const void *key){
 }
 
 /**
-   Increases the size of a hash table by the difference between the ith and 
+   Increase the size of a hash table by the difference between the ith and 
    (i + 1)th prime numbers in the C_PRIME_PARTS array. Assumes that the
    (i + 1)th prime number in the C_PRIME_PARTS array exists. Makes no changes
    if the (i + 1)th prime number in the C_PRIME_PARTS array is not
@@ -360,47 +363,20 @@ typedef struct{
 
 static void *reinsert_thread(void *arg){
   size_t i, ix, lock_ix;
-  /*size_t num_ins = 0;*/
   dll_node_t **head = NULL, *node = NULL;
   reinsert_arg_t *ra = arg;
-  /*printf("thread entered, "
-	 "start : %lu, "
-	 "count : %lu, "
-	 "num_ins : %lu, "
-	 "ht->count : %lu, "
-	 "ht->num_elts : %lu\n",
-	 TOLU(ra->start),
-	 TOLU(ra->count),
-	 TOLU(num_ins),
-	 TOLU(ra->ht->count),
-	 TOLU(ra->ht->num_elts));*/
   for (i = 0; i < ra->count; i++){
     head = &ra->prev_key_elts[ra->start + i];
     while (*head != NULL){
       node = *head;
       dll_remove(head, node);
       ix = hash(ra->ht, node->key);
-      lock_ix = ix / ra->ht->key_seg_count;
-      if (lock_ix >= ra->ht->key_locks_count){
-	lock_ix = ra->ht->key_locks_count - 1;
-      }
+      lock_ix = ix % ra->ht->key_locks_count;
       mutex_lock_perror(&ra->ht->key_locks[lock_ix]);
       dll_prepend(&ra->ht->key_elts[ix], node);
       mutex_unlock_perror(&ra->ht->key_locks[lock_ix]);
-      /* num_ins++; */
     }
   }
-  /*printf("thread finished, "
-	    "start : %lu, "
-	    "count : %lu, "
-	    "num_ins : %lu, "
-	    "ht->count : %lu, "
-	    "ht->num_elts : %lu\n",
-	    TOLU(ra->start),
-	    TOLU(ra->count),
-	    TOLU(num_ins),
-	    TOLU(ra->ht->count),
-	    TOLU(ra->ht->num_elts));*/
   return NULL;
 }
 
@@ -409,7 +385,6 @@ static void ht_grow(ht_divchn_pthread_t *ht){
   size_t start = 0;
   size_t seg_count, rem_count;
   dll_node_t **prev_key_elts = ht->key_elts;
-  dll_node_t **head = NULL;
   pthread_t *rids = NULL;
   reinsert_arg_t *ras = NULL;
   rids = malloc_perror(ht->num_grow_threads, sizeof(pthread_t));
@@ -425,11 +400,8 @@ static void ht_grow(ht_divchn_pthread_t *ht){
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
-    head = &ht->key_elts[i];
-    dll_init(head);
+    dll_init(&ht->key_elts[i]);
   }
-  ht->key_seg_count = ht->count / (ht->key_locks_count - 1);
-
   /* multithreaded reinsertion */
   seg_count = prev_count / ht->num_grow_threads;
   rem_count = prev_count % ht->num_grow_threads;
@@ -445,8 +417,7 @@ static void ht_grow(ht_divchn_pthread_t *ht){
     if (i > 0) thread_create_perror(&rids[i], reinsert_thread, &ras[i]);
     start += ras[i].count;
   }
-  /* use the parent threads as well */
-  reinsert_thread(&ras[0]);
+  reinsert_thread(&ras[0]); /* use the parent threads as well */
   for (i = 1; i < ht->num_grow_threads; i++){
     thread_join_perror(rids[i], NULL);
   }
@@ -454,15 +425,8 @@ static void ht_grow(ht_divchn_pthread_t *ht){
   free(rids);
   free(ras);
   prev_key_elts = NULL;
-  head = NULL;
   rids = NULL;
   ras = NULL;
-  /*printf("after grow ht->count : %lu, "
-	 "key_locks_count : %lu, "
-	 "key_seg_count : %lu\n",
-	 ht->count,
-	 ht->key_locks_count,
-	 ht->key_seg_count);*/
 }
 
 /**
