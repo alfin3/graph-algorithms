@@ -275,8 +275,6 @@ static void ht_grow(ht_div_t *ht){
   }
   free(prev_key_elts);
   prev_key_elts = NULL;
-  head = NULL;
-  node = NULL;
 }
 
 /**

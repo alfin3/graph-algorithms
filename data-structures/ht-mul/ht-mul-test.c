@@ -122,7 +122,6 @@ void print_test_result(int res);
 void new_uint(void *elt, size_t val){
   size_t *s = elt;
   *s = val;
-  s = NULL;
 }
 
 size_t val_uint(const void *elt){
@@ -222,7 +221,6 @@ void new_uint_ptr(void *elt, size_t val){
   *s = malloc_perror(1, sizeof(uint_ptr_t));
   (*s)->val = malloc_perror(1, sizeof(size_t));
   *((*s)->val) = val;
-  s = NULL;
 }
 
 size_t val_uint_ptr(const void *elt){
@@ -236,7 +234,6 @@ void free_uint_ptr(void *elt){
   (*s)->val = NULL;
   free(*s);
   *s = NULL;
-  s = NULL;
 }
 
 /**

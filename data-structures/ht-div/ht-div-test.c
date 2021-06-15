@@ -228,7 +228,6 @@ void free_uint_ptr(void *elt){
   (*s)->val = NULL;
   free(*s);
   *s = NULL;
-  s = NULL;
 }
 
 /**

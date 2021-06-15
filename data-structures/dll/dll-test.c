@@ -148,7 +148,6 @@ void new_int_ptr(void *a, int val){
   (*s) = malloc_perror(1, sizeof(int_ptr_t));
   (*s)->val = malloc_perror(1, sizeof(int));
   *((*s)->val) = val;
-  s = NULL;
 }
 
 int val_int_ptr(const void *a){
@@ -171,7 +170,6 @@ void free_int_ptr(void *a){
   (*s)->val = NULL;
   free(*s);
   *s = NULL;
-  s = NULL;
 }
 
 void run_prepend_append_free_int_ptr_test(int pow_ins){

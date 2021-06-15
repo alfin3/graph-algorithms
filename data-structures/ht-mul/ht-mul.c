@@ -293,7 +293,6 @@ void ht_mul_free(ht_mul_t *ht){
   free(ht->key_elts);
   ht->ph = NULL;
   ht->key_elts = NULL;
-  ke = NULL;
 }
 
 /** Helper functions */
@@ -519,7 +518,6 @@ static void ht_grow(ht_mul_t *ht){
   }
   free(prev_key_elts);
   prev_key_elts = NULL;
-  ke = NULL;
 }
 
 /**
@@ -547,7 +545,6 @@ static void ht_clean(ht_mul_t *ht){
   }
   free(prev_key_elts);
   prev_key_elts = NULL;
-  ke = NULL;
 }
 
 /**
