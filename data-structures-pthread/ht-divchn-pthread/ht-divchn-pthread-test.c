@@ -5,34 +5,6 @@
    The implementation is based on a division method for hashing and a
    chaining method for resolving collisions.
 
-   The following command line arguments can be used to customize tests:
-   ht-divchn-pthread-test
-      [0, # bits in size_t - 1) : i s.t. # inserts = 2^i
-      [0, # bits in size_t) : a given k = sizeof(size_t)
-      [0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b
-      > 0 : c
-      > 0 : d s.t. z = c / d
-      [0, # bits in size_t) : e
-      [0, # bits in size_t) : f s.t. z * 2^e <= alpha <= z * 2^f
-      [0, 1] : on/off insert search uint test
-      [0, 1] : on/off remove delete uint test
-      [0, 1] : on/off insert search uint_ptr test
-      [0, 1] : on/off remove delete uint_ptr test
-      [0, 1] : on/off corner cases test
-
-   usage examples:
-   ./ht-divchn-pthread-test
-   ./ht-divchn-pthread-test 17 0 4 1 100
-   ./ht-divchn-pthread-test 17 0 4 2 10 0 8
-   ./ht-divchn-pthread-test 17 5 6 2 10 0 1
-   ./ht-divchn-pthread-test 17 5 6 2 10 0 1 0 0 1 1 0
-
-   ht-divchn-pthread-test can be run with any subset of command line
-   arguments in the above-defined order. If the (i + 1)th argument is
-   specified then the ith argument must be specified for i >= 0. Default
-   values are used for the unspecified arguments according to the
-   C_ARGS_DEF array.
-
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
    is greater or equal to 16 and is even.
@@ -247,6 +219,8 @@ void run_insert_search_free_uint_ptr_test(int ins_pow,
    elements.
 */
 
+/* Insert */
+
 typedef struct{
   size_t start;
   size_t count;
@@ -322,7 +296,7 @@ void insert_keys_elts(ht_divchn_pthread_t *ht,
     thread_join_perror(iids[i], NULL);
   }
   t = timer() - t;
-  printf("\t\t%lu threads, insert time:         "
+  printf("\t\t%lu threads, insert time:             "
 	 "%.4f seconds\n", TOLU(num_threads), t);
   *res *= (ht->num_elts == n + count);
   free(iids);
@@ -331,60 +305,154 @@ void insert_keys_elts(ht_divchn_pthread_t *ht,
   ias = NULL;
 }
 
+/* Search */
+
+typedef struct{
+  size_t start;
+  size_t count;
+  size_t *elt_count; /* for each thread */
+  const void *keys;
+  const void *elts;
+  const ht_divchn_pthread_t *ht;
+  size_t (*val_elt)(const void *);
+} search_arg_t;
+
+void *search_thread(void *arg){
+  size_t i;
+  search_arg_t *sa = arg;
+  for (i = 0; i < sa->count; i++){
+    ht_divchn_pthread_search(sa->ht, ptr(sa->keys,
+					 sa->start + i,
+					 sa->ht->key_size));
+  }
+  return NULL;
+}
+
+void *search_res_thread(void *arg){
+  size_t i;
+  void *elt = NULL;
+  search_arg_t *sa = arg;
+  *(sa->elt_count) = 0;
+  for (i = 0; i < sa->count; i++){
+    elt = ht_divchn_pthread_search(sa->ht, ptr(sa->keys,
+					       sa->start + i,
+					       sa->ht->key_size));
+    if (elt != NULL){
+      *(sa->elt_count) +=
+	(sa->val_elt(ptr(sa->elts, sa->start + i, sa->ht->elt_size)) ==
+	 sa->val_elt(elt));
+    }
+  }
+  return NULL;
+}
+
+size_t search_ht_helper(const ht_divchn_pthread_t *ht,
+			const void *keys,
+			const void *elts,
+			size_t count,
+			size_t num_threads,
+			size_t (*val_elt)(const void *),
+			double *t){
+  size_t i;
+  size_t ret = 0;
+  size_t seg_count, rem_count;
+  size_t start = 0;
+  size_t *elt_counts = NULL;
+  pthread_t *sids = NULL;
+  search_arg_t *sas = NULL;
+  elt_counts = calloc_perror(num_threads, sizeof(size_t));
+  sids = malloc_perror(num_threads, sizeof(pthread_t));
+  sas = malloc_perror(num_threads, sizeof(search_arg_t));
+  seg_count = count / num_threads;
+  rem_count = count % num_threads; /* to distribute among threads */
+  for (i = 0; i < num_threads; i++){
+    sas[i].start = start;
+    sas[i].count = seg_count;
+    if (rem_count > 0){
+      sas[i].count++;
+      rem_count--;
+    }
+    sas[i].elt_count = &elt_counts[i];
+    sas[i].keys = keys;
+    sas[i].elts = elts;
+    sas[i].ht = ht;
+    sas[i].val_elt = val_elt;
+    start += sas[i].count;
+  }
+  /* timing */
+  *t = timer();
+  for (i = 1; i < num_threads; i++){
+    thread_create_perror(&sids[i], search_thread, &sas[i]);
+  }
+  search_thread(&sas[0]);
+  for (i = 1; i < num_threads; i++){
+    thread_join_perror(sids[i], NULL);
+  }
+  *t = timer() - *t;
+  /* correctness */
+  for (i = 1; i < num_threads; i++){
+    thread_create_perror(&sids[i], search_res_thread, &sas[i]);
+  }
+  search_res_thread(&sas[0]);
+  ret += elt_counts[0];
+  for (i = 1; i < num_threads; i++){
+    thread_join_perror(sids[i], NULL);
+    ret += elt_counts[i];
+  }
+  free(elt_counts);
+  free(sids);
+  free(sas);
+  elt_counts = NULL;
+  sids = NULL;
+  sas = NULL;
+  return ret;
+}
+
 void search_in_ht(const ht_divchn_pthread_t *ht,
 		  const void *keys,
 		  const void *elts,
 		  size_t count,
+		  size_t num_threads,
 		  size_t (*val_elt)(const void *),
 		  int *res){
   size_t n = ht->num_elts;
-  size_t i;
   double t;
-  void *elt = NULL;
-  t = timer();
-  for (i = 0; i < count; i++){
-    elt = ht_divchn_pthread_search(ht, ptr(keys, i, ht->key_size));
-  }
-  t = timer() - t;
-  for (i = 0; i < count; i++){
-    elt = ht_divchn_pthread_search(ht, ptr(keys, i, ht->key_size));
-    *res *= (val_elt(ptr(elts, i, ht->elt_size)) == val_elt(elt));
-  }
-  printf("\t\tin ht search time:              "
-	 "%.4f seconds\n", t);
-  *res *= (ht->num_elts == n);
+  *res *=
+    (search_ht_helper(ht, keys, elts, count, num_threads, val_elt, &t) ==
+     ht->num_elts);
+  *res *= (n == ht->num_elts);
+  printf("\t\t%lu threads, in ht search time:       " 
+	 "%.4f seconds\n", TOLU(num_threads), t);
 }
 
 void search_not_in_ht(const ht_divchn_pthread_t *ht,
-		      void **keys,
+		      const void *keys,
+		      const void *elts,
 		      size_t count,
+		      size_t num_threads,
+		      size_t (*val_elt)(const void *),
 		      int *res){
   size_t n = ht->num_elts;
-  size_t i;
   double t;
-  void *elt = NULL;
-  t = timer();
-  for (i = 0; i < count; i++){
-    elt = ht_divchn_pthread_search(ht, ptr(keys, i, ht->key_size));
-  }
-  t = timer() - t;
-  for (i = 0; i < count; i++){
-    elt = ht_divchn_pthread_search(ht, ptr(keys, i, ht->key_size));
-    *res *= (elt == NULL);
-  }
-  printf("\t\tnot in ht search time:          "
-	 "%.4f seconds\n", t);
-  *res *= (ht->num_elts == n);
+  *res *=
+    (search_ht_helper(ht, keys, elts, count, num_threads, val_elt, &t) == 0);
+  *res *= (n == ht->num_elts);
+  printf("\t\t%lu threads, not in ht search time:   " 
+	 "%.4f seconds\n", TOLU(num_threads), t);
 }
 
+/* Search */
+
 void free_ht(ht_divchn_pthread_t *ht){
-  clock_t t;
-  t = clock();
+  double t;;
+  t = timer();
   ht_divchn_pthread_free(ht);
-  t = clock() - t;
-  printf("\t\tfree time:                      "
-	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  t = timer() - t;
+  printf("\t\tfree time:                          "
+	 "%.4f seconds\n", t);
 }
+
+/* Insert, search, free */
 
 void insert_search_free(size_t num_ins,
 			size_t key_size,
@@ -411,25 +479,22 @@ void insert_search_free(size_t num_ins,
   ht_divchn_pthread_init(&ht,
 			 key_size,
 			 elt_size,
-			 500,
+			 50000,
 			 4,
 			 alpha,
 			 NULL,
 			 free_elt);
-  insert_keys_elts(&ht,
-		   keys,
-		   elts,
-		   num_ins,
-		   4,
-		   &res);
-  search_in_ht(&ht, keys, elts, num_ins, val_elt, &res);
+  insert_keys_elts(&ht, keys, elts, num_ins, 4, &res);
+  search_in_ht(&ht, keys, elts, num_ins, 1, val_elt, &res);
+  search_in_ht(&ht, keys, elts, num_ins, 4, val_elt, &res);
   for (i = 0; i < num_ins; i++){
     *(size_t *)byte_ptr(ptr(keys, i, key_size),
 			key_size - C_KEY_SIZE_FACTOR) = i + num_ins;
   }
-  search_not_in_ht(&ht, keys, num_ins, &res);
+  search_not_in_ht(&ht, keys, elts, num_ins, 1, val_elt, &res);
+  search_not_in_ht(&ht, keys, elts, num_ins, 4, val_elt, &res);
   free_ht(&ht);
-  printf("\t\tsearch correctness:             ");
+  printf("\t\tsearch correctness:                 ");
   print_test_result(res);
   free(keys);
   free(elts);

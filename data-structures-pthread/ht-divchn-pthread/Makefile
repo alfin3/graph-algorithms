@@ -26,11 +26,11 @@ DLL_DIR = ../../data-structures/dll/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
 UTILS_PTHD_DIR = ../../utilities-pthread/utilities-pthread/
-CFLAGS = -I$(DLL_DIR)                                    \
-         -I$(UTILS_MEM_DIR)                              \
-         -I$(UTILS_MOD_DIR)                              \
-         -I$(UTILS_PTHD_DIR)                             \
-         ${CFLAGS_BUILD_MODE} -pthread -Wall -Wextra -O3
+CFLAGS = -I$(DLL_DIR)                                                       \
+         -I$(UTILS_MEM_DIR)                                                 \
+         -I$(UTILS_MOD_DIR)                                                 \
+         -I$(UTILS_PTHD_DIR)                                                \
+         ${CFLAGS_BUILD_MODE} -pthread -Wno-unused-result -Wall -Wextra -O3
 
 OBJ = ht-divchn-pthread-test.o             \
       ht-divchn-pthread.o                  \
