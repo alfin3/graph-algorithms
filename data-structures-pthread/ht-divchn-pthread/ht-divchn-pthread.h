@@ -39,7 +39,7 @@ typedef struct{
   /* thread synchronization */
   size_t num_in_threads; /* passed gate_lock's first critical section */
   size_t num_grow_threads;
-  size_t key_locks_count; /* -> probability of waiting at a slot */
+  size_t key_locks_mask; /* -> probability of waiting at a slot */
   boolean_t gate_open;
   pthread_mutex_t gate_lock;
   pthread_mutex_t *key_locks; /* locks, each covering a subset of slots */
@@ -57,7 +57,7 @@ typedef struct{
 void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			    size_t key_size,
 			    size_t elt_size,
-			    size_t num_key_locks,
+			    size_t log_num_key_locks,
 			    size_t num_grow_threads,
 			    float alpha,
 			    void (*ins_elt)(void *, const void *, size_t),

@@ -104,12 +104,13 @@ static void *ptr(const void *block, size_t i, size_t size);
 void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			    size_t key_size,
 			    size_t elt_size,
-			    size_t num_key_locks,
+			    size_t log_num_key_locks,
 			    size_t num_grow_threads,
 			    float alpha,
 			    void (*ins_elt)(void *, const void *, size_t),
 			    void (*free_elt)(void *)){
   size_t i;
+  size_t key_locks_count;
   /* hash table */
   ht->key_size = key_size;
   ht->elt_size = elt_size;
@@ -125,12 +126,13 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
   /* thread synchronization */
   ht->num_in_threads = 0;
   ht->num_grow_threads = num_grow_threads;
-  ht->key_locks_count = num_key_locks;
+  key_locks_count = pow_two(log_num_key_locks);
+  ht->key_locks_mask = C_SIZE_MAX & (key_locks_count - 1);
   ht->gate_open = TRUE;
   mutex_init_perror(&ht->gate_lock);
-  ht->key_locks = malloc_perror(ht->key_locks_count,
+  ht->key_locks = malloc_perror(key_locks_count,
 				sizeof(pthread_mutex_t));
-  for (i = 0; i < ht->key_locks_count; i++){
+  for (i = 0; i < key_locks_count; i++){
     mutex_init_perror(&ht->key_locks[i]);
   }
   cond_init_perror(&ht->gate_open_cond);
@@ -164,7 +166,7 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
   for (i = 0; i < batch_count; i++){
     ix = hash(ht, ptr(batch_keys, i, ht->key_size));
     head = &ht->key_elts[ix];
-    lock_ix = ix % ht->key_locks_count;
+    lock_ix = ix & ht->key_locks_mask;
     mutex_lock_perror(&ht->key_locks[lock_ix]);
     node = dll_search_key(head,
 			  ptr(batch_keys, i, ht->key_size),
@@ -257,7 +259,7 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
   for (i = 0; i < batch_count; i++){
     ix = hash(ht, ptr(batch_keys, i, ht->key_size));
     head = &ht->key_elts[ix];
-    lock_ix = ix % ht->key_locks_count;
+    lock_ix = ix & ht->key_locks_mask;
     mutex_lock_perror(&ht->key_locks[lock_ix]);
     node = dll_search_key(head,
 			  ptr(batch_keys, i, ht->key_size),
@@ -300,7 +302,7 @@ void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
   for (i = 0; i < batch_count; i++){
     ix = hash(ht, ptr(batch_keys, i, ht->key_size));
     head = &ht->key_elts[ix];
-    lock_ix = ix % ht->key_locks_count;
+    lock_ix = ix & ht->key_locks_mask;
     mutex_lock_perror(&ht->key_locks[lock_ix]);
     node = dll_search_key(head,
 			  ptr(batch_keys, i, ht->key_size),
@@ -371,7 +373,7 @@ static void *reinsert_thread(void *arg){
       node = *head;
       dll_remove(head, node);
       ix = hash(ra->ht, node->key);
-      lock_ix = ix % ra->ht->key_locks_count;
+      lock_ix = ix & ra->ht->key_locks_mask;
       mutex_lock_perror(&ra->ht->key_locks[lock_ix]);
       dll_prepend(&ra->ht->key_elts[ix], node);
       mutex_unlock_perror(&ra->ht->key_locks[lock_ix]);
