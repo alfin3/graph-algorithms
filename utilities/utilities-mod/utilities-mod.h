@@ -63,5 +63,6 @@ void represent_uint(size_t n, size_t *k, size_t *u);
    Exits with an error otherwise.
 */
 size_t pow_two(size_t k);
+size_t pow_two_perror(size_t k);
 
 #endif

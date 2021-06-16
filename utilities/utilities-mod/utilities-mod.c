@@ -219,4 +219,12 @@ size_t pow_two(size_t k){
     exit(EXIT_FAILURE);
   }
   return (size_t)1 << k;
+}
+
+size_t pow_two_perror(size_t k){
+  if (k >= C_FULL_BIT){
+    perror("pow_two size_t overflow");
+    exit(EXIT_FAILURE);
+  }
+  return (size_t)1 << k;
 } 
