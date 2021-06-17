@@ -549,14 +549,15 @@ void insert_search_free(size_t num_ins,
 			key_size - C_KEY_SIZE_FACTOR) = i;
     new_elt(ptr(elts, i, elt_size), i);
   }
-  ht_divchn_pthread_init(&ht,
-			 key_size,
-			 elt_size,
-			 15,
-			 4,
-			 alpha,
-			 NULL,
-			 free_elt);
+  ht_divchn_pthread_min_init(&ht,
+			     key_size,
+			     elt_size,
+			     num_ins,
+			     15,
+			     4,
+			     alpha,
+			     NULL,
+			     free_elt);
   insert_keys_elts(&ht, keys, elts, num_ins, 4, &res);
   search_in_ht(&ht, keys, elts, num_ins, 1, val_elt, &res);
   search_in_ht(&ht, keys, elts, num_ins, 4, val_elt, &res);
@@ -780,14 +781,15 @@ void remove_delete(size_t num_ins,
 			key_size - C_KEY_SIZE_FACTOR) = i;
     new_elt(ptr(elts, i, elt_size), i);
   }
-  ht_divchn_pthread_init(&ht,
-			 key_size,
-			 elt_size,
-			 15,
-			 4,
-			 alpha,
-			 NULL,
-			 free_elt);
+  ht_divchn_pthread_min_init(&ht,
+			     key_size,
+			     elt_size,
+			     num_ins,
+			     15,
+			     4,
+			     alpha,
+			     NULL,
+			     free_elt);
   insert_keys_elts(&ht, keys, elts, num_ins, 4, &res);
   memset(elts, 0, num_ins * elt_size);
   remove_key_elts(&ht, keys, elts, num_ins, 4, &res);
