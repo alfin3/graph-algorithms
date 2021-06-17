@@ -16,8 +16,6 @@
 #include "utilities-mod.h"
 #include "utilities-pthread.h"
 
-#define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
-
 /**
    An array of primes in the increasing order, approximately doubling in 
    magnitude, that are not too close to the powers of 2 and 10 to avoid 
@@ -204,7 +202,7 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 	cond_wait_perror(&ht->grow_cond, &ht->gate_lock);
       }
       mutex_unlock_perror(&ht->gate_lock);
-      ht_grow(ht); /* no lock; no changes by another thread possible */
+      ht_grow(ht); /* single thread; num_elts can be used without lock */
       mutex_lock_perror(&ht->gate_lock);
       ht->gate_open = TRUE;
       cond_broadcast_perror(&ht->gate_open_cond);
@@ -352,8 +350,8 @@ static size_t hash(const ht_divchn_pthread_t *ht, const void *key){
    (i + 1)th prime numbers in the C_PRIME_PARTS array. Assumes that the
    (i + 1)th prime number in the C_PRIME_PARTS array exists. Makes no changes
    if the (i + 1)th prime number in the C_PRIME_PARTS array is not
-   representable as size_t on a given system.
-   Run when guaranteed that only the calling thread can make changes to ht.
+   representable as size_t on a given system. Run when guaranteed that only
+   the calling thread has access to ht.
 */
 
 typedef struct{
@@ -391,15 +389,17 @@ static void ht_grow(ht_divchn_pthread_t *ht){
   reinsert_arg_t *ras = NULL;
   rids = malloc_perror(ht->num_grow_threads, sizeof(pthread_t));
   ras = malloc_perror(ht->num_grow_threads, sizeof(reinsert_arg_t));
-  /* initialize next ht from the given struct */
-  ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
-  if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
-  if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-    /* last prime representable as size_t on a system reached */
-    ht->count_ix = C_SIZE_MAX;
-    return;
+  /* initialize next ht; num_elts can be used without lock */
+  while ((float)ht->num_elts / ht->count > ht->alpha){
+    ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
+    if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
+    if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
+      /* last prime representable as size_t on a system reached */
+      ht->count_ix = C_SIZE_MAX;
+      return;
+    }
+    ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
   }
-  ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
