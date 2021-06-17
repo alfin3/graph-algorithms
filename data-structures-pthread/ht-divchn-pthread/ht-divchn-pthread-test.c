@@ -58,8 +58,8 @@ const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 const size_t C_KEY_SIZE_FACTOR = sizeof(size_t);
 
 /* corner cases test */
-const int C_CORNER_KEY_POW_START = 0;
-const int C_CORNER_KEY_POW_END = 8;
+const int C_CORNER_LOG_KEY_START = 0;
+const int C_CORNER_LOG_KEY_END = 8;
 const size_t C_CORNER_HT_COUNT = 1543u;
 const float C_CORNER_ALPHA = 0.001;
 
@@ -109,24 +109,24 @@ size_t val_uint(const void *elt){
    size_t elements across key sizes >= C_KEY_SIZE_FACTOR and load factor
    upper bounds.
 */
-void run_insert_search_free_uint_test(int ins_pow,
-				      int key_pow_start,
-				      int key_pow_end,
+void run_insert_search_free_uint_test(int log_ins,
+				      int log_key_start,
+				      int log_key_end,
 				      float alpha_factor,
-				      int alpha_pow_start,
-				      int alpha_pow_end){
+				      int log_alpha_start,
+				      int log_alpha_end){
   int i, j;
   size_t num_ins;
   size_t key_size;
   size_t elt_size = sizeof(size_t);
   float alpha;
-  num_ins = pow_two(ins_pow);
-  for (i = key_pow_start; i <= key_pow_end; i++){
-    key_size = C_KEY_SIZE_FACTOR * pow_two(i);
+  num_ins = pow_two_perror(log_ins);
+  for (i = log_key_start; i <= log_key_end; i++){
+    key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_divchn_pthread_{insert, search, free} test on distinct "
 	   "%lu-byte keys and size_t elements\n", TOLU(key_size));
-    for (j = alpha_pow_start; j <= alpha_pow_end; j++){
-      alpha = alpha_factor * pow_two(j);
+    for (j = log_alpha_start; j <= log_alpha_end; j++){
+      alpha = alpha_factor * pow_two_perror(j);
       printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
 	     TOLU(num_ins), alpha);
       insert_search_free(num_ins,
@@ -136,6 +136,42 @@ void run_insert_search_free_uint_test(int ins_pow,
 			 new_uint,
 			 val_uint,
 			 NULL);
+    }
+  }
+}
+
+/**
+   Runs a ht_divchn_pthread_{remove, delete} test on distinct keys and
+   size_t elements across key sizes >= C_KEY_SIZE_FACTOR and load factor
+   upper bounds.
+*/
+void run_remove_delete_uint_test(int log_ins,
+				 int log_key_start,
+				 int log_key_end,
+				 float alpha_factor,
+				 int log_alpha_start,
+				 int log_alpha_end){
+  int i, j;
+  size_t num_ins;
+  size_t key_size;
+  size_t elt_size = sizeof(size_t);
+  float alpha;
+  num_ins = pow_two_perror(log_ins);
+  for (i = log_key_start; i <= log_key_end; i++){
+    key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
+    printf("Run a ht_divchn_pthread_{remove, delete} test on distinct "
+	   "%lu-byte keys and size_t elements\n", TOLU(key_size));
+    for (j = log_alpha_start; j <= log_alpha_end; j++){
+      alpha = alpha_factor * pow_two_perror(j);
+      printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
+	     TOLU(num_ins), alpha);
+      remove_delete(num_ins,
+		    key_size,
+		    elt_size,
+		    alpha,
+		    new_uint,
+		    val_uint,
+		    NULL);
     }
   }
 }
@@ -181,25 +217,25 @@ void free_uint_ptr(void *elt){
    noncontiguous uint_ptr_t elements across key sizes >= C_KEY_SIZE_FACTOR
    and load factor upper bounds.
 */
-void run_insert_search_free_uint_ptr_test(int ins_pow,
-					  int key_pow_start,
-					  int key_pow_end,
+void run_insert_search_free_uint_ptr_test(int log_ins,
+					  int log_key_start,
+					  int log_key_end,
 					  float alpha_factor,
-					  int alpha_pow_start,
-					  int alpha_pow_end){
+					  int log_alpha_start,
+					  int log_alpha_end){
   int i, j;
   size_t num_ins;
   size_t key_size;
   size_t elt_size =  sizeof(uint_ptr_t *);
   float alpha;
-  num_ins = pow_two(ins_pow);
-  for (i = key_pow_start; i <= key_pow_end; i++){
-    key_size = C_KEY_SIZE_FACTOR * pow_two(i);
+  num_ins = pow_two_perror(log_ins);
+  for (i = log_key_start; i <= log_key_end; i++){
+    key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_divchn_pthread_{insert, search, free} test on distinct "
 	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
 	   TOLU(key_size));
-    for (j = alpha_pow_start; j <= alpha_pow_end; j++){
-      alpha = alpha_factor * pow_two(j);
+    for (j = log_alpha_start; j <= log_alpha_end; j++){
+      alpha = alpha_factor * pow_two_perror(j);
       printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
 	     TOLU(num_ins), alpha);
       insert_search_free(num_ins,
@@ -209,6 +245,43 @@ void run_insert_search_free_uint_ptr_test(int ins_pow,
 			 new_uint_ptr,
 			 val_uint_ptr,
 			 free_uint_ptr);
+    }
+  }
+}
+
+/**
+   Runs a ht_divchn_pthread_{remove, delete} test on distinct keys and 
+   noncontiguous uint_ptr_t elements across key sizes >= C_KEY_SIZE_FACTOR
+   and load factor upper bounds.
+*/
+void run_remove_delete_uint_ptr_test(int log_ins,
+				     int log_key_start,
+				     int log_key_end,
+				     float alpha_factor,
+				     int log_alpha_start,
+				     int log_alpha_end){
+  int i, j;
+  size_t num_ins;
+  size_t key_size;
+  size_t elt_size = sizeof(uint_ptr_t *);
+  float alpha;
+  num_ins = pow_two_perror(log_ins);
+  for (i = log_key_start; i <= log_key_end; i++){
+    key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
+    printf("Run a ht_divchn_pthread_{remove, delete} test on distinct "
+	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
+	   TOLU(key_size));
+    for (j = log_alpha_start; j <= log_alpha_end; j++){
+      alpha = alpha_factor * pow_two_perror(j);
+      printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
+	     TOLU(num_ins), alpha);
+      remove_delete(num_ins,
+		    key_size,
+		    elt_size,
+		    alpha,
+		    new_uint_ptr,
+		    val_uint_ptr,
+		    free_uint_ptr);
     }
   }
 }
@@ -502,10 +575,239 @@ void insert_search_free(size_t num_ins,
   elts = NULL;
 }
 
+/** 
+   Helper functions for the ht_divchn_pthread_{remove, delete} tests
+   across key sizes and load factor upper bounds, on size_t and 
+   uint_ptr_t elements.
+*/
+
+/* Remove */
+
+typedef struct{
+  size_t start;
+  size_t count;
+  const void *keys;
+  void *elts;
+  ht_divchn_pthread_t *ht;
+} remove_arg_t;
+
+void *remove_thread(void *arg){
+  size_t i;
+  size_t batch_count = 1000;
+  remove_arg_t *ra = arg;
+  for (i = 0; i < ra->count; i += batch_count){
+    if (ra->count - i < batch_count){
+      ht_divchn_pthread_remove(ra->ht,
+			       ptr(ra->keys,
+				   ra->start + i,
+				   ra->ht->key_size),
+			       ptr(ra->elts,
+				   ra->start + i,
+				   ra->ht->elt_size),
+			       ra->count - i);
+    }else{
+      ht_divchn_pthread_remove(ra->ht,
+			       ptr(ra->keys,
+				   ra->start + i,
+				   ra->ht->key_size),
+			       ptr(ra->elts,
+				   ra->start + i,
+				   ra->ht->elt_size),
+			       batch_count);
+    }
+  }
+  return NULL;
+}
+
+void remove_key_elts(ht_divchn_pthread_t *ht,
+		     const void *keys,
+		     void *elts,
+		     size_t count,
+		     size_t num_threads,
+		     int *res){
+  size_t i;
+  size_t seg_count, rem_count;
+  size_t start = 0;
+  double t;
+  pthread_t *rids = NULL;
+  remove_arg_t *ras = NULL;
+  rids = malloc_perror(num_threads, sizeof(pthread_t));
+  ras = malloc_perror(num_threads, sizeof(remove_arg_t));
+  seg_count = count / num_threads;
+  rem_count = count % num_threads; /* to distribute among threads */
+  for (i = 0; i < num_threads; i++){
+    ras[i].start = start;
+    ras[i].count = seg_count;
+    if (rem_count > 0){
+      ras[i].count++;
+      rem_count--;
+    }
+    ras[i].keys = keys;
+    ras[i].elts = elts;
+    ras[i].ht = ht;
+    start += ras[i].count;
+  }
+  t = timer();
+  for (i = 1; i < num_threads; i++){
+    thread_create_perror(&rids[i], remove_thread, &ras[i]);
+  }
+  /* use the parent thread as well */
+  remove_thread(&ras[0]);
+  for (i = 1; i < num_threads; i++){
+    thread_join_perror(rids[i], NULL);
+  }
+  t = timer() - t;
+  *res *= (ht->num_elts == 0);
+  for (i = 0; i < count; i++){
+    *res *=
+      (ht_divchn_pthread_search(ht, ptr(keys, i, ht->key_size)) == NULL);
+  }
+  for (i = 0; i < ht->count; i++){
+    *res *= (ht->key_elts[i] == NULL);
+  }
+  printf("\t\t%lu threads, remove time:             "
+	 "%.4f seconds\n", TOLU(num_threads), t);
+  free(rids);
+  free(ras);
+  rids = NULL;
+  ras = NULL;
+}
+
+/* Delete */
+
+typedef struct{
+  size_t start;
+  size_t count;
+  const void *keys;
+  ht_divchn_pthread_t *ht;
+} delete_arg_t;
+
+void *delete_thread(void *arg){
+  size_t i;
+  size_t batch_count = 1000;
+  delete_arg_t *da = arg;
+  for (i = 0; i < da->count; i += batch_count){
+    if (da->count - i < batch_count){
+      ht_divchn_pthread_delete(da->ht,
+			       ptr(da->keys,
+				   da->start + i,
+				   da->ht->key_size),
+			       da->count - i);
+    }else{
+      ht_divchn_pthread_delete(da->ht,
+			       ptr(da->keys,
+				   da->start + i,
+				   da->ht->key_size),
+			       batch_count);
+    }
+  }
+  return NULL;
+}
+
+void delete_key_elts(ht_divchn_pthread_t *ht,
+		     const void *keys,
+		     size_t count,
+		     size_t num_threads,
+		     int *res){
+  size_t i;
+  size_t seg_count, rem_count;
+  size_t start = 0;
+  double t;
+  pthread_t *dids = NULL;
+  delete_arg_t *das = NULL;
+  dids = malloc_perror(num_threads, sizeof(pthread_t));
+  das = malloc_perror(num_threads, sizeof(delete_arg_t));
+  seg_count = count / num_threads;
+  rem_count = count % num_threads; /* to distribute among threads */
+  for (i = 0; i < num_threads; i++){
+    das[i].start = start;
+    das[i].count = seg_count;
+    if (rem_count > 0){
+      das[i].count++;
+      rem_count--;
+    }
+    das[i].keys = keys;
+    das[i].ht = ht;
+    start += das[i].count;
+  }
+  t = timer();
+  for (i = 1; i < num_threads; i++){
+    thread_create_perror(&dids[i], delete_thread, &das[i]);
+  }
+  /* use the parent thread as well */
+  delete_thread(&das[0]);
+  for (i = 1; i < num_threads; i++){
+    thread_join_perror(dids[i], NULL);
+  }
+  t = timer() - t;
+  *res *= (ht->num_elts == 0);
+  for (i = 0; i < count; i++){
+    *res *=
+      (ht_divchn_pthread_search(ht, ptr(keys, i, ht->key_size)) == NULL);
+  }
+  for (i = 0; i < ht->count; i++){
+    *res *= (ht->key_elts[i] == NULL);
+  }
+  printf("\t\t%lu threads, delete time:             "
+	 "%.4f seconds\n", TOLU(num_threads), t);
+  free(dids);
+  free(das);
+  dids = NULL;
+  das = NULL;
+}
+
+/* Remove, delete */
+
+void remove_delete(size_t num_ins,
+		   size_t key_size,
+		   size_t elt_size,
+		   float alpha,
+		   void (*new_elt)(void *, size_t),
+		   size_t (*val_elt)(const void *),
+		   void (*free_elt)(void *)){
+  int res = 1;
+  size_t i, j;
+  void *keys = NULL, *elts = NULL;
+  ht_divchn_pthread_t ht;
+  keys = malloc_perror(num_ins, key_size);
+  elts = malloc_perror(num_ins, elt_size);
+  for (i = 0; i < num_ins; i++){
+    for (j = 0; j < key_size - C_KEY_SIZE_FACTOR; j++){
+      *(unsigned char *)byte_ptr(ptr(keys, i, key_size),
+				 j) = RANDOM(); /* mod 2^CHAR_BIT */
+    }
+    *(size_t *)byte_ptr(ptr(keys, i, key_size),
+			key_size - C_KEY_SIZE_FACTOR) = i;
+    new_elt(ptr(elts, i, elt_size), i);
+  }
+  ht_divchn_pthread_init(&ht,
+			 key_size,
+			 elt_size,
+			 15,
+			 4,
+			 alpha,
+			 NULL,
+			 free_elt);
+  insert_keys_elts(&ht, keys, elts, num_ins, 4, &res);
+  memset(elts, 0, num_ins * elt_size);
+  remove_key_elts(&ht, keys, elts, num_ins, 4, &res);
+  search_not_in_ht(&ht, keys, elts, num_ins, 4, val_elt, &res);
+  insert_keys_elts(&ht, keys, elts, num_ins, 4, &res);
+  search_in_ht(&ht, keys, elts, num_ins, 4, val_elt, &res);
+  delete_key_elts(&ht, keys, num_ins, 4, &res);
+  free_ht(&ht);
+  printf("\t\tremove and delete correctness:      ");
+  print_test_result(res);
+  free(keys);
+  free(elts);
+  keys = NULL;
+  elts = NULL;
+}
+
 /**
    Runs a corner cases test.
 */
-void run_corner_cases_test(int ins_pow){
+void run_corner_cases_test(int log_ins){
   int res = 1;
   int j;
   size_t i, k;
@@ -515,14 +817,14 @@ void run_corner_cases_test(int ins_pow){
   size_t num_ins;
   void *key = NULL;
   ht_divchn_pthread_t ht;
-  num_ins = pow_two(ins_pow);
-  key = malloc_perror(1, pow_two(C_CORNER_KEY_POW_END));
-  for (i = 0; i < pow_two(C_CORNER_KEY_POW_END); i++){
+  num_ins = pow_two_perror(log_ins);
+  key = malloc_perror(1, pow_two_perror(C_CORNER_LOG_KEY_END));
+  for (i = 0; i < pow_two_perror(C_CORNER_LOG_KEY_END); i++){
     *(unsigned char *)byte_ptr(key, i) = RANDOM();
   }
   printf("Run corner cases test --> ");
-  for (j = C_CORNER_KEY_POW_START; j <= C_CORNER_KEY_POW_END; j++){
-    key_size = pow_two(j);
+  for (j = C_CORNER_LOG_KEY_START; j <= C_CORNER_LOG_KEY_END; j++){
+    key_size = pow_two_perror(j);
     ht_divchn_pthread_init(&ht,
 			   key_size,
 			   elt_size,
@@ -619,24 +921,24 @@ int main(int argc, char *argv[]){
 						alpha_factor,
 						args[5],
 						args[6]);
- /* if (args[8]) run_remove_delete_uint_test(args[0],
-					   args[1],
-					   args[2],
-					   alpha_factor,
-					   args[5],
-					   args[6]); */
+ if (args[8]) run_remove_delete_uint_test(args[0],
+					  args[1],
+					  args[2],
+					  alpha_factor,
+					  args[5],
+					  args[6]);
   if (args[9]) run_insert_search_free_uint_ptr_test(args[0],
 						    args[1],
 						    args[2],
 						    alpha_factor,
 						    args[5],
 						    args[6]);
- /* if (args[10]) run_remove_delete_uint_ptr_test(args[0],
-						args[1],
-						args[2],
-						alpha_factor,
-						args[5],
-						args[6]); */
+ if (args[10]) run_remove_delete_uint_ptr_test(args[0],
+					       args[1],
+					       args[2],
+					       alpha_factor,
+					       args[5],
+					       args[6]);
   if (args[11]) run_corner_cases_test(args[0]); 
   free(args);
   args = NULL;

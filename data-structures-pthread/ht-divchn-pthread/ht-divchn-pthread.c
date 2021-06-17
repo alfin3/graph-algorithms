@@ -126,7 +126,7 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
   /* thread synchronization */
   ht->num_in_threads = 0;
   ht->num_grow_threads = num_grow_threads;
-  key_locks_count = pow_two(log_num_key_locks);
+  key_locks_count = pow_two_perror(log_num_key_locks);
   ht->key_locks_mask = C_SIZE_MAX & (key_locks_count - 1);
   ht->gate_open = TRUE;
   mutex_init_perror(&ht->gate_lock);
@@ -289,10 +289,10 @@ void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,
 			      size_t batch_count){
   size_t i, ix, lock_ix;
-  boolean_t deleted = FALSE;
+  size_t deleted = 0;
   dll_node_t **head = NULL, *node = NULL;
-  mutex_lock_perror(&ht->gate_lock);
   /* first critical section : go through gate or wait */
+  mutex_lock_perror(&ht->gate_lock);
   while (!ht->gate_open){
     cond_wait_perror(&ht->gate_open_cond, &ht->gate_lock);
   }
