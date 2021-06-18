@@ -55,12 +55,12 @@ const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* insert, search, free, remove, delete tests */
+const size_t C_HT_INIT_COUNT = 0x0607u;
 const size_t C_KEY_SIZE_FACTOR = sizeof(size_t);
 
 /* corner cases test */
 const int C_CORNER_LOG_KEY_START = 0;
 const int C_CORNER_LOG_KEY_END = 8;
-const size_t C_CORNER_HT_COUNT = 1543u;
 const float C_CORNER_ALPHA = 0.001;
 
 void insert_search_free(size_t num_ins,
@@ -404,6 +404,7 @@ void insert_keys_elts(ht_divchn_pthread_t *ht,
 		      size_t batch_count,
 		      int *res){
   size_t n = ht->num_elts;
+  size_t init_count = ht->count;
   size_t i;
   size_t seg_count, rem_count;
   size_t start = 0;
@@ -437,8 +438,13 @@ void insert_keys_elts(ht_divchn_pthread_t *ht,
     thread_join_perror(iids[i], NULL);
   }
   t = timer() - t;
-  printf("\t\tinsert time:                        "
-	 "%.4f seconds\n", t);
+  if (init_count == C_HT_INIT_COUNT && ht->count != C_HT_INIT_COUNT){
+    printf("\t\tinsert w/ growth time               "
+	   "%.4f seconds\n", t);
+  }else{
+    printf("\t\tinsert w/o growth time              "
+	   "%.4f seconds\n", t);
+  }
   *res *= (ht->num_elts == n + count);
   free(iids);
   free(ias);
@@ -594,13 +600,15 @@ void search_nin_ht(const ht_divchn_pthread_t *ht,
 
 /* Search */
 
-void free_ht(ht_divchn_pthread_t *ht){
+void free_ht(ht_divchn_pthread_t *ht, int verb){
   double t;;
   t = timer();
   ht_divchn_pthread_free(ht);
   t = timer() - t;
-  printf("\t\tfree time:                          "
-	 "%.4f seconds\n", t);
+  if (verb){
+    printf("\t\tfree time:                          "
+	   "%.4f seconds\n", t);
+  }
 }
 
 /* Insert, search, free */
@@ -634,6 +642,17 @@ void insert_search_free(size_t num_ins,
   ht_divchn_pthread_init(&ht,
 			 key_size,
 			 elt_size,
+			 0,
+			 alpha,
+			 log_num_locks,
+			 num_grow_threads,
+			 NULL,
+			 NULL); /* NULL for free elt to reinitialize */
+  insert_keys_elts(&ht, keys, elts, num_ins, num_threads, batch_count, &res);
+  free_ht(&ht, 0);
+  ht_divchn_pthread_init(&ht,
+			 key_size,
+			 elt_size,
 			 num_ins,
 			 alpha,
 			 log_num_locks,
@@ -649,7 +668,7 @@ void insert_search_free(size_t num_ins,
   }
   search_nin_ht(&ht, keys, elts, num_ins, 1, val_elt, &res);
   search_nin_ht(&ht, keys, elts, num_ins, num_threads, val_elt, &res);
-  free_ht(&ht);
+  free_ht(&ht, 1);
   printf("\t\tsearch correctness:                 ");
   print_test_result(res);
   free(keys);
@@ -887,7 +906,7 @@ void remove_delete(size_t num_ins,
   insert_keys_elts(&ht, keys, elts, num_ins, num_threads, batch_count, &res);
   search_in_ht(&ht, keys, elts, num_ins, num_threads, val_elt, &res);
   delete_key_elts(&ht, keys, num_ins, num_threads, batch_count, &res);
-  free_ht(&ht);
+  free_ht(&ht, 1);
   printf("\t\tremove and delete correctness:      ");
   print_test_result(res);
   free(keys);
@@ -931,11 +950,11 @@ void run_corner_cases_test(int log_ins){
       ht_divchn_pthread_insert(&ht, key, &elt, 1);
     }
     res *= (ht.count_ix == 0);
-    res *= (ht.count == C_CORNER_HT_COUNT);
+    res *= (ht.count == C_HT_INIT_COUNT);
     res *= (ht.num_elts == 1);
     res *= (*(size_t *)ht_divchn_pthread_search(&ht, key) == elt);
     ht_divchn_pthread_delete(&ht, key, 1);
-    res *= (ht.count == C_CORNER_HT_COUNT);
+    res *= (ht.count == C_HT_INIT_COUNT);
     res *= (ht.num_elts == 0);
     res *= (ht_divchn_pthread_search(&ht, key) == NULL);
     ht_divchn_pthread_free(&ht);
