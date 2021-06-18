@@ -47,7 +47,7 @@ typedef struct{
   pthread_cond_t grow_cond;
 
   /* function pointers */
-  void (*ins_elt)(void *, const void *, size_t); /* e.g. min, conditional */
+  void (*rdc_elt)(void *, const void *, size_t); /* e.g. min, max, add */
   void (*free_elt)(void *);
 } ht_divchn_pthread_t;
 
@@ -57,21 +57,12 @@ typedef struct{
 void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			    size_t key_size,
 			    size_t elt_size,
+			    size_t min_num,
+			    float alpha,
 			    size_t log_num_locks,
 			    size_t num_grow_threads,
-			    float alpha,
-			    void (*ins_elt)(void *, const void *, size_t),
+			    void (*rdc_elt)(void *, const void *, size_t),
 			    void (*free_elt)(void *));
-
-void ht_divchn_pthread_min_init(ht_divchn_pthread_t *ht,
-				size_t key_size,
-				size_t elt_size,
-				size_t min_num,
-				size_t log_num_locks,
-				size_t num_grow_threads,
-				float alpha,
-				void (*ins_elt)(void *, const void *, size_t),
-				void (*free_elt)(void *));
 
 void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,

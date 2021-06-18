@@ -102,53 +102,12 @@ static void *ptr(const void *block, size_t i, size_t size);
 void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			    size_t key_size,
 			    size_t elt_size,
+			    size_t min_num,
+			    float alpha,
 			    size_t log_num_locks,
 			    size_t num_grow_threads,
-			    float alpha,
-			    void (*ins_elt)(void *, const void *, size_t),
+			    void (*rdc_elt)(void *, const void *, size_t),
 			    void (*free_elt)(void *)){
-  size_t i;
-  size_t key_locks_count;
-  /* hash table */
-  ht->key_size = key_size;
-  ht->elt_size = elt_size;
-  ht->group_ix = 0;
-  ht->count_ix = 0;
-  ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-  ht->num_elts = 0;
-  ht->alpha = alpha;
-  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
-  for (i = 0; i < ht->count; i++){
-    dll_init(&ht->key_elts[i]);
-  }
-  /* thread synchronization */
-  ht->num_in_threads = 0;
-  ht->num_grow_threads = num_grow_threads;
-  key_locks_count = pow_two_perror(log_num_locks);
-  ht->key_locks_mask = C_SIZE_MAX & (key_locks_count - 1);
-  ht->gate_open = TRUE;
-  mutex_init_perror(&ht->gate_lock);
-  ht->key_locks = malloc_perror(key_locks_count,
-				sizeof(pthread_mutex_t));
-  for (i = 0; i < key_locks_count; i++){
-    mutex_init_perror(&ht->key_locks[i]);
-  }
-  cond_init_perror(&ht->gate_open_cond);
-  cond_init_perror(&ht->grow_cond);
-  /* function pointers */
-  ht->ins_elt = ins_elt;
-  ht->free_elt = free_elt;
-}
-
-void ht_divchn_pthread_min_init(ht_divchn_pthread_t *ht,
-				size_t key_size,
-				size_t elt_size,
-				size_t min_num,
-				size_t log_num_locks,
-				size_t num_grow_threads,
-				float alpha,
-				void (*ins_elt)(void *, const void *, size_t),
-				void (*free_elt)(void *)){
   size_t i;
   size_t key_locks_count;
   /* hash table */
@@ -188,7 +147,7 @@ void ht_divchn_pthread_min_init(ht_divchn_pthread_t *ht,
   cond_init_perror(&ht->gate_open_cond);
   cond_init_perror(&ht->grow_cond);
   /* function pointers */
-  ht->ins_elt = ins_elt;
+  ht->rdc_elt = rdc_elt;
   ht->free_elt = free_elt;
 }
 
@@ -230,8 +189,8 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
       mutex_unlock_perror(&ht->key_locks[lock_ix]);
       increased++;
     }else{
-      if (ht->ins_elt != NULL){
-	ht->ins_elt(node->elt,
+      if (ht->rdc_elt != NULL){
+	ht->rdc_elt(node->elt,
 		    ptr(batch_elts, i, ht->elt_size),
 		    ht->elt_size);
       }else{
