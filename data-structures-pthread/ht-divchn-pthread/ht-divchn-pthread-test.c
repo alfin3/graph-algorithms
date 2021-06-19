@@ -7,8 +7,8 @@
    collisions.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99, and requires that CHAR_BIT * sizeof(size_t) is greater
-   or equal to 16 and is even, as well as the availability of pthreads API.
+   C89/C90 and C99. The requirements are: i) CHAR_BIT * sizeof(size_t) is
+   greater or equal to 16 and is even, and ii) pthreads API is available.
 */
 
 #include <unistd.h>
@@ -37,7 +37,7 @@
 
 /* input handling */
 const char *C_USAGE =
-  "ht-div-pthread-test\n"
+  "ht-divchn-pthread-test\n"
   "[0, # bits in size_t - 1) : i s.t. # inserts = 2^i\n"
   "[0, # bits in size_t) : a given k = sizeof(size_t)\n"
   "[0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b\n"

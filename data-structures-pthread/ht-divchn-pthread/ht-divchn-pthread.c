@@ -152,7 +152,12 @@ static void *ptr(const void *block, size_t i, size_t size);
                       - size of a pointer to an element, if the element is
                       within a noncontiguous memory block or a pointer to a
                       contiguous element is inserted
-   alpha            : > 0.0, a load factor upper bound
+   min_num          : minimum number of keys that are known or expected to
+                      become present simultaneously (within a time slice)
+                      in a hash table, resulting in a speedup by avoiding
+                      unnecessary growth steps of a hash table; 0 if a
+                      positive value is not specified and all growth steps
+                      are to be completed
    log_num_locks    : log base 2 number of mutex locks for synchronizing
                       insert, remove, and delete operations; a larger number
                       reduces the size of a set of slots that maps to a lock

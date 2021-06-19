@@ -99,6 +99,12 @@ typedef struct{
                       - size of a pointer to an element, if the element is
                       within a noncontiguous memory block or a pointer to a
                       contiguous element is inserted
+   min_num          : minimum number of keys that are known or expected to
+                      become present simultaneously (within a time slice)
+                      in a hash table, resulting in a speedup by avoiding
+                      unnecessary growth steps of a hash table; 0 if a
+                      positive value is not specified and all growth steps
+                      are to be completed
    alpha            : > 0.0, a load factor upper bound
    log_num_locks    : log base 2 number of mutex locks for synchronizing
                       insert, remove, and delete operations; a larger number
