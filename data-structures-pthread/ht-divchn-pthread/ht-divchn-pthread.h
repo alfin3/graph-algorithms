@@ -17,27 +17,36 @@
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by the 
    alpha parameter. The alpha parameter does not provide an upper bound 
-   after the maximum count of slots in a hash table is reached.
+   after the maximum representable count of slots in a hash table is
+   reached.
 
-   A hash table is accessed by threads calling insert, remove, and/or delete
-   operations concurrently. The design provides the following guarantees:
-     - the final state of the hash table is guaranteed with respect to
-     concurrent insert, remove, and/or delete operations if the key sets
-     between threads are disjoint,
+   A hash table is modified by threads calling insert, remove, and/or delete
+   operations concurrently. The design provides the following guarantees
+   with respect to the final state of a hash table, defined as a pair of 
+   i) a load factor, and ii) the set of sets of key-element pairs, where each
+   set is the set of key-element pairs at a slot of a hash table:
+     - a single final state is guaranteed with respect to concurrent
+     insert, remove, and/or delete operations if the sets of keys used by
+     threads are disjoint,
      - if insert operations are called by more than one thread concurrently
-     and the key sets are not disjoint, then the final state of the hash
-     table is guaranteed according to a user-defined insertion reduction 
-     function (e.g. min, max, add, multiply, and, or, xor of key-associated
-     elements),
+     and the sets of keys used by threads are not disjoint, then a single
+     final state of the hash table is guaranteed according to a user-defined
+     insertion reduction function (e.g. min, max, add, multiply, and, or,
+     xor of key-associated elements),
      - because chaining does not limit the number of insertions, each thread
      that passed the first critical section is guaranteed to complete its
-     batch operation before the hash table grows, although alpha may be
-     temporarily exceeded to the extent dependent on the number of threads
-     that passed the first critical section and their batch sizes.
+     batch operation before the hash table grows, although alpha is
+     temporarily* exceeded**.
 
    The implementation does not use stdint.h and is portable under C89/C90
-   and C99, and requires that CHAR_BIT * sizeof(size_t) is greater or equal
-   to 16 and is even, as well as the availability of pthreads API.
+   and C99. The requirements are: i) CHAR_BIT * sizeof(size_t) is greater
+   or equal to 16 and is even, and ii) pthreads API is available.
+
+   * unless the maximum representable count was reached and the growth
+   step did not lower the load factor below alpha, in which case alpha no
+   longer provides a load factor upper bound as specified above
+   ** to the extent dependent on the number of threads that passed the first
+   critical section and their batch sizes
 */
 
 #ifndef HT_DIVCHN_PTHREAD_H  
@@ -91,10 +100,24 @@ typedef struct{
                       within a noncontiguous memory block or a pointer to a
                       contiguous element is inserted
    alpha            : > 0.0, a load factor upper bound
-   log_num_locks    : >= 1, number of mutex locks for synchronizing insert,
-                      remove, delete operations.
+   log_num_locks    : log base 2 number of mutex locks for synchronizing
+                      insert, remove, and delete operations; a larger number
+                      reduces the size of a set of slots that maps to a lock
+                      and may reduce the time threads are blocked, depending
+                      on the scheduler and at the expense of space
    num_grow_threads : >= 1, number of threads used in growing the hash table
-   rdc_elt          : reduction function TODO add specification
+   rdc_elt          : - NULL, if a key is in the hash table when the key is
+                      inserted, the key-associated element in the hash table
+                      is updated to the inserted element
+                      - non-NULL, if a key is in the hash table when the
+                      key is inserted, performs a reduction of the element
+                      already in the hash table and the inserted element;
+                      the result of the reduction is associated with the key
+                      in the hash table; the first argument points to an
+                      elt_size-sized block in the hash table, the second
+                      argument points to an elt_size-sized block of the
+                      inserted element, and the third argument is equal to a
+                      elt_size value
    free_elt         : - if an element is within a contiguous memory block and
                       a copy of the element was inserted, then NULL as
                       free_elt is sufficient to delete the element,
@@ -117,7 +140,9 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 
 /**
    Inserts a batch of keys and associated elements into a hash table.
-   The batch_keys and batch_elts parameters are not NULL.
+   The batch_keys and batch_elts parameters are not NULL. The
+   batch_count parameter is the count of keys in a batch. See also the
+   specification of rdc_elt in ht_divchn_pthread_init.
 */
 void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,
@@ -125,16 +150,19 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 			      size_t batch_count);
 
 /**
-   Call after all threads completed insert, delete and remove operations on 
-   ht. This is a non-modifying query operation and has no synchronization
-   overhead.
+   If a key is present in a hash table, returns a pointer to its associated 
+   element, otherwise returns NULL. The key parameter is not NULL.
+   The operation is called before/after all threads started/completed
+   insert, remove, and delete operations on ht. This is a non-modifying
+   query operation and has no synchronization overhead.
 */
 void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
 			       const void *key);
 
 /**
    Removes a batch of keys and associated elements from a hash table.
-   The batch_keys and batch_elts parameters are not NULL.
+   The batch_keys and batch_elts parameters are not NULL. The
+   batch_count parameter is the count of keys in a batch.
 */
 void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,
@@ -143,7 +171,8 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
 
 /**
    Deletes a batch of keys and associated elements from a hash table.
-   The batch_keys and batch_elts parameters are not NULL.
+   The batch_keys and batch_elts parameters are not NULL. The
+   batch_count parameter is the count of keys in a batch.
 */
 void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,
