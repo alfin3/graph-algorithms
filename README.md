@@ -1,14 +1,12 @@
 # data-structures-algorithms-c
 
-Graph algorithms and supporting data structures with generic (any type) edge weights, a hash table parameter, low memory footprint, and general C89/C90 portability across systems without conditional compilation.
+Graph algorithms and supporting data structures with generic (any type) edge weights, a hash table parameter, low memory footprint, and general C89/C90 and C99 portability across systems without conditional compilation.
 
-Hashing parametrization and generic programming were used to minimize the memory space occupied and used by a program. The implementation provides i) potential space and speed advantages relative to the use of C++ abstractions in settings with limited memory resources, and ii) parameters for hashing optimization with respect to graph topologies across hardware settings. The modularity of the implementation provides avenues for parametrizing the multithreading across the dependency tree of data structures, including the hash tables, which is work in progress.
+The presented approach reflects the perspective that graph problems often reduce to hashing problems, where an ordered set of a graph topology, an algorithm, and a hash function maps to a distribution of hash values. Information about a graph topology can often be obtained from a problem statement and/or the prior knowledge of a domain. Additional information, such as the indegree of each vertex in a graph or a subset of vertices, can be stored at the time of graph construction. Based on the preliminary data, the provided implementation may motivate the development and evaluation of graph-conscious hashing methods.
 
-The presented approach reflects the perspective that graph problems often reduce to hashing problems, where an ordered set of a graph topology, an algorithm, and a hash function maps to a distribution of hash values. Information about a graph topology can often be obtained from a problem statement and/or the prior knowledge of a domain. Additional information, such as the indegree of each vertex in a graph or a subset of vertices, can be stored at the time of graph construction. Based on the preliminary data, the provided implementation may motivate the development and evaluation of graph-aware hashing methods.
+The approach may be particularly suitable for computing and optimizing the exact solutions of small instances of NP-hard problems in memory-constrained environments. Small instances of NP-hard problems may require little space as graphs in memory. However, computing an exact solution may require extensive memory resources without hashing. The provided division and multiplication-based hash tables, portable under C89/C90 and C99, enable the hashing of contiguous blocks of memory thereby accommodating the hashing of sets of vertices.
 
-The approach may be particularly suitable for computing and optimizing the exact solutions of small instances of NP-hard problems in memory-constrained environments. Small instances of NP-hard problems may require little space as graphs in memory. However, computing an exact solution may require extensive memory resources without hashing. The provided division and multiplication-based hash tables, portable under C89/C90, enable the hashing of contiguous blocks of memory thereby accommodating the hashing of sets of vertices.
-
-Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency have not yet been profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations. Instructions for making libhgraph.a will be provided in the near future.
+Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency are being profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
 In each directory with a Makefile, run:
 
@@ -19,6 +17,15 @@ In each directory with a Makefile, run:
 `make clean` or `make clean-all`
 
 **Highlights:**
+
+`./data-structures-pthread/ht-divchn-pthread/`
+
+A hash table with generic hash keys and generic elements that is concurrently accessible and modifiable. The implementation is based on a division method for hashing and a chaining method for resolving collisions.
+
+A hash table is modified by threads calling insert, remove, and/or delete operations concurrently. The design provides the following guarantees with respect to the final state of a hash table, defined as a pair of i) a load factor, and ii) the set of sets of key-element pairs, where each set is the set of key-element pairs at a slot of a hash table:
+- a single final state is guaranteed with respect to concurrent insert, remove, and/or delete operations if the sets of keys used by threads are disjoint,
+- if insert operations are called by more than one thread concurrently and the sets of keys used by threads are not disjoint, then a single final state of the hash table is guaranteed according to a user-defined reduction function (e.g. min, max, add, multiply, and, or, xor of key-associated elements),
+- because chaining does not limit the number of insertions, each thread is guaranteed to complete its batch operation before the hash table grows, although a load factor upper bound is temporarily exceeded.
 
 `./graph-algorithms/tsp`
 
