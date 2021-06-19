@@ -1,4 +1,4 @@
-# data-structures-algorithms-c
+# graph-algorithms
 
 Graph algorithms and supporting data structures with generic (any type) edge weights, a hash table parameter, low memory footprint, and general C89/C90 and C99 portability across systems without conditional compilation.
 
@@ -26,6 +26,8 @@ A hash table is modified by threads calling insert, remove, and/or delete operat
 - a single final state is guaranteed with respect to concurrent insert, remove, and/or delete operations if the sets of keys used by threads are disjoint,
 - if insert operations are called by more than one thread concurrently and the sets of keys used by threads are not disjoint, then a single final state of the hash table is guaranteed according to a user-defined reduction function (e.g. min, max, add, multiply, and, or, xor of key-associated elements),
 - because chaining does not limit the number of insertions, each thread is guaranteed to complete its batch operation before the hash table grows, although a load factor upper bound is temporarily exceeded.
+
+The provided design and associated guarantees are suited for the use of hash tables in multithreaded graph algorithms, e.g. in multithreaded looping in an adjacency list. Tests across load factor upper bounds and key sizes exceeding the basic types are provided with respect to elements within contiguous and noncontiguous memory blocks. The implementation requires that CHAR_BIT * sizeof(size_t) is greater or equal to 16 and is even, as well as pthreads API.
 
 `./graph-algorithms/tsp`
 
