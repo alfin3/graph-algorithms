@@ -1,13 +1,14 @@
 /**
    ht-divchn-pthread-test.c
 
-   Tests of a hash table with generic hash keys and generic elements.
-   The implementation is based on a division method for hashing and a
-   chaining method for resolving collisions.
+   Tests of a hash table with generic hash keys and generic elements that 
+   is concurrently accessible and modifiable. The implementation is based
+   on a division method for hashing and a chaining method for resolving
+   collisions.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
-   is greater or equal to 16 and is even.
+   C89/C90 and C99, and requires that CHAR_BIT * sizeof(size_t) is greater
+   or equal to 16 and is even, as well as the availability of pthreads API.
 */
 
 #include <unistd.h>
@@ -55,12 +56,15 @@ const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* insert, search, free, remove, delete tests */
-const size_t C_HT_INIT_COUNT = 0x0607u;
 const size_t C_KEY_SIZE_FACTOR = sizeof(size_t);
 
 /* corner cases test */
 const int C_CORNER_LOG_KEY_START = 0;
 const int C_CORNER_LOG_KEY_END = 8;
+const size_t C_CORNER_MIN_NUM = 0;
+const size_t C_CORNER_NUM_LOCKS = 1;
+const size_t C_CORNER_NUM_GROW_THREADS = 1;
+const size_t C_CORNER_HT_COUNT = 0x0607u;
 const float C_CORNER_ALPHA = 0.001;
 
 void insert_search_free(size_t num_ins,
@@ -438,7 +442,7 @@ void insert_keys_elts(ht_divchn_pthread_t *ht,
     thread_join_perror(iids[i], NULL);
   }
   t = timer() - t;
-  if (init_count == C_HT_INIT_COUNT && ht->count != C_HT_INIT_COUNT){
+  if (init_count < ht->count){
     printf("\t\tinsert w/ growth time               "
 	   "%.4f seconds\n", t);
   }else{
@@ -647,7 +651,7 @@ void insert_search_free(size_t num_ins,
 			 log_num_locks,
 			 num_grow_threads,
 			 NULL,
-			 NULL); /* NULL for free elt to reinitialize */
+			 NULL); /* NULL to reinsert non-contig. elements */
   insert_keys_elts(&ht, keys, elts, num_ins, num_threads, batch_count, &res);
   free_ht(&ht, 0);
   ht_divchn_pthread_init(&ht,
@@ -660,14 +664,14 @@ void insert_search_free(size_t num_ins,
 			 NULL,
 			 free_elt);
   insert_keys_elts(&ht, keys, elts, num_ins, num_threads, batch_count, &res);
-  search_in_ht(&ht, keys, elts, num_ins, 1, val_elt, &res);
   search_in_ht(&ht, keys, elts, num_ins, num_threads, val_elt, &res);
+  search_in_ht(&ht, keys, elts, num_ins, 1, val_elt, &res);
   for (i = 0; i < num_ins; i++){
     *(size_t *)byte_ptr(ptr(keys, i, key_size),
 			key_size - C_KEY_SIZE_FACTOR) = i + num_ins;
   }
-  search_nin_ht(&ht, keys, elts, num_ins, 1, val_elt, &res);
   search_nin_ht(&ht, keys, elts, num_ins, num_threads, val_elt, &res);
+  search_nin_ht(&ht, keys, elts, num_ins, 1, val_elt, &res);
   free_ht(&ht, 1);
   printf("\t\tsearch correctness:                 ");
   print_test_result(res);
@@ -939,10 +943,10 @@ void run_corner_cases_test(int log_ins){
     ht_divchn_pthread_init(&ht,
 			   key_size,
 			   elt_size,
-			   0,
+			   C_CORNER_MIN_NUM,
 			   C_CORNER_ALPHA,
-			   4,
-			   4,
+			   C_CORNER_NUM_LOCKS,
+			   C_CORNER_NUM_GROW_THREADS,
 			   NULL,
 			   NULL);
     for (k = 0; k < num_ins; k++){
@@ -950,11 +954,11 @@ void run_corner_cases_test(int log_ins){
       ht_divchn_pthread_insert(&ht, key, &elt, 1);
     }
     res *= (ht.count_ix == 0);
-    res *= (ht.count == C_HT_INIT_COUNT);
+    res *= (ht.count == C_CORNER_HT_COUNT);
     res *= (ht.num_elts == 1);
     res *= (*(size_t *)ht_divchn_pthread_search(&ht, key) == elt);
     ht_divchn_pthread_delete(&ht, key, 1);
-    res *= (ht.count == C_HT_INIT_COUNT);
+    res *= (ht.count == C_CORNER_HT_COUNT);
     res *= (ht.num_elts == 0);
     res *= (ht_divchn_pthread_search(&ht, key) == NULL);
     ht_divchn_pthread_free(&ht);
