@@ -203,7 +203,7 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
   ht->group_ix = 0;
   ht->count_ix = 0;
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-  while ((float)min_num / ht->count > ht->alpha){
+  while ((float)min_num / ht->count > alpha){
     ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
     if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
     if (ht->count_ix == C_PRIME_PARTS_COUNT){
