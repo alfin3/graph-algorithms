@@ -123,7 +123,7 @@ static const size_t C_PRIME_PARTS[6 * 1 + 16 * (2 + 3 + 4)] =
    0x58a1u, 0xbd96u, 0x2836u, 0x5f8cu,    /* 6884922145916737697 */
    0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u};   /* 15769474759331449193 */
 
-static const size_t C_LAST_PRIME_IX = 6 + 16 * (2 + 3 + 4) - 4;
+static const size_t C_PRIME_PARTS_COUNT = 6 + 16 * (2 + 3 + 4);
 static const size_t C_PARTS_PER_PRIME[4] = {1, 2, 3, 4};
 static const size_t C_PARTS_ACC_COUNTS[4] = {6,
 					     6 + 16 * 2,
@@ -203,15 +203,19 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
   ht->group_ix = 0;
   ht->count_ix = 0;
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-  while ((float)min_num / ht->count > alpha){
+  while ((float)min_num / ht->count > ht->alpha){
     ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
     if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
-    if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-      /* last prime representable as size_t on a system reached */
+    if (ht->count_ix == C_PRIME_PARTS_COUNT){
+      /* the largest prime in C_PRIME_PARTS built */
+      break;
+    }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
+      /* the largest representable prime in C_PRIME_PARTS built */
       ht->count_ix = C_SIZE_MAX;
       break;
+    }else{
+      ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
     }
-    ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
   }
   ht->num_elts = 0;
   ht->alpha = alpha;
@@ -291,7 +295,7 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 
   /* grow ht if needed, and finish */
   if (ht->count_ix != C_SIZE_MAX &&
-      ht->count_ix != C_LAST_PRIME_IX){
+      ht->count_ix != C_PRIME_PARTS_COUNT){
     mutex_lock_perror(&ht->gate_lock);
     ht->num_elts += increased;
     if ((float)ht->num_elts / ht->count > ht->alpha && ht->gate_open){
@@ -498,12 +502,16 @@ static void ht_grow(ht_divchn_pthread_t *ht){
   while ((float)ht->num_elts / ht->count > ht->alpha){
     ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
     if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
-    if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-      /* last prime representable as size_t on a system reached */
+    if (ht->count_ix == C_PRIME_PARTS_COUNT){
+      /* the largest prime in C_PRIME_PARTS built */
+      break;
+    }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
+      /* the largest representable prime in C_PRIME_PARTS built */
       ht->count_ix = C_SIZE_MAX;
-      return;
+      break;
+    }else{
+      ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
     }
-    ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
   }
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
