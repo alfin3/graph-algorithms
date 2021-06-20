@@ -456,11 +456,10 @@ static size_t hash(const ht_divchn_pthread_t *ht, const void *key){
 
 /**
    Increase the size of a hash table by the difference between the ith and 
-   (i + 1)th prime numbers in the C_PRIME_PARTS array. Assumes that the
-   (i + 1)th prime number in the C_PRIME_PARTS array exists. Makes no changes
-   if the (i + 1)th prime number in the C_PRIME_PARTS array is not
-   representable as size_t on a given system. The operation is called when
-   it is guaranteed that only the calling thread has access to ht.
+   (i + 1)th prime numbers in the C_PRIME_PARTS array. The operation is
+   called if i) alpha was exceeded and the hash table count did not reach
+   the maximum (representable) value, AND ii) it is guaranteed that
+   only the calling thread has access to ht throughout the operation.
 */
 
 typedef struct{
