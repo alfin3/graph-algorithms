@@ -127,7 +127,7 @@ void ht_muloa_pthread_delete(ht_muloa_pthread_t *ht,
 void ht_muloa_pthread_free(ht_muloa_pthread_t *ht);
 
 /**
-   The product of NUM_INS_THREADS_MIN and the value of max_batch_count
+   The product of NUM_INS_THREADS_MINMAX and the value of max_batch_count
    determines:
    i) the allowed number of key-element pairs that can be inserted in excess
    of a load factor upper bound before a hash table undergoes a growth step
@@ -135,6 +135,6 @@ void ht_muloa_pthread_free(ht_muloa_pthread_t *ht);
    ii) the count of hash table slots after the completion of hash table
    initialization to accommodate the allowed excess.
 */
-#define NUM_INS_THREADS_MIN (10)
+#define NUM_INS_THREADS_MINMAX (10)
 
 #endif
