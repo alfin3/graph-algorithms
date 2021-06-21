@@ -46,7 +46,9 @@ typedef struct{
   key_elt_t **key_elts;
 
   /* thread synchronization */
+  size_t max_batch_count;
   size_t num_in_threads; /* passed gate_lock's first critical section */
+  size_t num_in_ins_threads;
   size_t num_grow_threads;
   size_t key_locks_mask; /* -> probability of waiting at a slot */
   boolean_t gate_open;
@@ -71,6 +73,7 @@ void ht_muloa_pthread_init(ht_muloa_pthread_t *ht,
 			   size_t elt_size,
 			   size_t min_num,
 			   float alpha,
+			   size_t max_batch_count,
 			   size_t log_num_locks,
 			   size_t num_grow_threads,
 			   size_t (*rdc_key)(const void *, size_t),
@@ -122,5 +125,16 @@ void ht_muloa_pthread_delete(ht_muloa_pthread_t *ht,
    insert, remove, delete, and search operations.
 */
 void ht_muloa_pthread_free(ht_muloa_pthread_t *ht);
+
+/**
+   The product of NUM_INS_THREADS_MIN and the value of max_batch_count
+   determines:
+   i) the allowed number of key-element pairs that can be inserted in excess
+   of a load factor upper bound before a hash table undergoes a growth step
+   by an insert thread,
+   ii) the count of hash table slots after the completion of hash table
+   initialization to accommodate the allowed excess.
+*/
+#define NUM_INS_THREADS_MIN (10)
 
 #endif
