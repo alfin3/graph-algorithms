@@ -22,31 +22,34 @@
 
    A hash table is modified by threads calling insert, remove, and/or delete
    operations concurrently. The design provides the following guarantees
-   with respect to the final state of a hash table, defined as a pair of 
-   i) a load factor, and ii) the set of sets of key-element pairs, where each
-   set is the set of key-element pairs at a slot of a hash table:
-     - a single final state is guaranteed with respect to concurrent
-     insert, remove, and/or delete operations if the sets of keys used by
-     threads are disjoint,
+   with respect to the final state of a hash table, defined as a pair of
+   i) a load factor, and ii) the set of sets of key-element pairs for each
+   slot of the hash table, after all operations are completed:
+     - a single final state is guaranteed with respect to concurrent insert,
+     remove, and/or delete operations if the sets of keys used by threads
+     are disjoint,
      - if insert operations are called by more than one thread concurrently
      and the sets of keys used by threads are not disjoint, then a single
      final state of the hash table is guaranteed according to a user-defined
-     insertion reduction function (e.g. min, max, add, multiply, and, or,
-     xor of key-associated elements),
+     reduction function (e.g. min, max, add, multiply, and, or, xor of key-
+     associated elements),
      - because chaining does not limit the number of insertions, each thread
-     that passed the first critical section is guaranteed to complete its
-     batch operation before the hash table grows, although alpha is
-     temporarily* exceeded**.
+     is theoretically guaranteed to complete its batch operation i) before a
+     load factor upper bound (alpha) is exceeded, ii) before the hash table
+     grows as a part of a called insert operation when alpha is temporarily*
+     exceeded**, or iii) after the hash table reaches its maximum count of
+     slots on a given system and alpha no longer bounds the load factor.
 
    The implementation does not use stdint.h and is portable under C89/C90
    and C99. The requirements are: i) CHAR_BIT * sizeof(size_t) is greater
    or equal to 16 and is even, and ii) pthreads API is available.
 
-   * unless the maximum representable count was reached and the growth
-   step did not lower the load factor below alpha, in which case alpha no
-   longer provides a load factor upper bound as specified above
-   ** to the extent dependent on the number of threads that passed the first
-   critical section and their batch sizes
+   * unless the growth step that follows does not lower the load factor
+   below alpha because the maximum count of slots is reached during the
+   growth step, in which case alpha no longer bounds the load factor
+
+   ** to the extent dependent on the number of threads that passed the
+   first critical section and their batch sizes
 */
 
 #ifndef HT_DIVCHN_PTHREAD_H  
