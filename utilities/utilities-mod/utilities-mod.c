@@ -89,6 +89,11 @@ size_t mul_mod_pow_two(size_t a, size_t b){
 /**
    Computes overflow-safe (a + b) mod n, by applying the following relation:
    if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then a1 + a2 ≡ b1 + b2 (mod n).
+   Note: this version with last unpredictable branch is faster at -O3 than
+   the below non-branching version tested with gcc on hash table performance:
+   rem = n - a;
+   mask = (size_t)-(rem > b);
+   return (a & mask) + b - (rem & ~mask);
 */
 size_t sum_mod(size_t a, size_t b, size_t n){
   size_t rem;
