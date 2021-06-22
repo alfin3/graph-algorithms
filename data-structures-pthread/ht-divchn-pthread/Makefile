@@ -30,7 +30,8 @@ CFLAGS = -I$(DLL_DIR)                                                       \
          -I$(UTILS_MEM_DIR)                                                 \
          -I$(UTILS_MOD_DIR)                                                 \
          -I$(UTILS_PTHD_DIR)                                                \
-         ${CFLAGS_BUILD_MODE} -pthread -Wno-unused-result -Wall -Wextra -O3
+         ${CFLAGS_BUILD_MODE} -pthread -Wno-unused-result -Wall -Wextra     \ 
+         -flto -O3
 
 OBJ = ht-divchn-pthread-test.o             \
       ht-divchn-pthread.o                  \
