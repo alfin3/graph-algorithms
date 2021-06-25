@@ -3,6 +3,12 @@
 
    Functions for running the BFS algorithm on graphs with vertices
    indexed from 0.
+
+   Optimization notes: 
+   - using a bit array for testing if a vertex was visited, instead of
+   prev[vts[i]] == NR, in order to decrease cache misses did not result
+   in a speed up in tests even when the index computation was performed
+   with a right bit shift on 64-bit words.
 */
 
 #include <stdio.h>
