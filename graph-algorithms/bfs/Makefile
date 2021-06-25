@@ -27,11 +27,11 @@ GRAPH_DIR     = $(DS_DIR)graph/
 QUEUE_DIR     = $(DS_DIR)queue/
 STACK_DIR     = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
-CFLAGS = -I$(GRAPH_DIR)                                        \
-         -I$(QUEUE_DIR)                                        \
-         -I$(STACK_DIR)                                        \
-         -I$(UTILS_MEM_DIR)                                    \
-         ${CFLAGS_BUILD_MODE} -pthread -Wall -Wextra -flto -O3
+CFLAGS = -I$(GRAPH_DIR)                               \
+         -I$(QUEUE_DIR)                               \
+         -I$(STACK_DIR)                               \
+         -I$(UTILS_MEM_DIR)                           \
+         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = bfs-test.o                      \
       bfs.o                           \
