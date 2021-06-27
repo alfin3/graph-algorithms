@@ -7,6 +7,20 @@
    Each list in an adjacency list is represented by a dynamically growing 
    stack. A vertex is a size_t index starting from 0. If a graph is weighted,
    the edge weights are of any basic type (e.g. char, int, double).
+
+   Optimization:
+
+   - the implementation provides separate stacks for adjacent vertices and
+   adjacent generic weights. In contrast to a version with a single stack,
+   where there is additional overhead in pointer computation, the provided
+   design resulted in a better performance in tests on a machine with the
+   following caches (cache, capacity, k-way associativity, line size):
+   (L1inst, 32768, 8, 64), (L1data, 32768, 8, 64), (L2, 262144, 4, 64),
+   (L3, 3145728, 12, 64). In future versions, a macro may be provided to
+   offset the addresses of each weight stack relative to the addresses of a
+   corresponding vertex stack in order to prevent low-cache efficiency
+   scenarios, such as when for adjacent vertices a block often needs to be
+   evicted to access a corresponding weight.
 */
 
 #ifndef GRAPH_H  
