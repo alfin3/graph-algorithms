@@ -30,14 +30,14 @@ DLL_DIR       = $(DS_DIR)dll/
 STACK_DIR     = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
-CFLAGS = -I$(GRAPH_DIR)                         \
-         -I$(HT_DIV_DIR)                        \
-         -I$(HT_MUL_DIR)                        \
-         -I$(DLL_DIR)                           \
-         -I$(STACK_DIR)                         \
-         -I$(UTILS_MEM_DIR)                     \
-         -I$(UTILS_MOD_DIR)                     \
-         ${CFLAGS_BUILD_MODE} -Wall -Wextra -O3
+CFLAGS = -I$(GRAPH_DIR)                               \
+         -I$(HT_DIV_DIR)                              \
+         -I$(HT_MUL_DIR)                              \
+         -I$(DLL_DIR)                                 \
+         -I$(STACK_DIR)                               \
+         -I$(UTILS_MEM_DIR)                           \
+         -I$(UTILS_MOD_DIR)                           \
+         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = tsp-test.o                      \
       tsp.o                           \
