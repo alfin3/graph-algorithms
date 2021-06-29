@@ -26,10 +26,10 @@ DS_DIR = ../../data-structures/
 GRAPH_DIR = $(DS_DIR)graph/
 STACK_DIR = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
-CFLAGS = -I$(GRAPH_DIR)                         \
-         -I$(STACK_DIR)                         \
-         -I$(UTILS_MEM_DIR)                     \
-         ${CFLAGS_BUILD_MODE} -Wall -Wextra -O3
+CFLAGS = -I$(GRAPH_DIR)                               \
+         -I$(STACK_DIR)                               \
+         -I$(UTILS_MEM_DIR)                           \
+         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = dfs-test.o                      \
       dfs.o                           \

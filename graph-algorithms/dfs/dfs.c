@@ -17,8 +17,9 @@
 
 typedef struct{
   size_t u;
-  size_t vi; /* given (u, v), vi is v's index in u's stack in an adj. list */
-} uvi_t;
+  char *vp; /* given (u, v), vp is pointer to v in u's stack in an adj. list */
+  char *vp_end; /* pointer to the end of u's stack */
+} uvp_t;
 
 static void search(const adj_lst_t *a,
 		   stack_t *s,
@@ -26,7 +27,7 @@ static void search(const adj_lst_t *a,
 		   size_t *c,
 		   size_t *pre,
 		   size_t *post);
-static void next_uvi(const adj_lst_t *a, uvi_t *uvi, const size_t *pre);
+static void move_uvp(const adj_lst_t *a, uvp_t *uvp, const size_t *pre);
 
 static const size_t NR = (size_t)-1; /* not reached as index */
 static const size_t STACK_INIT_COUNT = 1;
@@ -45,12 +46,11 @@ static const size_t STACK_INIT_COUNT = 1;
 void dfs(const adj_lst_t *a, size_t start, size_t *pre, size_t *post){
   size_t c = 0; /* counter */
   size_t vt_size = sizeof(size_t);
-  size_t uvi_size = sizeof(uvi_t);
   size_t i;
   stack_t s;
   memset(pre, 0xff, a->num_vts * vt_size); /* initialize both arrays to NR */
   memset(post, 0xff, a->num_vts * vt_size);
-  stack_init(&s, STACK_INIT_COUNT, uvi_size, NULL);
+  stack_init(&s, STACK_INIT_COUNT, sizeof(uvp_t), NULL);
   for (i = start; i < a->num_vts; i++){
     if (pre[i] == NR){
       search(a, &s, i, &c, pre, post);
@@ -75,44 +75,42 @@ static void search(const adj_lst_t *a,
 		   size_t *c,
 		   size_t *pre,
 		   size_t *post){
-  size_t *vts = NULL;
-  uvi_t uvi;
+  uvp_t uvp;
   pre[u] = *c;
   (*c)++;
-  uvi.u = u;
-  uvi.vi = 0;
-  stack_push(s, &uvi);
+  uvp.u = u;
+  uvp.vp = a->vt_wts[uvp.u]->elts;
+  uvp.vp_end = uvp.vp + a->vt_wts[uvp.u]->num_elts * a->step_size;
+  stack_push(s, &uvp);
   while (s->num_elts > 0){
-    stack_pop(s, &uvi);
-    next_uvi(a, &uvi, pre);
-    if (uvi.vi == a->vts[uvi.u]->num_elts){
-      post[uvi.u] = *c;
+    stack_pop(s, &uvp);
+    move_uvp(a, &uvp, pre);
+    if (uvp.vp == uvp.vp_end){
+      post[uvp.u] = *c;
       (*c)++;
     }else{
-      stack_push(s, &uvi); /* push the unfinished vertex */
-      vts = a->vts[uvi.u]->elts;
-      pre[vts[uvi.vi]] = *c;
+      stack_push(s, &uvp); /* push the unfinished vertex */
+      pre[*(size_t *)uvp.vp] = *c;
       (*c)++;
-      uvi.u = vts[uvi.vi];
-      uvi.vi = 0;
-      stack_push(s, &uvi); /* then push an unexplored vertex */
+      uvp.u = *(size_t *)uvp.vp;
+      uvp.vp = a->vt_wts[uvp.u]->elts;
+      uvp.vp_end = uvp.vp + a->vt_wts[uvp.u]->num_elts * a->step_size;
+      stack_push(s, &uvp); /* then push an unexplored vertex */
     }
   }
 }
 
 /**
-   Updates a uvi_t pair by computing the index of the next unexplored vertex 
-   in u's stack in an adjacency list. Updates the uvi_t pair to the count of
-   vertices in u's stack if threre is no next unexplored vertex.
+   Updates a uvp_t by computing a pointer to the next unexplored vertex 
+   in u's stack in an adjacency list.
 */
-static void next_uvi(const adj_lst_t *a, uvi_t *uvi, const size_t *pre){
-  size_t i;
-  size_t *vts = a->vts[uvi->u]->elts;
-  for (i = uvi->vi; i < a->vts[uvi->u]->num_elts; i++){
-    if (pre[vts[i]] == NR){
-      uvi->vi = i;
+static void move_uvp(const adj_lst_t *a, uvp_t *uvp, const size_t *pre){
+  char *p = NULL;
+  for (p = uvp->vp; p < uvp->vp_end; p += a->step_size){
+    if (pre[*(size_t *)p] == NR){
+      uvp->vp = p;
       return;
     }
   }
-  uvi->vi = a->vts[uvi->u]->num_elts; /* no next valid index */
+  uvp->vp = uvp->vp_end;
 }

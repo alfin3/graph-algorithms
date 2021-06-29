@@ -90,9 +90,9 @@ const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_WEIGHT_HIGH = ((size_t)-1 >>
 			      ((CHAR_BIT * sizeof(size_t) + 1) / 2));
 
-void print_uint_elts(const stack_t *s);
-void print_double_elts(const stack_t *s);
-void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *));
+void print_uint(const void *a);
+void print_double(const void *a);
+void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *));
 void print_uint_arr(const size_t *arr, size_t n);
 void print_double_arr(const double *arr, size_t n);
 void print_test_result(int res);
@@ -248,7 +248,7 @@ void run_uint_graph_test(){
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
-  print_adj_lst(&a, print_uint_elts);
+  print_adj_lst(&a, print_uint);
   run_default_uint_dijkstra(&a);
   run_div_uint_dijkstra(&a);
   run_mul_uint_dijkstra(&a);
@@ -259,7 +259,7 @@ void run_uint_graph_test(){
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
-  print_adj_lst(&a, print_uint_elts);
+  print_adj_lst(&a, print_uint);
   run_default_uint_dijkstra(&a);
   run_div_uint_dijkstra(&a);
   run_mul_uint_dijkstra(&a);
@@ -273,7 +273,7 @@ void run_uint_graph_test(){
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
-  print_adj_lst(&a, print_uint_elts);
+  print_adj_lst(&a, print_uint);
   run_default_uint_dijkstra(&a);
   run_div_uint_dijkstra(&a);
   run_mul_uint_dijkstra(&a);
@@ -285,7 +285,7 @@ void run_uint_graph_test(){
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
-  print_adj_lst(&a, print_uint_elts);
+  print_adj_lst(&a, print_uint);
   run_default_uint_dijkstra(&a);
   run_div_uint_dijkstra(&a);
   run_mul_uint_dijkstra(&a);
@@ -422,7 +422,7 @@ void run_double_graph_test(){
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
-  print_adj_lst(&a, print_double_elts);
+  print_adj_lst(&a, print_double);
   run_default_double_dijkstra(&a);
   run_div_double_dijkstra(&a);
   run_mul_double_dijkstra(&a);
@@ -433,7 +433,7 @@ void run_double_graph_test(){
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
-  print_adj_lst(&a, print_double_elts);
+  print_adj_lst(&a, print_double);
   run_default_double_dijkstra(&a);
   run_div_double_dijkstra(&a);
   run_mul_double_dijkstra(&a);
@@ -446,7 +446,7 @@ void run_double_graph_test(){
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
-  print_adj_lst(&a, print_double_elts);
+  print_adj_lst(&a, print_double);
   run_default_double_dijkstra(&a);
   run_div_double_dijkstra(&a);
   run_mul_double_dijkstra(&a);
@@ -458,7 +458,7 @@ void run_double_graph_test(){
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
-  print_adj_lst(&a, print_double_elts);
+  print_adj_lst(&a, print_double);
   run_default_double_dijkstra(&a);
   run_div_double_dijkstra(&a);
   run_mul_double_dijkstra(&a);
@@ -848,37 +848,40 @@ void run_rand_uint_test(int pow_start, int pow_end){
    Printing functions.
 */
 
-void print_uint_elts(const stack_t *s){
-  size_t i;
-  for (i = 0; i < s->num_elts; i++){
-    printf("%lu ", TOLU(*((size_t *)s->elts + i)));
-  }
-  printf("\n");
+void print_uint(const void *a){
+  printf("%lu ", TOLU(*(size_t *)a));
 }
 
-void print_double_elts(const stack_t *s){
-  size_t i;
-  for (i = 0; i < s->num_elts; i++){
-    printf("%.2f ", *((double *)s->elts + i));
-  }
-  printf("\n");
+void print_double(const void *a){
+  printf("%.2f ", *(double *)a);
 }
   
-void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *)){
+void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *)){
+  char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t i;
   printf("\tvertices: \n");
   for (i = 0; i < a->num_vts; i++){
     printf("\t%lu : ", TOLU(i));
-    print_uint_elts(a->vts[i]);
+    p_start = a->vt_wts[i]->elts;
+    p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
+    for (p = p_start; p < p_end; p += a->step_size){
+      printf("%lu ", *(size_t *)p);
+    }
+    printf("\n");
   }
-  if (print_wts != NULL){
+  if (a->wt_size > 0 && print_wt != NULL){
     printf("\tweights: \n");
     for (i = 0; i < a->num_vts; i++){
       printf("\t%lu : ", TOLU(i));
-      print_wts(a->wts[i]);
+      p_start = a->vt_wts[i]->elts;
+      p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
+      p_start += sizeof(size_t);
+      for (p = p_start; p < p_end; p += a->step_size){
+	print_wt(p);
+      }
+      printf("\n");
     }
   }
-  printf("\n");
 }
 
 void print_uint_arr(const size_t *arr, size_t n){

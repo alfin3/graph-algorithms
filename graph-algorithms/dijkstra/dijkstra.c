@@ -62,7 +62,6 @@ static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt);
 static void ht_def_free(ht_def_t *ht);
 
 /* functions for computing pointers */
-static size_t *vt_ptr(const size_t *vts, size_t i);
 static void *wt_ptr(const void *wts, size_t i, size_t wt_size);
 static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 
@@ -102,11 +101,11 @@ void dijkstra(const adj_lst_t *a,
 	      const heap_ht_t *hht,
 	      void (*add_wt)(void *, const void *, const void *),
 	      int (*cmp_wt)(const void *, const void *)){
+  char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t wt_size = a->wt_size;
   size_t vt_size = sizeof(size_t);
   size_t init_count = 1;
   size_t u, v;
-  size_t i;
   void *u_wt = NULL, *v_wt = NULL, *sum_wt = NULL;
   ht_def_t ht_def;
   context_t context;
@@ -133,10 +132,12 @@ void dijkstra(const adj_lst_t *a,
   prev[start] = start;
   while (h.num_elts > 0){
     heap_pop(&h, u_wt, &u);
-    for (i = 0; i < a->vts[u]->num_elts; i++){
-      v = *vt_ptr(a->vts[u]->elts, i);
+    p_start = a->vt_wts[u]->elts;
+    p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
+    for (p = p_start; p < p_end; p += a->step_size){
+      v = *(size_t *)p;
       v_wt = wt_ptr(dist, v, wt_size);
-      add_wt(sum_wt, u_wt, wt_ptr(a->wts[u]->elts, i, wt_size));
+      add_wt(sum_wt, u_wt, p + sizeof(size_t));
       if (prev[v] == C_NREACHED){
 	memcpy(v_wt, sum_wt, wt_size);
 	heap_push(&h, v_wt, &v);
@@ -215,13 +216,6 @@ static void ht_def_free(ht_def_t *ht){
 }
 
 /** Functions for computing pointers */
-
-/**
-   Computes a pointer to an entry in an array of vertices.
-*/
-static size_t *vt_ptr(const size_t *vts, size_t i){
-  return (size_t *)vts + i;
-}
 
 /**
    Computes a pointer to an entry in an array of weights.

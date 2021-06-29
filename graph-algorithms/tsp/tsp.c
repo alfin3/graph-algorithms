@@ -86,8 +86,6 @@ static size_t pow_two(size_t k);
 static void fprintf_stderr_exit(const char *s, int line);
 
 /* functions for computing pointers */
-static size_t *vt_ptr(const size_t *vts, size_t i);
-static void *wt_ptr(const void *wts, size_t i, size_t wt_size);
 static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
 
 /**
@@ -127,6 +125,7 @@ int tsp(const adj_lst_t *a,
 	const tsp_ht_t *tht,
 	void (*add_wt)(void *, const void *, const void *),
 	int (*cmp_wt)(const void *, const void *)){
+  char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t wt_size = a->wt_size;
   size_t set_count, set_size;
   size_t u, v;
@@ -185,12 +184,14 @@ int tsp(const adj_lst_t *a,
   while (prev_s.num_elts > 0){
     stack_pop(&prev_s, prev_set);
     u = prev_set[0];
-    for (i = 0; i < a->vts[u]->num_elts; i++){
-      v = *vt_ptr(a->vts[u]->elts, i);
+    p_start = a->vt_wts[u]->elts;
+    p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
+    for (p = p_start; p < p_end; p += a->step_size){
+      v = *(size_t *)p;
       if (v == start){
 	add_wt(sum_wt,
 	       thtp->search(thtp->ht, prev_set),
-	       wt_ptr(a->wts[u]->elts, i, wt_size));
+	       p + sizeof(size_t));
 	if (!final_dist_updated){
 	  memcpy(dist, sum_wt, wt_size);
 	  final_dist_updated = TRUE;
@@ -221,6 +222,7 @@ static void build_next(const adj_lst_t *a,
 		       const tsp_ht_t *tht,
 		       void (*add_wt)(void *, const void *, const void *),
 		       int (*cmp_wt)(const void *, const void *)){
+  char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t wt_size = a->wt_size;
   size_t set_size = prev_s->elt_size;
   size_t u, v;
@@ -236,8 +238,10 @@ static void build_next(const adj_lst_t *a,
     stack_pop(prev_s, prev_set);
     tht->remove(tht->ht, prev_set, prev_wt);
     u = prev_set[0];
-    for (i = 0; i < a->vts[u]->num_elts; i++){
-      v = *vt_ptr(a->vts[u]->elts, i);
+    p_start = a->vt_wts[u]->elts;
+    p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
+    for (p = p_start; p < p_end; p += a->step_size){
+      v = *(size_t *)p;
       set_init(&ibit, v);
       if (set_member(&ibit, &prev_set[1]) == NULL){
 	memcpy(next_set, prev_set, set_size);
@@ -246,7 +250,7 @@ static void build_next(const adj_lst_t *a,
 	set_union(&ibit, &next_set[1]);
 	add_wt(sum_wt,
 	       prev_wt,
-	       wt_ptr(a->wts[u]->elts, i, wt_size));
+	       p + sizeof(size_t));
 	next_wt = tht->search(tht->ht, next_set);
 	if (next_wt == NULL){
 	  tht->insert(tht->ht, next_set, sum_wt);
@@ -367,20 +371,6 @@ static size_t pow_two(size_t k){
 static void fprintf_stderr_exit(const char *s, int line){
   fprintf(stderr, "%s in %s at line %d\n", s,  __FILE__, line);
   exit(EXIT_FAILURE);
-}
-
-/**
-   Computes a pointer to an entry in an array of vertices.
-*/
-static size_t *vt_ptr(const size_t *vts, size_t i){
-  return (size_t *)vts + i;
-}
-
-/**
-   Computes a pointer to an entry in an array of weights.
-*/
-static void *wt_ptr(const void *wts, size_t i, size_t wt_size){
-  return (void *)((char *)wts + i * wt_size);
 }
 
 /**

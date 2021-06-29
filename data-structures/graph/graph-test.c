@@ -86,12 +86,10 @@ const double C_PROB_ONE = 1.0;
 const double C_PROB_HALF = 0.5;
 const double C_PROB_ZERO = 0.0;
 
-size_t sum(const size_t *a, size_t num_elts);
-void print_uint_elts(const stack_t *s);
-void print_double_elts(const stack_t *s);
-void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *));
-void print_uint_arr(const size_t *arr, size_t n);
-void print_double_arr(const double *arr, size_t n);
+size_t sum_vts(const adj_lst_t *a, size_t i);
+void print_uint(const void *a);
+void print_double(const void *a);
+void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *));
 void print_test_result(int res);
 
 /** 
@@ -151,14 +149,14 @@ void run_uint_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   uint_graph_helper(&a, C_NUMS_DIR, C_VTS_DIR, C_WTS_UINT_DIR);
-  print_adj_lst(&a, print_uint_elts);
+  print_adj_lst(&a, print_uint);
   adj_lst_free(&a);
   printf("Test adj_lst_{init, undir_build, free} on an undirected "
 	 "graph with size_t weights --> ");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   uint_graph_helper(&a, C_NUMS_UNDIR, C_VTS_UNDIR, C_WTS_UINT_UNDIR);
-  print_adj_lst(&a, print_uint_elts);
+  print_adj_lst(&a, print_uint);
   adj_lst_free(&a);
   graph_free(&g);
 }
@@ -167,14 +165,17 @@ void uint_graph_helper(const adj_lst_t *a,
 		       const size_t nums[],
 		       const size_t vts[],
 		       const size_t wts[]){
+  char *p = NULL, *p_start = NULL, *p_end = NULL;
   int res = 1;
   size_t ix = 0;
-  size_t i, j;
+  size_t i;
   for (i = 0; i < a->num_vts; i++){
-    res *= (nums[i] == a->vts[i]->num_elts);
-    for (j = 0; j < nums[i]; j++){
-      res *= (*((size_t *)a->vts[i]->elts + j) == vts[ix]);
-      res *= (*((size_t *)a->wts[i]->elts + j) == wts[ix]);
+    res *= (nums[i] == a->vt_wts[i]->num_elts);
+    p_start = a->vt_wts[i]->elts;
+    p_end = p_start + nums[i] * a->step_size;
+    for (p = p_start; p < p_end; p += a->step_size){
+      res *= (*(size_t *)p == vts[ix]);
+      res *= (*(size_t *)(p + sizeof(size_t)) == wts[ix]);
       ix++;
     }
   }
@@ -200,14 +201,14 @@ void run_double_graph_test(){
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   double_graph_helper(&a, C_NUMS_DIR, C_VTS_DIR, C_WTS_DOUBLE_DIR);
-  print_adj_lst(&a, print_double_elts);
+  print_adj_lst(&a, print_double);
   adj_lst_free(&a);
   printf("Test adj_lst_{init, undir_build, free} on an undirected "
 	 "graph with double weights --> ");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   double_graph_helper(&a, C_NUMS_UNDIR, C_VTS_UNDIR, C_WTS_DOUBLE_UNDIR); 
-  print_adj_lst(&a, print_double_elts);
+  print_adj_lst(&a, print_double);
   adj_lst_free(&a);
   graph_free(&g);
 }
@@ -216,15 +217,18 @@ void double_graph_helper(const adj_lst_t *a,
 			 const size_t nums[],
 			 const size_t vts[],
 			 const double wts[]){
+  char *p = NULL, *p_start = NULL, *p_end = NULL;
   int res = 1;
   size_t ix = 0;
-  size_t i, j;
+  size_t i;
   for (i = 0; i < a->num_vts; i++){
-    res *= (nums[i] == a->vts[i]->num_elts);
-    for (j = 0; j < nums[i]; j++){
-      res *= (*((size_t *)a->vts[i]->elts + j) == vts[ix]);
+    res *= (nums[i] == a->vt_wts[i]->num_elts);
+    p_start = a->vt_wts[i]->elts;
+    p_end = p_start + nums[i] * a->step_size;
+    for (p = p_start; p < p_end; p += a->step_size){
+      res *= (*(size_t *)p == vts[ix]);
       /* == because of the same bit pattern */
-      res *= (*((double *)a->wts[i]->elts + j) == wts[ix]);
+      res *= (*(double *)(p + sizeof(size_t)) == wts[ix]);
       ix++;
     }
   }
@@ -249,16 +253,14 @@ void run_corner_cases_test(){
     adj_lst_dir_build(&a, &g);
     res *= (a.num_vts == i &&
 	    a.num_es == 0 &&
-	    a.wt_size == 0 &&
-	    a.wts == NULL);
+	    a.wt_size == 0);
     corner_cases_helper(&a, i, &res);
     adj_lst_free(&a);
     adj_lst_init(&a, &g);
     adj_lst_undir_build(&a, &g);
     res *= (a.num_vts == i &&
 	    a.num_es == 0 &&
-	    a.wt_size == 0 &&
-	    a.wts == NULL);
+	    a.wt_size == 0);
     corner_cases_helper(&a, i, &res);
     adj_lst_free(&a);
     graph_free(&g);
@@ -271,12 +273,12 @@ void run_corner_cases_test(){
 void corner_cases_helper(const adj_lst_t *a, size_t num_vts, int *res){
   size_t i;
   if (num_vts){
-    *res *= (a->vts != NULL);
+    *res *= (a->vt_wts != NULL);
     for(i = 0; i < num_vts; i++){
-      *res *= (a->vts[i]->num_elts == 0);
+      *res *= (a->vt_wts[i]->num_elts == 0);
     }
   }else{
-    *res *= (a->vts == NULL);
+    *res *= (a->vt_wts == NULL);
   }
 }
 
@@ -425,9 +427,8 @@ void add_edge_helper(int pow_start,
     fflush(stdout);
     /* sum test; wraps around */
     for (i = 0; i < n; i++){
-      res *= (a_blt.vts[i]->num_elts == a_bld.vts[i]->num_elts);
-      res *= (sum(a_blt.vts[i]->elts, a_blt.vts[i]->num_elts) ==
-	      sum(a_bld.vts[i]->elts, a_bld.vts[i]->num_elts));
+      res *= (a_blt.vt_wts[i]->num_elts == a_bld.vt_wts[i]->num_elts);
+      res *= (sum_vts(&a_blt, i) == sum_vts(&a_bld, i));
     }
     res *= (a_blt.num_vts == a_bld.num_vts);
     res *= (a_blt.num_es == a_bld.num_es);
@@ -496,14 +497,16 @@ void rand_build_helper(int pow_start,
 */
 
 /**
-   Sums num_elts elements of an size_t array. Wraps around and
+   Sums the vertices in the ith stack in an adjacency list. Wraps around and
    does not check for overflow.
 */
-size_t sum(const size_t *a, size_t num_elts){
+size_t sum_vts(const adj_lst_t *a, size_t i){
+  char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t ret = 0;
-  size_t i;
-  for (i = 0; i < num_elts; i++){
-    ret += a[i];
+  p_start = a->vt_wts[i]->elts;
+  p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
+  for (p = p_start; p < p_end; p += a->step_size){
+    ret += *(size_t *)p;
   }
   return ret;
 }
@@ -512,53 +515,40 @@ size_t sum(const size_t *a, size_t num_elts){
    Printing functions.
 */
 
-void print_uint_elts(const stack_t *s){
-  size_t i;
-  for (i = 0; i < s->num_elts; i++){
-    printf("%lu ", TOLU(*((size_t *)s->elts + i)));
-  }
-  printf("\n");
+void print_uint(const void *a){
+  printf("%lu ", TOLU(*(size_t *)a));
 }
 
-void print_double_elts(const stack_t *s){
-  size_t i;
-  for (i = 0; i < s->num_elts; i++){
-    printf("%.2f ", *((double *)s->elts + i));
-  }
-  printf("\n");
+void print_double(const void *a){
+  printf("%.2f ", *(double *)a);
 }
   
-void print_adj_lst(const adj_lst_t *a, void (*print_wts)(const stack_t *)){
+void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *)){
+  char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t i;
   printf("\tvertices: \n");
   for (i = 0; i < a->num_vts; i++){
     printf("\t%lu : ", TOLU(i));
-    print_uint_elts(a->vts[i]);
+    p_start = a->vt_wts[i]->elts;
+    p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
+    for (p = p_start; p < p_end; p += a->step_size){
+      printf("%lu ", *(size_t *)p);
+    }
+    printf("\n");
   }
-  if (print_wts != NULL){
+  if (a->wt_size > 0 && print_wt != NULL){
     printf("\tweights: \n");
     for (i = 0; i < a->num_vts; i++){
       printf("\t%lu : ", TOLU(i));
-      print_wts(a->wts[i]);
+      p_start = a->vt_wts[i]->elts;
+      p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
+      p_start += sizeof(size_t);
+      for (p = p_start; p < p_end; p += a->step_size){
+	print_wt(p);
+      }
+      printf("\n");
     }
   }
-  printf("\n");
-}
-
-void print_uint_arr(const size_t *arr, size_t n){
-  size_t i;
-  for (i = 0; i < n; i++){
-    printf("%lu ", TOLU(arr[i]));
-  }
-  printf("\n");
-} 
-
-void print_double_arr(const double *arr, size_t n){
-  size_t i;
-  for (i = 0; i < n; i++){
-    printf("%.2f ", arr[i]);
-  }
-  printf("\n");
 }
 
 void print_test_result(int res){

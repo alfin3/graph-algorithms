@@ -7,19 +7,21 @@
    stack. A vertex is a size_t index starting from 0. If a graph is weighted,
    the edge weights are of any basic type (e.g. char, int, double).
 
+   The implementation uses a single stack of adjacent vertex weight pairs
+   to achieve cache efficiency in graph algorithms. The value of step_size
+   (in bytes) enables a user to iterate with a char *p pointer across a stack
+   and access a weight by p + sizeof(size_t) when p points to an adjacent
+   vertex.
+
    Optimization:
 
-   - the implementation provides separate stacks for adjacent vertices and
-   adjacent generic weights. In contrast to a version with a single stack,
-   where there is additional overhead in pointer computation, the provided
-   design resulted in a better performance in tests on a machine with the
-   following caches (cache, capacity, k-way associativity, line size):
-   (L1inst, 32768, 8, 64), (L1data, 32768, 8, 64), (L2, 262144, 4, 64),
-   (L3, 3145728, 12, 64). In future versions, a macro may be provided to
-   offset the addresses of each weight stack relative to the addresses of a
-   corresponding vertex stack in order to prevent low-cache efficiency
-   scenarios, such as when for adjacent vertices a block often needs to be
-   evicted to access a corresponding weight.
+   -  The implementation resulted in upto 1.3 - 1.4x speedups for dijkstra
+   and prim and upto 1.1x for tsp over an implementation with separate vertex
+   and weight stacks in tests on a machine with the following caches (cache,
+   capacity, k-way associativity, line size): (L1inst, 32768, 8, 64),
+   (L1data, 32768, 8, 64), (L2, 262144, 4, 64), (L3, 3145728, 12, 64).
+   Compilation was performed with gcc and -flto -O3. No notable decrease of
+   performance was recorded in tests of bfs and dfs on unweighted graphs.
 */
 
 #include <stdio.h>
@@ -29,8 +31,6 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
-static size_t *u_ptr(const graph_t *g, size_t i);
-static size_t *v_ptr(const graph_t *g, size_t i);
 static void *wt_ptr(const graph_t *g, size_t i);
 
 const size_t STACK_INIT_COUNT = 1;
@@ -75,45 +75,18 @@ void adj_lst_init(adj_lst_t *a, const graph_t *g){
   a->num_vts = g->num_vts;
   a->num_es = 0; 
   a->wt_size = g->wt_size;
-  a->vts = NULL;
-  a->wts = NULL;
+  a->step_size =
+    add_sz_perror(sizeof(size_t), a->wt_size); /* >= sizeof(size_t) */
+  a->buf = malloc_perror(1, a->step_size);
+  a->vt_wts = NULL;
   if (a->num_vts > 0){
-    a->vts = malloc_perror(a->num_vts, sizeof(stack_t *));
-    if (a->wt_size > 0){
-      a->wts = malloc_perror(a->num_vts, sizeof(stack_t *));
-    }
+    a->vt_wts = malloc_perror(a->num_vts, sizeof(stack_t *));
   }
   /* initialize stacks */
   for (i = 0; i < a->num_vts; i++){
-    a->vts[i] = malloc_perror(1, sizeof(stack_t));
-    stack_init(a->vts[i], STACK_INIT_COUNT, sizeof(size_t), NULL);
-    if (a->wt_size > 0){
-      a->wts[i] = malloc_perror(1, sizeof(stack_t));
-      stack_init(a->wts[i], STACK_INIT_COUNT, a->wt_size, NULL);
-    }
+    a->vt_wts[i] = malloc_perror(1, sizeof(stack_t));
+    stack_init(a->vt_wts[i], STACK_INIT_COUNT, a->step_size, NULL);
   }
-}
-
-/**
-   Frees an adjacency list and leaves a block of size sizeof(adj_lst_t)
-   pointed to by the a parameter.
-*/
-void adj_lst_free(adj_lst_t *a){
-  size_t i;
-  for (i = 0; i < a->num_vts; i++){
-    stack_free(a->vts[i]);
-    free(a->vts[i]);
-    a->vts[i] = NULL;
-    if (a->wt_size > 0){
-      stack_free(a->wts[i]);
-      free(a->wts[i]);
-      a->wts[i] = NULL;
-    }
-  }
-  free(a->vts); /* free(NULL) performs no operation */
-  free(a->wts);
-  a->vts = NULL;
-  a->wts = NULL;
 }
    
 /**
@@ -122,10 +95,11 @@ void adj_lst_free(adj_lst_t *a){
 void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
   size_t i;
   for (i = 0; i < g->num_es; i++){
-    stack_push(a->vts[*u_ptr(g, i)], v_ptr(g, i));
+    memcpy(a->buf, &g->v[i], sizeof(size_t));
     if (a->wt_size > 0){
-      stack_push(a->wts[*u_ptr(g, i)], wt_ptr(g, i));
+      memcpy((char *)a->buf + sizeof(size_t), wt_ptr(g, i), a->wt_size);
     }
+    stack_push(a->vt_wts[g->u[i]], a->buf);
     a->num_es++;
   }
 }
@@ -136,12 +110,13 @@ void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
 void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
   size_t i;
   for (i = 0; i < g->num_es; i++){
-    stack_push(a->vts[*u_ptr(g, i)], v_ptr(g, i));
-    stack_push(a->vts[*v_ptr(g, i)], u_ptr(g, i));
+    memcpy(a->buf, &g->v[i], sizeof(size_t));
     if (a->wt_size > 0){
-      stack_push(a->wts[*u_ptr(g, i)], wt_ptr(g, i));
-      stack_push(a->wts[*v_ptr(g, i)], wt_ptr(g, i));
+      memcpy((char *)a->buf + sizeof(size_t), wt_ptr(g, i), a->wt_size);
     }
+    stack_push(a->vt_wts[g->u[i]], a->buf);
+    memcpy(a->buf, &g->u[i], sizeof(size_t));
+    stack_push(a->vt_wts[g->v[i]], a->buf);
     a->num_es += 2;
   }
 }
@@ -159,10 +134,11 @@ void adj_lst_add_dir_edge(adj_lst_t *a,
 			  int (*bern)(void *),
 			  void *arg){
   if (bern(arg)){
-    stack_push(a->vts[u], &v);
+    memcpy(a->buf, &v, sizeof(size_t));
     if (a->wt_size > 0){
-      stack_push(a->wts[u], wt);
+      memcpy((char *)a->buf + sizeof(size_t), wt, a->wt_size);
     }
+    stack_push(a->vt_wts[u], a->buf);
     a->num_es++;
   }
 }
@@ -180,12 +156,13 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
 			    int (*bern)(void *),
 			    void *arg){
   if (bern(arg)){
-    stack_push(a->vts[u], &v);
-    stack_push(a->vts[v], &u);
+    memcpy(a->buf, &v, sizeof(size_t));
     if (a->wt_size > 0){
-      stack_push(a->wts[u], wt);
-      stack_push(a->wts[v], wt);
+      memcpy((char *)a->buf + sizeof(size_t), wt, a->wt_size);
     }
+    stack_push(a->vt_wts[u], a->buf);
+    memcpy(a->buf, &u, sizeof(size_t));
+    stack_push(a->vt_wts[v], a->buf);
     a->num_es += 2;
   }
 }
@@ -237,19 +214,24 @@ void adj_lst_rand_undir(adj_lst_t *a,
   }
 }
 
-/** Helper functions */
-
 /**
-   Compute pointers to vertices and weights in a graph.
+   Frees an adjacency list and leaves a block of size sizeof(adj_lst_t)
+   pointed to by the a parameter.
 */
-
-static size_t *u_ptr(const graph_t *g, size_t i){
-  return &(g->u[i]);
+void adj_lst_free(adj_lst_t *a){
+  size_t i;
+  for (i = 0; i < a->num_vts; i++){
+    stack_free(a->vt_wts[i]);
+    free(a->vt_wts[i]);
+    a->vt_wts[i] = NULL;
+  }
+  free(a->buf);
+  free(a->vt_wts); /* free(NULL) performs no operation */
+  a->buf = NULL;
+  a->vt_wts = NULL;
 }
 
-static size_t *v_ptr(const graph_t *g, size_t i){
-  return &(g->v[i]);
-}
+/** Helper functions */
 
 static void *wt_ptr(const graph_t *g, size_t i){
   return (void *)((char *)g->wts + i * g->wt_size);

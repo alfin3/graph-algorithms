@@ -8,19 +8,21 @@
    stack. A vertex is a size_t index starting from 0. If a graph is weighted,
    the edge weights are of any basic type (e.g. char, int, double).
 
+   The implementation uses a single stack of adjacent vertex weight pairs
+   to achieve cache efficiency in graph algorithms. The value of step_size
+   (in bytes) enables a user to iterate with a char *p pointer across a stack
+   and access a weight by p + sizeof(size_t) when p points to an adjacent
+   vertex.
+
    Optimization:
 
-   - the implementation provides separate stacks for adjacent vertices and
-   adjacent generic weights. In contrast to a version with a single stack,
-   where there is additional overhead in pointer computation, the provided
-   design resulted in a better performance in tests on a machine with the
-   following caches (cache, capacity, k-way associativity, line size):
-   (L1inst, 32768, 8, 64), (L1data, 32768, 8, 64), (L2, 262144, 4, 64),
-   (L3, 3145728, 12, 64). In future versions, a macro may be provided to
-   offset the addresses of each weight stack relative to the addresses of a
-   corresponding vertex stack in order to prevent low-cache efficiency
-   scenarios, such as when for adjacent vertices a block often needs to be
-   evicted to access a corresponding weight.
+   -  The implementation resulted in upto 1.3 - 1.4x speedups for dijkstra
+   and prim and upto 1.1x for tsp over an implementation with separate vertex
+   and weight stacks in tests on a machine with the following caches (cache,
+   capacity, k-way associativity, line size): (L1inst, 32768, 8, 64),
+   (L1data, 32768, 8, 64), (L2, 262144, 4, 64), (L3, 3145728, 12, 64).
+   Compilation was performed with gcc and -flto -O3. No notable decrease of
+   performance was recorded in tests of bfs and dfs on unweighted graphs.
 */
 
 #ifndef GRAPH_H  
@@ -42,9 +44,10 @@ typedef struct{
   size_t num_vts;
   size_t num_es;
   size_t wt_size;
-  stack_t **vts;  /* NULL if no vertices */
-  stack_t **wts;  /* NULL if no vertices or wt_size is 0 */
-} adj_lst_t;
+  size_t step_size; /* sizeof(size_t) + wt_size */
+  void *buf; /* buffer that is only used by adj_lst_ functions */
+  stack_t **vt_wts;  /* stacks of vertex weight pairs, NULL if no vertices */
+} adj_lst_t; /* vertex weight pairs are contiguous to decrease cache misses */
 
 /**
    Initializes a weighted or unweighted graph with n vertices and no edges,
@@ -68,6 +71,10 @@ void graph_free(graph_t *g);
                  graph_base_init
 */
 void adj_lst_init(adj_lst_t *a, const graph_t *g);
+
+size_t adj_lst_v(const adj_lst_t *a, size_t u, size_t i);
+
+void *adj_lst_wt_ptr(const adj_lst_t *a, size_t u, size_t i);
 
 /**
    Frees an adjacency list and leaves a block of size sizeof(adj_lst_t)
