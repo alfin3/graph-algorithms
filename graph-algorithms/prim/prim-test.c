@@ -623,7 +623,7 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *)){
     p_start = a->vt_wts[i]->elts;
     p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
     for (p = p_start; p < p_end; p += a->step_size){
-      printf("%lu ", *(size_t *)p);
+      printf("%lu ", TOLU(*(size_t *)p));
     }
     printf("\n");
   }

@@ -226,7 +226,6 @@ static void build_next(const adj_lst_t *a,
   size_t wt_size = a->wt_size;
   size_t set_size = prev_s->elt_size;
   size_t u, v;
-  size_t i;
   size_t *prev_set = NULL, *next_set = NULL;
   void *prev_wt = NULL, *next_wt = NULL, *sum_wt = NULL;
   ibit_t ibit;

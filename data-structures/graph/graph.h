@@ -72,10 +72,6 @@ void graph_free(graph_t *g);
 */
 void adj_lst_init(adj_lst_t *a, const graph_t *g);
 
-size_t adj_lst_v(const adj_lst_t *a, size_t u, size_t i);
-
-void *adj_lst_wt_ptr(const adj_lst_t *a, size_t u, size_t i);
-
 /**
    Frees an adjacency list and leaves a block of size sizeof(adj_lst_t)
    pointed to by the a parameter.
