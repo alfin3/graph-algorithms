@@ -23,7 +23,7 @@
    Optimization:
 
    -  the pointer computations in pty_ptr and elt_ptr were optimized out in tests;
-   if p = pty_ptr(h, i), then the corresponding element is pointed to by
+   if char *p = pty_ptr(h, i), then the corresponding element is pointed to by
    p + h->pty_size; pty_ptr and elt_ptr are left for readability.
 */
 
@@ -55,7 +55,7 @@ static void fprintf_stderr_exit(const char *s, int line);
                  copies are pushed as distinct elements
                  - size of a pointer to an element object, if the element
                  object is within a noncontiguous memory block
-   ht          : a non-NULL pointer to a set of parameters specifying a
+   hht         : a non-NULL pointer to a set of parameters specifying a
                  hash table for in-heap search and modifications; a hash
                  key has the size and bit pattern of the block of size
                  elt_size pointed to by elt in heap_push
@@ -82,7 +82,7 @@ void heap_init(heap_t *h,
 	       size_t init_count,
 	       size_t pty_size,
 	       size_t elt_size,
-	       const heap_ht_t *ht,
+	       const heap_ht_t *hht,
 	       int (*cmp_pty)(const void *, const void *),
 	       void (*free_elt)(void *)){
   h->count = init_count;
@@ -96,10 +96,10 @@ void heap_init(heap_t *h,
   h->pair_size = add_sz_perror(pty_size, elt_size);
   h->pty_elts = malloc_perror(init_count, h->pair_size);
   h->buf = malloc_perror(2, h->pair_size); /* 1st heapify, 2nd swap */
-  h->ht = ht;
+  h->hht = hht;
   h->cmp_pty = cmp_pty;
   h->free_elt = free_elt;
-  h->ht->init(ht->ht, elt_size, sizeof(size_t), NULL, ht->context);
+  h->hht->init(hht->ht, elt_size, sizeof(size_t), NULL, hht->context);
 }
 
 /**
@@ -120,7 +120,7 @@ void heap_push(heap_t *h, const void *pty, const void *elt){
   if (h->count == ix) heap_grow(h);
   memcpy(pty_ptr(h, ix), pty, h->pty_size);
   memcpy(elt_ptr(h, ix), elt, h->elt_size);
-  h->ht->insert(h->ht->ht, elt, &ix);
+  h->hht->insert(h->hht->ht, elt, &ix);
   h->num_elts++;
   heapify_up(h, ix);
 }
@@ -134,7 +134,7 @@ void heap_push(heap_t *h, const void *pty, const void *elt){
    heap_push.
 */
 void *heap_search(const heap_t *h, const void *elt){
-  const size_t *ix_ptr = h->ht->search(h->ht->ht, elt);
+  const size_t *ix_ptr = h->hht->search(h->hht->ht, elt);
   if (ix_ptr != NULL){
     return pty_ptr(h, *ix_ptr);
   }else{
@@ -150,7 +150,7 @@ void *heap_search(const heap_t *h, const void *elt){
    specification in heap_push.
 */
 void heap_update(heap_t *h, const void *pty, const void *elt){
-  size_t ix = *(const size_t *)h->ht->search(h->ht->ht, elt);
+  size_t ix = *(const size_t *)h->hht->search(h->hht->ht, elt);
   memcpy(pty_ptr(h, ix), pty, h->pty_size);
   heapify_up(h, ix);
   heapify_down(h, ix);
@@ -168,7 +168,7 @@ void heap_pop(heap_t *h, void *pty, void *elt){
   memcpy(pty, pty_ptr(h, ix), h->pty_size);
   memcpy(elt, elt_ptr(h, ix), h->elt_size);
   swap(h, ix, h->num_elts - 1);
-  h->ht->remove(h->ht->ht, elt, &ix_buf);
+  h->hht->remove(h->hht->ht, elt, &ix_buf);
   h->num_elts--;
   if (h->num_elts > 0) heapify_down(h, ix);
 }
@@ -186,7 +186,7 @@ void heap_free(heap_t *h){
   }
   free(h->pty_elts);
   free(h->buf);
-  h->ht->free(h->ht->ht);
+  h->hht->free(h->hht->ht);
   h->pty_elts = NULL;
   h->buf = NULL;
 }
@@ -203,8 +203,8 @@ static void swap(heap_t *h, size_t i, size_t j){
   memcpy(buf, pty_ptr(h, i), h->pair_size);
   memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pair_size);
   memcpy(pty_ptr(h, j), buf, h->pair_size);
-  h->ht->insert(h->ht->ht, elt_ptr(h, i), &i);
-  h->ht->insert(h->ht->ht, elt_ptr(h, j), &j);
+  h->hht->insert(h->hht->ht, elt_ptr(h, i), &i);
+  h->hht->insert(h->hht->ht, elt_ptr(h, j), &j);
 }
 
 /**
@@ -214,7 +214,7 @@ static void swap(heap_t *h, size_t i, size_t j){
 static void half_swap(heap_t *h, size_t t, size_t s){
   if (s == t) return;
   memcpy(pty_ptr(h, t), pty_ptr(h, s), h->pair_size);
-  h->ht->insert(h->ht->ht, elt_ptr(h, t), &t);
+  h->hht->insert(h->hht->ht, elt_ptr(h, t), &t);
 }
 
 /**
@@ -250,7 +250,7 @@ static void heapify_up(heap_t *h, size_t i){
     }
   }
   memcpy(pty_ptr(h, i), h->buf, h->pair_size);
-  h->ht->insert(h->ht->ht, elt_ptr(h, i), &i);
+  h->hht->insert(h->hht->ht, elt_ptr(h, i), &i);
 }
 
 /**
@@ -285,7 +285,7 @@ static void heapify_down(heap_t *h, size_t i){
     }
   }
   memcpy(pty_ptr(h, i), h->buf, h->pair_size);
-  h->ht->insert(h->ht->ht, elt_ptr(h, i), &i);
+  h->hht->insert(h->hht->ht, elt_ptr(h, i), &i);
 }
 
 /**

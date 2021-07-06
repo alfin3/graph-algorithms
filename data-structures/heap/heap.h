@@ -55,7 +55,7 @@ typedef struct{
   size_t pair_size; /* pty_size + elt_size */
   void *pty_elts;
   void *buf; /* only used by heap operations internally */
-  const heap_ht_t *ht;
+  const heap_ht_t *hht;
   int (*cmp_pty)(const void *, const void *);
   void (*free_elt)(void *);
 } heap_t;
@@ -73,7 +73,7 @@ typedef struct{
                  copies are pushed as distinct elements
                  - size of a pointer to an element object, if the element
                  object is within a noncontiguous memory block
-   ht          : a non-NULL pointer to a set of parameters specifying a
+   hht         : a non-NULL pointer to a set of parameters specifying a
                  hash table for in-heap search and modifications; a hash
                  key has the size and bit pattern of the block of size
                  elt_size pointed to by elt in heap_push
@@ -100,7 +100,7 @@ void heap_init(heap_t *h,
 	       size_t init_count,
 	       size_t pty_size,
 	       size_t elt_size,
-	       const heap_ht_t *ht,
+	       const heap_ht_t *hht,
 	       int (*cmp_pty)(const void *, const void *),
 	       void (*free_elt)(void *));
 
