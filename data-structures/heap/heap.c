@@ -19,6 +19,12 @@
    represented by its unique pointer, this invariant only prevents
    associating a given element object in memory with more than one priority
    value in a heap.
+
+   Optimization:
+
+   -  the pointer computations in pty_ptr and elt_ptr were optimized out in tests;
+   if p = pty_ptr(h, i), then the corresponding element is pointed to by
+   p + h->pty_size; pty_ptr and elt_ptr are left for readability.
 */
 
 #include <stdio.h>
@@ -87,7 +93,9 @@ void heap_init(heap_t *h,
   h->num_elts = 0;
   h->pty_size = pty_size;
   h->elt_size = elt_size;
-  h->pty_elts = malloc_perror(init_count, add_sz_perror(pty_size, elt_size));
+  h->pair_size = add_sz_perror(pty_size, elt_size);
+  h->pty_elts = malloc_perror(init_count, h->pair_size);
+  h->buf = malloc_perror(2, h->pair_size); /* 1st heapify, 2nd swap */
   h->ht = ht;
   h->cmp_pty = cmp_pty;
   h->free_elt = free_elt;
@@ -126,7 +134,7 @@ void heap_push(heap_t *h, const void *pty, const void *elt){
    heap_push.
 */
 void *heap_search(const heap_t *h, const void *elt){
-  size_t *ix_ptr = h->ht->search(h->ht->ht, elt);
+  const size_t *ix_ptr = h->ht->search(h->ht->ht, elt);
   if (ix_ptr != NULL){
     return pty_ptr(h, *ix_ptr);
   }else{
@@ -142,7 +150,7 @@ void *heap_search(const heap_t *h, const void *elt){
    specification in heap_push.
 */
 void heap_update(heap_t *h, const void *pty, const void *elt){
-  size_t ix = *(size_t *)h->ht->search(h->ht->ht, elt);
+  size_t ix = *(const size_t *)h->ht->search(h->ht->ht, elt);
   memcpy(pty_ptr(h, ix), pty, h->pty_size);
   heapify_up(h, ix);
   heapify_down(h, ix);
@@ -177,8 +185,10 @@ void heap_free(heap_t *h){
     } 
   }
   free(h->pty_elts);
+  free(h->buf);
   h->ht->free(h->ht->ht);
   h->pty_elts = NULL;
+  h->buf = NULL;
 }
 
 /** Helper functions */
@@ -188,16 +198,13 @@ void heap_free(heap_t *h){
    to their new indices in the hash table.
 */
 static void swap(heap_t *h, size_t i, size_t j){
-  void *buf = NULL;
+  void *buf = (char *)h->buf + h->pair_size; /* second subbuffer */
   if (i == j) return;
-  buf = malloc_perror(1, add_sz_perror(h->pty_size, h->elt_size));
-  memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
-  memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pty_size + h->elt_size);
-  memcpy(pty_ptr(h, j), buf, h->pty_size + h->elt_size);
+  memcpy(buf, pty_ptr(h, i), h->pair_size);
+  memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pair_size);
+  memcpy(pty_ptr(h, j), buf, h->pair_size);
   h->ht->insert(h->ht->ht, elt_ptr(h, i), &i);
   h->ht->insert(h->ht->ht, elt_ptr(h, j), &j);
-  free(buf);
-  buf = NULL;
 }
 
 /**
@@ -206,7 +213,7 @@ static void swap(heap_t *h, size_t i, size_t j){
 */
 static void half_swap(heap_t *h, size_t t, size_t s){
   if (s == t) return;
-  memcpy(pty_ptr(h, t), pty_ptr(h, s), h->pty_size + h->elt_size);
+  memcpy(pty_ptr(h, t), pty_ptr(h, s), h->pair_size);
   h->ht->insert(h->ht->ht, elt_ptr(h, t), &t);
 }
 
@@ -224,9 +231,7 @@ static void heap_grow(heap_t *h){
   }else{
     h->count *= 2;
   }
-  h->pty_elts = realloc_perror(h->pty_elts,
-			       h->count,
-			       add_sz_perror(h->pty_size, h->elt_size));
+  h->pty_elts = realloc_perror(h->pty_elts, h->count, h->pair_size);
 }
 
 /**
@@ -234,21 +239,18 @@ static void heap_grow(heap_t *h){
 */
 static void heapify_up(heap_t *h, size_t i){
   size_t ju;
-  void *buf = malloc_perror(1, add_sz_perror(h->pty_size, h->elt_size));
-  memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
+  memcpy(h->buf, pty_ptr(h, i), h->pair_size);
   while(i > 0){
     ju = (i - 1) / 2;
-    if (h->cmp_pty(pty_ptr(h, ju), buf) > 0){
+    if (h->cmp_pty(pty_ptr(h, ju), h->buf) > 0){
       half_swap(h, i, ju);
       i = ju;
     }else{
       break;
     }
   }
-  memcpy(pty_ptr(h, i), buf, h->pty_size + h->elt_size);
+  memcpy(pty_ptr(h, i), h->buf, h->pair_size);
   h->ht->insert(h->ht->ht, elt_ptr(h, i), &i);
-  free(buf);
-  buf = NULL;
 }
 
 /**
@@ -257,18 +259,17 @@ static void heapify_up(heap_t *h, size_t i){
 */
 static void heapify_down(heap_t *h, size_t i){
   size_t jl, jr;
-  void *buf = malloc_perror(1, add_sz_perror(h->pty_size, h->elt_size));
-  memcpy(buf, pty_ptr(h, i), h->pty_size + h->elt_size);
+  memcpy(h->buf, pty_ptr(h, i), h->pair_size);
   /* 0 <= i <= num_elts - 1 <= SIZE_MAX - 2 */
   while (i + 2 <= h->num_elts - 1 - i){
     /* both next left and next right indices have elements */
     jl = 2 * i + 1;
     jr = 2 * i + 2;
-    if (h->cmp_pty(buf, pty_ptr(h, jl)) > 0 &&
+    if (h->cmp_pty(h->buf, pty_ptr(h, jl)) > 0 &&
 	h->cmp_pty(pty_ptr(h, jl), pty_ptr(h, jr)) <= 0){
       half_swap(h, i, jl);
       i = jl;
-    }else if (h->cmp_pty(buf, pty_ptr(h, jr)) > 0){
+    }else if (h->cmp_pty(h->buf, pty_ptr(h, jr)) > 0){
       /* jr has min pty relative to jl and the ith pty is greater */
       half_swap(h, i, jr);
       i = jr;
@@ -278,30 +279,27 @@ static void heapify_down(heap_t *h, size_t i){
   }
   if (i + 1 == h->num_elts - 1 - i){
     jl = 2 * i + 1;
-    if (h->cmp_pty(buf, pty_ptr(h, jl)) > 0){
+    if (h->cmp_pty(h->buf, pty_ptr(h, jl)) > 0){
       half_swap(h, i, jl);
       i = jl;
     }
   }
-  memcpy(pty_ptr(h, i), buf, h->pty_size + h->elt_size);
+  memcpy(pty_ptr(h, i), h->buf, h->pair_size);
   h->ht->insert(h->ht->ht, elt_ptr(h, i), &i);
-  free(buf);
-  buf = NULL;
 }
 
 /**
    Computes a pointer to an element in the element-priority array of a heap.
 */
 static void *pty_ptr(const heap_t *h, size_t i){
-  return (void *)((char *)h->pty_elts + i * (h->pty_size + h->elt_size));
+  return (void *)((char *)h->pty_elts + i * h->pair_size);
 }
 
 /**
    Computes a pointer to a priority in the element-priority array of a heap.
 */
 static void *elt_ptr(const heap_t *h, size_t i){
-  return (void *)((char *)h->pty_elts +
-		  i * (h->pty_size + h->elt_size) + h->pty_size);
+  return (void *)((char *)h->pty_elts + i * h->pair_size + h->pty_size);
 }
 
 /**

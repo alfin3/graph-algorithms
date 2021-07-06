@@ -27,12 +27,12 @@ HT_MUL_DIR = ../ht-mul/
 DLL_DIR = ../dll/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
-CFLAGS = -I$(HT_DIV_DIR)                        \
-         -I$(HT_MUL_DIR)                        \
-         -I$(DLL_DIR)                           \
-         -I$(UTILS_MEM_DIR)                     \
-         -I$(UTILS_MOD_DIR)                     \
-         ${CFLAGS_BUILD_MODE} -Wall -Wextra -O3
+CFLAGS = -I$(HT_DIV_DIR)                              \
+         -I$(HT_MUL_DIR)                              \
+         -I$(DLL_DIR)                                 \
+         -I$(UTILS_MEM_DIR)                           \
+         -I$(UTILS_MOD_DIR)                           \
+         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = heap-test.o                     \
       heap.o                          \

@@ -52,7 +52,9 @@ typedef struct{
   size_t num_elts;
   size_t pty_size;
   size_t elt_size;
+  size_t pair_size; /* pty_size + elt_size */
   void *pty_elts;
+  void *buf; /* only used by heap operations internally */
   const heap_ht_t *ht;
   int (*cmp_pty)(const void *, const void *);
   void (*free_elt)(void *);
