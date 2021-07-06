@@ -5,19 +5,20 @@
    dynamicaly allocated (min) heap with a hash table parameter. 
 
    The implementation provides a dynamic set in the min heap form for any
-   element objects in memory associated with priority values of basic type
+   elements in memory associated with priority values of basic type
    (e.g. char, int, long, double).
 
    The hash table parameter specifies a hash table used for in-heap
    search and modifications, and enables the optimization of space and
    time resources associated with heap operations by choice of a hash
-   table and its load factor upper bound.
+   table, its load factor upper bound, and known or expected minimum
+   number of simultaneously present elements.
 
    The implementation assumes that for every element in a heap, the 
    block of size elt_size pointed to by an argument passed as the elt
-   parameter in heap_push is unique. Because an element object can be
+   parameter in heap_push is unique. Because an element can be
    represented by its unique pointer, this invariant only prevents
-   associating a given element object in memory with more than one priority
+   associating a given element in memory with more than one priority
    value in a heap.
 */
 
@@ -65,14 +66,11 @@ typedef struct{
    h           : pointer to a preallocated block of size sizeof(heap_t)
    init_count  : > 0
    pty_size    : size of a contiguous priority object
-   elt_size    : - size of an element object, if the element object is
-                 within a contiguous memory block and element copies
-                 are not pushed as distinct elements
-                 - size of a pointer to an element object, if the element
-                 object is within a contiguous memory block and element
-                 copies are pushed as distinct elements
-                 - size of a pointer to an element object, if the element
-                 object is within a noncontiguous memory block
+   elt_size    : - size of an element, if the element is within a contiguous
+                 memory block and a copy of the element is inserted,
+                 - size of a pointer to an element, if the element is within
+                 a noncontiguous memory block or a pointer to a contiguous
+                 element is inserted
    hht         : a non-NULL pointer to a set of parameters specifying a
                  hash table for in-heap search and modifications; a hash
                  key has the size and bit pattern of the block of size
@@ -84,17 +82,14 @@ typedef struct{
                  the first argument is greater than the priority value 
                  pointed to by the second, and zero integer value if the two
                  priority values are equal
-   free_elt    : - if an element is within a contiguous memory block,
-                 as reflected by elt_size, and a pointer to the element is 
-                 passed as elt in ht_push, then the element is fully copied
-                 into a heap, and NULL as free_elt is sufficient to delete
-                 the element,
-                 - if an element is an object within a contiguous or
-                 noncontiguous memory block, and a pointer to a pointer to
-                 the element is passed as elt in heap_push, then the pointer
-                 to the element is copied into the heap, and an element-
-                 specific free_elt, taking a pointer to a pointer to an
-                 element as its parameter, is necessary to delete the element
+   free_elt    : - if an element is within a contiguous memory block and
+                 a copy of the element was inserted, then NULL as free_elt
+                 is sufficient to delete the element,
+                 - if an element is within a noncontiguous memory block or
+                 a pointer to a contiguous element was inserted, then an
+                 element-specific free_elt, taking a pointer to a pointer to an
+                 element as its argument and leaving a block of size elt_size
+                 pointed to by the argument, is necessary to delete the element
 */
 void heap_init(heap_t *h,
 	       size_t init_count,
@@ -114,7 +109,7 @@ void heap_init(heap_t *h,
                  basic type (e.g. char, int, long, double)
    elt         : pointer to a block of size elt_size that is either a
                  contiguous element object or a pointer to a contiguous or
-                 non-contiguous element object; the block must have a unique
+                 non-contiguous element; the block must have a unique
                  bit pattern for each pushed element
 */
 void heap_push(heap_t *h, const void *pty, const void *elt);

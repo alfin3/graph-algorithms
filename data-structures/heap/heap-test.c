@@ -33,8 +33,8 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even.
+   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
+   is greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
@@ -89,7 +89,7 @@ void (*const C_NEW_PTY_ARR[3])(void *, size_t) = {new_uint,
 						  new_long_double};
 const size_t C_H_INIT_COUNT = 1;
 
-void push_pop_free(size_t n,
+void push_pop_free(size_t num_ins,
 		   size_t pty_size,
 		   size_t elt_size,
 		   const heap_ht_t *hht,
@@ -98,7 +98,7 @@ void push_pop_free(size_t n,
 		   void (*new_pty)(void *, size_t),
 		   void (*new_elt)(void *, size_t),
 		   void (*free_elt)(void *));
-void update_search(size_t n,
+void update_search(size_t num_ins,
 		   size_t pty_size,
 		   size_t elt_size,
 		   const heap_ht_t *hht,
@@ -107,6 +107,7 @@ void update_search(size_t n,
 		   void (*new_pty)(void *, size_t),
 		   void (*new_elt)(void *, size_t),
 		   void (*free_elt)(void *));
+void *ptr(const void *block, size_t i, size_t size);
 void print_test_result(int res);
 
 /**
@@ -544,23 +545,26 @@ void run_update_search_mul_uint_ptr_test(int log_ins, float alpha){
 */
 
 void push_ptys_elts(heap_t *h,
-		    int *res,
-		    void **ptys,
-		    void **elts,
-		    size_t count){
-  size_t i, half_count;
+		    const void *pty_elts,
+		    size_t count,
+                    int *res){
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
+  size_t half_count;
   size_t n = h->num_elts;
   clock_t t_first, t_second;
-  half_count = count / 2;
+  half_count = count >> 1;  /* count > 0 */
+  p_start = pty_elts;
+  p_end = ptr(pty_elts, half_count, h->pair_size);
   t_first = clock();
-  for (i = 0; i < half_count; i++){
-    heap_push(h, ptys[i], elts[i]);
+  for (p = p_start; p < p_end; p += h->pair_size){
+    heap_push(h, p, p + h->pty_size);
   }
   t_first = clock() - t_first;
-  *res *= (h->num_elts == n + half_count);
+  p_start = ptr(pty_elts, half_count, h->pair_size);
+  p_end = ptr(pty_elts, count - 1, h->pair_size);
   t_second = clock();
-  for (i = half_count; i < count; i++){
-    heap_push(h, ptys[i], elts[i]);
+  for (p = p_start; p <= p_end; p += h->pair_size){
+    heap_push(h, p, p + h->pty_size);
   }
   t_second = clock() - t_second;
   printf("\t\tpush 1/2 elements:                           "
@@ -571,23 +575,26 @@ void push_ptys_elts(heap_t *h,
 }
 
 void push_rev_ptys_elts(heap_t *h,
-			int *res,
-			void **ptys,
-			void **elts,
-			size_t count){
-  size_t i, half_count;
+			const void *pty_elts,
+			size_t count,
+                        int *res){
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
+  size_t half_count;
   size_t n = h->num_elts;
   clock_t t_first, t_second;
-  half_count = count / 2;
+  half_count = count >> 1;  /* count > 0 */
+  p_start = ptr(pty_elts, count - 1, h->pair_size);
+  p_end = ptr(pty_elts, half_count, h->pair_size);
   t_first = clock();
-  for (i = 0; i < half_count; i++){
-    heap_push(h, ptys[count - i - 1], elts[count - i - 1]);
+  for (p = p_start; p > p_end; p -= h->pair_size){
+    heap_push(h, p, p + h->pty_size);
   }
   t_first = clock() - t_first;
-  *res *= (h->num_elts == n + half_count);
+  p_start = ptr(pty_elts, half_count, h->pair_size);
+  p_end = pty_elts;
   t_second = clock();
-  for (i = half_count; i < count; i++){
-    heap_push(h, ptys[count - i - 1], elts[count - i - 1]);
+  for (p = p_start; p >= p_end; p -= h->pair_size){
+    heap_push(h, p, p + h->pty_size);
   }
   t_second = clock() - t_second;
   printf("\t\tpush 1/2 elements, rev. pty order:           "
@@ -598,56 +605,53 @@ void push_rev_ptys_elts(heap_t *h,
 }
 
 void pop_ptys_elts(heap_t *h,
-		   int *res,
-		   size_t pty_size,
-		   size_t elt_size,
-		   void **elts,
+		   const void *pty_elts,
 		   size_t count,
 		   int (*cmp_pty)(const void *, const void *),
-		   int (*cmp_elt)(const void *, const void *)){
+		   int (*cmp_elt)(const void *, const void *),
+                   int *res){
+  char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t i, half_count;
   size_t n = h->num_elts;
-  void **pop_ptys = NULL, **pop_elts = NULL;
+  void *pop_pty_elts = NULL;
   clock_t t_first, t_second;
-  half_count = count / 2;
-  pop_ptys = malloc_perror(count, sizeof(void *));
-  pop_elts = malloc_perror(count, sizeof(void *));
-  for (i = 0; i < count; i++){
-    pop_ptys[i] = malloc_perror(1, pty_size);
-    pop_elts[i] = malloc_perror(1, elt_size);
-  }
+  half_count = count >> 1; /* count > 0 */
+  pop_pty_elts = malloc_perror(count, h->pair_size);
+  p_start = pop_pty_elts;
+  p_end = ptr(pop_pty_elts, half_count, h->pair_size);
   t_first = clock();
-  for (i = 0; i < half_count; i++){
-    heap_pop(h, pop_ptys[i], pop_elts[i]);
+  for (p = p_start; p < p_end; p += h->pair_size){
+    heap_pop(h, p, p + h->pty_size);
   }
   t_first = clock() - t_first;
-  *res *= (h->num_elts == n - half_count);
+  p_start = ptr(pop_pty_elts, half_count, h->pair_size);
+  p_end = ptr(pop_pty_elts, count - 1, h->pair_size);
   t_second = clock();
-  for (i = half_count; i < count; i++){
-    heap_pop(h, pop_ptys[i], pop_elts[i]);
+  for (p = p_start; p <= p_end; p += h->pair_size){
+    heap_pop(h, p, p + h->pty_size);
   }
   t_second = clock() - t_second;
   *res *= (h->num_elts == n - count);
   for (i = 0; i < count; i++){
     if (i == 0){
-      *res *= (cmp_elt(pop_elts[i], elts[i]) == 0);
+      *res *=
+	(cmp_elt((char *)ptr(pop_pty_elts, i, h->pair_size) + h->pty_size,
+		 (char *)ptr(pty_elts, i, h->pair_size) + h->pty_size) == 0);
     }else{
-      *res *= (cmp_pty(pop_ptys[i], pop_ptys[i - 1]) >= 0);
-      *res *= (cmp_elt(pop_elts[i], elts[i]) == 0);
+      *res *=
+	(cmp_pty(ptr(pop_pty_elts, i, h->pair_size),
+		 ptr(pop_pty_elts, i - 1, h->pair_size)) >= 0);
+      *res *=
+	(cmp_elt((char *)ptr(pop_pty_elts, i, h->pair_size) + h->pty_size,
+		 (char *)ptr(pty_elts, i, h->pair_size) + h->pty_size) == 0);
     }
   }
   printf("\t\tpop 1/2 elements:                            "
 	 "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
   printf("\t\tpop residual elements:                       "
 	 "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
-  for (i = 0; i < count; i++){
-    free(pop_ptys[i]);
-    free(pop_elts[i]); /* a non-contiguous element accessible from elts */ 
-  }
-  free(pop_ptys);
-  free(pop_elts);
-  pop_ptys = NULL;
-  pop_elts = NULL;
+  free(pop_pty_elts);
+  pop_pty_elts = NULL;
 }
 
 void free_heap(heap_t *h){
@@ -663,50 +667,27 @@ void free_heap(heap_t *h){
    Helper functions for heap_{update, search} tests.
 */
 
-void push_ptys_rev_elts(heap_t *h,
-			int *res,
-			void **ptys,
-			void **elts,
-			size_t count){
-  size_t i, half_count;
-  size_t n = h->num_elts;
-  clock_t t_first, t_second;
-  half_count = count / 2;
-  t_first = clock();
-  for (i = 0; i < half_count; i++){
-    heap_push(h, ptys[i], elts[count - i - 1]);
-  }
-  t_first = clock() - t_first;
-  *res *= (h->num_elts == n + half_count);
-  t_second = clock();
-  for (i = half_count; i < count; i++){
-    heap_push(h, ptys[i], elts[count - i - 1]);
-  }
-  t_second = clock() - t_second;
-  printf("\t\tpush 1/2 elements, rev. elt order:           "
-	 "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
-  printf("\t\tpush residual elements, rev. elt order:      "
-	 "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
-  *res *= (h->num_elts == n + count);
-}
-
 void update_ptys_elts(heap_t *h,
-		      int *res,
-		      void **ptys,
-		      void **elts,
-		      size_t count){
-  size_t i, half_count = count / 2;
+		      const void *pty_elts,
+		      size_t count,
+                      int *res){
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
+  size_t half_count = count >> 1;
   size_t n = h->num_elts;
   clock_t t_first, t_second;
+  p_start = pty_elts;
+  p_end = ptr(pty_elts, half_count, h->pair_size);
   t_first = clock();
-  for (i = 0; i < half_count; i++){
-    heap_update(h, ptys[i], elts[i]);
+  for (p = p_start; p < p_end; p += h->pair_size){
+    heap_update(h, p, p + h->pty_size);
   }
   t_first = clock() - t_first;
   *res *= (h->num_elts == n);
+  p_start = ptr(pty_elts, half_count, h->pair_size);
+  p_end = ptr(pty_elts, count - 1, h->pair_size);
   t_second = clock();
-  for (i = half_count; i < count; i++){
-    heap_update(h, ptys[i], elts[i]);
+  for (p = p_start; p <= p_end; p += h->pair_size){
+    heap_update(h, p, p + h->pty_size);
   }
   t_second = clock() - t_second;
   printf("\t\tupdate 1/2 elements:                         "
@@ -716,33 +697,37 @@ void update_ptys_elts(heap_t *h,
   *res *= (h->num_elts == n);
 }
 
-void search_ptys_elts(heap_t *h,
-		      int *res,
-		      void **elts,
-		      void **not_heap_elts,
-		      size_t count){
+void search_ptys_elts(const heap_t *h,
+		      const void *pty_elts,
+		      const void *not_heap_elts,
+		      size_t count,
+                      int *res){
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t n = h->num_elts;
-  size_t i;
-  void *ptr = NULL;
+  void *rp = NULL;
   clock_t t_heap, t_not_heap;
+  p_start = pty_elts;
+  p_end = ptr(pty_elts, count - 1, h->pair_size);
   t_heap = clock();
-  for (i = 0; i < count; i++){
-    ptr = heap_search(h, elts[i]);
+  for (p = p_start; p <= p_end; p += h->pair_size){
+    rp = heap_search(h, p + h->pty_size);
   }
   t_heap = clock() - t_heap;
-  for (i = 0; i < count; i++){
-    ptr = heap_search(h, elts[i]);
-    *res *= (ptr != NULL);
+  for (p = p_start; p <= p_end; p += h->pair_size){
+    rp = heap_search(h, p + h->pty_size);
+    *res *= (rp != NULL);
   }
   *res *= (h->num_elts == n);
+  p_start = not_heap_elts;
+  p_end = ptr(not_heap_elts, count - 1, h->elt_size);
   t_not_heap = clock();
-  for (i = 0; i < count; i++){
-    ptr = heap_search(h, not_heap_elts[i]);
+  for (p = p_start; p <= p_end; p += h->elt_size){
+    rp = heap_search(h, p);
   }
   t_not_heap = clock() - t_not_heap;
-  for (i = 0; i < count; i++){
-    ptr = heap_search(h, not_heap_elts[i]);
-    *res *= (ptr == NULL);
+  for (p = p_start; p <= p_end; p += h->elt_size){
+    rp = heap_search(h, p);
+    *res *= (rp == NULL);
   }
   printf("\t\tin heap search:                              "
 	 "%.4f seconds\n", (float)t_heap / CLOCKS_PER_SEC);
@@ -755,7 +740,7 @@ void search_ptys_elts(heap_t *h,
    tests that are used in the upper-level test routines.
 */
 
-void push_pop_free(size_t n,
+void push_pop_free(size_t num_ins,
 		   size_t pty_size,
 		   size_t elt_size,
 		   const heap_ht_t *hht,
@@ -766,36 +751,29 @@ void push_pop_free(size_t n,
 		   void (*free_elt)(void *)){
   int res = 1;
   size_t i;
-  void **ptys = NULL, **elts = NULL;
+  size_t pair_size = add_sz_perror(pty_size, elt_size);
+  void *pty_elts = NULL;
   heap_t h;
-  ptys = malloc_perror(n, sizeof(void *));
-  elts = malloc_perror(n, sizeof(void *));
-  for (i = 0; i < n; i++){
-    ptys[i] = malloc_perror(1, pty_size);
-    elts[i] = malloc_perror(1, elt_size);
-    new_pty(ptys[i], i);  /* priority must not decrease in value with i */
-    new_elt(elts[i], i);
+  /* num_ins > 0 */
+  pty_elts = malloc_perror(num_ins, pair_size);
+  for (i = 0; i < num_ins; i++){
+    new_pty(ptr(pty_elts, i, pair_size), i); /* no decrease with i */
+    new_elt((char *)ptr(pty_elts, i, pair_size) + pty_size, i);
   }
   heap_init(&h, C_H_INIT_COUNT, pty_size, elt_size, hht, cmp_pty, free_elt);
-  push_ptys_elts(&h, &res, ptys, elts, n);
-  pop_ptys_elts(&h, &res, pty_size, elt_size, elts, n, cmp_pty, cmp_elt);
-  push_rev_ptys_elts(&h, &res, ptys, elts, n);
-  pop_ptys_elts(&h, &res, pty_size, elt_size, elts, n, cmp_pty, cmp_elt);
-  push_ptys_elts(&h, &res, ptys, elts, n);
+  push_ptys_elts(&h, pty_elts, num_ins, &res);
+  pop_ptys_elts(&h, pty_elts, num_ins, cmp_pty, cmp_elt, &res);
+  push_rev_ptys_elts(&h, pty_elts, num_ins, &res);
+  pop_ptys_elts(&h, pty_elts, num_ins, cmp_pty, cmp_elt, &res);
+  push_ptys_elts(&h, pty_elts, num_ins, &res);
   free_heap(&h);
   printf("\t\torder correctness:                           ");
   print_test_result(res);
-  for (i = 0; i < n; i++){
-    free(ptys[i]);
-    free(elts[i]); /* non-contiguous elements freed by free_heap */
-  }
-  free(ptys);
-  free(elts);
-  ptys = NULL;
-  elts = NULL;
+  free(pty_elts);
+  pty_elts = NULL;
 }
 
-void update_search(size_t n,
+void update_search(size_t num_ins,
 		   size_t pty_size,
 		   size_t elt_size,
 		   const heap_ht_t *hht,
@@ -806,42 +784,51 @@ void update_search(size_t n,
 		   void (*free_elt)(void *)){
   int res = 1;
   size_t i;
-  void **ptys = NULL, **elts = NULL, **not_heap_elts = NULL;
+  size_t pair_size = add_sz_perror(pty_size, elt_size);
+  void *pty_elts = NULL, *pty_rev_elts = NULL, *not_heap_elts = NULL;
   heap_t h;
-  ptys = malloc_perror(n, sizeof(void *));
-  elts = malloc_perror(n, sizeof(void *));
-  not_heap_elts = malloc_perror(n, sizeof(void *));
-  for (i = 0; i < n; i++){
-    ptys[i] = malloc_perror(1, pty_size);
-    elts[i] = malloc_perror(1, elt_size);
-    not_heap_elts[i] = malloc_perror(1, elt_size);
-    new_pty(ptys[i], i);  /* priority must not decrease in value with i */
-    new_elt(elts[i], i);
-    new_elt(not_heap_elts[i], n + i);
+  /* num_ins > 0 */
+  pty_elts = malloc_perror(num_ins, pair_size);
+  pty_rev_elts = malloc_perror(num_ins, pair_size);
+  not_heap_elts = malloc_perror(num_ins, elt_size);
+  for (i = 0; i < num_ins; i++){
+    new_pty(ptr(pty_elts, i, pair_size), i);  /* no decrease with i */
+    new_elt((char *)ptr(pty_elts, i, pair_size) + pty_size, i);
+    new_elt(ptr(not_heap_elts, i, elt_size), num_ins + i);
+  }
+  for (i = 0; i < num_ins; i++){
+    new_pty(ptr(pty_rev_elts, i, pair_size), i);  /* no decrease with i */
+    memcpy((char *)ptr(pty_rev_elts, i, pair_size) + pty_size,
+	   (char *)ptr(pty_elts, num_ins - 1 - i, pair_size) + pty_size,
+	   elt_size);
   }
   heap_init(&h, C_H_INIT_COUNT, pty_size, elt_size, hht, cmp_pty, free_elt);
-  push_ptys_rev_elts(&h, &res, ptys, elts, n);
-  update_ptys_elts(&h, &res, ptys, elts, n);
-  search_ptys_elts(&h, &res, elts, not_heap_elts, n);
-  pop_ptys_elts(&h, &res, pty_size, elt_size, elts, n, cmp_pty, cmp_elt);
+  push_ptys_elts(&h, pty_rev_elts, num_ins, &res);
+  update_ptys_elts(&h, pty_elts, num_ins, &res);
+  search_ptys_elts(&h, pty_elts, not_heap_elts, num_ins, &res);
+  pop_ptys_elts(&h, pty_elts, num_ins, cmp_pty, cmp_elt, &res);
   free_heap(&h);
   printf("\t\torder correctness:                           ");
   print_test_result(res);
-  for (i = 0; i < n; i++){
-    free(ptys[i]);
-    if (free_elt != NULL){
-      free_elt(elts[i]);
-      free_elt(not_heap_elts[i]);
+  if (free_elt != NULL){
+    for (i = 0; i < num_ins; i++){
+      free_elt((char *)ptr(pty_elts, i, pair_size) + pty_size);
+      free_elt(ptr(not_heap_elts, i, elt_size));
     }
-    free(elts[i]);
-    free(not_heap_elts[i]);
   }
-  free(ptys);
-  free(elts);
+  free(pty_elts);
+  free(pty_rev_elts);
   free(not_heap_elts);
-  ptys = NULL;
-  elts = NULL;
+  pty_elts = NULL;
+  pty_rev_elts = NULL;
   not_heap_elts = NULL;
+}
+
+/**
+   Computes a pointer to the ith element in the block of elements.
+*/
+void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
 }
 
 /**
