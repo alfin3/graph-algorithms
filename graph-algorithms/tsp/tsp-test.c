@@ -39,7 +39,7 @@
 #include <limits.h>
 #include <time.h>
 #include "tsp.h"
-#include "ht-div.h"
+#include "ht-divchn.h"
 #include "ht-mul.h"
 #include "graph.h"
 #include "stack.h"
@@ -77,7 +77,7 @@ const size_t C_SPARSE_GRAPH_V_MAX = 8 * CHAR_BIT * sizeof(size_t);
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* hash table load factor upper bounds */
-const float C_ALPHA_DIV = 1.0;
+const float C_ALPHA_DIVCHN = 1.0;
 const float C_ALPHA_MUL = 0.4;
 
 /* small graph test */
@@ -151,20 +151,20 @@ int cmp_uint(const void *a, const void *b){
   
 typedef struct{
   float alpha;
-} context_div_t;
+} context_divchn_t;
 
 typedef struct{
   float alpha;
   size_t (*rdc_key)(const void *, size_t);
 } context_mul_t;
 
-void ht_div_init_helper(ht_div_t *ht,
-			size_t key_size,
-			size_t elt_size,
-			void (*free_elt)(void *),
-			void *context){
-  context_div_t *c = context;
-  ht_div_init(ht, key_size, elt_size, c->alpha, free_elt);
+void ht_divchn_init_helper(ht_divchn_t *ht,
+			   size_t key_size,
+			   size_t elt_size,
+			   void (*free_elt)(void *),
+			   void *context){
+  context_divchn_t *c = context;
+  ht_divchn_init(ht, key_size, elt_size, 0, c->alpha, free_elt);
 }
 
 void ht_mul_init_helper(ht_mul_t *ht,
@@ -188,21 +188,21 @@ void run_def_uint_tsp(const adj_lst_t *a){
   printf("\n");
 }
 
-void run_div_uint_tsp(const adj_lst_t *a){
+void run_divchn_uint_tsp(const adj_lst_t *a){
   int ret = -1;
   size_t dist;
   size_t i;
-  ht_div_t ht_div;
-  context_div_t context_div;
+  ht_divchn_t ht_divchn;
+  context_divchn_t context_divchn;
   tsp_ht_t tht;
-  context_div.alpha = C_ALPHA_DIV;
-  tht.ht = &ht_div;
-  tht.context = &context_div;
-  tht.init = (tsp_ht_init)ht_div_init_helper;
-  tht.insert = (tsp_ht_insert)ht_div_insert;
-  tht.search = (tsp_ht_search)ht_div_search;
-  tht.remove = (tsp_ht_remove)ht_div_remove;
-  tht.free = (tsp_ht_free)ht_div_free;
+  context_divchn.alpha = C_ALPHA_DIVCHN;
+  tht.ht = &ht_divchn;
+  tht.context = &context_divchn;
+  tht.init = (tsp_ht_init)ht_divchn_init_helper;
+  tht.insert = (tsp_ht_insert)ht_divchn_insert;
+  tht.search = (tsp_ht_search)ht_divchn_search;
+  tht.remove = (tsp_ht_remove)ht_divchn_remove;
+  tht.free = (tsp_ht_free)ht_divchn_free;
   for (i = 0; i < a->num_vts; i++){
     ret = tsp(a, i, &dist, &tht, add_uint, cmp_uint);
     printf("tsp ret: %d, tour length with %lu as start: ", ret, TOLU(i));
@@ -242,26 +242,26 @@ void run_uint_graph_test(){
   graph_uint_wts_init(&g);
   printf("Running a test on a size_t graph with a \n"
 	 "i) default hash table \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_uint);
   run_def_uint_tsp(&a);
-  run_div_uint_tsp(&a);
+  run_divchn_uint_tsp(&a);
   run_mul_uint_tsp(&a);
   adj_lst_free(&a);
   graph_free(&g);
   graph_uint_single_vt_init(&g);
   printf("Running a test on a size_t graph with a single vertex, with a \n"
 	 "i) default hash table \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_uint);
   run_def_uint_tsp(&a);
-  run_div_uint_tsp(&a);
+  run_divchn_uint_tsp(&a);
   run_mul_uint_tsp(&a);
   adj_lst_free(&a);
   graph_free(&g);
@@ -319,21 +319,21 @@ void run_def_double_tsp(const adj_lst_t *a){
   printf("\n");
 }
 
-void run_div_double_tsp(const adj_lst_t *a){
+void run_divchn_double_tsp(const adj_lst_t *a){
   int ret = -1;
   size_t i;
   double dist;
-  ht_div_t ht_div;
-  context_div_t context_div;
+  ht_divchn_t ht_divchn;
+  context_divchn_t context_divchn;
   tsp_ht_t tht;
-  context_div.alpha = C_ALPHA_DIV;
-  tht.ht = &ht_div;
-  tht.context = &context_div;
-  tht.init = (tsp_ht_init)ht_div_init_helper;
-  tht.insert = (tsp_ht_insert)ht_div_insert;
-  tht.search = (tsp_ht_search)ht_div_search;
-  tht.remove = (tsp_ht_remove)ht_div_remove;
-  tht.free = (tsp_ht_free)ht_div_free;
+  context_divchn.alpha = C_ALPHA_DIVCHN;
+  tht.ht = &ht_divchn;
+  tht.context = &context_divchn;
+  tht.init = (tsp_ht_init)ht_divchn_init_helper;
+  tht.insert = (tsp_ht_insert)ht_divchn_insert;
+  tht.search = (tsp_ht_search)ht_divchn_search;
+  tht.remove = (tsp_ht_remove)ht_divchn_remove;
+  tht.free = (tsp_ht_free)ht_divchn_free;
   for (i = 0; i < a->num_vts; i++){
     ret = tsp(a, i, &dist, &tht, add_double, cmp_double);
     printf("tsp ret: %d, tour length with %lu as start: ", ret, TOLU(i));
@@ -373,26 +373,26 @@ void run_double_graph_test(){
   graph_double_wts_init(&g);
   printf("Running a test on a double graph with a \n"
 	 "i) default hash table \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_double);
   run_def_double_tsp(&a);
-  run_div_double_tsp(&a);
+  run_divchn_double_tsp(&a);
   run_mul_double_tsp(&a);
   adj_lst_free(&a);
   graph_free(&g);
   graph_double_single_vt_init(&g);
   printf("Running a test on a double graph with a single vertex, with a \n"
 	 "i) default hash table \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_double);
   run_def_double_tsp(&a);
-  run_div_double_tsp(&a);
+  run_divchn_double_tsp(&a);
   run_mul_double_tsp(&a);
   adj_lst_free(&a);
   graph_free(&g);
@@ -484,28 +484,28 @@ void adj_lst_rand_dir_wts(adj_lst_t *a,
 void run_rand_uint_test(int num_vts_start, int num_vts_end){
   int p, i, j;
   int res = 1;
-  int ret_def = -1, ret_div = -1, ret_mul = -1;
+  int ret_def = -1, ret_divchn = -1, ret_mul = -1;
   size_t n;
   size_t wt_l = 0, wt_h = C_WEIGHT_HIGH;
-  size_t dist_def, dist_div, dist_mul;
+  size_t dist_def, dist_divchn, dist_mul;
   size_t *rand_start = NULL;
   adj_lst_t a;
   bern_arg_t b;
-  ht_div_t ht_div;
+  ht_divchn_t ht_divchn;
   ht_mul_t ht_mul;
-  context_div_t context_div;
+  context_divchn_t context_divchn;
   context_mul_t context_mul;
-  tsp_ht_t tht_div, tht_mul;
-  clock_t t_def, t_div, t_mul;
+  tsp_ht_t tht_divchn, tht_mul;
+  clock_t t_def, t_divchn, t_mul;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
-  context_div.alpha = C_ALPHA_DIV;
-  tht_div.ht = &ht_div;
-  tht_div.context = &context_div;
-  tht_div.init = (tsp_ht_init)ht_div_init_helper;
-  tht_div.insert = (tsp_ht_insert)ht_div_insert;
-  tht_div.search = (tsp_ht_search)ht_div_search;
-  tht_div.remove = (tsp_ht_remove)ht_div_remove;
-  tht_div.free = (tsp_ht_free)ht_div_free;
+  context_divchn.alpha = C_ALPHA_DIVCHN;
+  tht_divchn.ht = &ht_divchn;
+  tht_divchn.context = &context_divchn;
+  tht_divchn.init = (tsp_ht_init)ht_divchn_init_helper;
+  tht_divchn.insert = (tsp_ht_insert)ht_divchn_insert;
+  tht_divchn.search = (tsp_ht_search)ht_divchn_search;
+  tht_divchn.remove = (tsp_ht_remove)ht_divchn_remove;
+  tht_divchn.free = (tsp_ht_free)ht_divchn_free;
   context_mul.alpha = C_ALPHA_MUL;
   context_mul.rdc_key = NULL;
   tht_mul.ht = &ht_mul;
@@ -545,16 +545,16 @@ void run_rand_uint_test(int num_vts_start, int num_vts_end){
 		      cmp_uint);
       }
       t_def = clock() - t_def;
-      t_div = clock();
+      t_divchn = clock();
       for (j = 0; j < C_ITER; j++){
-	ret_div = tsp(&a,
+	ret_divchn = tsp(&a,
 		      rand_start[j],
-		      &dist_div,
-		      &tht_div,
+		      &dist_divchn,
+		      &tht_divchn,
 		      add_uint,
 		      cmp_uint);
       }
-      t_div = clock() - t_div;
+      t_divchn = clock() - t_divchn;
       t_mul = clock();
       for (j = 0; j < C_ITER; j++){
 	ret_mul = tsp(&a,
@@ -567,20 +567,20 @@ void run_rand_uint_test(int num_vts_start, int num_vts_end){
       t_mul = clock() - t_mul;
       if (n == 1){
 	res *= (dist_def == 0 && ret_def == 0);
-	res *= (dist_div == 0 && ret_div == 0);
+	res *= (dist_divchn == 0 && ret_divchn == 0);
 	res *= (dist_mul == 0 && ret_mul == 0);
       }else{
 	res *= (dist_def == n && ret_def == 0);
-	res *= (dist_div == n && ret_div == 0);
+	res *= (dist_divchn == n && ret_divchn == 0);
 	res *= (dist_mul == n && ret_mul == 0);
       }
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
 	     TOLU(a.num_vts), TOLU(a.num_es));
       printf("\t\t\ttsp default ht ave runtime:     %.8f seconds\n"
-	     "\t\t\ttsp ht_div ave runtime:         %.8f seconds\n"
+	     "\t\t\ttsp ht_divchn ave runtime:      %.8f seconds\n"
 	     "\t\t\ttsp ht_mul ave runtime:         %.8f seconds\n",
 	     (float)t_def / C_ITER / CLOCKS_PER_SEC,
-	     (float)t_div / C_ITER / CLOCKS_PER_SEC,
+	     (float)t_divchn / C_ITER / CLOCKS_PER_SEC,
 	     (float)t_mul / C_ITER / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness:                    ");
       print_test_result(res);
@@ -662,28 +662,28 @@ void run_def_rand_uint_test(int num_vts_start, int num_vts_end){
 void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
   int p, i, j;
   int res = 1;
-  int ret_div = -1, ret_mul = -1;
+  int ret_divchn = -1, ret_mul = -1;
   size_t n;
   size_t wt_l = 0, wt_h = C_WEIGHT_HIGH;
-  size_t dist_div, dist_mul;
+  size_t dist_divchn, dist_mul;
   size_t *rand_start = NULL;
   adj_lst_t a;
   bern_arg_t b;
-  ht_div_t ht_div;
+  ht_divchn_t ht_divchn;
   ht_mul_t ht_mul;
-  context_div_t context_div;
+  context_divchn_t context_divchn;
   context_mul_t context_mul;
-  tsp_ht_t tht_div, tht_mul;
-  clock_t t_div, t_mul;
+  tsp_ht_t tht_divchn, tht_mul;
+  clock_t t_divchn, t_mul;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
-  context_div.alpha = C_ALPHA_DIV;
-  tht_div.ht = &ht_div;
-  tht_div.context = &context_div;
-  tht_div.init = (tsp_ht_init)ht_div_init_helper;
-  tht_div.insert = (tsp_ht_insert)ht_div_insert;
-  tht_div.search = (tsp_ht_search)ht_div_search;
-  tht_div.remove = (tsp_ht_remove)ht_div_remove;
-  tht_div.free = (tsp_ht_free)ht_div_free;
+  context_divchn.alpha = C_ALPHA_DIVCHN;
+  tht_divchn.ht = &ht_divchn;
+  tht_divchn.context = &context_divchn;
+  tht_divchn.init = (tsp_ht_init)ht_divchn_init_helper;
+  tht_divchn.insert = (tsp_ht_insert)ht_divchn_insert;
+  tht_divchn.search = (tsp_ht_search)ht_divchn_search;
+  tht_divchn.remove = (tsp_ht_remove)ht_divchn_remove;
+  tht_divchn.free = (tsp_ht_free)ht_divchn_free;
   context_mul.alpha = C_ALPHA_MUL;
   context_mul.rdc_key = NULL;
   tht_mul.ht = &ht_mul;
@@ -712,16 +712,16 @@ void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
       for (j = 0; j < C_ITER; j++){
 	rand_start[j] = RANDOM() % n;
       }
-      t_div = clock();
+      t_divchn = clock();
       for (j = 0; j < C_ITER; j++){
-	ret_div = tsp(&a,
+	ret_divchn = tsp(&a,
 		      rand_start[j],
-		      &dist_div,
-		      &tht_div,
+		      &dist_divchn,
+		      &tht_divchn,
 		      add_uint,
 		      cmp_uint);
       }
-      t_div = clock() - t_div;
+      t_divchn = clock() - t_divchn;
       t_mul = clock();
       for (j = 0; j < C_ITER; j++){
 	ret_mul = tsp(&a,
@@ -733,17 +733,17 @@ void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
       }
       t_mul = clock() - t_mul;
       if (n == 1){
-	res *= (dist_div == 0 && ret_div == 0);
+	res *= (dist_divchn == 0 && ret_divchn == 0);
 	res *= (dist_mul == 0 && ret_mul == 0);
       }else{
-	res *= (dist_div == n && ret_div == 0);
+	res *= (dist_divchn == n && ret_divchn == 0);
 	res *= (dist_mul == n && ret_mul == 0);
       }
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
 	     TOLU(a.num_vts), TOLU(a.num_es));
-      printf("\t\t\ttsp ht_div ave runtime:         %.8f seconds\n"
+      printf("\t\t\ttsp ht_divchn ave runtime:      %.8f seconds\n"
 	     "\t\t\ttsp ht_mul ave runtime:         %.8f seconds\n",
-	     (float)t_div / C_ITER / CLOCKS_PER_SEC,
+	     (float)t_divchn / C_ITER / CLOCKS_PER_SEC,
 	     (float)t_mul / C_ITER / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness:                    ");
       print_test_result(res);

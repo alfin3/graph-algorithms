@@ -37,7 +37,7 @@
 #include "dijkstra.h"
 #include "bfs.h"
 #include "heap.h"
-#include "ht-div.h"
+#include "ht-divchn.h"
 #include "ht-mul.h"
 #include "graph.h"
 #include "stack.h"
@@ -68,7 +68,7 @@ const int C_ARGC_MAX = 6;
 const size_t C_ARGS_DEF[5] = {0, 10, 1, 1, 1};
 
 /* hash table load factor upper bounds */
-const float C_ALPHA_DIV = 1.0;
+const float C_ALPHA_DIVCHN = 1.0;
 const float C_ALPHA_MUL = 0.4;
 
 /* small graph tests */
@@ -141,13 +141,13 @@ typedef struct{
   float alpha;
 } context_t;
 
-void ht_div_init_helper(ht_div_t *ht,
-			size_t key_size,
-			size_t elt_size,
-			void (*free_elt)(void *),
-			void *context){
+void ht_divchn_init_helper(ht_divchn_t *ht,
+			   size_t key_size,
+			   size_t elt_size,
+			   void (*free_elt)(void *),
+			   void *context){
   context_t *c = context;
-  ht_div_init(ht, key_size, elt_size, c->alpha, free_elt);
+  ht_divchn_init(ht, key_size, elt_size, 0, c->alpha, free_elt);
 }
 
 void ht_mul_init_helper(ht_mul_t *ht,
@@ -178,23 +178,23 @@ void run_default_uint_dijkstra(const adj_lst_t *a){
   prev = NULL;
 }
 
-void run_div_uint_dijkstra(const adj_lst_t *a){
+void run_divchn_uint_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *dist = NULL;
   size_t *prev = NULL;
-  ht_div_t ht_div;
+  ht_divchn_t ht_divchn;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(size_t));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
-  context.alpha = C_ALPHA_DIV;
-  hht.ht = &ht_div;
+  context.alpha = C_ALPHA_DIVCHN;
+  hht.ht = &ht_divchn;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_div_init_helper;
-  hht.insert = (heap_ht_insert)ht_div_insert;
-  hht.search = (heap_ht_search)ht_div_search;
-  hht.remove = (heap_ht_remove)ht_div_remove;
-  hht.free = (heap_ht_free)ht_div_free;
+  hht.init = (heap_ht_init)ht_divchn_init_helper;
+  hht.insert = (heap_ht_insert)ht_divchn_insert;
+  hht.search = (heap_ht_search)ht_divchn_search;
+  hht.remove = (heap_ht_remove)ht_divchn_remove;
+  hht.free = (heap_ht_free)ht_divchn_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_uint, cmp_uint);
     printf("distances and previous vertices with %lu as start \n", TOLU(i));
@@ -244,24 +244,24 @@ void run_uint_graph_test(){
   graph_uint_wts_init(&g);
   printf("Running a test on a directed size_t graph with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_uint);
   run_default_uint_dijkstra(&a);
-  run_div_uint_dijkstra(&a);
+  run_divchn_uint_dijkstra(&a);
   run_mul_uint_dijkstra(&a);
   adj_lst_free(&a);
   printf("Running a test on an undirected size_t graph with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_uint);
   run_default_uint_dijkstra(&a);
-  run_div_uint_dijkstra(&a);
+  run_divchn_uint_dijkstra(&a);
   run_mul_uint_dijkstra(&a);
   adj_lst_free(&a);
   graph_free(&g);
@@ -269,25 +269,25 @@ void run_uint_graph_test(){
   printf("Running a test on a directed size_t graph with no edges, "
 	 "with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_uint);
   run_default_uint_dijkstra(&a);
-  run_div_uint_dijkstra(&a);
+  run_divchn_uint_dijkstra(&a);
   run_mul_uint_dijkstra(&a);
   adj_lst_free(&a);
   printf("Running a test on a undirected size_t graph with no edges, "
 	 "with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_uint);
   run_default_uint_dijkstra(&a);
-  run_div_uint_dijkstra(&a);
+  run_divchn_uint_dijkstra(&a);
   run_mul_uint_dijkstra(&a);
   adj_lst_free(&a);
   graph_free(&g);
@@ -352,23 +352,23 @@ void run_default_double_dijkstra(const adj_lst_t *a){
   prev = NULL;
 }
 
-void run_div_double_dijkstra(const adj_lst_t *a){
+void run_divchn_double_dijkstra(const adj_lst_t *a){
   size_t i;
   size_t *prev = NULL;
   double *dist = NULL;
-  ht_div_t ht_div;
+  ht_divchn_t ht_divchn;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(double));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
-  context.alpha = C_ALPHA_DIV;
-  hht.ht = &ht_div;
+  context.alpha = C_ALPHA_DIVCHN;
+  hht.ht = &ht_divchn;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_div_init_helper;
-  hht.insert = (heap_ht_insert)ht_div_insert;
-  hht.search = (heap_ht_search)ht_div_search;
-  hht.remove = (heap_ht_remove)ht_div_remove;
-  hht.free = (heap_ht_free)ht_div_free;
+  hht.init = (heap_ht_init)ht_divchn_init_helper;
+  hht.insert = (heap_ht_insert)ht_divchn_insert;
+  hht.search = (heap_ht_search)ht_divchn_search;
+  hht.remove = (heap_ht_remove)ht_divchn_remove;
+  hht.free = (heap_ht_free)ht_divchn_free;
   for (i = 0; i < a->num_vts; i++){
     dijkstra(a, i, dist, prev, &hht, add_double, cmp_double);
     printf("distances and previous vertices with %lu as start \n", TOLU(i));
@@ -418,49 +418,49 @@ void run_double_graph_test(){
   graph_double_wts_init(&g);
   printf("Running a test on a directed double graph with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_double);
   run_default_double_dijkstra(&a);
-  run_div_double_dijkstra(&a);
+  run_divchn_double_dijkstra(&a);
   run_mul_double_dijkstra(&a);
   adj_lst_free(&a);
   printf("Running a test on an undirected double graph with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_double);
   run_default_double_dijkstra(&a);
-  run_div_double_dijkstra(&a);
+  run_divchn_double_dijkstra(&a);
   run_mul_double_dijkstra(&a);
   adj_lst_free(&a);
   graph_free(&g);
   graph_double_wts_no_edges_init(&g);
   printf("Running a test on a directed double graph with no edges, with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_dir_build(&a, &g);
   print_adj_lst(&a, print_double);
   run_default_double_dijkstra(&a);
-  run_div_double_dijkstra(&a);
+  run_divchn_double_dijkstra(&a);
   run_mul_double_dijkstra(&a);
   adj_lst_free(&a);
   printf("Running a test on a undirected double graph with no edges, "
 	 "with a \n"
 	 "i) default hash table (index array) \n"
-	 "ii) ht_div_t hash table \n"
+	 "ii) ht_divchn_t hash table \n"
 	 "iii) ht_mul_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_double);
   run_default_double_dijkstra(&a);
-  run_div_double_dijkstra(&a);
+  run_divchn_double_dijkstra(&a);
   run_mul_double_dijkstra(&a);
   adj_lst_free(&a);
   graph_free(&g);
@@ -554,24 +554,24 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
   size_t *dist = NULL, *prev = NULL;
   adj_lst_t a;
   bern_arg_t b;
-  ht_div_t ht_div;
+  ht_divchn_t ht_divchn;
   ht_mul_t ht_mul;
-  context_t context_div, context_mul;
-  heap_ht_t hht_div, hht_mul;
-  clock_t t_bfs, t_def, t_div, t_mul;
+  context_t context_divchn, context_mul;
+  heap_ht_t hht_divchn, hht_mul;
+  clock_t t_bfs, t_def, t_divchn, t_mul;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
   dist_bfs = malloc_perror(pow_two(pow_end), sizeof(size_t));
   prev_bfs = malloc_perror(pow_two(pow_end), sizeof(size_t));
   dist = malloc_perror(pow_two(pow_end), sizeof(size_t));
   prev = malloc_perror(pow_two(pow_end), sizeof(size_t));
-  context_div.alpha = C_ALPHA_DIV;
-  hht_div.ht = &ht_div;
-  hht_div.context = &context_div;
-  hht_div.init = (heap_ht_init)ht_div_init_helper;
-  hht_div.insert = (heap_ht_insert)ht_div_insert;
-  hht_div.search = (heap_ht_search)ht_div_search;
-  hht_div.remove = (heap_ht_remove)ht_div_remove;
-  hht_div.free = (heap_ht_free)ht_div_free;
+  context_divchn.alpha = C_ALPHA_DIVCHN;
+  hht_divchn.ht = &ht_divchn;
+  hht_divchn.context = &context_divchn;
+  hht_divchn.init = (heap_ht_init)ht_divchn_init_helper;
+  hht_divchn.insert = (heap_ht_insert)ht_divchn_insert;
+  hht_divchn.search = (heap_ht_search)ht_divchn_search;
+  hht_divchn.remove = (heap_ht_remove)ht_divchn_remove;
+  hht_divchn.free = (heap_ht_free)ht_divchn_free;
   context_mul.alpha = C_ALPHA_MUL;
   hht_mul.ht = &ht_mul;
   hht_mul.context = &context_mul;
@@ -617,17 +617,17 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
       t_def = clock() - t_def;
       norm_uint_arr(dist, i + 1, n);
       res *= (memcmp(dist_bfs, dist, n * sizeof(size_t)) == 0);
-      t_div = clock();
+      t_divchn = clock();
       for (j = 0; j < C_ITER; j++){
 	dijkstra(&a,
 		 rand_start[j],
 		 dist,
 		 prev,
-		 &hht_div,
+		 &hht_divchn,
 		 add_uint,
 		 cmp_uint);
       }
-      t_div = clock() - t_div;
+      t_divchn = clock() - t_divchn;
       norm_uint_arr(dist, i + 1, n);
       res *= (memcmp(dist_bfs, dist, n * sizeof(size_t)) == 0);
       t_mul = clock();
@@ -647,11 +647,11 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
 	     TOLU(a.num_vts), TOLU(a.num_es));
       printf("\t\t\tbfs ave runtime:                     %.8f seconds\n"
 	     "\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
-	     "\t\t\tdijkstra ht_div ave runtime:         %.8f seconds\n"
+	     "\t\t\tdijkstra ht_divchn ave runtime:      %.8f seconds\n"
 	     "\t\t\tdijkstra ht_mul ave runtime:         %.8f seconds\n",
 	     (float)t_bfs / C_ITER / CLOCKS_PER_SEC,
 	     (float)t_def / C_ITER / CLOCKS_PER_SEC,
-	     (float)t_div / C_ITER / CLOCKS_PER_SEC,
+	     (float)t_divchn / C_ITER / CLOCKS_PER_SEC,
 	     (float)t_mul / C_ITER / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness:                         ");
       print_test_result(res);
@@ -703,31 +703,31 @@ void wrap_sum(size_t *num_wraps,
 void run_rand_uint_test(int pow_start, int pow_end){
   int p, i, j;
   int res = 1;
-  size_t num_wraps_def, num_wraps_div, num_wraps_mul;
-  size_t sum_def, sum_div, sum_mul;
-  size_t num_paths_def, num_paths_div, num_paths_mul;
+  size_t num_wraps_def, num_wraps_divchn, num_wraps_mul;
+  size_t sum_def, sum_divchn, sum_mul;
+  size_t num_paths_def, num_paths_divchn, num_paths_mul;
   size_t n;
   size_t wt_l = 0, wt_h = C_WEIGHT_HIGH;
   size_t *rand_start = NULL;
   size_t *dist = NULL, *prev = NULL;
   adj_lst_t a;
   bern_arg_t b;
-  ht_div_t ht_div;
+  ht_divchn_t ht_divchn;
   ht_mul_t ht_mul;
-  context_t context_div, context_mul;
-  heap_ht_t hht_div, hht_mul;
-  clock_t t_def, t_div, t_mul;
+  context_t context_divchn, context_mul;
+  heap_ht_t hht_divchn, hht_mul;
+  clock_t t_def, t_divchn, t_mul;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
   dist = malloc_perror(pow_two(pow_end), sizeof(size_t));
   prev = malloc_perror(pow_two(pow_end), sizeof(size_t));
-  context_div.alpha = C_ALPHA_DIV;
-  hht_div.ht = &ht_div;
-  hht_div.context = &context_div;
-  hht_div.init = (heap_ht_init)ht_div_init_helper;
-  hht_div.insert = (heap_ht_insert)ht_div_insert;
-  hht_div.search = (heap_ht_search)ht_div_search;
-  hht_div.remove = (heap_ht_remove)ht_div_remove;
-  hht_div.free = (heap_ht_free)ht_div_free;
+  context_divchn.alpha = C_ALPHA_DIVCHN;
+  hht_divchn.ht = &ht_divchn;
+  hht_divchn.context = &context_divchn;
+  hht_divchn.init = (heap_ht_init)ht_divchn_init_helper;
+  hht_divchn.insert = (heap_ht_insert)ht_divchn_insert;
+  hht_divchn.search = (heap_ht_search)ht_divchn_search;
+  hht_divchn.remove = (heap_ht_remove)ht_divchn_remove;
+  hht_divchn.free = (heap_ht_free)ht_divchn_free;
   context_mul.alpha = C_ALPHA_MUL;
   hht_mul.ht = &ht_mul;
   hht_mul.context = &context_mul;
@@ -772,20 +772,20 @@ void run_rand_uint_test(int pow_start, int pow_end){
 	       a.num_vts,
 	       dist,
 	       prev);
-      t_div = clock();
+      t_divchn = clock();
       for (j = 0; j < C_ITER; j++){
 	dijkstra(&a,
 		 rand_start[j],
 		 dist,
 		 prev,
-		 &hht_div,
+		 &hht_divchn,
 		 add_uint,
 		 cmp_uint);
       }
-      t_div = clock() - t_div;
-      wrap_sum(&num_wraps_div,
-	       &sum_div,
-	       &num_paths_div,
+      t_divchn = clock() - t_divchn;
+      wrap_sum(&num_wraps_divchn,
+	       &sum_divchn,
+	       &num_paths_divchn,
 	       a.num_vts,
 	       dist,
 	       prev);
@@ -806,19 +806,19 @@ void run_rand_uint_test(int pow_start, int pow_end){
 	       a.num_vts,
 	       dist,
 	       prev);
-      res *= (num_wraps_def == num_wraps_div &&
-	      num_wraps_div == num_wraps_mul);
-      res *= (sum_def == sum_div &&
-	      sum_div == sum_mul);
-      res *= (num_paths_def == num_paths_div &&
-	      num_paths_div == num_paths_mul);
+      res *= (num_wraps_def == num_wraps_divchn &&
+	      num_wraps_divchn == num_wraps_mul);
+      res *= (sum_def == sum_divchn &&
+	      sum_divchn == sum_mul);
+      res *= (num_paths_def == num_paths_divchn &&
+	      num_paths_divchn == num_paths_mul);
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
 	     TOLU(a.num_vts), TOLU(a.num_es));
       printf("\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
-	     "\t\t\tdijkstra ht_div ave runtime:         %.8f seconds\n"
+	     "\t\t\tdijkstra ht_divchn ave runtime:      %.8f seconds\n"
 	     "\t\t\tdijkstra ht_mul ave runtime:         %.8f seconds\n",
 	     (float)t_def / C_ITER / CLOCKS_PER_SEC,
-	     (float)t_div / C_ITER / CLOCKS_PER_SEC,
+	     (float)t_divchn / C_ITER / CLOCKS_PER_SEC,
 	     (float)t_mul / C_ITER / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness:                         ");
       print_test_result(res);

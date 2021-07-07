@@ -24,14 +24,14 @@ CC = gcc
 
 DS_DIR        = ../../data-structures/
 GRAPH_DIR     = $(DS_DIR)graph/
-HT_DIV_DIR    = $(DS_DIR)ht-div/
+HT_DIVCHN_DIR = $(DS_DIR)ht-divchn/
 HT_MUL_DIR    = $(DS_DIR)ht-mul/
 DLL_DIR       = $(DS_DIR)dll/
 STACK_DIR     = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
 CFLAGS = -I$(GRAPH_DIR)                               \
-         -I$(HT_DIV_DIR)                              \
+         -I$(HT_DIVCHN_DIR)                           \
          -I$(HT_MUL_DIR)                              \
          -I$(DLL_DIR)                                 \
          -I$(STACK_DIR)                               \
@@ -42,7 +42,7 @@ CFLAGS = -I$(GRAPH_DIR)                               \
 OBJ = tsp-test.o                      \
       tsp.o                           \
       $(GRAPH_DIR)graph.o             \
-      $(HT_DIV_DIR)ht-div.o           \
+      $(HT_DIVCHN_DIR)ht-divchn.o     \
       $(HT_MUL_DIR)ht-mul.o           \
       $(DLL_DIR)dll.o                 \
       $(STACK_DIR)stack.o             \
@@ -54,7 +54,7 @@ tsp-test : $(OBJ)
 
 tsp-test.o                      : tsp.h                           \
                                   $(GRAPH_DIR)graph.h             \
-                                  $(HT_DIV_DIR)ht-div.h           \
+                                  $(HT_DIVCHN_DIR)ht-divchn.h     \
                                   $(HT_MUL_DIR)ht-mul.h           \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
@@ -66,7 +66,7 @@ tsp.o                           : tsp.h                           \
 $(GRAPH_DIR)graph.o             : $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h
-$(HT_DIV_DIR)ht-div.o           : $(HT_DIV_DIR)ht-div.h           \
+$(HT_DIVCHN_DIR)ht-divchn.o     : $(HT_DIVCHN_DIR)ht-divchn.h     \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h

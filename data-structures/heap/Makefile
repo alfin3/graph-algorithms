@@ -22,12 +22,12 @@ CFLAGS_BUILD_MODE_DEF = -std=c90 -Wpedantic
 CFLAGS_BUILD_MODE = ${CFLAGS_BUILD_MODE_${BUILD_MODE}}
 CC = gcc
 
-HT_DIV_DIR = ../ht-div/
+HT_DIVCHN_DIR = ../ht-divchn/
 HT_MUL_DIR = ../ht-mul/
 DLL_DIR = ../dll/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
-CFLAGS = -I$(HT_DIV_DIR)                              \
+CFLAGS = -I$(HT_DIVCHN_DIR)                           \
          -I$(HT_MUL_DIR)                              \
          -I$(DLL_DIR)                                 \
          -I$(UTILS_MEM_DIR)                           \
@@ -36,7 +36,7 @@ CFLAGS = -I$(HT_DIV_DIR)                              \
 
 OBJ = heap-test.o                     \
       heap.o                          \
-      $(HT_DIV_DIR)ht-div.o           \
+      $(HT_DIVCHN_DIR)ht-divchn.o     \
       $(HT_MUL_DIR)ht-mul.o           \
       $(DLL_DIR)dll.o                 \
       $(UTILS_MEM_DIR)utilities-mem.o \
@@ -46,13 +46,13 @@ heap-test : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
 
 heap-test.o                     : heap.h                          \
-                                  $(HT_DIV_DIR)ht-div.h           \
+                                  $(HT_DIVCHN_DIR)ht-divchn.h     \
                                   $(HT_MUL_DIR)ht-mul.h           \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h
 heap.o                          : heap.h                          \
                                   $(UTILS_MEM_DIR)utilities-mem.h
-$(HT_DIV_DIR)ht-div.o           : $(HT_DIV_DIR)ht-div.h           \
+$(HT_DIVCHN_DIR)ht-divchn.o     : $(HT_DIVCHN_DIR)ht-divchn.h     \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h

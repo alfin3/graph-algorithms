@@ -43,7 +43,7 @@
 #include <limits.h>
 #include <time.h>
 #include "heap.h"
-#include "ht-div.h"
+#include "ht-divchn.h"
 #include "ht-mul.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
@@ -168,20 +168,20 @@ void new_long_double(void *a, size_t val){
 
 typedef struct{
   float alpha;
-} ht_div_context_t;
+} ht_divchn_context_t;
 
 typedef struct{
   float alpha;
   size_t (*rdc_key)(const void *, size_t);
 } ht_mul_context_t;
 
-void ht_div_init_helper(ht_div_t *ht,
+void ht_divchn_init_helper(ht_divchn_t *ht,
 			size_t key_size,
 			size_t elt_size,
 			void (*free_elt)(void *),
 			void *context){
-  ht_div_context_t *c = context;
-  ht_div_init(ht, key_size, elt_size, c->alpha, free_elt);
+  ht_divchn_context_t *c = context;
+  ht_divchn_init(ht, key_size, elt_size, 0, c->alpha, free_elt);
 }
 
 void ht_mul_init_helper(ht_mul_t *ht,
@@ -194,25 +194,25 @@ void ht_mul_init_helper(ht_mul_t *ht,
 }
 
 /**
-   Runs a heap_{push, pop, free} test with a ht_div_t hash table on
+   Runs a heap_{push, pop, free} test with a ht_divchn_t hash table on
    size_t elements across priority types.
 */
-void run_push_pop_free_div_uint_test(int log_ins, float alpha){
+void run_push_pop_free_divchn_uint_test(int log_ins, float alpha){
   int i;
   size_t n;
-  ht_div_t ht_div;
-  ht_div_context_t context;
+  ht_divchn_t ht_divchn;
+  ht_divchn_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   context.alpha = alpha;
-  hht.ht = &ht_div;
+  hht.ht = &ht_divchn;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_div_init_helper;
-  hht.insert = (heap_ht_insert)ht_div_insert;
-  hht.search = (heap_ht_search)ht_div_search;
-  hht.remove = (heap_ht_remove)ht_div_remove;
-  hht.free = (heap_ht_free)ht_div_free;
-  printf("Run a heap_{push, pop, free} test with a ht_div_t "
+  hht.init = (heap_ht_init)ht_divchn_init_helper;
+  hht.insert = (heap_ht_insert)ht_divchn_insert;
+  hht.search = (heap_ht_search)ht_divchn_search;
+  hht.remove = (heap_ht_remove)ht_divchn_remove;
+  hht.free = (heap_ht_free)ht_divchn_free;
+  printf("Run a heap_{push, pop, free} test with a ht_divchn_t "
 	 "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
@@ -232,25 +232,25 @@ void run_push_pop_free_div_uint_test(int log_ins, float alpha){
 }
 
 /**
-   Runs a heap_{update, search} test with a ht_div_t hash table on
+   Runs a heap_{update, search} test with a ht_divchn_t hash table on
    size_t elements across priority types.
 */
-void run_update_search_div_uint_test(int log_ins, float alpha){
+void run_update_search_divchn_uint_test(int log_ins, float alpha){
   int i;
   size_t n;
-  ht_div_t ht_div;
-  ht_div_context_t context;
+  ht_divchn_t ht_divchn;
+  ht_divchn_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   context.alpha = alpha;
-  hht.ht = &ht_div;
+  hht.ht = &ht_divchn;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_div_init_helper;
-  hht.insert = (heap_ht_insert)ht_div_insert;
-  hht.search = (heap_ht_search)ht_div_search;
-  hht.remove = (heap_ht_remove)ht_div_remove;
-  hht.free = (heap_ht_free)ht_div_free;
-  printf("Run a heap_{update, search} test with a ht_div_t "
+  hht.init = (heap_ht_init)ht_divchn_init_helper;
+  hht.insert = (heap_ht_insert)ht_divchn_insert;
+  hht.search = (heap_ht_search)ht_divchn_search;
+  hht.remove = (heap_ht_remove)ht_divchn_remove;
+  hht.free = (heap_ht_free)ht_divchn_free;
+  printf("Run a heap_{update, search} test with a ht_divchn_t "
 	 "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
@@ -387,25 +387,25 @@ void free_uint_ptr(void *a){
 }
 
 /**
-   Runs a heap_{push, pop, free} test with a ht_div_t hash table on
+   Runs a heap_{push, pop, free} test with a ht_divchn_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_push_pop_free_div_uint_ptr_test(int log_ins, float alpha){
+void run_push_pop_free_divchn_uint_ptr_test(int log_ins, float alpha){
   int i;
   size_t n;
-  ht_div_t ht_div;
-  ht_div_context_t context;
+  ht_divchn_t ht_divchn;
+  ht_divchn_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   context.alpha = alpha;
-  hht.ht = &ht_div;
+  hht.ht = &ht_divchn;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_div_init_helper;
-  hht.insert = (heap_ht_insert)ht_div_insert;
-  hht.search = (heap_ht_search)ht_div_search;
-  hht.remove = (heap_ht_remove)ht_div_remove;
-  hht.free = (heap_ht_free)ht_div_free;
-  printf("Run a heap_{push, pop, free} test with a ht_div_t "
+  hht.init = (heap_ht_init)ht_divchn_init_helper;
+  hht.insert = (heap_ht_insert)ht_divchn_insert;
+  hht.search = (heap_ht_search)ht_divchn_search;
+  hht.remove = (heap_ht_remove)ht_divchn_remove;
+  hht.free = (heap_ht_free)ht_divchn_free;
+  printf("Run a heap_{push, pop, free} test with a ht_divchn_t "
 	 "hash table on noncontiguous uint_ptr_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
@@ -425,25 +425,25 @@ void run_push_pop_free_div_uint_ptr_test(int log_ins, float alpha){
 }
 
 /**
-   Runs a heap_{update, search} test with a ht_div_t hash table on
+   Runs a heap_{update, search} test with a ht_divchn_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_update_search_div_uint_ptr_test(int log_ins, float alpha){
+void run_update_search_divchn_uint_ptr_test(int log_ins, float alpha){
   int i;
   size_t n;
-  ht_div_t ht_div;
-  ht_div_context_t context;
+  ht_divchn_t ht_divchn;
+  ht_divchn_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   context.alpha = alpha;
-  hht.ht = &ht_div;
+  hht.ht = &ht_divchn;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_div_init_helper;
-  hht.insert = (heap_ht_insert)ht_div_insert;
-  hht.search = (heap_ht_search)ht_div_search;
-  hht.remove = (heap_ht_remove)ht_div_remove;
-  hht.free = (heap_ht_free)ht_div_free;
-  printf("Run a heap_{update, search} test with a ht_div_t "
+  hht.init = (heap_ht_init)ht_divchn_init_helper;
+  hht.insert = (heap_ht_insert)ht_divchn_insert;
+  hht.search = (heap_ht_search)ht_divchn_search;
+  hht.remove = (heap_ht_remove)ht_divchn_remove;
+  hht.free = (heap_ht_free)ht_divchn_free;
+  printf("Run a heap_{update, search} test with a ht_divchn_t "
 	 "hash table on noncontiguous uint_ptr_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
@@ -845,7 +845,7 @@ void print_test_result(int res){
 int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
-  float alpha_div, alpha_mul;
+  float alpha_divchn, alpha_mul;
   if (argc > C_ARGC_MAX){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
@@ -867,19 +867,19 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  alpha_div = (float)args[1] / args[2];
+  alpha_divchn = (float)args[1] / args[2];
   alpha_mul = (float)args[3] / args[4];
   if (alpha_mul >= C_ALPHA_MUL_MAX){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
   if (args[5]){
-    run_push_pop_free_div_uint_test(args[0], alpha_div);
-    run_push_pop_free_div_uint_ptr_test(args[0], alpha_div);
+    run_push_pop_free_divchn_uint_test(args[0], alpha_divchn);
+    run_push_pop_free_divchn_uint_ptr_test(args[0], alpha_divchn);
   }
   if (args[6]){
-    run_update_search_div_uint_test(args[0], alpha_div);
-    run_update_search_div_uint_ptr_test(args[0], alpha_div);
+    run_update_search_divchn_uint_test(args[0], alpha_divchn);
+    run_update_search_divchn_uint_ptr_test(args[0], alpha_divchn);
   }
   if (args[7]){
     run_push_pop_free_mul_uint_test(args[0], alpha_mul);
