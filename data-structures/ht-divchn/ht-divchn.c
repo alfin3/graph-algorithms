@@ -105,6 +105,7 @@ static const size_t C_SIZE_MAX = (size_t)-1;
 
 static size_t hash(const ht_divchn_t *ht, const void *key);
 static void ht_grow(ht_divchn_t *ht);
+static int incr_count(ht_divchn_t *ht);
 static int is_overflow(size_t start, size_t count);
 static size_t build_prime(size_t start, size_t count);
 
@@ -145,20 +146,7 @@ void ht_divchn_init(ht_divchn_t *ht,
   ht->group_ix = 0;
   ht->count_ix = 0;
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-  while ((float)min_num / ht->count > alpha){
-    ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
-    if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
-    if (ht->count_ix == C_PRIME_PARTS_COUNT){
-      /* the largest prime in C_PRIME_PARTS built */
-      break;
-    }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-      /* the largest representable prime in C_PRIME_PARTS built */
-      ht->count_ix = C_SIZE_MAX;
-      break;
-    }else{
-      ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-    }
-  }
+  while ((float)min_num / ht->count > alpha && incr_count(ht));
   ht->num_elts = 0;
   ht->alpha = alpha;
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
@@ -262,8 +250,8 @@ static size_t hash(const ht_divchn_t *ht, const void *key){
 }
 
 /**
-   Increase the size of a hash table to the next prime number in the
-   C_PRIME_PARTS array that lower the load factor below alpha. The
+   Increase the count of a hash table to the next prime number in the
+   C_PRIME_PARTS array that lowers the load factor below alpha. The
    operation is called if alpha was exceeded and the hash table count did
    not reach the largest prime number in the C_PRIME_PARTS array
    representable on a system. A single call is guaranteed to lower the load
@@ -274,20 +262,8 @@ static void ht_grow(ht_divchn_t *ht){
   size_t i, prev_count = ht->count;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL, *node = NULL;
-  while ((float)ht->num_elts / ht->count > ht->alpha){
-    ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
-    if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
-    if (ht->count_ix == C_PRIME_PARTS_COUNT){
-      /* the largest prime in C_PRIME_PARTS built */
-      break;
-    }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-      /* the largest representable prime in C_PRIME_PARTS built */
-      ht->count_ix = C_SIZE_MAX;
-      break;
-    }else{
-      ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-    }
-  }
+  while ((float)ht->num_elts / ht->count > ht->alpha && incr_count(ht));
+  if (prev_count == ht->count) return; /* max reached without increase */
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
@@ -302,6 +278,28 @@ static void ht_grow(ht_divchn_t *ht){
   }
   free(prev_key_elts);
   prev_key_elts = NULL;
+}
+
+/**
+   Attempts to increase the count of a hash table. Returns 1 if the count
+   was increased. Returns 0 if i) the count could not be increased because
+   the next prime number in the C_PRIME_PARTS array overflows on a given
+   system, or ii) the previous count was the largest prime number in the
+   C_PRIME_PARTS array. Updates count_ix, group_ix, and count of a hash
+   table accordingly.
+*/
+static int incr_count(ht_divchn_t *ht){
+  ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
+  if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
+  if (ht->count_ix == C_PRIME_PARTS_COUNT){
+    return 0;
+  }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
+    ht->count_ix = C_SIZE_MAX;
+    return 0;
+  }else{
+    ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
+  }
+  return 1;
 }
 
 /**
