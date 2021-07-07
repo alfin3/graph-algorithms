@@ -556,14 +556,14 @@ void push_ptys_elts(heap_t *h,
   p_start = pty_elts;
   p_end = ptr(pty_elts, half_count, h->pair_size);
   t_first = clock();
-  for (p = p_start; p < p_end; p += h->pair_size){
+  for (p = p_start; p != p_end; p += h->pair_size){
     heap_push(h, p, p + h->pty_size);
   }
   t_first = clock() - t_first;
   p_start = ptr(pty_elts, half_count, h->pair_size);
-  p_end = ptr(pty_elts, count - 1, h->pair_size);
+  p_end = ptr(pty_elts, count, h->pair_size);
   t_second = clock();
-  for (p = p_start; p <= p_end; p += h->pair_size){
+  for (p = p_start; p != p_end; p += h->pair_size){
     heap_push(h, p, p + h->pty_size);
   }
   t_second = clock() - t_second;
@@ -582,11 +582,12 @@ void push_rev_ptys_elts(heap_t *h,
   size_t half_count;
   size_t n = h->num_elts;
   clock_t t_first, t_second;
-  half_count = count >> 1;  /* count > 0 */
+  half_count = count >> 1;
+  /* backwards pointer iteration; count > 0 */
   p_start = ptr(pty_elts, count - 1, h->pair_size);
   p_end = ptr(pty_elts, half_count, h->pair_size);
   t_first = clock();
-  for (p = p_start; p > p_end; p -= h->pair_size){
+  for (p = p_start; p != p_end; p -= h->pair_size){
     heap_push(h, p, p + h->pty_size);
   }
   t_first = clock() - t_first;
@@ -620,14 +621,14 @@ void pop_ptys_elts(heap_t *h,
   p_start = pop_pty_elts;
   p_end = ptr(pop_pty_elts, half_count, h->pair_size);
   t_first = clock();
-  for (p = p_start; p < p_end; p += h->pair_size){
+  for (p = p_start; p != p_end; p += h->pair_size){
     heap_pop(h, p, p + h->pty_size);
   }
   t_first = clock() - t_first;
   p_start = ptr(pop_pty_elts, half_count, h->pair_size);
-  p_end = ptr(pop_pty_elts, count - 1, h->pair_size);
+  p_end = ptr(pop_pty_elts, count, h->pair_size);
   t_second = clock();
-  for (p = p_start; p <= p_end; p += h->pair_size){
+  for (p = p_start; p != p_end; p += h->pair_size){
     heap_pop(h, p, p + h->pty_size);
   }
   t_second = clock() - t_second;
@@ -678,15 +679,15 @@ void update_ptys_elts(heap_t *h,
   p_start = pty_elts;
   p_end = ptr(pty_elts, half_count, h->pair_size);
   t_first = clock();
-  for (p = p_start; p < p_end; p += h->pair_size){
+  for (p = p_start; p != p_end; p += h->pair_size){
     heap_update(h, p, p + h->pty_size);
   }
   t_first = clock() - t_first;
   *res *= (h->num_elts == n);
   p_start = ptr(pty_elts, half_count, h->pair_size);
-  p_end = ptr(pty_elts, count - 1, h->pair_size);
+  p_end = ptr(pty_elts, count, h->pair_size);
   t_second = clock();
-  for (p = p_start; p <= p_end; p += h->pair_size){
+  for (p = p_start; p != p_end; p += h->pair_size){
     heap_update(h, p, p + h->pty_size);
   }
   t_second = clock() - t_second;
@@ -707,25 +708,25 @@ void search_ptys_elts(const heap_t *h,
   void *rp = NULL;
   clock_t t_heap, t_not_heap;
   p_start = pty_elts;
-  p_end = ptr(pty_elts, count - 1, h->pair_size);
+  p_end = ptr(pty_elts, count, h->pair_size);
   t_heap = clock();
-  for (p = p_start; p <= p_end; p += h->pair_size){
+  for (p = p_start; p != p_end; p += h->pair_size){
     rp = heap_search(h, p + h->pty_size);
   }
   t_heap = clock() - t_heap;
-  for (p = p_start; p <= p_end; p += h->pair_size){
+  for (p = p_start; p != p_end; p += h->pair_size){
     rp = heap_search(h, p + h->pty_size);
     *res *= (rp != NULL);
   }
   *res *= (h->num_elts == n);
   p_start = not_heap_elts;
-  p_end = ptr(not_heap_elts, count - 1, h->elt_size);
+  p_end = ptr(not_heap_elts, count, h->elt_size);
   t_not_heap = clock();
-  for (p = p_start; p <= p_end; p += h->elt_size){
+  for (p = p_start; p != p_end; p += h->elt_size){
     rp = heap_search(h, p);
   }
   t_not_heap = clock() - t_not_heap;
-  for (p = p_start; p <= p_end; p += h->elt_size){
+  for (p = p_start; p != p_end; p += h->elt_size){
     rp = heap_search(h, p);
     *res *= (rp == NULL);
   }
