@@ -274,7 +274,6 @@ static void ht_grow(ht_divchn_t *ht){
   size_t i, prev_count = ht->count;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL, *node = NULL;
-  ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
   while ((float)ht->num_elts / ht->count > ht->alpha){
     ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
     if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
