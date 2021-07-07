@@ -30,20 +30,20 @@ CFLAGS = -I$(DLL_DIR)                                 \
          -I$(UTILS_MOD_DIR)                           \
          ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
-OBJ = ht-div-test.o                   \
-      ht-div.o                        \
+OBJ = ht-divchn-test.o                \
+      ht-divchn.o                     \
       $(DLL_DIR)dll.o                 \
       $(UTILS_MEM_DIR)utilities-mem.o \
       $(UTILS_MOD_DIR)utilities-mod.o
 
-ht-div-test : $(OBJ)
+ht-divchn-test : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
 
-ht-div-test.o                       : ht-div.h                        \
+ht-divchn-test.o                    : ht-divchn.h                     \
                                       $(DLL_DIR)dll.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h \
                                       $(UTILS_MOD_DIR)utilities-mod.h
-ht-div.o                            : ht-div.h                        \
+ht-divchn.o                         : ht-divchn.h                     \
                                       $(DLL_DIR)dll.h                 \
                                       $(UTILS_MEM_DIR)utilities-mem.h \
                                       $(UTILS_MOD_DIR)utilities-mod.h
@@ -57,4 +57,4 @@ $(UTILS_MOD_DIR)utilities-mod.o     : $(UTILS_MOD_DIR)utilities-mod.h
 clean :
 	rm $(OBJ)
 clean-all : 
-	rm -f ht-div-test $(OBJ)
+	rm -f ht-divchn-test $(OBJ)

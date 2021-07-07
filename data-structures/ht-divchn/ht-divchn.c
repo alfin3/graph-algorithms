@@ -1,5 +1,5 @@
 /**
-   ht-div.c
+   ht-divchn.c
 
    A hash table with generic hash keys and generic elements. The 
    implementation is based on a division method for hashing into upto  
@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include "ht-div.h"
+#include "ht-divchn.h"
 #include "dll.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
@@ -93,7 +93,7 @@ static const size_t C_PRIME_PARTS[6 * 1 + 16 * (2 + 3 + 4)] =
    0x58a1u, 0xbd96u, 0x2836u, 0x5f8cu,    /* 6884922145916737697 */
    0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u};   /* 15769474759331449193 */
 
-static const size_t C_LAST_PRIME_IX = 6 + 16 * (2 + 3 + 4) - 4;
+static const size_t C_PRIME_PARTS_COUNT = 6 + 16 * (2 + 3 + 4);
 static const size_t C_PARTS_PER_PRIME[4] = {1, 2, 3, 4};
 static const size_t C_PARTS_ACC_COUNTS[4] = {6,
 					     6 + 16 * 2,
@@ -103,20 +103,26 @@ static const size_t C_BUILD_SHIFT = 16;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_SIZE_MAX = (size_t)-1;
 
-static size_t hash(const ht_div_t *ht, const void *key);
-static void ht_grow(ht_div_t *ht);
+static size_t hash(const ht_divchn_t *ht, const void *key);
+static void ht_grow(ht_divchn_t *ht);
 static int is_overflow(size_t start, size_t count);
 static size_t build_prime(size_t start, size_t count);
 
 /**
    Initializes a hash table. 
-   ht          : a pointer to a preallocated block of size sizeof(ht_div_t).
+   ht          : a pointer to a preallocated block of size 
+                 sizeof(ht_divchn_t).
    key_size    : size of a key object
    elt_size    : - size of an element, if the element is within a contiguous
                  memory block and a copy of the element is inserted,
                  - size of a pointer to an element, if the element is within
                  a noncontiguous memory block or a pointer to a contiguous
                  element is inserted
+   min_num     : minimum number of keys that are known or expected to become 
+                 present simultaneously in a hash table, resulting in a
+                 speedup by avoiding unnecessary growth steps of a hash
+                 table; 0 if a positive value is not specified and all growth
+                 steps are to be completed
    alpha       : > 0.0, a load factor upper bound
    free_elt    : - if an element is within a contiguous memory block and
                  a copy of the element was inserted, then NULL as free_elt
@@ -127,9 +133,10 @@ static size_t build_prime(size_t start, size_t count);
                  element as its argument and leaving a block of size elt_size
                  pointed to by the argument, is necessary to delete the element
 */
-void ht_div_init(ht_div_t *ht,
+void ht_divchn_init(ht_divchn_t *ht,
 		 size_t key_size,
 		 size_t elt_size,
+		 size_t min_num,
 		 float alpha,
 		 void (*free_elt)(void *)){
   size_t i;
@@ -138,6 +145,20 @@ void ht_div_init(ht_div_t *ht,
   ht->group_ix = 0;
   ht->count_ix = 0;
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
+  while ((float)min_num / ht->count > alpha){
+    ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
+    if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
+    if (ht->count_ix == C_PRIME_PARTS_COUNT){
+      /* the largest prime in C_PRIME_PARTS built */
+      break;
+    }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
+      /* the largest representable prime in C_PRIME_PARTS built */
+      ht->count_ix = C_SIZE_MAX;
+      break;
+    }else{
+      ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
+    }
+  }
   ht->num_elts = 0;
   ht->alpha = alpha;
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
@@ -152,13 +173,13 @@ void ht_div_init(ht_div_t *ht,
    in the hash table, associates the key with the new element. The key and
    elt parameters are not NULL.
 */
-void ht_div_insert(ht_div_t *ht, const void *key, const void *elt){
+void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
   size_t ix;
   dll_node_t **head = NULL, *node = NULL;
   /* grow if load factor > alpha and the next representable prime exists */
-  while ((float)ht->num_elts / ht->count > ht->alpha &&
-	 ht->count_ix != C_SIZE_MAX &&
-	 ht->count_ix != C_LAST_PRIME_IX){
+  if ((float)ht->num_elts / ht->count > ht->alpha &&
+      ht->count_ix != C_SIZE_MAX &&
+      ht->count_ix != C_PRIME_PARTS_COUNT){
     ht_grow(ht);
   }
   ix = hash(ht, key);
@@ -177,10 +198,10 @@ void ht_div_insert(ht_div_t *ht, const void *key, const void *elt){
    If a key is present in a hash table, returns a pointer to its associated 
    element, otherwise returns NULL. The key parameter is not NULL.
 */
-void *ht_div_search(const ht_div_t *ht, const void *key){
-  dll_node_t *node = dll_search_key(&ht->key_elts[hash(ht, key)],
-				     key,
-				     ht->key_size);
+void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
+  const dll_node_t *node = dll_search_key(&ht->key_elts[hash(ht, key)],
+					  key,
+					  ht->key_size);
   if (node == NULL){
     return NULL;
   }else{
@@ -194,7 +215,7 @@ void *ht_div_search(const ht_div_t *ht, const void *key){
    by elt. If the key is not in the hash table, leaves the block pointed
    to by elt unchanged. The key and elt parameters are not NULL.
 */
-void ht_div_remove(ht_div_t *ht, const void *key, void *elt){
+void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
   dll_node_t *node = dll_search_key(head, key, ht->key_size);
   if (node != NULL){
@@ -209,7 +230,7 @@ void ht_div_remove(ht_div_t *ht, const void *key, void *elt){
    If a key is present in a hash table, deletes the key and its associated 
    element according free_elt. The key parameter is not NULL.
 */
-void ht_div_delete(ht_div_t *ht, const void *key){
+void ht_divchn_delete(ht_divchn_t *ht, const void *key){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
   dll_node_t *node = dll_search_key(head, key, ht->key_size);
   if (node != NULL){
@@ -219,10 +240,10 @@ void ht_div_delete(ht_div_t *ht, const void *key){
 }
 
 /**
-   Frees a hash table and leaves a block of size sizeof(ht_div_t)
+   Frees a hash table and leaves a block of size sizeof(ht_divchn_t)
    pointed to by ht.
 */
-void ht_div_free(ht_div_t *ht){
+void ht_divchn_free(ht_divchn_t *ht){
   size_t i;
   for (i = 0; i < ht->count; i++){
     dll_free(&ht->key_elts[i], ht->free_elt);
@@ -236,30 +257,38 @@ void ht_div_free(ht_div_t *ht){
 /**
    Maps a hash key to a slot index in a hash table with a division method. 
 */
-static size_t hash(const ht_div_t *ht, const void *key){
+static size_t hash(const ht_divchn_t *ht, const void *key){
   return fast_mem_mod(key, ht->key_size, ht->count); 
 }
 
 /**
-   Increases the size of a hash table by the difference between the ith and 
-   (i + 1)th prime numbers in the C_PRIME_PARTS array. Assumes that the
-   (i + 1)th prime number in the C_PRIME_PARTS array exists. Makes no changes
-   if the (i + 1)th prime number in the C_PRIME_PARTS array is not
-   representable as size_t on a given system.
+   Increase the size of a hash table to the next prime number in the
+   C_PRIME_PARTS array that lower the load factor below alpha. The
+   operation is called if alpha was exceeded and the hash table count did
+   not reach the largest prime number in the C_PRIME_PARTS array
+   representable on a system. A single call is guaranteed to lower the load
+   factor below alpha if a sufficiently large number in the C_PRIME_PARTS
+   array is available, even if alpha is extremely small.
 */
-static void ht_grow(ht_div_t *ht){
+static void ht_grow(ht_divchn_t *ht){
   size_t i, prev_count = ht->count;
   dll_node_t **prev_key_elts = ht->key_elts;
   dll_node_t **head = NULL, *node = NULL;
   ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
-  if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
-  if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-    /* last prime representable as size_t on a system reached */
-    ht->count_ix = C_SIZE_MAX;
-    return;
+  while ((float)ht->num_elts / ht->count > alpha){
+    ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
+    if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
+    if (ht->count_ix == C_PRIME_PARTS_COUNT){
+      /* the largest prime in C_PRIME_PARTS built */
+      break;
+    }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
+      /* the largest representable prime in C_PRIME_PARTS built */
+      ht->count_ix = C_SIZE_MAX;
+      break;
+    }else{
+      ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
+    }
   }
-  ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-  ht->num_elts = 0;
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
@@ -269,8 +298,7 @@ static void ht_grow(ht_div_t *ht){
     while (*head != NULL){
       node = *head;
       dll_remove(head, node);
-      dll_append(&ht->key_elts[hash(ht, node->key)], node);
-      ht->num_elts++;
+      dll_prepend(&ht->key_elts[hash(ht, node->key)], node);
     }
   }
   free(prev_key_elts);
