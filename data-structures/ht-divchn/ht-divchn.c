@@ -143,6 +143,7 @@ void ht_divchn_init(ht_divchn_t *ht,
   size_t i;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
+  ht->pair_size = add_sz_perror(key_size, elt_size);
   ht->group_ix = 0;
   ht->count_ix = 0;
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);

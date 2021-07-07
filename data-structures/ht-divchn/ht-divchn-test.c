@@ -102,7 +102,7 @@ void remove_delete(size_t num_ins,
 		   void (*new_elt)(void *, size_t),
 		   size_t (*val_elt)(const void *),
 		   void (*free_elt)(void *));
-void *byte_ptr(const void *block, size_t i);
+void *ptr(const void *block, size_t i, size_t size);
 void print_test_result(int res);
 
 /**
@@ -311,17 +311,18 @@ void run_remove_delete_uint_ptr_test(int log_ins,
 */
 
 void insert_keys_elts(ht_divchn_t *ht,
-		      void **keys,
-		      void **elts,
+		      const void *key_elts,
 		      size_t count,
 		      int *res){
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t n = ht->num_elts;
   size_t init_count = ht->count;
-  size_t i;
   clock_t t;
+  p_start = key_elts;
+  p_end = ptr(key_elts, count, ht->pair_size);
   t = clock();
-  for (i = 0; i < count; i++){
-    ht_divchn_insert(ht, keys[i], elts[i]);
+  for (p = p_start; p != p_end; p += ht->pair_size){
+    ht_divchn_insert(ht, p, p + ht->key_size);
   }
   t = clock() - t;
   if (init_count < ht->count){
@@ -335,23 +336,24 @@ void insert_keys_elts(ht_divchn_t *ht,
 }
 
 void search_in_ht(const ht_divchn_t *ht,
-		  void **keys,
-		  void **elts,
+		  const void *key_elts,
 		  size_t count,
-		  int *res,
-		  size_t (*val_elt)(const void *)){
+		  size_t (*val_elt)(const void *),
+                  int *res){
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t n = ht->num_elts;
-  size_t i;
-  void *elt = NULL;
+  const void *elt = NULL;
   clock_t t;
+  p_start = key_elts;
+  p_end = ptr(key_elts, count, ht->pair_size);
   t = clock();
-  for (i = 0; i < count; i++){
-    elt = ht_divchn_search(ht, keys[i]);
+  for (p = p_start; p != p_end; p += ht->pair_size){
+    elt = ht_divchn_search(ht, p);
   }
   t = clock() - t;
-  for (i = 0; i < count; i++){
-    elt = ht_divchn_search(ht, keys[i]);
-    *res *= (val_elt(elts[i]) == val_elt(elt));
+  for (p = p_start; p != p_end; p += ht->pair_size){
+    elt = ht_divchn_search(ht, p);
+    *res *= (val_elt(p + ht->key_size) == val_elt(elt));
   }
   printf("\t\tin ht search time:              "
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
@@ -359,20 +361,22 @@ void search_in_ht(const ht_divchn_t *ht,
 }
 
 void search_nin_ht(const ht_divchn_t *ht,
-		   void **keys,
+		   const void *nin_keys,
 		   size_t count,
 		   int *res){
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t n = ht->num_elts;
-  size_t i;
-  void *elt = NULL;
+  const void *elt = NULL;
   clock_t t;
+  p_start = nin_keys;
+  p_end = ptr(nin_keys, count, ht->key_size);
   t = clock();
-  for (i = 0; i < count; i++){
-    elt = ht_divchn_search(ht, keys[i]);
+  for (p = p_start; p != p_end; p += ht->key_size){
+    elt = ht_divchn_search(ht, p);
   }
   t = clock() - t;
-  for (i = 0; i < count; i++){
-    elt = ht_divchn_search(ht, keys[i]);
+  for (p = p_start; p != p_end; p += ht->key_size){
+    elt = ht_divchn_search(ht, p);
     *res *= (elt == NULL);
   }
   printf("\t\tnot in ht search time:          "
@@ -398,40 +402,42 @@ void insert_search_free(size_t num_ins,
 			void (*free_elt)(void *)){
   int res = 1;
   size_t i, j;
-  void **keys = NULL, **elts = NULL;
+  size_t pair_size = add_sz_perror(key_size, elt_size);
+  void *key = NULL;
+  void *key_elts = NULL;
+  void *nin_keys = NULL;
   ht_divchn_t ht;
-  keys = malloc_perror(num_ins, sizeof(void *));
-  elts = malloc_perror(num_ins, sizeof(void *));
+  key_elts = malloc_perror(num_ins, pair_size);
+  nin_keys = malloc_perror(num_ins, key_size);
   for (i = 0; i < num_ins; i++){
-    keys[i] = malloc_perror(1, key_size);
+    key = ptr(key_elts, i, pair_size);
     for (j = 0; j < key_size - C_KEY_SIZE_FACTOR; j++){
-      *(unsigned char *)byte_ptr(keys[i], j) = RANDOM(); /* mod 2^CHAR_BIT */
+      *(unsigned char *)ptr(key, j, 1) = RANDOM(); /* mod 2^CHAR_BIT */
     }
-    *(size_t *)byte_ptr(keys[i], key_size - C_KEY_SIZE_FACTOR) = i;
-    elts[i] = malloc_perror(1, elt_size);
-    new_elt(elts[i], i);
+    *(size_t *)ptr(key, key_size - C_KEY_SIZE_FACTOR, 1) = i;
+    new_elt((char *)ptr(key_elts, i, pair_size) + key_size, i);
   }
   ht_divchn_init(&ht, key_size, elt_size, 0, alpha, NULL);
-  insert_keys_elts(&ht, keys, elts, num_ins, &res);
+  insert_keys_elts(&ht, key_elts, num_ins, &res);
   free_ht(&ht);
   ht_divchn_init(&ht, key_size, elt_size, num_ins, alpha, free_elt);
-  insert_keys_elts(&ht, keys, elts, num_ins, &res);
-  search_in_ht(&ht, keys, elts, num_ins, &res, val_elt);
+  insert_keys_elts(&ht, key_elts, num_ins, &res);
+  search_in_ht(&ht, key_elts, num_ins, val_elt, &res);
   for (i = 0; i < num_ins; i++){
-    *(size_t *)byte_ptr(keys[i], key_size - C_KEY_SIZE_FACTOR) = i + num_ins;
+    key = ptr(nin_keys, i, key_size);
+    for (j = 0; j < key_size - C_KEY_SIZE_FACTOR; j++){
+      *(unsigned char *)ptr(key, j, 1) = RANDOM(); /* mod 2^CHAR_BIT */
+    }
+    *(size_t *)ptr(key, key_size - C_KEY_SIZE_FACTOR, 1) = i + num_ins;
   }
-  search_nin_ht(&ht, keys, num_ins, &res);
+  search_nin_ht(&ht, nin_keys, num_ins, &res);
   free_ht(&ht);
   printf("\t\tsearch correctness:             ");
   print_test_result(res);
-  for (i = 0; i < num_ins; i++){
-    free(keys[i]);
-    free(elts[i]);
-  }
-  free(keys);
-  free(elts);
-  keys = NULL;
-  elts = NULL;
+  free(key_elts);
+  free(nin_keys);
+  key_elts = NULL;
+  nin_keys = NULL;
 }
 
 /** 
@@ -441,42 +447,51 @@ void insert_search_free(size_t num_ins,
 */
 
 void remove_key_elts(ht_divchn_t *ht,
-		     void **keys,
-		     void **elts,
+		     const void *key_elts,
 		     size_t count,
-		     int *res,
-		     size_t (*val_elt)(const void *)){
+		     size_t (*val_elt)(const void *),
+		     int *res){
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t n = ht->num_elts;
+  size_t step_size = mul_sz_perror(2, ht->pair_size);
   size_t i;
-  void *ptr = NULL, *elt = NULL;
+  void *elt = NULL;
   clock_t t_first_half, t_second_half;
   elt = malloc_perror(1, ht->elt_size);
+  p = key_elts;
   t_first_half = clock();
-  for (i = 0; i < count; i += 2){
-    ht_divchn_remove(ht, keys[i], elt);
-    /* if an element is noncontiguous, it is still accessible from elts[i] */
+  for (i = 0; i < count; i += 2){ /* count < SIZE_MAX */
+    p += (i > 0) * step_size; /* avoid undef. behavior of pointer increment */
+    ht_divchn_remove(ht, p, elt);
+    /* noncontiguous element is still accessible from key_elts */
   }
   t_first_half = clock() - t_first_half;
   *res *= (ht->num_elts == ((count & 1) ?
 			    (n - count / 2 - 1) :
 			    (n - count / 2)));
-  for (i = 0; i < count; i++){
-    if (i & 1){
-      ptr = ht_divchn_search(ht, keys[i]);
-      *res *= (val_elt(elts[i]) == val_elt(ptr));
+  p_start = key_elts;
+  p_end = ptr(key_elts, count, ht->pair_size);
+  i = 0;
+  for (p = p_start; p != p_end; p += ht->pair_size){
+    if (1 & i++){
+      *res *= (val_elt(p + ht->key_size) == val_elt(ht_divchn_search(ht, p)));
     }else{
-      *res *= (ht_divchn_search(ht, keys[i]) == NULL);
+      *res *= (ht_divchn_search(ht, p) == NULL);
     }
   }
+  p = ptr(key_elts, (count > 0), ht->pair_size);
   t_second_half = clock();
-  for (i = 1; i < count; i += 2){
-    ht_divchn_remove(ht, keys[i], elt);
-    /* if an element is noncontiguous, it is still accessible from elts[i] */
+  for (i = 1; i < count; i += 2){ /* count < SIZE_MAX */
+    p += (i > 1) * step_size; /* avoid undef. behavior of pointer increment */
+    ht_divchn_remove(ht, p, elt);
+    /* noncontiguous element is still accessible from key_elts */
   }
   t_second_half = clock() - t_second_half;
   *res *= (ht->num_elts == 0);
-  for (i = 0; i < count; i++){
-    *res *= (ht_divchn_search(ht, keys[i]) == NULL);
+  p_start = key_elts;
+  p_end = ptr(key_elts, count, ht->pair_size);
+  for (p = p_start; p != p_end; p += ht->pair_size){
+    *res *= (ht_divchn_search(ht, p) == NULL);
   }
   for (i = 0; i < ht->count; i++){
     *res *= (ht->key_elts[i] == NULL);
@@ -490,39 +505,47 @@ void remove_key_elts(ht_divchn_t *ht,
 }
 
 void delete_key_elts(ht_divchn_t *ht,
-		     void **keys,
-		     void **elts,
+		     const void *key_elts,
 		     size_t count,
-		     int *res,
-		     size_t (*val_elt)(const void *)){
+		     size_t (*val_elt)(const void *),
+                     int *res){
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t n = ht->num_elts;
+  size_t step_size = mul_sz_perror(2, ht->pair_size);
   size_t i;
-  void *ptr;
   clock_t t_first_half, t_second_half;
+  p = key_elts;
   t_first_half = clock();
-  for (i = 0; i < count; i += 2){
-    ht_divchn_delete(ht, keys[i]);
+  for (i = 0; i < count; i += 2){ /* count < SIZE_MAX */
+    p += (i > 0) * step_size; /* avoid undef. behavior of pointer increment */
+    ht_divchn_delete(ht, p);
   }
   t_first_half = clock() - t_first_half;
   *res *= (ht->num_elts == ((count & 1) ?
 			    (n - count / 2 - 1) :
 			    (n - count / 2)));
-  for (i = 0; i < count; i++){
-    if (i & 1){
-      ptr = ht_divchn_search(ht, keys[i]);
-      *res *= (val_elt(elts[i]) == val_elt(ptr));
+  p_start = key_elts;
+  p_end = ptr(key_elts, count, ht->pair_size);
+  i = 0;
+  for (p = p_start; p != p_end; p += ht->pair_size){
+    if (1 & i++){
+      *res *= (val_elt(p + ht->key_size) == val_elt(ht_divchn_search(ht, p)));
     }else{
-      *res *= (ht_divchn_search(ht, keys[i]) == NULL);
+      *res *= (ht_divchn_search(ht, p) == NULL);
     }
   }
+  p = ptr(key_elts, (count > 0), ht->pair_size);
   t_second_half = clock();
-  for (i = 1; i < count; i += 2){
-    ht_divchn_delete(ht, keys[i]);
+  for (i = 1; i < count; i += 2){ /* count < SIZE_MAX */
+    p += (i > 1) * step_size; /* avoid undef. behavior of pointer increment */
+    ht_divchn_delete(ht, p);
   }
   t_second_half = clock() - t_second_half;
   *res *= (ht->num_elts == 0);
-  for (i = 0; i < count; i++){
-    *res *= (ht_divchn_search(ht, keys[i]) == NULL);
+  p_start = key_elts;
+  p_end = ptr(key_elts, count, ht->pair_size);
+  for (p = p_start; p != p_end; p += ht->pair_size){
+    *res *= (ht_divchn_search(ht, p) == NULL);
   }
   for (i = 0; i < ht->count; i++){
     *res *= (ht->key_elts[i] == NULL);
@@ -542,35 +565,29 @@ void remove_delete(size_t num_ins,
 		   void (*free_elt)(void *)){
   int res = 1;
   size_t i, j;
-  void **keys = NULL, **elts = NULL;
+  size_t pair_size = add_sz_perror(key_size, elt_size);
+  void *key = NULL;
+  void *key_elts = NULL;
   ht_divchn_t ht;
-  keys = malloc_perror(num_ins, sizeof(void *));
-  elts = malloc_perror(num_ins, sizeof(void *));
+  key_elts = malloc_perror(num_ins, pair_size);
   for (i = 0; i < num_ins; i++){
-    keys[i] = malloc_perror(1, key_size);
+    key = ptr(key_elts, i, pair_size);
     for (j = 0; j < key_size - C_KEY_SIZE_FACTOR; j++){
-      *(unsigned char *)byte_ptr(keys[i], j) = RANDOM(); /* mod 2^CHAR_BIT */
+      *(unsigned char *)ptr(key, j, 1) = RANDOM(); /* mod 2^CHAR_BIT */
     }
-    *(size_t *)byte_ptr(keys[i], key_size - C_KEY_SIZE_FACTOR) = i;
-    elts[i] = malloc_perror(1, elt_size);
-    new_elt(elts[i], i);
+    *(size_t *)ptr(key, key_size - C_KEY_SIZE_FACTOR, 1) = i;
+    new_elt((char *)ptr(key_elts, i, pair_size) + key_size, i);
   }
   ht_divchn_init(&ht, key_size, elt_size, 0, alpha, free_elt);
-  insert_keys_elts(&ht, keys, elts, num_ins, &res);
-  remove_key_elts(&ht, keys, elts, num_ins, &res, val_elt);
-  insert_keys_elts(&ht, keys, elts, num_ins, &res);
-  delete_key_elts(&ht, keys, elts, num_ins, &res, val_elt);
+  insert_keys_elts(&ht, key_elts, num_ins, &res);
+  remove_key_elts(&ht, key_elts, num_ins, val_elt, &res);
+  insert_keys_elts(&ht, key_elts, num_ins, &res);
+  delete_key_elts(&ht, key_elts, num_ins, val_elt, &res);
   free_ht(&ht);
   printf("\t\tremove and delete correctness:  ");
   print_test_result(res);
-  for (i = 0; i < num_ins; i++){
-    free(keys[i]);
-    free(elts[i]);
-  }
-  free(keys);
-  free(elts);
-  keys = NULL;
-  elts = NULL;
+  free(key_elts);
+  key_elts = NULL;
 }
 
 /**
@@ -589,7 +606,7 @@ void run_corner_cases_test(int log_ins){
   num_ins = pow_two_perror(log_ins);
   key = malloc_perror(1, pow_two_perror(C_CORNER_LOG_KEY_END));
   for (i = 0; i < pow_two_perror(C_CORNER_LOG_KEY_END); i++){
-    *(unsigned char *)byte_ptr(key, i) = RANDOM();
+    *(unsigned char *)ptr(key, i, 1) = RANDOM();
   }
   printf("Run corner cases test --> ");
   for (j = C_CORNER_LOG_KEY_START; j <= C_CORNER_LOG_KEY_END; j++){
@@ -602,7 +619,7 @@ void run_corner_cases_test(int log_ins){
     res *= (ht.count_ix == 0);
     res *= (ht.count == C_CORNER_HT_COUNT);
     res *= (ht.num_elts == 1);
-    res *= (*(size_t *)ht_divchn_search(&ht, key) == elt);
+    res *= (*(const size_t *)ht_divchn_search(&ht, key) == elt);
     ht_divchn_delete(&ht, key);
     res *= (ht.count == C_CORNER_HT_COUNT);
     res *= (ht.num_elts == 0);
@@ -619,10 +636,10 @@ void run_corner_cases_test(int log_ins){
 */
 
 /**
-   Computes a pointer to the ith byte in a block.
+   Computes a pointer to the ith element in the block of elements.
 */
-void *byte_ptr(const void *block, size_t i){
-  return (void *)((char *)block + i);
+void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
 }
 
 /**
