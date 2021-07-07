@@ -125,7 +125,7 @@ int tsp(const adj_lst_t *a,
 	const tsp_ht_t *tht,
 	void (*add_wt)(void *, const void *, const void *),
 	int (*cmp_wt)(const void *, const void *)){
-  char *p = NULL, *p_start = NULL, *p_end = NULL;
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t wt_size = a->wt_size;
   size_t set_count, set_size;
   size_t u, v;
@@ -186,8 +186,8 @@ int tsp(const adj_lst_t *a,
     u = prev_set[0];
     p_start = a->vt_wts[u]->elts;
     p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
-    for (p = p_start; p < p_end; p += a->step_size){
-      v = *(size_t *)p;
+    for (p = p_start; p != p_end; p += a->step_size){
+      v = *(const size_t *)p;
       if (v == start){
 	add_wt(sum_wt,
 	       thtp->search(thtp->ht, prev_set),
@@ -222,7 +222,7 @@ static void build_next(const adj_lst_t *a,
 		       const tsp_ht_t *tht,
 		       void (*add_wt)(void *, const void *, const void *),
 		       int (*cmp_wt)(const void *, const void *)){
-  char *p = NULL, *p_start = NULL, *p_end = NULL;
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t wt_size = a->wt_size;
   size_t set_size = prev_s->elt_size;
   size_t u, v;
@@ -239,8 +239,8 @@ static void build_next(const adj_lst_t *a,
     u = prev_set[0];
     p_start = a->vt_wts[u]->elts;
     p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
-    for (p = p_start; p < p_end; p += a->step_size){
-      v = *(size_t *)p;
+    for (p = p_start; p != p_end; p += a->step_size){
+      v = *(const size_t *)p;
       set_init(&ibit, v);
       if (set_member(&ibit, &prev_set[1]) == NULL){
 	memcpy(next_set, prev_set, set_size);

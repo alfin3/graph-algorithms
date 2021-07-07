@@ -37,7 +37,7 @@ static const size_t QUEUE_INIT_COUNT = 1;
                  number of vertices in the adjacency list
 */
 void bfs(const adj_lst_t *a, size_t start, size_t *dist, size_t *prev){
-  char *p = NULL, *p_start = NULL, *p_end = NULL;
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t u, v;
   size_t vt_size = sizeof(size_t);
   queue_t q;
@@ -50,8 +50,8 @@ void bfs(const adj_lst_t *a, size_t start, size_t *dist, size_t *prev){
     queue_pop(&q, &u);
     p_start = a->vt_wts[u]->elts;
     p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
-    for (p = p_start; p < p_end; p += a->step_size){
-      v = *(size_t *)p;
+    for (p = p_start; p != p_end; p += a->step_size){
+      v = *(const size_t *)p;
       if (prev[v] == NR){
 	dist[v] = dist[u] + 1;
 	prev[v] = u;

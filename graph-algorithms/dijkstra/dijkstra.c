@@ -101,7 +101,7 @@ void dijkstra(const adj_lst_t *a,
 	      const heap_ht_t *hht,
 	      void (*add_wt)(void *, const void *, const void *),
 	      int (*cmp_wt)(const void *, const void *)){
-  char *p = NULL, *p_start = NULL, *p_end = NULL;
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t wt_size = a->wt_size;
   size_t vt_size = sizeof(size_t);
   size_t init_count = 1;
@@ -134,8 +134,8 @@ void dijkstra(const adj_lst_t *a,
     heap_pop(&h, u_wt, &u);
     p_start = a->vt_wts[u]->elts;
     p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
-    for (p = p_start; p < p_end; p += a->step_size){
-      v = *(size_t *)p;
+    for (p = p_start; p != p_end; p += a->step_size){
+      v = *(const size_t *)p;
       v_wt = wt_ptr(dist, v, wt_size);
       add_wt(sum_wt, u_wt, p + sizeof(size_t));
       if (prev[v] == C_NREACHED){

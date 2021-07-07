@@ -17,8 +17,8 @@
 
 typedef struct{
   size_t u;
-  char *vp; /* given (u, v), vp is pointer to v in u's stack in an adj. list */
-  char *vp_end; /* pointer to the end of u's stack */
+  const char *vp; /* vp is pointer to v in u's stack in an adj. list */
+  const char *vp_end; /* pointer to the end of u's stack */
 } uvp_t;
 
 static void search(const adj_lst_t *a,
@@ -90,9 +90,9 @@ static void search(const adj_lst_t *a,
       (*c)++;
     }else{
       stack_push(s, &uvp); /* push the unfinished vertex */
-      pre[*(size_t *)uvp.vp] = *c;
+      pre[*(const size_t *)uvp.vp] = *c;
       (*c)++;
-      uvp.u = *(size_t *)uvp.vp;
+      uvp.u = *(const size_t *)uvp.vp;
       uvp.vp = a->vt_wts[uvp.u]->elts;
       uvp.vp_end = uvp.vp + a->vt_wts[uvp.u]->num_elts * a->step_size;
       stack_push(s, &uvp); /* then push an unexplored vertex */
@@ -105,9 +105,9 @@ static void search(const adj_lst_t *a,
    in u's stack in an adjacency list.
 */
 static void move_uvp(const adj_lst_t *a, uvp_t *uvp, const size_t *pre){
-  char *p = NULL;
-  for (p = uvp->vp; p < uvp->vp_end; p += a->step_size){
-    if (pre[*(size_t *)p] == NR){
+  const char *p = NULL;
+  for (p = uvp->vp; p != uvp->vp_end; p += a->step_size){
+    if (pre[*(const size_t *)p] == NR){
       uvp->vp = p;
       return;
     }

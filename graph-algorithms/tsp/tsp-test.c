@@ -768,15 +768,15 @@ void print_double(const void *a){
 }
   
 void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *)){
-  char *p = NULL, *p_start = NULL, *p_end = NULL;
+  const char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t i;
   printf("\tvertices: \n");
   for (i = 0; i < a->num_vts; i++){
     printf("\t%lu : ", TOLU(i));
     p_start = a->vt_wts[i]->elts;
     p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
-    for (p = p_start; p < p_end; p += a->step_size){
-      printf("%lu ", TOLU(*(size_t *)p));
+    for (p = p_start; p != p_end; p += a->step_size){
+      printf("%lu ", TOLU(*(const size_t *)p));
     }
     printf("\n");
   }
@@ -786,9 +786,8 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *)){
       printf("\t%lu : ", TOLU(i));
       p_start = a->vt_wts[i]->elts;
       p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
-      p_start += sizeof(size_t);
-      for (p = p_start; p < p_end; p += a->step_size){
-	print_wt(p);
+      for (p = p_start; p != p_end; p += a->step_size){
+	print_wt(p + sizeof(size_t));
       }
       printf("\n");
     }
