@@ -23,7 +23,8 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is even.
+   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
+   is even.
 */
 
 #include <stdio.h>
@@ -173,7 +174,7 @@ void uint_graph_helper(const adj_lst_t *a,
     res *= (nums[i] == a->vt_wts[i]->num_elts);
     p_start = a->vt_wts[i]->elts;
     p_end = p_start + nums[i] * a->step_size;
-    for (p = p_start; p < p_end; p += a->step_size){
+    for (p = p_start; p != p_end; p += a->step_size){
       res *= (*(size_t *)p == vts[ix]);
       res *= (*(size_t *)(p + sizeof(size_t)) == wts[ix]);
       ix++;
@@ -225,7 +226,7 @@ void double_graph_helper(const adj_lst_t *a,
     res *= (nums[i] == a->vt_wts[i]->num_elts);
     p_start = a->vt_wts[i]->elts;
     p_end = p_start + nums[i] * a->step_size;
-    for (p = p_start; p < p_end; p += a->step_size){
+    for (p = p_start; p != p_end; p += a->step_size){
       res *= (*(size_t *)p == vts[ix]);
       /* == because of the same bit pattern */
       res *= (*(double *)(p + sizeof(size_t)) == wts[ix]);
@@ -311,16 +312,16 @@ void complete_graph_init(graph_t *g, size_t n){
 /**
    Runs a adj_lst_undir_build test on complete unweighted graphs.
 */
-void run_adj_lst_undir_build_test(int pow_start, int pow_end){
-  int p;
+void run_adj_lst_undir_build_test(int log_start, int log_end){
+  int l;
   graph_t g;
   adj_lst_t a;
   clock_t t;
   printf("Test adj_lst_undir_build on complete unweighted graphs \n");
   printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) "
 	 "directed edges \n");
-  for (p = pow_start; p <= pow_end; p++){
-    complete_graph_init(&g, pow_two(p));
+  for (l = log_start; l <= log_end; l++){
+    complete_graph_init(&g, pow_two_perror(l));
     adj_lst_init(&a, &g);
     t = clock();
     adj_lst_undir_build(&a, &g);
@@ -355,8 +356,8 @@ int bern(void *arg){
    Test adj_lst_add_dir_edge and adj_lst_add_undir_edge.
 */
 
-void add_edge_helper(int pow_start,
-		     int pow_end,
+void add_edge_helper(int log_start,
+		     int log_end,
 		     void (*build)(adj_lst_t *,
 				   const graph_t *),
 		     void (*add_edge)(adj_lst_t *,
@@ -366,27 +367,27 @@ void add_edge_helper(int pow_start,
 				      int (*)(void *),
 				      void *));
 
-void run_adj_lst_add_dir_edge_test(int pow_start, int pow_end){
+void run_adj_lst_add_dir_edge_test(int log_start, int log_end){
   printf("Test adj_lst_add_dir_edge on DAGs \n");
   printf("\tn vertices, 0 as source, n(n - 1)/2 directed edges \n");
-  add_edge_helper(pow_start,
-		  pow_end,
+  add_edge_helper(log_start,
+		  log_end,
 		  adj_lst_dir_build,
 		  adj_lst_add_dir_edge);
 }
 
-void run_adj_lst_add_undir_edge_test(int pow_start, int pow_end){
+void run_adj_lst_add_undir_edge_test(int log_start, int log_end){
   printf("Test adj_lst_add_undir_edge on complete graphs \n");
   printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) "
 	 "directed edges \n");
-  add_edge_helper(pow_start,
-		  pow_end,
+  add_edge_helper(log_start,
+		  log_end,
 		  adj_lst_undir_build,
 		  adj_lst_add_undir_edge);
 }
 
-void add_edge_helper(int pow_start,
-		     int pow_end,
+void add_edge_helper(int log_start,
+		     int log_end,
 		     void (*build)(adj_lst_t *,
 				   const graph_t *),
 		     void (*add_edge)(adj_lst_t *,
@@ -396,15 +397,15 @@ void add_edge_helper(int pow_start,
 				      int (*)(void *),
 				      void *)){
   int res = 1;
-  int p;
+  int l;
   size_t i, j, n;
   bern_arg_t b;
   graph_t g_blt, g_bld;
   adj_lst_t a_blt, a_bld;
   clock_t t;
   b.p = C_PROB_ONE;
-  for (p = pow_start; p <= pow_end; p++){
-    n = pow_two(p);
+  for (l = log_start; l <= log_end; l++){
+    n = pow_two_perror(l);
     complete_graph_init(&g_blt, n);
     graph_base_init(&g_bld, n, 0);
     adj_lst_init(&a_blt, &g_blt);
@@ -446,41 +447,41 @@ void add_edge_helper(int pow_start,
    Test adj_lst_rand_dir and adj_lst_rand_undir.
 */
 
-void rand_build_helper(int pow_start,
-		       int pow_end,
+void rand_build_helper(int log_start,
+		       int log_end,
 		       double prob,
 		       void (*rand_build)(adj_lst_t *,
 					  size_t,
 					  int (*)(void *),
 					  void *));
 
-void run_adj_lst_rand_dir_test(int pow_start, int pow_end){
+void run_adj_lst_rand_dir_test(int log_start, int log_end){
   printf("Test adj_lst_rand_dir on the number of edges in expectation\n");
   printf("\tn vertices, E[# of directed edges] = n(n - 1) * (%.1f * 1)\n",
 	 C_PROB_HALF);
-  rand_build_helper(pow_start, pow_end, C_PROB_HALF, adj_lst_rand_dir);
+  rand_build_helper(log_start, log_end, C_PROB_HALF, adj_lst_rand_dir);
 }
 
-void run_adj_lst_rand_undir_test(int pow_start, int pow_end){
+void run_adj_lst_rand_undir_test(int log_start, int log_end){
   printf("Test adj_lst_rand_undir on the number of edges in expectation\n");
   printf("\tn vertices, E[# of directed edges] = n(n - 1)/2 * (%.1f * 2)\n",
 	 C_PROB_HALF);
-  rand_build_helper(pow_start, pow_end, C_PROB_HALF, adj_lst_rand_undir);
+  rand_build_helper(log_start, log_end, C_PROB_HALF, adj_lst_rand_undir);
 }
 
-void rand_build_helper(int pow_start,
-		       int pow_end,
+void rand_build_helper(int log_start,
+		       int log_end,
 		       double prob,
 		       void (*rand_build)(adj_lst_t *,
 					  size_t,
 					  int (*)(void *),
 					  void *)){
-  int p;
+  int l;
   bern_arg_t b;
   adj_lst_t a;
   b.p = prob;
-  for (p = pow_start; p <= pow_end; p++){
-    rand_build(&a, pow_two(p), bern, &b);
+  for (l = log_start; l <= log_end; l++){
+    rand_build(&a, pow_two_perror(l), bern, &b);
     printf("\t\tvertices: %lu, "
 	   "expected directed edges: %.1f, "
 	   "directed edges: %lu\n",
@@ -505,7 +506,7 @@ size_t sum_vts(const adj_lst_t *a, size_t i){
   size_t ret = 0;
   p_start = a->vt_wts[i]->elts;
   p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
-  for (p = p_start; p < p_end; p += a->step_size){
+  for (p = p_start; p != p_end; p += a->step_size){
     ret += *(size_t *)p;
   }
   return ret;
@@ -531,7 +532,7 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *)){
     printf("\t%lu : ", TOLU(i));
     p_start = a->vt_wts[i]->elts;
     p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
-    for (p = p_start; p < p_end; p += a->step_size){
+    for (p = p_start; p != p_end; p += a->step_size){
       printf("%lu ", TOLU(*(size_t *)p));
     }
     printf("\n");
@@ -542,9 +543,8 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *)){
       printf("\t%lu : ", TOLU(i));
       p_start = a->vt_wts[i]->elts;
       p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
-      p_start += sizeof(size_t);
-      for (p = p_start; p < p_end; p += a->step_size){
-	print_wt(p);
+      for (p = p_start; p != p_end; p += a->step_size){
+	print_wt(p + sizeof(size_t));
       }
       printf("\n");
     }
