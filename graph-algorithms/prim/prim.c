@@ -100,11 +100,12 @@ void prim(const adj_lst_t *a,
 	  const heap_ht_t *hht,
 	  int (*cmp_wt)(const void *, const void *)){
   const char *p = NULL, *p_start = NULL, *p_end = NULL;
+  const char *uv_wt = NULL;
   size_t wt_size = a->wt_size;
   size_t vt_size = sizeof(size_t);
   size_t init_count = 1;
   size_t u, v;
-  void *u_wt = NULL, *v_wt = NULL, *uv_wt = NULL;
+  void *u_wt = NULL, *v_wt = NULL;
   ht_def_t ht_def;
   context_t context;
   heap_ht_t hht_def;

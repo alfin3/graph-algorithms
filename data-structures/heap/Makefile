@@ -23,12 +23,12 @@ CFLAGS_BUILD_MODE = ${CFLAGS_BUILD_MODE_${BUILD_MODE}}
 CC = gcc
 
 HT_DIVCHN_DIR = ../ht-divchn/
-HT_MUL_DIR = ../ht-mul/
+HT_MULOA_DIR = ../ht-muloa/
 DLL_DIR = ../dll/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
 CFLAGS = -I$(HT_DIVCHN_DIR)                           \
-         -I$(HT_MUL_DIR)                              \
+         -I$(HT_MULOA_DIR)                              \
          -I$(DLL_DIR)                                 \
          -I$(UTILS_MEM_DIR)                           \
          -I$(UTILS_MOD_DIR)                           \
@@ -37,7 +37,7 @@ CFLAGS = -I$(HT_DIVCHN_DIR)                           \
 OBJ = heap-test.o                     \
       heap.o                          \
       $(HT_DIVCHN_DIR)ht-divchn.o     \
-      $(HT_MUL_DIR)ht-mul.o           \
+      $(HT_MULOA_DIR)ht-muloa.o           \
       $(DLL_DIR)dll.o                 \
       $(UTILS_MEM_DIR)utilities-mem.o \
       $(UTILS_MOD_DIR)utilities-mod.o
@@ -47,7 +47,7 @@ heap-test : $(OBJ)
 
 heap-test.o                     : heap.h                          \
                                   $(HT_DIVCHN_DIR)ht-divchn.h     \
-                                  $(HT_MUL_DIR)ht-mul.h           \
+                                  $(HT_MULOA_DIR)ht-muloa.h       \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h
 heap.o                          : heap.h                          \
@@ -56,7 +56,7 @@ $(HT_DIVCHN_DIR)ht-divchn.o     : $(HT_DIVCHN_DIR)ht-divchn.h     \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h
-$(HT_MUL_DIR)ht-mul.o           : $(HT_MUL_DIR)ht-mul.h           \
+$(HT_MULOA_DIR)ht-muloa.o       : $(HT_MULOA_DIR)ht-muloa.h       \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h

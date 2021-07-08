@@ -44,7 +44,7 @@
 #include <time.h>
 #include "heap.h"
 #include "ht-divchn.h"
-#include "ht-mul.h"
+#include "ht-muloa.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
 
@@ -65,7 +65,7 @@ const char *C_USAGE =
 const int C_ARGC_MAX = 10;
 const size_t C_ARGS_DEF[9] = {14, 1, 1, 1, 3, 1, 1, 1, 1};
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
-const float C_ALPHA_MUL_MAX = 1.0;
+const float C_ALPHA_MULOA_MAX = 1.0;
 
 /* tests */
 const int C_PTY_TYPES_COUNT = 3;
@@ -173,24 +173,24 @@ typedef struct{
 typedef struct{
   float alpha;
   size_t (*rdc_key)(const void *, size_t);
-} ht_mul_context_t;
+} ht_muloa_context_t;
 
 void ht_divchn_init_helper(ht_divchn_t *ht,
-			size_t key_size,
-			size_t elt_size,
-			void (*free_elt)(void *),
-			void *context){
+			   size_t key_size,
+			   size_t elt_size,
+			   void (*free_elt)(void *),
+			   void *context){
   ht_divchn_context_t *c = context;
   ht_divchn_init(ht, key_size, elt_size, 0, c->alpha, free_elt);
 }
 
-void ht_mul_init_helper(ht_mul_t *ht,
-			size_t key_size,
-			size_t elt_size,
-			void (*free_elt)(void *),
-			void *context){
-  ht_mul_context_t * c = context;
-  ht_mul_init(ht, key_size, elt_size, c->alpha, c->rdc_key, free_elt);
+void ht_muloa_init_helper(ht_muloa_t *ht,
+			  size_t key_size,
+			  size_t elt_size,
+			  void (*free_elt)(void *),
+			  void *context){
+  ht_muloa_context_t * c = context;
+  ht_muloa_init(ht, key_size, elt_size, 0, c->alpha, c->rdc_key, free_elt);
 }
 
 /**
@@ -270,26 +270,26 @@ void run_update_search_divchn_uint_test(int log_ins, float alpha){
 }
 
 /**
-   Runs a heap_{push, pop, free} test with a ht_mul_t hash table on
+   Runs a heap_{push, pop, free} test with a ht_muloa_t hash table on
    size_t elements across priority types.
 */
-void run_push_pop_free_mul_uint_test(int log_ins, float alpha){
+void run_push_pop_free_muloa_uint_test(int log_ins, float alpha){
   int i;
   size_t n;
-  ht_mul_t ht_mul;
-  ht_mul_context_t context;
+  ht_muloa_t ht_muloa;
+  ht_muloa_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   context.alpha = alpha;
   context.rdc_key = NULL;
-  hht.ht = &ht_mul;
+  hht.ht = &ht_muloa;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_mul_init_helper;
-  hht.insert = (heap_ht_insert)ht_mul_insert;
-  hht.search = (heap_ht_search)ht_mul_search;
-  hht.remove = (heap_ht_remove)ht_mul_remove;
-  hht.free = (heap_ht_free)ht_mul_free;
-  printf("Run a heap_{push, pop, free} test with a ht_mul_t "
+  hht.init = (heap_ht_init)ht_muloa_init_helper;
+  hht.insert = (heap_ht_insert)ht_muloa_insert;
+  hht.search = (heap_ht_search)ht_muloa_search;
+  hht.remove = (heap_ht_remove)ht_muloa_remove;
+  hht.free = (heap_ht_free)ht_muloa_free;
+  printf("Run a heap_{push, pop, free} test with a ht_muloa_t "
 	 "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
@@ -309,26 +309,26 @@ void run_push_pop_free_mul_uint_test(int log_ins, float alpha){
 }
 
 /**
-   Runs a heap_{update, search} test with a ht_mul_t hash table on
+   Runs a heap_{update, search} test with a ht_muloa_t hash table on
    size_t elements across priority types.
 */
-void run_update_search_mul_uint_test(int log_ins, float alpha){
+void run_update_search_muloa_uint_test(int log_ins, float alpha){
   int i;
   size_t n;
-  ht_mul_t ht_mul;
-  ht_mul_context_t context;
+  ht_muloa_t ht_muloa;
+  ht_muloa_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   context.alpha = alpha;
   context.rdc_key = NULL;
-  hht.ht = &ht_mul;
+  hht.ht = &ht_muloa;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_mul_init_helper;
-  hht.insert = (heap_ht_insert)ht_mul_insert;
-  hht.search = (heap_ht_search)ht_mul_search;
-  hht.remove = (heap_ht_remove)ht_mul_remove;
-  hht.free = (heap_ht_free)ht_mul_free;
-  printf("Run a heap_{update, search} test with a ht_mul_t "
+  hht.init = (heap_ht_init)ht_muloa_init_helper;
+  hht.insert = (heap_ht_insert)ht_muloa_insert;
+  hht.search = (heap_ht_search)ht_muloa_search;
+  hht.remove = (heap_ht_remove)ht_muloa_remove;
+  hht.free = (heap_ht_free)ht_muloa_free;
+  printf("Run a heap_{update, search} test with a ht_muloa_t "
 	 "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
@@ -463,26 +463,26 @@ void run_update_search_divchn_uint_ptr_test(int log_ins, float alpha){
 }
 
 /**
-   Runs a heap_{push, pop, free} test with a ht_mul_t hash table on
+   Runs a heap_{push, pop, free} test with a ht_muloa_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_push_pop_free_mul_uint_ptr_test(int log_ins, float alpha){
+void run_push_pop_free_muloa_uint_ptr_test(int log_ins, float alpha){
   int i;
   size_t n;
-  ht_mul_t ht_mul;
-  ht_mul_context_t context;
+  ht_muloa_t ht_muloa;
+  ht_muloa_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   context.alpha = alpha;
   context.rdc_key = NULL;
-  hht.ht = &ht_mul;
+  hht.ht = &ht_muloa;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_mul_init_helper;
-  hht.insert = (heap_ht_insert)ht_mul_insert;
-  hht.search = (heap_ht_search)ht_mul_search;
-  hht.remove = (heap_ht_remove)ht_mul_remove;
-  hht.free = (heap_ht_free)ht_mul_free;
-  printf("Run a heap_{push, pop, free} test with a ht_mul_t "
+  hht.init = (heap_ht_init)ht_muloa_init_helper;
+  hht.insert = (heap_ht_insert)ht_muloa_insert;
+  hht.search = (heap_ht_search)ht_muloa_search;
+  hht.remove = (heap_ht_remove)ht_muloa_remove;
+  hht.free = (heap_ht_free)ht_muloa_free;
+  printf("Run a heap_{push, pop, free} test with a ht_muloa_t "
 	 "hash table on noncontiguous uint_ptr_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
@@ -502,26 +502,26 @@ void run_push_pop_free_mul_uint_ptr_test(int log_ins, float alpha){
 }
 
 /**
-   Runs a heap_{update, search} test with a ht_mul_t hash table on
+   Runs a heap_{update, search} test with a ht_muloa_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_update_search_mul_uint_ptr_test(int log_ins, float alpha){
+void run_update_search_muloa_uint_ptr_test(int log_ins, float alpha){
   int i;
   size_t n;
-  ht_mul_t ht_mul;
-  ht_mul_context_t context;
+  ht_muloa_t ht_muloa;
+  ht_muloa_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   context.alpha = alpha;
   context.rdc_key = NULL;
-  hht.ht = &ht_mul;
+  hht.ht = &ht_muloa;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_mul_init_helper;
-  hht.insert = (heap_ht_insert)ht_mul_insert;
-  hht.search = (heap_ht_search)ht_mul_search;
-  hht.remove = (heap_ht_remove)ht_mul_remove;
-  hht.free = (heap_ht_free)ht_mul_free;
-  printf("Run a heap_{update, search} test with a ht_mul_t "
+  hht.init = (heap_ht_init)ht_muloa_init_helper;
+  hht.insert = (heap_ht_insert)ht_muloa_insert;
+  hht.search = (heap_ht_search)ht_muloa_search;
+  hht.remove = (heap_ht_remove)ht_muloa_remove;
+  hht.free = (heap_ht_free)ht_muloa_free;
+  printf("Run a heap_{update, search} test with a ht_muloa_t "
 	 "hash table on noncontiguous uint_ptr_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
@@ -846,7 +846,7 @@ void print_test_result(int res){
 int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
-  float alpha_divchn, alpha_mul;
+  float alpha_divchn, alpha_muloa;
   if (argc > C_ARGC_MAX){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
@@ -869,8 +869,8 @@ int main(int argc, char *argv[]){
     exit(EXIT_FAILURE);
   }
   alpha_divchn = (float)args[1] / args[2];
-  alpha_mul = (float)args[3] / args[4];
-  if (alpha_mul >= C_ALPHA_MUL_MAX){
+  alpha_muloa = (float)args[3] / args[4];
+  if (alpha_muloa >= C_ALPHA_MULOA_MAX){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
@@ -883,12 +883,12 @@ int main(int argc, char *argv[]){
     run_update_search_divchn_uint_ptr_test(args[0], alpha_divchn);
   }
   if (args[7]){
-    run_push_pop_free_mul_uint_test(args[0], alpha_mul);
-    run_push_pop_free_mul_uint_ptr_test(args[0], alpha_mul);
+    run_push_pop_free_muloa_uint_test(args[0], alpha_muloa);
+    run_push_pop_free_muloa_uint_ptr_test(args[0], alpha_muloa);
   }
   if (args[8]){
-    run_update_search_mul_uint_test(args[0], alpha_mul);
-    run_update_search_mul_uint_ptr_test(args[0], alpha_mul);
+    run_update_search_muloa_uint_test(args[0], alpha_muloa);
+    run_update_search_muloa_uint_ptr_test(args[0], alpha_muloa);
   }
   free(args);
   args = NULL;

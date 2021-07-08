@@ -27,7 +27,7 @@ ALG_DIR       = ../
 GRAPH_DIR     = $(DS_DIR)graph/
 HEAP_DIR      = $(DS_DIR)heap/
 HT_DIVCHN_DIR = $(DS_DIR)ht-divchn/
-HT_MUL_DIR    = $(DS_DIR)ht-mul/
+HT_MULOA_DIR  = $(DS_DIR)ht-muloa/
 DLL_DIR       = $(DS_DIR)dll/
 STACK_DIR     = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
@@ -35,7 +35,7 @@ UTILS_MOD_DIR = ../../utilities/utilities-mod/
 CFLAGS = -I$(GRAPH_DIR)                               \
          -I$(HEAP_DIR)                                \
          -I$(HT_DIVCHN_DIR)                           \
-         -I$(HT_MUL_DIR)                              \
+         -I$(HT_MULOA_DIR)                            \
          -I$(DLL_DIR)                                 \
          -I$(STACK_DIR)                               \
          -I$(UTILS_MEM_DIR)                           \
@@ -47,7 +47,7 @@ OBJ = prim-test.o                     \
       $(GRAPH_DIR)graph.o             \
       $(HEAP_DIR)heap.o               \
       $(HT_DIVCHN_DIR)ht-divchn.o     \
-      $(HT_MUL_DIR)ht-mul.o           \
+      $(HT_MULOA_DIR)ht-muloa.o       \
       $(DLL_DIR)dll.o                 \
       $(STACK_DIR)stack.o             \
       $(UTILS_MEM_DIR)utilities-mem.o \
@@ -59,7 +59,7 @@ prim-test : $(OBJ)
 prim-test.o                     : prim.h                          \
                                   $(HEAP_DIR)heap.h               \
                                   $(HT_DIVCHN_DIR)ht-divchn.h     \
-                                  $(HT_MUL_DIR)ht-mul.h           \
+                                  $(HT_MULOA_DIR)ht-muloa.h       \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
@@ -78,7 +78,7 @@ $(HT_DIVCHN_DIR)ht-divchn.o     : $(HT_DIVCHN_DIR)ht-divchn.h     \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h
-$(HT_MUL_DIR)ht-mul.o           : $(HT_MUL_DIR)ht-mul.h           \
+$(HT_MULOA_DIR)ht-muloa.o       : $(HT_MULOA_DIR)ht-muloa.h       \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h

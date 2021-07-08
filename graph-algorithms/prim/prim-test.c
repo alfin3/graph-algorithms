@@ -36,7 +36,7 @@
 #include "prim.h"
 #include "heap.h"
 #include "ht-divchn.h"
-#include "ht-mul.h"
+#include "ht-muloa.h"
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
@@ -66,7 +66,7 @@ const size_t C_ARGS_DEF[4] = {0, 10, 1, 1};
 
 /* hash table load factor upper bounds */
 const float C_ALPHA_DIVCHN = 1.0;
-const float C_ALPHA_MUL = 0.4;
+const float C_ALPHA_MULOA = 0.4;
 
 /* small graph tests */
 const size_t C_NUM_VTS = 5;
@@ -143,13 +143,13 @@ void ht_divchn_init_helper(ht_divchn_t *ht,
   ht_divchn_init(ht, key_size, elt_size, 0, c->alpha, free_elt);
 }
 
-void ht_mul_init_helper(ht_mul_t *ht,
-			size_t key_size,
-			size_t elt_size,
-			void (*free_elt)(void *),
-			void *context){
+void ht_muloa_init_helper(ht_muloa_t *ht,
+			  size_t key_size,
+			  size_t elt_size,
+			  void (*free_elt)(void *),
+			  void *context){
   context_t * c = context;
-  ht_mul_init(ht, key_size, elt_size, c->alpha, NULL, free_elt);
+  ht_muloa_init(ht, key_size, elt_size, 0, c->alpha, NULL, free_elt);
 }
 
 void run_def_uint_prim(const adj_lst_t *a){
@@ -201,23 +201,23 @@ void run_divchn_uint_prim(const adj_lst_t *a){
   prev = NULL;
 }
 
-void run_mul_uint_prim(const adj_lst_t *a){
+void run_muloa_uint_prim(const adj_lst_t *a){
   size_t i;
   size_t *dist = NULL;
   size_t *prev = NULL;
-  ht_mul_t ht_mul;
+  ht_muloa_t ht_muloa;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(size_t));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
-  context.alpha = C_ALPHA_MUL;
-  hht.ht = &ht_mul;
+  context.alpha = C_ALPHA_MULOA;
+  hht.ht = &ht_muloa;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_mul_init_helper;
-  hht.insert = (heap_ht_insert)ht_mul_insert;
-  hht.search = (heap_ht_search)ht_mul_search;
-  hht.remove = (heap_ht_remove)ht_mul_remove;
-  hht.free = (heap_ht_free)ht_mul_free;
+  hht.init = (heap_ht_init)ht_muloa_init_helper;
+  hht.insert = (heap_ht_insert)ht_muloa_insert;
+  hht.search = (heap_ht_search)ht_muloa_search;
+  hht.remove = (heap_ht_remove)ht_muloa_remove;
+  hht.free = (heap_ht_free)ht_muloa_free;
   for (i = 0; i < a->num_vts; i++){
     prim(a, i, dist, prev, &hht, cmp_uint);
     printf("distances and previous vertices with %lu as start \n", TOLU(i));
@@ -238,13 +238,13 @@ void run_uint_graph_test(){
   printf("Running a test on an undirected size_t graph with a \n"
 	 "i) default hash table (index array) \n"
 	 "ii) ht_divchn_t hash table \n"
-	 "iii) ht_mul_t hash table \n\n");
+	 "iii) ht_muloa_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_uint);
   run_def_uint_prim(&a);
   run_divchn_uint_prim(&a);
-  run_mul_uint_prim(&a);
+  run_muloa_uint_prim(&a);
   adj_lst_free(&a);
   graph_free(&g);
   graph_uint_wts_no_edges_init(&g);
@@ -252,13 +252,13 @@ void run_uint_graph_test(){
 	 "with a \n"
 	 "i) default hash table (index array) \n"
 	 "ii) ht_divchn_t hash table \n"
-	 "iii) ht_mul_t hash table \n\n");
+	 "iii) ht_muloa_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_uint);
   run_def_uint_prim(&a);
   run_divchn_uint_prim(&a);
-  run_mul_uint_prim(&a);
+  run_muloa_uint_prim(&a);
   adj_lst_free(&a);
   graph_free(&g);
 }
@@ -348,23 +348,23 @@ void run_divchn_double_prim(const adj_lst_t *a){
   prev = NULL;
 }
 
-void run_mul_double_prim(const adj_lst_t *a){
+void run_muloa_double_prim(const adj_lst_t *a){
   size_t i;
   size_t *prev = NULL;
   double *dist = NULL;
-  ht_mul_t ht_mul;
+  ht_muloa_t ht_muloa;
   context_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(double));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
-  context.alpha = C_ALPHA_MUL;
-  hht.ht = &ht_mul;
+  context.alpha = C_ALPHA_MULOA;
+  hht.ht = &ht_muloa;
   hht.context = &context;
-  hht.init = (heap_ht_init)ht_mul_init_helper;
-  hht.insert = (heap_ht_insert)ht_mul_insert;
-  hht.search = (heap_ht_search)ht_mul_search;
-  hht.remove = (heap_ht_remove)ht_mul_remove;
-  hht.free = (heap_ht_free)ht_mul_free;
+  hht.init = (heap_ht_init)ht_muloa_init_helper;
+  hht.insert = (heap_ht_insert)ht_muloa_insert;
+  hht.search = (heap_ht_search)ht_muloa_search;
+  hht.remove = (heap_ht_remove)ht_muloa_remove;
+  hht.free = (heap_ht_free)ht_muloa_free;
   for (i = 0; i < a->num_vts; i++){
     prim(a, i, dist, prev, &hht, cmp_double);
     printf("distances and previous vertices with %lu as start \n", TOLU(i));
@@ -385,13 +385,13 @@ void run_double_graph_test(){
   printf("Running a test on an undirected double graph with a \n"
 	 "i) default hash table (index array) \n"
 	 "ii) ht_divchn_t hash table \n"
-	 "iii) ht_mul_t hash table \n\n");
+	 "iii) ht_muloa_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_double);
   run_def_double_prim(&a);
   run_divchn_double_prim(&a);
-  run_mul_double_prim(&a);
+  run_muloa_double_prim(&a);
   adj_lst_free(&a);
   graph_free(&g);
   graph_double_wts_no_edges_init(&g);
@@ -399,13 +399,13 @@ void run_double_graph_test(){
 	 "with a \n"
 	 "i) default hash table (index array) \n"
 	 "ii) ht_divchn_t hash table \n"
-	 "iii) ht_mul_t hash table \n\n");
+	 "iii) ht_muloa_t hash table \n\n");
   adj_lst_init(&a, &g);
   adj_lst_undir_build(&a, &g);
   print_adj_lst(&a, print_double);
   run_def_double_prim(&a);
   run_divchn_double_prim(&a);
-  run_mul_double_prim(&a);
+  run_muloa_double_prim(&a);
   adj_lst_free(&a);
   graph_free(&g);
 }
@@ -499,8 +499,8 @@ void sum_mst_edges(size_t *wt_mst,
 void run_rand_uint_test(int pow_start, int pow_end){
   int p, i, j;
   int res = 1;
-  size_t wt_def, wt_divchn, wt_mul;
-  size_t num_vts_def, num_vts_divchn, num_vts_mul;
+  size_t wt_def, wt_divchn, wt_muloa;
+  size_t num_vts_def, num_vts_divchn, num_vts_muloa;
   size_t n;
   size_t wt_l = 0, wt_h = C_WEIGHT_HIGH;
   size_t *rand_start = NULL;
@@ -508,10 +508,10 @@ void run_rand_uint_test(int pow_start, int pow_end){
   adj_lst_t a;
   bern_arg_t b;
   ht_divchn_t ht_divchn;
-  ht_mul_t ht_mul;
-  context_t context_divchn, context_mul;
-  heap_ht_t hht_divchn, hht_mul;
-  clock_t t_def, t_divchn, t_mul;
+  ht_muloa_t ht_muloa;
+  context_t context_divchn, context_muloa;
+  heap_ht_t hht_divchn, hht_muloa;
+  clock_t t_def, t_divchn, t_muloa;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
   dist = malloc_perror(pow_two(pow_end), sizeof(size_t));
   prev = malloc_perror(pow_two(pow_end), sizeof(size_t));
@@ -523,14 +523,14 @@ void run_rand_uint_test(int pow_start, int pow_end){
   hht_divchn.search = (heap_ht_search)ht_divchn_search;
   hht_divchn.remove = (heap_ht_remove)ht_divchn_remove;
   hht_divchn.free = (heap_ht_free)ht_divchn_free;
-  context_mul.alpha = C_ALPHA_MUL;
-  hht_mul.ht = &ht_mul;
-  hht_mul.context = &context_mul;
-  hht_mul.init = (heap_ht_init)ht_mul_init_helper;
-  hht_mul.insert = (heap_ht_insert)ht_mul_insert;
-  hht_mul.search = (heap_ht_search)ht_mul_search;
-  hht_mul.remove = (heap_ht_remove)ht_mul_remove;
-  hht_mul.free = (heap_ht_free)ht_mul_free;
+  context_muloa.alpha = C_ALPHA_MULOA;
+  hht_muloa.ht = &ht_muloa;
+  hht_muloa.context = &context_muloa;
+  hht_muloa.init = (heap_ht_init)ht_muloa_init_helper;
+  hht_muloa.insert = (heap_ht_insert)ht_muloa_insert;
+  hht_muloa.search = (heap_ht_search)ht_muloa_search;
+  hht_muloa.remove = (heap_ht_remove)ht_muloa_remove;
+  hht_muloa.free = (heap_ht_free)ht_muloa_free;
   printf("Run a prim test on random undirected graphs with random "
 	 "size_t weights in [%lu, %lu]\n", TOLU(wt_l), TOLU(wt_h));
   fflush(stdout);
@@ -562,24 +562,24 @@ void run_rand_uint_test(int pow_start, int pow_end){
       }
       t_divchn = clock() - t_divchn;
       sum_mst_edges(&wt_divchn, &num_vts_divchn, a.num_vts, dist, prev);
-      t_mul = clock();
+      t_muloa = clock();
       for (j = 0; j < C_ITER; j++){
-	prim(&a, rand_start[j], dist, prev, &hht_mul, cmp_uint);
+	prim(&a, rand_start[j], dist, prev, &hht_muloa, cmp_uint);
       }
-      t_mul = clock() - t_mul;
-      sum_mst_edges(&wt_mul, &num_vts_mul, a.num_vts, dist, prev);
+      t_muloa = clock() - t_muloa;
+      sum_mst_edges(&wt_muloa, &num_vts_muloa, a.num_vts, dist, prev);
       res *= (wt_def == wt_divchn &&
-	      wt_divchn == wt_mul);
+	      wt_divchn == wt_muloa);
       res *= (num_vts_def == num_vts_divchn &&
-	      num_vts_divchn == num_vts_mul);
+	      num_vts_divchn == num_vts_muloa);
       printf("\t\tvertices: %lu, # of directed edges: %lu\n",
 	     TOLU(a.num_vts), TOLU(a.num_es));
       printf("\t\t\tprim default ht ave runtime:         %.8f seconds\n"
 	     "\t\t\tprim ht_divchn ave runtime:          %.8f seconds\n"
-	     "\t\t\tprim ht_mul ave runtime:             %.8f seconds\n",
+	     "\t\t\tprim ht_muloa ave runtime:           %.8f seconds\n",
 	     (float)t_def / C_ITER / CLOCKS_PER_SEC,
 	     (float)t_divchn / C_ITER / CLOCKS_PER_SEC,
-	     (float)t_mul / C_ITER / CLOCKS_PER_SEC);
+	     (float)t_muloa / C_ITER / CLOCKS_PER_SEC);
       printf("\t\t\tcorrectness:                         ");
       print_test_result(res);
       printf("\t\t\tlast mst # edges:                    %lu\n",
