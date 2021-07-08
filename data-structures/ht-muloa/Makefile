@@ -22,25 +22,24 @@ CFLAGS_BUILD_MODE_DEF = -std=c90 -Wpedantic
 CFLAGS_BUILD_MODE = ${CFLAGS_BUILD_MODE_${BUILD_MODE}}
 CC = gcc
 
-DLL_DIR = ../dll/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
-CFLAGS = -I$(UTILS_MEM_DIR)                    \
-         -I$(UTILS_MOD_DIR)                    \
-         ${CFLAGS_BUILD_MODE} -Wall -Wextra -O3
+CFLAGS = -I$(UTILS_MEM_DIR)                           \
+         -I$(UTILS_MOD_DIR)                           \
+         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
-OBJ = ht-mul-test.o                   \
-      ht-mul.o                        \
+OBJ = ht-muloa-test.o                   \
+      ht-muloa.o                        \
       $(UTILS_MEM_DIR)utilities-mem.o \
       $(UTILS_MOD_DIR)utilities-mod.o
 
-ht-mul-test : $(OBJ)
+ht-muloa-test : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
 
-ht-mul-test.o                   : ht-mul.h                        \
+ht-muloa-test.o                 : ht-muloa.h                      \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h
-ht-mul.o                        : ht-mul.h                        \
+ht-muloa.o                      : ht-muloa.h                      \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
@@ -51,4 +50,4 @@ $(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h
 clean :
 	rm $(OBJ)
 clean-all : 
-	rm -f ht-mul-test $(OBJ)
+	rm -f ht-muloa-test $(OBJ)

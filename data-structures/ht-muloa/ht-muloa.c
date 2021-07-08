@@ -1,5 +1,5 @@
 /**
-   ht-mul.c
+   ht-muloa.c
 
    A hash table with generic hash keys and generic elements. The 
    implementation is based on a multiplication method for hashing into upto 
@@ -24,7 +24,7 @@
    within a contiguous or noncontiguous block of memory.
 
    The implementation does not use stdint.h and is portable under C89/C90
-   and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
+   and C99 with the only requirements that CHAR_BIT * sizeof(size_t) is
    greater or equal to 16 and is even.
 */
 
@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include "ht-mul.h"
+#include "ht-muloa.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
 
@@ -102,7 +102,8 @@ static const size_t C_BUILD_SHIFT = 16;
 static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_FULL_SIZE = sizeof(size_t);
-static const size_t C_INIT_LOG_COUNT = 8;
+static const size_t C_LOG_COUNT_MIN = 8;
+static const size_t C_LOG_COUNT_MAX = CHAR_BIT * sizeof(size_t) - 1;
 
 /* placeholder handling */
 static key_elt_t *ph_new();
@@ -123,25 +124,30 @@ static void key_elt_update(key_elt_t *ke,
 static void key_elt_free(key_elt_t* ke, void (*free_elt)(void *));
 
 /* hashing */
-static size_t find_build_prime(const size_t *parts);
-static size_t convert_std_key(const ht_mul_t *ht, const void *key);
+static size_t convert_std_key(const ht_muloa_t *ht, const void *key);
 static size_t adjust_dist(size_t dist);
 
 /* hash table operations and maintenance*/
-static key_elt_t **search(const ht_mul_t *ht, const void *key);
-static void ht_grow(ht_mul_t *ht);
-static void ht_clean(ht_mul_t *ht);
-static void reinsert(ht_mul_t *ht, const key_elt_t *prev_ke);
+static key_elt_t **search(const ht_muloa_t *ht, const void *key);
+static int incr_count(ht_muloa_t *ht);
+static void ht_grow(ht_muloa_t *ht);
+static void ht_clean(ht_muloa_t *ht);
+static void reinsert(ht_muloa_t *ht, const key_elt_t *prev_ke);
+
+/* integer constant construction */
+static size_t find_build_prime(const size_t *parts);
 
 /**
    Initializes a hash table. 
-   ht          : a pointer to a preallocated block of size sizeof(ht_mul_t).
-   key_size    : size of a key object
-   elt_size    : - size of an element, if the element is within a contiguous
-                 memory block and a copy of the element is inserted,
-                 - size of a pointer to an element, if the element is within
-                 a noncontiguous memory block or a pointer to a contiguous
-                 element is inserted
+   ht          : a pointer to a preallocated block of size
+                 sizeof(ht_muloa_t).
+   key_size    : non-zero size of a key object.
+   elt_size    : - non-zero size of an element, if the element is within a
+                 contiguous memory block and a copy of the element is
+                 inserted,
+                 - size of a pointer to an element, if the element
+                 is within a noncontiguous memory block or a pointer to a
+                 contiguous element is inserted
    alpha       : a load factor upper bound that is > 0.0 and < 1.0
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
@@ -156,22 +162,25 @@ static void reinsert(ht_mul_t *ht, const key_elt_t *prev_ke);
                  is sufficient to delete the element,
                  - if an element is within a noncontiguous memory block or
                  a pointer to a contiguous element was inserted, then an
-                 element-specific free_elt, taking a pointer to a pointer to an
-                 element as its argument and leaving a block of size elt_size
-                 pointed to by the argument, is necessary to delete the element
+                 element-specific free_elt, taking a pointer to a pointer
+                 to an element as its argument and leaving a block of size
+                 elt_size pointed to by the argument, is necessary to delete
+                 the element
 */
-void ht_mul_init(ht_mul_t *ht,
-		 size_t key_size,
-		 size_t elt_size,
-		 float alpha,
-		 size_t (*rdc_key)(const void *, size_t),
-		 void (*free_elt)(void *)){
+void ht_muloa_init(ht_muloa_t *ht,
+		   size_t key_size,
+		   size_t elt_size,
+		   size_t min_num,
+		   float alpha,
+		   size_t (*rdc_key)(const void *, size_t),
+		   void (*free_elt)(void *)){
   size_t i;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
-  ht->log_count = C_INIT_LOG_COUNT;
-  ht->count = pow_two(ht->log_count);
-  ht->max_count = pow_two(C_FULL_BIT - 1);
+  ht->pair_size = add_sz_perror(key_size, elt_size);
+  ht->log_count = C_LOG_COUNT_MIN;
+  ht->count = pow_two_perror(C_LOG_COUNT_MIN);
+  while ((float)min_num / ht->count > alpha && incr_count(ht));
   ht->max_num_probes = 1; /* at least one probe */
   ht->num_elts = 0;
   ht->num_phs = 0;
@@ -192,20 +201,18 @@ void ht_mul_init(ht_mul_t *ht,
    in the hash table, associates the key with the new element. The key and 
    elt parameters are not NULL.
 */
-void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
+void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
   size_t num_probes = 1;
   size_t std_key;
   size_t fval, sval;
   size_t ix, dist;
   key_elt_t **ke = NULL;
-  while ((float)(ht->num_elts + ht->num_phs) / ht->count > ht->alpha){
+  if ((float)(ht->num_elts + ht->num_phs) / ht->count > ht->alpha){
     /* clean or grow if E[# keys in a slot] > alpha */
     if (ht->num_elts < ht->num_phs){
       ht_clean(ht);
-    }else if (ht->count < ht->max_count){
+    }else if (ht->log_count < C_LOG_COUNT_MAX){
       ht_grow(ht);
-    }else{
-      break;
     }
   }
   std_key = convert_std_key(ht, key);
@@ -235,7 +242,7 @@ void ht_mul_insert(ht_mul_t *ht, const void *key, const void *elt){
    If a key is present in a hash table, returns a pointer to its associated 
    element, otherwise returns NULL. The key parameter is not NULL.
 */
-void *ht_mul_search(const ht_mul_t *ht, const void *key){
+void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
   key_elt_t **ke = search(ht, key);
   if (ke != NULL){
     return (*ke)->elt;
@@ -250,7 +257,7 @@ void *ht_mul_search(const ht_mul_t *ht, const void *key){
    by elt. If the key is not in the hash table, leaves the block pointed
    to by elt unchanged. The key and elt parameters are not NULL.
 */
-void ht_mul_remove(ht_mul_t *ht, const void *key, void *elt){
+void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt){
   key_elt_t **ke = search(ht, key);
   if (ke != NULL){
     memcpy(elt, (*ke)->elt, ht->elt_size);
@@ -266,7 +273,7 @@ void ht_mul_remove(ht_mul_t *ht, const void *key, void *elt){
    If a key is in a hash table, deletes the key and its associated element 
    according to free_elt. The key parameter is not NULL.
 */
-void ht_mul_delete(ht_mul_t *ht, const void *key){
+void ht_muloa_delete(ht_muloa_t *ht, const void *key){
   key_elt_t **ke = search(ht, key);
   if (ke != NULL){
     key_elt_free(*ke, ht->free_elt);
@@ -277,10 +284,10 @@ void ht_mul_delete(ht_mul_t *ht, const void *key){
 }
 
 /**
-   Frees a hash table and leaves a block of size sizeof(ht_mul_t)
+   Frees a hash table and leaves a block of size sizeof(ht_muloa_t)
    pointed to by the ht parameter.
 */
-void ht_mul_free(ht_mul_t *ht){
+void ht_muloa_free(ht_muloa_t *ht){
   size_t i;
   key_elt_t **ke = NULL;
   for (i = 0; i < ht->count; i++){
@@ -321,7 +328,7 @@ static void ph_free(key_elt_t *ke){
 }
 
 /**
-   Create and free a key element.
+   Create, update, and free a key element.
 */
 
 static key_elt_t *key_elt_new(size_t fval,
@@ -355,6 +362,179 @@ static void key_elt_free(key_elt_t *ke, void (*free_elt)(void *)){
   if (free_elt != NULL) free_elt(ke->elt);
   free(ke);
   ke = NULL;
+}
+
+/**
+   Performs a default mod 2^{CHAR_BIT * sizeof(size_t)} addition routine
+   on a key of size greater than sizeof(size_t) bytes.
+*/
+static size_t rdc_key_def(const void *key, size_t key_size){
+  const unsigned char *c_ptr = NULL;
+  size_t std_key = 0;
+  size_t i, rem_count, sz_count;
+  const size_t *sz_ptr = NULL;
+  sz_count = key_size / sizeof(size_t);
+  rem_count = key_size - sz_count * sizeof(size_t);
+  c_ptr = key;
+  for (i = 0; i < rem_count; i++){
+    std_key += c_ptr[i];
+    std_key <<= C_BYTE_BIT;
+  }
+  sz_ptr = (const size_t *)&c_ptr[rem_count];
+  for (i = 0; i < sz_count; i++){
+    std_key += sz_ptr[i];
+  }
+  return std_key;
+}
+
+/**
+   Converts a key to a key of the standard size of sizeof(size_t) bytes.
+*/
+static size_t convert_std_key(const ht_muloa_t *ht, const void *key){
+  size_t std_key = 0;
+  if (ht->rdc_key != NULL){
+    std_key = ht->rdc_key(key, ht->key_size);
+  }else if (ht->key_size <= C_FULL_SIZE){
+    memcpy(&std_key, key, ht->key_size);
+  }else{
+    std_key = rdc_key_def(key, ht->key_size);
+  }
+  return std_key;
+}
+
+/**
+   Adjusts a probe distance to an odd distance, if necessary. 
+*/
+static size_t adjust_dist(size_t dist){
+  size_t ret = dist;
+  if (!(dist & 1)){
+    if (dist == 0){
+      ret++;
+    }else{
+      ret--;
+    }
+  }
+  return ret;
+}
+
+/**
+   If a key is present in a hash table, returns a pointer to a slot
+   in the key_elts array that stores a pointer to key_elt_t with the
+   key, otherwise returns NULL.
+*/
+static key_elt_t **search(const ht_muloa_t *ht, const void *key){
+  size_t num_probes = 1;
+  size_t std_key, fval, sval, ix, dist;
+  key_elt_t **ke = NULL;
+  std_key = convert_std_key(ht, key);
+  fval = ht->fprime * std_key; /* mod 2^FULL_BIT */
+  sval = ht->sprime * std_key; /* mod 2^FULL_BIT */
+  ix = fval >> (C_FULL_BIT - ht->log_count);
+  dist = adjust_dist(sval >> (C_FULL_BIT - ht->log_count));
+  ke = &ht->key_elts[ix];
+  while (*ke != NULL){
+    if (!is_ph(*ke) &&
+	memcmp((*ke)->key, key, ht->key_size) == 0){
+      return ke;
+    }else if (num_probes == ht->max_num_probes){
+      break;
+    }else{
+      ix = sum_mod(dist, ix, ht->count);
+      ke = &ht->key_elts[ix];
+      num_probes++;
+    }
+  }
+  return NULL;
+}
+
+/**
+   Increases the count of a hash table to the next power of two that lowers
+   the load factor below alpha or to 2^C_LOG_COUNT_MAX. The operation is
+   called if alpha was exceeded and the hash table log_count did not reach
+   C_LOG_COUNT_MAX. A single call is guaranteed to lower the load factor
+   below alpha if a sufficiently large power of two is representable by
+   size_t on a given system, even if alpha is extremely small.
+*/
+static void ht_grow(ht_muloa_t *ht){
+  size_t i, prev_count = ht->count;
+  key_elt_t **prev_key_elts = ht->key_elts;
+  key_elt_t **ke = NULL;
+  while ((float)ht->num_elts / ht->count > ht->alpha && incr_count(ht));
+  if (prev_count == ht->count) return; /* max reached without increase */
+  ht->max_num_probes = 1;
+  ht->num_phs = 0;
+  ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
+  for (i = 0; i < ht->count; i++){
+    ht->key_elts[i] = NULL;
+  }
+  for (i = 0; i < prev_count; i++){
+    ke = &prev_key_elts[i];
+    if (*ke != NULL && !is_ph(*ke)){
+      reinsert(ht, *ke);
+    }
+  }
+  free(prev_key_elts);
+  prev_key_elts = NULL;
+}
+		      
+/**
+   Attempts to increase the count of a hash table. Returns 1 if the count
+   was increased. Returns 0 if the count could not be increased because
+   C_LOG_COUNT_MAX was reached. Updates count and log_count of a hash
+   table accordingly.
+*/
+static int incr_count(ht_muloa_t *ht){
+  if (ht->log_count == C_LOG_COUNT_MAX) return 0;
+  ht->log_count++;
+  ht->count <<= 1;
+  return 1;
+}
+
+/**
+   Eliminates the placeholders left by delete and remove operations.
+   If called when num_elts < num_placeholders, then for every delete/remove 
+   operation at most one rehashing operation is performed, resulting in a 
+   constant overhead of at most one rehashing per delete/remove operation.
+*/
+static void ht_clean(ht_muloa_t *ht){
+  size_t i;
+  key_elt_t **prev_key_elts = ht->key_elts;
+  key_elt_t **ke = NULL;
+  ht->max_num_probes = 1;
+  ht->num_phs = 0;
+  ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
+  for (i = 0; i < ht->count; i++){
+    ht->key_elts[i] = NULL;
+  }
+  for (i = 0; i < ht->count; i++){
+    ke = &prev_key_elts[i];
+    if (*ke != NULL && !is_ph(*ke)){
+      reinsert(ht, *ke);
+    }
+  }
+  free(prev_key_elts);
+  prev_key_elts = NULL;
+}
+
+/**
+   Reinserts a key and an associated element into a new hash table during 
+   ht_grow and ht_clean operations by recomputing the hash values with 
+   bit shifting and without multiplication.
+*/
+static void reinsert(ht_muloa_t *ht, const key_elt_t *prev_ke){
+  size_t num_probes = 1;
+  size_t ix, dist;
+  key_elt_t **ke = NULL;
+  ix = prev_ke->fval >> (C_FULL_BIT - ht->log_count);
+  dist = adjust_dist(prev_ke->sval >> (C_FULL_BIT - ht->log_count));
+  ke = &ht->key_elts[ix];
+  while (*ke != NULL){
+    ix = sum_mod(dist, ix, ht->count);
+    ke = &ht->key_elts[ix];
+    num_probes++;
+    if (num_probes > ht->max_num_probes) ht->max_num_probes++;
+  }
+  *ke = (key_elt_t *)prev_ke;
 }
 
 /**
@@ -407,166 +587,4 @@ static size_t find_build_prime(const size_t *parts){
     if (i == C_PARTS_ACC_COUNTS[j]) j++;
   }
   return p;
-}
-
-/**
-   Performs a default mod 2^{CHAR_BIT * sizeof(size_t)} addition routine
-   on a key of size greater than sizeof(size_t) bytes.
-*/
-static size_t rdc_key_def(const void *key, size_t key_size){
-  unsigned char *c_ptr = NULL;
-  size_t std_key = 0;
-  size_t i, rem_count, sz_count;
-  size_t *sz_ptr = NULL;
-  sz_count = key_size / sizeof(size_t);
-  rem_count = key_size - sz_count * sizeof(size_t);
-  c_ptr = (unsigned char *)key;
-  for (i = 0; i < rem_count; i++){
-    std_key += c_ptr[i];
-    std_key <<= C_BYTE_BIT;
-  }
-  sz_ptr = (size_t *)(&c_ptr[rem_count]);
-  for (i = 0; i < sz_count; i++){
-    std_key += sz_ptr[i];
-  }
-  return std_key;
-}
-
-/**
-   Converts a key to a key of the standard size of sizeof(size_t) bytes.
-*/
-static size_t convert_std_key(const ht_mul_t *ht, const void *key){
-  size_t std_key = 0;
-  if (ht->rdc_key != NULL){
-    std_key = ht->rdc_key(key, ht->key_size);
-  }else if (ht->key_size <= C_FULL_SIZE){
-    memcpy(&std_key, key, ht->key_size);
-  }else{
-    std_key = rdc_key_def(key, ht->key_size);
-  }
-  return std_key;
-}
-
-/**
-   Adjusts a probe distance to an odd distance, if necessary. 
-*/
-static size_t adjust_dist(size_t dist){
-  size_t ret = dist;
-  if (!(dist & 1)){
-    if (dist == 0){
-      ret++;
-    }else{
-      ret--;
-    }
-  }
-  return ret;
-}
-
-/**
-   If a key is present in a hash table, returns a pointer to a slot
-   in the key_elts array that stores a pointer to key_elt_t with the
-   key, otherwise returns NULL.
-*/
-static key_elt_t **search(const ht_mul_t *ht, const void *key){
-  size_t num_probes = 1;
-  size_t std_key, fval, sval, ix, dist;
-  key_elt_t **ke = NULL;
-  std_key = convert_std_key(ht, key);
-  fval = ht->fprime * std_key; /* mod 2^FULL_BIT */
-  sval = ht->sprime * std_key; /* mod 2^FULL_BIT */
-  ix = fval >> (C_FULL_BIT - ht->log_count);
-  dist = adjust_dist(sval >> (C_FULL_BIT - ht->log_count));
-  ke = &ht->key_elts[ix];
-  while (*ke != NULL){
-    if (!is_ph(*ke) &&
-	memcmp((*ke)->key, key, ht->key_size) == 0){
-      return ke;
-    }else if (num_probes == ht->max_num_probes){
-      break;
-    }else{
-      ix = sum_mod(dist, ix, ht->count);
-      ke = &ht->key_elts[ix];
-      num_probes++;
-    }
-  }
-  return NULL;
-}
-
-/**
-   Doubles the count of a hash table. Makes no changes if the maximum count
-   has been reached.
-*/
-static void ht_grow(ht_mul_t *ht){
-  size_t i, prev_count = ht->count;
-  key_elt_t **prev_key_elts = ht->key_elts;
-  key_elt_t **ke = NULL;
-  if (ht->count == ht->max_count) return;
-  ht->log_count++;
-  ht->count *= 2;
-  ht->max_num_probes = 1;
-  ht->num_elts = 0;
-  ht->num_phs = 0;
-  ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
-  for (i = 0; i < ht->count; i++){
-    ht->key_elts[i] = NULL;
-  }
-  for (i = 0; i < prev_count; i++){
-    ke = &prev_key_elts[i];
-    if (*ke != NULL && !is_ph(*ke)){
-      reinsert(ht, *ke);
-    }
-  }
-  free(prev_key_elts);
-  prev_key_elts = NULL;
-}
-
-/**
-   Eliminates the placeholders left by delete and remove operations.
-   If called when num_elts < num_placeholders, then for every delete/remove 
-   operation at most one rehashing operation is performed, resulting in a 
-   constant overhead of at most one rehashing per delete/remove operation.
-*/
-static void ht_clean(ht_mul_t *ht){
-  size_t i;
-  key_elt_t **prev_key_elts = ht->key_elts;
-  key_elt_t **ke = NULL;
-  ht->max_num_probes = 1;
-  ht->num_elts = 0;
-  ht->num_phs = 0;
-  ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
-  for (i = 0; i < ht->count; i++){
-    ht->key_elts[i] = NULL;
-  }
-  for (i = 0; i < ht->count; i++){
-    ke = &prev_key_elts[i];
-    if (*ke != NULL && !is_ph(*ke)){
-      reinsert(ht, *ke);
-    }
-  }
-  free(prev_key_elts);
-  prev_key_elts = NULL;
-}
-
-/**
-   Reinserts a key and an associated element into a new hash table during 
-   ht_grow and ht_clean operations by recomputing the hash values with 
-   bit shifting and without multiplication.
-*/
-static void reinsert(ht_mul_t *ht, const key_elt_t *prev_ke){
-  size_t num_probes = 1;
-  size_t ix, dist;
-  key_elt_t **ke = NULL;
-  ix = prev_ke->fval >> (C_FULL_BIT - ht->log_count);
-  dist = adjust_dist(prev_ke->sval >> (C_FULL_BIT - ht->log_count));
-  ke = &ht->key_elts[ix];
-  while (*ke != NULL){
-    ix = sum_mod(dist, ix, ht->count);
-    ke = &ht->key_elts[ix];
-    num_probes++;
-    if (num_probes > ht->max_num_probes){
-      ht->max_num_probes++;
-    }
-  }
-  *ke = (key_elt_t *)prev_ke;
-  ht->num_elts++;
 }
