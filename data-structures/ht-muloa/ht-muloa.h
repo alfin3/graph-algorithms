@@ -24,9 +24,10 @@
    Key size reduction methods may introduce regularities. An element is
    within a contiguous or noncontiguous block of memory.
 
-   The implementation does not use stdint.h and is portable under C89/C90
-   and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even.
+   The implementation does not use stdint.h, and is portable under C89/C90
+   and C99 with the only requirements that CHAR_BIT * sizeof(size_t) is
+   greater or equal to 16 and is even. The correctness of the implementation
+   does not depend on implementation-defined float conversions. 
 */
 
 #ifndef HT_MULOA_H  
@@ -47,6 +48,7 @@ typedef struct{
   size_t pair_size; /* key_size + elt_size for input iterations by user */
   size_t log_count;
   size_t count;
+  size_t max_sum;
   size_t max_num_probes;
   size_t num_elts;
   size_t num_phs;
@@ -70,7 +72,15 @@ typedef struct{
                  - size of a pointer to an element, if the element
                  is within a noncontiguous memory block or a pointer to a
                  contiguous element is inserted
-   alpha       : a load factor upper bound that is > 0.0 and < 1.0
+   min_num     : minimum number of keys that are known or expected to become 
+                 present simultaneously in a hash table, resulting in a
+                 speedup by avoiding unnecessary growth steps of a hash
+                 table; 0 if a positive value is not specified and all growth
+                 steps are to be completed
+   alpha       : a load factor upper bound that is > 0.0 and < 1.0; if
+                 min_num is 0, at least one insertion is allowed
+                 for any valid alpha value, even if alpha is extremely low,
+                 before a hash table attempts to grow to accomodate alpha
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
                  - if NULL and key_size is greater than sizeof(size_t), then

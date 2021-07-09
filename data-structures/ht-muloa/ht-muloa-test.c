@@ -88,7 +88,7 @@ const size_t C_KEY_SIZE_FACTOR = sizeof(size_t);
 const unsigned char C_CORNER_KEY_A = 2;
 const unsigned char C_CORNER_KEY_B = 1;
 const size_t C_CORNER_KEY_SIZE = sizeof(unsigned char);
-const size_t C_CORNER_HT_COUNT = 1024u;
+const size_t C_CORNER_HT_COUNT = 2048u;
 const float C_CORNER_ALPHA = 0.001;
 
 void insert_search_free(size_t num_ins,
@@ -595,14 +595,14 @@ void remove_delete(size_t num_ins,
 /**
    Runs a corner cases test.
 */
-void run_corner_cases_test(int ins_pow){
+void run_corner_cases_test(int log_ins){
   int res = 1;
   size_t elt;
   size_t elt_size = sizeof(size_t);
   size_t i, num_ins;
   ht_muloa_t ht;
   ht_muloa_init(&ht, C_CORNER_KEY_SIZE, elt_size, 0, C_CORNER_ALPHA, NULL, NULL);
-  num_ins = pow_two(ins_pow);
+  num_ins = pow_two_perror(log_ins);
   printf("Run corner cases test --> ");
   for (i = 0; i < num_ins; i++){
     elt = i;
