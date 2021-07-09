@@ -122,6 +122,7 @@ static void key_elt_update(key_elt_t *ke,
                            size_t key_size,
 			   size_t elt_size,
 			   void (*free_elt)(void *));
+static void *key_elt_ptr(const key_elt_t *ke, size_t size);
 static void key_elt_free(key_elt_t* ke,
 			 size_t key_size,
 			 void (*free_elt)(void *));
@@ -226,7 +227,7 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
   ke = &ht->key_elts[ix];
   while (*ke != NULL){
     if (!is_ph(*ke) &&
-	memcmp((*ke)->key_elt, key, ht->key_size) == 0){
+	memcmp(key_elt_ptr(*ke, 0), key, ht->key_size) == 0){
       key_elt_update(*ke, elt, ht->key_size, ht->elt_size, ht->free_elt);
       return;
     }
@@ -237,6 +238,7 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
       ht->max_num_probes++;
     }
   }
+  fval -= fval & 1; /* 1st bit never used => 1 as ph identifier */
   *ke = key_elt_new(fval, sval, key, elt, ht->key_size, ht->elt_size);
   ht->num_elts++;
 }
@@ -248,7 +250,7 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
 void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
   key_elt_t **ke = search(ht, key);
   if (ke != NULL){
-    return (char *)(*ke)->key_elt + ht->key_size;
+    return key_elt_ptr(*ke, ht->key_size);
   }else{
     return NULL;
   }
@@ -263,7 +265,7 @@ void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
 void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt){
   key_elt_t **ke = search(ht, key);
   if (ke != NULL){
-    memcpy(elt, (char *)(*ke)->key_elt + ht->key_size, ht->elt_size);
+    memcpy(elt, key_elt_ptr(*ke, ht->key_size), ht->elt_size);
     /* if an element is noncontiguous, only the pointer to it is deleted */
     key_elt_free(*ke, ht->key_size, NULL);
     *ke = ht->ph;
@@ -313,14 +315,13 @@ void ht_muloa_free(ht_muloa_t *ht){
 
 static key_elt_t *ph_new(){
   key_elt_t *ke = malloc_perror(1, sizeof(key_elt_t));
-  ke->fval = 0;
+  ke->fval = 1;
   ke->sval = 0;
-  ke->key_elt = NULL;
   return ke;
 }
 
 static int is_ph(const key_elt_t *ke){
-  return (ke->key_elt == NULL);
+  return (ke->fval == 1);
 }
 
 static void ph_free(key_elt_t *ke){
@@ -329,7 +330,8 @@ static void ph_free(key_elt_t *ke){
 }
 
 /**
-   Create, update, and free a key element.
+   Create, update, and free a key element. key_elt_ptr cannot be used on
+   a placeholder.
 */
 
 static key_elt_t *key_elt_new(size_t fval,
@@ -343,9 +345,8 @@ static key_elt_t *key_elt_new(size_t fval,
 				   add_sz_perror(key_size, elt_size)));
   ke->fval = fval;
   ke->sval = sval;
-  ke->key_elt = (char *)ke + sizeof(key_elt_t);
-  memcpy(ke->key_elt, key, key_size);
-  memcpy((char *)ke->key_elt + key_size, elt, elt_size);
+  memcpy(key_elt_ptr(ke, 0), key, key_size);
+  memcpy(key_elt_ptr(ke, key_size), elt, elt_size);
   return ke;
 }
 
@@ -354,14 +355,18 @@ static void key_elt_update(key_elt_t *ke,
                            size_t key_size,
 			   size_t elt_size,
 			   void (*free_elt)(void *)){
-  if (free_elt != NULL) free_elt((char *)ke->key_elt + key_size);
-  memcpy((char *)ke->key_elt + key_size, elt, elt_size);
+  if (free_elt != NULL) free_elt(key_elt_ptr(ke, key_size));
+  memcpy(key_elt_ptr(ke, key_size), elt, elt_size);
+}
+
+static void *key_elt_ptr(const key_elt_t *ke, size_t size){
+  return (char *)ke + sizeof(key_elt_t) + size;
 }
 
 static void key_elt_free(key_elt_t *ke,
 			 size_t key_size,
 			 void (*free_elt)(void *)){
-  if (free_elt != NULL) free_elt((char *)ke->key_elt + key_size);
+  if (free_elt != NULL) free_elt(key_elt_ptr(ke, key_size));
   free(ke);
   ke = NULL;
 }
@@ -436,7 +441,7 @@ static key_elt_t **search(const ht_muloa_t *ht, const void *key){
   ke = &ht->key_elts[ix];
   while (*ke != NULL){
     if (!is_ph(*ke) &&
-	memcmp((*ke)->key_elt, key, ht->key_size) == 0){
+	memcmp(key_elt_ptr(*ke, 0), key, ht->key_size) == 0){
       return ke;
     }else if (num_probes == ht->max_num_probes){
       break;

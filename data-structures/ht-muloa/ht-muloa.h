@@ -35,10 +35,11 @@
 #include <stddef.h>
 
 typedef struct{
-  size_t fval;
-  size_t sval;
-  void *key_elt;
-} key_elt_t; /* first and second hash values, key and element pointers */
+  size_t fval; /* first hash value with first bit only set in placeholder */
+  size_t sval; /* second hash value */
+} key_elt_t; /* given char *p pointer, key is at p + sizeof(key_elt_t) and
+                element is at p + sizeof(key_elt_t) + key_size; no key
+                and element in a placeholder */
 
 typedef struct{
   size_t key_size;
