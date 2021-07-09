@@ -310,7 +310,6 @@ void ht_muloa_free(ht_muloa_t *ht){
 
 static key_elt_t *ph_new(){
   key_elt_t *ke = malloc_perror(1, sizeof(key_elt_t));
-  ke->is_ph = TRUE;
   ke->fval = 0;
   ke->sval = 0;
   ke->key = NULL;
@@ -319,7 +318,7 @@ static key_elt_t *ph_new(){
 }
 
 static int is_ph(const key_elt_t *ke){
-  return ke->is_ph;
+  return (ke->key == NULL);
 }
 
 static void ph_free(key_elt_t *ke){
@@ -340,7 +339,6 @@ static key_elt_t *key_elt_new(size_t fval,
   key_elt_t *ke =
     malloc_perror(1, add_sz_perror(sizeof(key_elt_t),
 				   add_sz_perror(key_size, elt_size)));
-  ke->is_ph = FALSE;
   ke->fval = fval;
   ke->sval = sval;
   ke->key = (char *)ke + sizeof(key_elt_t);

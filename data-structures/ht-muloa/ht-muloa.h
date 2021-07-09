@@ -34,10 +34,7 @@
 
 #include <stddef.h>
 
-typedef enum{FALSE, TRUE} boolean_t;
-
 typedef struct{
-  boolean_t is_ph;
   size_t fval;
   size_t sval;
   void *key;
