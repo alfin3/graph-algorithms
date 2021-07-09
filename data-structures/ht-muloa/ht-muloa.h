@@ -37,8 +37,7 @@
 typedef struct{
   size_t fval;
   size_t sval;
-  void *key;
-  void *elt;
+  void *key_elt;
 } key_elt_t; /* first and second hash values, key and element pointers */
 
 typedef struct{

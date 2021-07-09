@@ -119,9 +119,12 @@ static key_elt_t *key_elt_new(size_t fval,
 			      size_t elt_size);
 static void key_elt_update(key_elt_t *ke,
 			   const void *elt,
+                           size_t key_size,
 			   size_t elt_size,
 			   void (*free_elt)(void *));
-static void key_elt_free(key_elt_t* ke, void (*free_elt)(void *));
+static void key_elt_free(key_elt_t* ke,
+			 size_t key_size,
+			 void (*free_elt)(void *));
 
 /* hashing */
 static size_t convert_std_key(const ht_muloa_t *ht, const void *key);
@@ -223,8 +226,8 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
   ke = &ht->key_elts[ix];
   while (*ke != NULL){
     if (!is_ph(*ke) &&
-	memcmp((*ke)->key, key, ht->key_size) == 0){
-      key_elt_update(*ke, elt, ht->elt_size, ht->free_elt);
+	memcmp((*ke)->key_elt, key, ht->key_size) == 0){
+      key_elt_update(*ke, elt, ht->key_size, ht->elt_size, ht->free_elt);
       return;
     }
     ix = sum_mod(dist, ix, ht->count);
@@ -245,7 +248,7 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
 void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
   key_elt_t **ke = search(ht, key);
   if (ke != NULL){
-    return (*ke)->elt;
+    return (char *)(*ke)->key_elt + ht->key_size;
   }else{
     return NULL;
   }
@@ -260,9 +263,9 @@ void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
 void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt){
   key_elt_t **ke = search(ht, key);
   if (ke != NULL){
-    memcpy(elt, (*ke)->elt, ht->elt_size);
+    memcpy(elt, (char *)(*ke)->key_elt + ht->key_size, ht->elt_size);
     /* if an element is noncontiguous, only the pointer to it is deleted */
-    key_elt_free(*ke, NULL);
+    key_elt_free(*ke, ht->key_size, NULL);
     *ke = ht->ph;
     ht->num_elts--;
     ht->num_phs++;
@@ -276,7 +279,7 @@ void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt){
 void ht_muloa_delete(ht_muloa_t *ht, const void *key){
   key_elt_t **ke = search(ht, key);
   if (ke != NULL){
-    key_elt_free(*ke, ht->free_elt);
+    key_elt_free(*ke, ht->key_size, ht->free_elt);
     *ke = ht->ph;
     ht->num_elts--;
     ht->num_phs++;
@@ -293,7 +296,7 @@ void ht_muloa_free(ht_muloa_t *ht){
   for (i = 0; i < ht->count; i++){
     ke = &ht->key_elts[i];
     if (*ke != NULL && !is_ph(*ke)){
-      key_elt_free(*ke, ht->free_elt);
+      key_elt_free(*ke, ht->key_size, ht->free_elt);
     }
   }
   ph_free(ht->ph);
@@ -312,13 +315,12 @@ static key_elt_t *ph_new(){
   key_elt_t *ke = malloc_perror(1, sizeof(key_elt_t));
   ke->fval = 0;
   ke->sval = 0;
-  ke->key = NULL;
-  ke->elt = NULL;
+  ke->key_elt = NULL;
   return ke;
 }
 
 static int is_ph(const key_elt_t *ke){
-  return (ke->key == NULL);
+  return (ke->key_elt == NULL);
 }
 
 static void ph_free(key_elt_t *ke){
@@ -341,23 +343,25 @@ static key_elt_t *key_elt_new(size_t fval,
 				   add_sz_perror(key_size, elt_size)));
   ke->fval = fval;
   ke->sval = sval;
-  ke->key = (char *)ke + sizeof(key_elt_t);
-  ke->elt = (char *)ke + sizeof(key_elt_t) + key_size;
-  memcpy(ke->key, key, key_size);
-  memcpy(ke->elt, elt, elt_size);
+  ke->key_elt = (char *)ke + sizeof(key_elt_t);
+  memcpy(ke->key_elt, key, key_size);
+  memcpy((char *)ke->key_elt + key_size, elt, elt_size);
   return ke;
 }
 
 static void key_elt_update(key_elt_t *ke,
 			   const void *elt,
+                           size_t key_size,
 			   size_t elt_size,
 			   void (*free_elt)(void *)){
-  if (free_elt != NULL) free_elt(ke->elt);
-  memcpy(ke->elt, elt, elt_size);
+  if (free_elt != NULL) free_elt((char *)ke->key_elt + key_size);
+  memcpy((char *)ke->key_elt + key_size, elt, elt_size);
 }
 
-static void key_elt_free(key_elt_t *ke, void (*free_elt)(void *)){
-  if (free_elt != NULL) free_elt(ke->elt);
+static void key_elt_free(key_elt_t *ke,
+			 size_t key_size,
+			 void (*free_elt)(void *)){
+  if (free_elt != NULL) free_elt((char *)ke->key_elt + key_size);
   free(ke);
   ke = NULL;
 }
@@ -432,7 +436,7 @@ static key_elt_t **search(const ht_muloa_t *ht, const void *key){
   ke = &ht->key_elts[ix];
   while (*ke != NULL){
     if (!is_ph(*ke) &&
-	memcmp((*ke)->key, key, ht->key_size) == 0){
+	memcmp((*ke)->key_elt, key, ht->key_size) == 0){
       return ke;
     }else if (num_probes == ht->max_num_probes){
       break;
