@@ -11,9 +11,9 @@
       [0, # bits in size_t) : a given k = sizeof(size_t)
       [0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b
       > 0 : c
-      > 0 : d s.t. c / d < 1.0
+      > 0 : d s.t. c / d <= 1.0
       > 0 : e
-      > 0 : f s.t. e / f < 1.0
+      > 0 : f s.t. e / f <= 1.0
       > 0 : g s.t. c / d <= alpha <= e / f, in g steps
       [0, 1] : on/off insert search uint test
       [0, 1] : on/off remove delete uint test
@@ -61,25 +61,25 @@
 
 /* input handling */
 const char *C_USAGE =
-  "ht-muloa-test \n"
-  "[0, # bits in size_t - 1) : i s.t. # inserts = 2^i \n"
-  "[0, # bits in size_t) : a given k = sizeof(size_t) \n"
-  "[0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b \n"
-  "> 0 : c \n"
-  "> 0 : d s.t. c / d < 1.0 \n"
-  "> 0 : e \n"
-  "> 0 : f s.t. e / f < 1.0 \n"
-  "> 0 : g s.t. c / d <= alpha <= e / f, in g steps \n"
-  "[0, 1] : on/off insert search uint test \n"
-  "[0, 1] : on/off remove delete uint test \n"
-  "[0, 1] : on/off insert search uint_ptr test \n"
-  "[0, 1] : on/off remove delete uint_ptr test \n"
-  "[0, 1] : on/off corner cases test \n";
+  "ht-muloa-test\n"
+  "[0, # bits in size_t - 1) : i s.t. # inserts = 2^i\n"
+  "[0, # bits in size_t) : a given k = sizeof(size_t)\n"
+  "[0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b\n"
+  "> 0 : c\n"
+  "> 0 : d s.t. c / d <= 1.0\n"
+  "> 0 : e\n"
+  "> 0 : f s.t. e / f <= 1.0\n"
+  "> 0 : g s.t. c / d <= alpha <= e / f, in g steps\n"
+  "[0, 1] : on/off insert search uint test\n"
+  "[0, 1] : on/off remove delete uint test\n"
+  "[0, 1] : on/off insert search uint_ptr test\n"
+  "[0, 1] : on/off remove delete uint_ptr test\n"
+  "[0, 1] : on/off corner cases test\n";
 const int C_ARGC_MAX = 14;
-const size_t C_ARGS_DEF[13] = {14, 0, 2, 1, 10, 9, 10, 10, 1, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[13] = {14, 0, 2, 1, 10, 10, 10, 10, 1, 1, 1, 1, 1};
 const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
-const float C_ALPHA_MAX = 1.0; /* cannot be reached */
+const float C_ALPHA_MAX = 1.0;
 
 /* insert, search, free, remove, delete tests */
 const size_t C_KEY_SIZE_FACTOR = sizeof(size_t);
@@ -686,8 +686,8 @@ int main(int argc, char *argv[]){
   }
   alpha_start = (float)args[3] / args[4];
   alpha_end = (float)args[5] / args[6];
-  if (alpha_start >= C_ALPHA_MAX ||
-      alpha_end >= C_ALPHA_MAX){
+  if (alpha_start > C_ALPHA_MAX ||
+      alpha_end > C_ALPHA_MAX){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }

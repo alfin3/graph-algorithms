@@ -158,10 +158,7 @@ static size_t find_build_prime(const size_t *parts);
                  speedup by avoiding unnecessary growth steps of a hash
                  table; 0 if a positive value is not specified and all growth
                  steps are to be completed
-   alpha       : a load factor upper bound that is > 0.0 and < 1.0; if
-                 min_num is in {0, 1}, at least two insertions are allowed
-                 for any valid alpha value, even if alpha is extremely low,
-                 before a hash table attempts to grow to accomodate alpha
+   alpha       : a load factor upper bound that is > 0.0 and <= 1.0
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
                  - if NULL and key_size is greater than sizeof(size_t), then
@@ -193,7 +190,7 @@ void ht_muloa_init(ht_muloa_t *ht,
   ht->pair_size = add_sz_perror(key_size, elt_size);
   ht->log_count = C_LOG_COUNT_MIN;
   ht->count = pow_two_perror(C_LOG_COUNT_MIN);
-  ht->max_sum = 1;
+  ht->max_sum = 0;
   while (min_num > ht->max_sum && incr_count(ht));
   ht->max_num_probes = 1; /* at least one probe */
   ht->num_elts = 0;
@@ -499,7 +496,7 @@ static void ht_grow(ht_muloa_t *ht){
    was increased. Returns 0 if the count could not be increased because
    C_LOG_COUNT_MAX was reached. Updates count, log_count, and max_sum of
    a hash table accordingly. The representation of alpha with max_sum avoids
-   implementation-defined integer to float conversitons when min_num or
+   implementation-defined integer to float conversions when min_num or
    num_elts cannot be represented as exact floats.
 */
 static int incr_count(ht_muloa_t *ht){
@@ -508,9 +505,8 @@ static int incr_count(ht_muloa_t *ht){
   ht->count <<= 1;
   /* count 2**N is exact float; product with alpha is truncated */
   ht->max_sum = ht->alpha * ht->count;
-  /* 0 < max_sum < count; count >= 2**C_LOG_COUNT_MIN */
-  if (ht->max_sum > ht->count) ht->max_sum = ht->count - 1;
-  ht->max_sum += (ht->max_sum == 0);
+  /* 0 <= max_sum < count; count >= 2**C_LOG_COUNT_MIN */
+  if (ht->max_sum >= ht->count) ht->max_sum = ht->count - 1;
   return 1;
 }
 
