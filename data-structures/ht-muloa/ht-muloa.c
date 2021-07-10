@@ -158,7 +158,9 @@ static size_t find_build_prime(const size_t *parts);
                  speedup by avoiding unnecessary growth steps of a hash
                  table; 0 if a positive value is not specified and all growth
                  steps are to be completed
-   alpha       : a load factor upper bound that is > 0.0 and <= 1.0
+   alpha       : a load factor upper bound that is > 0.0 and <= 1.0; extremely
+                 low values of alpha relative to min_num and memory resources
+                 result in an allocation error message and exit
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
                  - if NULL and key_size is greater than sizeof(size_t), then
@@ -234,11 +236,9 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
     ix = sum_mod(dist, ix, ht->count);
     ke = &ht->key_elts[ix];
     num_probes++;
-    if (num_probes > ht->max_num_probes){
-      ht->max_num_probes++;
-    }
+    if (num_probes > ht->max_num_probes) ht->max_num_probes++;
   }
-  fval -= fval & 1; /* 1st bit never used => 1 as ph identifier */
+  fval -= fval & 1; /* 1st bit not used in hashing => 1 as ph identifier */
   *ke = key_elt_new(fval, sval, key, elt, ht->key_size, ht->elt_size);
   ht->num_elts++;
   /* max_sum < count; grow ht after ensuring it was insertion, not update */
@@ -256,7 +256,7 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
    element, otherwise returns NULL. The key parameter is not NULL.
 */
 void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
-  key_elt_t **ke = search(ht, key);
+  key_elt_t * const *ke = search(ht, key);
   if (ke != NULL){
     return key_elt_ptr(*ke, ht->key_size);
   }else{
@@ -302,7 +302,7 @@ void ht_muloa_delete(ht_muloa_t *ht, const void *key){
 */
 void ht_muloa_free(ht_muloa_t *ht){
   size_t i;
-  key_elt_t **ke = NULL;
+  key_elt_t * const *ke = NULL;
   for (i = 0; i < ht->count; i++){
     ke = &ht->key_elts[i];
     if (*ke != NULL && !is_ph(*ke)){
@@ -440,7 +440,7 @@ static size_t adjust_dist(size_t dist){
 static key_elt_t **search(const ht_muloa_t *ht, const void *key){
   size_t num_probes = 1;
   size_t std_key, fval, sval, ix, dist;
-  key_elt_t **ke = NULL;
+  key_elt_t * const *ke = NULL;
   std_key = convert_std_key(ht, key);
   fval = ht->fprime * std_key; /* mod 2^FULL_BIT */
   sval = ht->sprime * std_key; /* mod 2^FULL_BIT */
@@ -450,7 +450,7 @@ static key_elt_t **search(const ht_muloa_t *ht, const void *key){
   while (*ke != NULL){
     if (!is_ph(*ke) &&
 	memcmp(key_elt_ptr(*ke, 0), key, ht->key_size) == 0){
-      return ke;
+      return (key_elt_t **)ke;
     }else if (num_probes == ht->max_num_probes){
       break;
     }else{
@@ -474,7 +474,7 @@ static key_elt_t **search(const ht_muloa_t *ht, const void *key){
 static void ht_grow(ht_muloa_t *ht){
   size_t i, prev_count = ht->count;
   key_elt_t **prev_key_elts = ht->key_elts;
-  key_elt_t **ke = NULL;
+  key_elt_t * const *ke = NULL;
   while (ht->num_elts + ht->num_phs > ht->max_sum && incr_count(ht));
   ht->max_num_probes = 1;
   ht->num_phs = 0;
@@ -520,7 +520,7 @@ static int incr_count(ht_muloa_t *ht){
 static void ht_clean(ht_muloa_t *ht){
   size_t i;
   key_elt_t **prev_key_elts = ht->key_elts;
-  key_elt_t **ke = NULL;
+  key_elt_t * const *ke = NULL;
   ht->max_num_probes = 1;
   ht->num_phs = 0;
   ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
