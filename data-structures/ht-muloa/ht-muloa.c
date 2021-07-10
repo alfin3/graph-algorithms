@@ -190,7 +190,8 @@ void ht_muloa_init(ht_muloa_t *ht,
   ht->pair_size = add_sz_perror(key_size, elt_size);
   ht->log_count = C_LOG_COUNT_MIN;
   ht->count = pow_two_perror(C_LOG_COUNT_MIN);
-  ht->max_sum = 0;
+  ht->max_sum = alpha * ht->count; /* 0 <= max_sum < count */
+  if (ht->max_sum >= ht->count) ht->max_sum = ht->count - 1;
   while (min_num > ht->max_sum && incr_count(ht));
   ht->max_num_probes = 1; /* at least one probe */
   ht->num_elts = 0;
