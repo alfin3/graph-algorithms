@@ -159,7 +159,7 @@ static size_t find_build_prime(const size_t *parts);
                  table; 0 if a positive value is not specified and all growth
                  steps are to be completed
    alpha       : a load factor upper bound that is > 0.0 and < 1.0; if
-                 min_num is 0, at least one insertion is allowed
+                 min_num is in {0, 1}, at least two insertions are allowed
                  for any valid alpha value, even if alpha is extremely low,
                  before a hash table attempts to grow to accomodate alpha
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
@@ -194,7 +194,7 @@ void ht_muloa_init(ht_muloa_t *ht,
   ht->log_count = C_LOG_COUNT_MIN;
   ht->count = pow_two_perror(C_LOG_COUNT_MIN);
   ht->max_sum = 1;
-  while (min_num >= ht->max_sum && incr_count(ht));
+  while (min_num > ht->max_sum && incr_count(ht));
   ht->max_num_probes = 1; /* at least one probe */
   ht->num_elts = 0;
   ht->num_phs = 0;
@@ -221,14 +221,6 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
   size_t fval, sval;
   size_t ix, dist;
   key_elt_t **ke = NULL;
-  if (ht->num_elts + ht->num_phs >= ht->max_sum){
-    /* clean or grow if E[# keys in a slot] > alpha */
-    if (ht->num_elts < ht->num_phs){
-      ht_clean(ht);
-    }else if (ht->log_count < C_LOG_COUNT_MAX){
-      ht_grow(ht);
-    }
-  }
   std_key = convert_std_key(ht, key);
   fval = ht->fprime * std_key; /* mod 2^FULL_BIT */
   sval = ht->sprime * std_key; /* mod 2^FULL_BIT */
@@ -251,6 +243,14 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
   fval -= fval & 1; /* 1st bit never used => 1 as ph identifier */
   *ke = key_elt_new(fval, sval, key, elt, ht->key_size, ht->elt_size);
   ht->num_elts++;
+  /* max_sum < count; grow ht after ensuring it was insertion, not update */
+  if (ht->num_elts + ht->num_phs > ht->max_sum){
+    if (ht->num_elts < ht->num_phs){
+      ht_clean(ht);
+    }else if (ht->log_count < C_LOG_COUNT_MAX){
+      ht_grow(ht);
+    }
+  }
 }
 
 /**
@@ -469,7 +469,7 @@ static key_elt_t **search(const ht_muloa_t *ht, const void *key){
    accomodates alpha as a load factor upper bound or to 2**C_LOG_COUNT_MAX.
    The operation is called if max_sum, representing alpha, was exceeded and
    the hash table log_count did not reach C_LOG_COUNT_MAX. A single call
-   lowers the load factor s.t. num_elts + num_phs < max_sum if a sufficiently
+   lowers the load factor s.t. num_elts + num_phs <= max_sum if a sufficiently
    large power of two is representable by size_t and a correponding array can
    be allocated on a given system.
 */
@@ -477,7 +477,7 @@ static void ht_grow(ht_muloa_t *ht){
   size_t i, prev_count = ht->count;
   key_elt_t **prev_key_elts = ht->key_elts;
   key_elt_t **ke = NULL;
-  while (ht->num_elts + ht->num_phs >= ht->max_sum && incr_count(ht));
+  while (ht->num_elts + ht->num_phs > ht->max_sum && incr_count(ht));
   ht->max_num_probes = 1;
   ht->num_phs = 0;
   ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
@@ -508,8 +508,8 @@ static int incr_count(ht_muloa_t *ht){
   ht->count <<= 1;
   /* count 2**N is exact float; product with alpha is truncated */
   ht->max_sum = ht->alpha * ht->count;
-  /* 0 < max_sum <= count */
-  if (ht->max_sum > ht->count) ht->max_sum -= ht->max_sum - ht->count;
+  /* 0 < max_sum < count; count >= 2**C_LOG_COUNT_MIN */
+  if (ht->max_sum > ht->count) ht->max_sum = ht->count - 1;
   ht->max_sum += (ht->max_sum == 0);
   return 1;
 }

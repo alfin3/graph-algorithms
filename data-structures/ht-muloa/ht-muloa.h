@@ -78,7 +78,7 @@ typedef struct{
                  table; 0 if a positive value is not specified and all growth
                  steps are to be completed
    alpha       : a load factor upper bound that is > 0.0 and < 1.0; if
-                 min_num is 0, at least one insertion is allowed
+                 min_num is in {0, 1}, at least two insertions are allowed
                  for any valid alpha value, even if alpha is extremely low,
                  before a hash table attempts to grow to accomodate alpha
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),

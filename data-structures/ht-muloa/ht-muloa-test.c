@@ -608,7 +608,6 @@ void run_corner_cases_test(int log_ins){
     elt = i;
     ht_muloa_insert(&ht, &C_CORNER_KEY_A, &elt);
   }
-  res *= (ht.count == C_CORNER_HT_COUNT);
   res *= (ht.num_elts == 1);
   res *= (*(size_t *)ht_muloa_search(&ht, &C_CORNER_KEY_A) == elt);
   res *= (ht_muloa_search(&ht, &C_CORNER_KEY_B) == NULL);
