@@ -25,8 +25,8 @@
 
    The implementation does not use stdint.h, and is portable under C89/C90
    and C99 with the only requirements that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even. The correctness of the implementation
-   does not depend on implementation-defined float conversions. 
+   greater or equal to 16 and is even. Integer arithmetic is used in load factor
+   operations, thereby eliminating the use of float. 
 */
 
 #include <stdio.h>
@@ -134,6 +134,7 @@ static size_t adjust_dist(size_t dist);
 
 /* hash table operations and maintenance*/
 static key_elt_t **search(const ht_muloa_t *ht, const void *key);
+static size_t mul_alpha(size_t n, size_t alpha_n, size_t log_alpha_d);
 static int incr_count(ht_muloa_t *ht);
 static void ht_grow(ht_muloa_t *ht);
 static void ht_clean(ht_muloa_t *ht);
@@ -158,9 +159,9 @@ static size_t find_build_prime(const size_t *parts);
                  speedup by avoiding unnecessary growth steps of a hash
                  table; 0 if a positive value is not specified and all growth
                  steps are to be completed
-   alpha       : a load factor upper bound that is > 0.0 and <= 1.0; extremely
-                 low values of alpha relative to min_num and memory resources
-                 result in an allocation error message and exit
+   alpha_n     : > 0 numerator of load factor upper bound
+   log_alpha_d : < CHAR_BIT * sizeof(size_t) log base 2 of denominator of
+                 load factor upper bound; denominator is a power of two
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
                  - if NULL and key_size is greater than sizeof(size_t), then
@@ -183,7 +184,8 @@ void ht_muloa_init(ht_muloa_t *ht,
 		   size_t key_size,
 		   size_t elt_size,
 		   size_t min_num,
-		   float alpha,
+		   size_t alpha_n,
+		   size_t log_alpha_d,
 		   size_t (*rdc_key)(const void *, size_t),
 		   void (*free_elt)(void *)){
   size_t i;
@@ -192,15 +194,17 @@ void ht_muloa_init(ht_muloa_t *ht,
   ht->pair_size = add_sz_perror(key_size, elt_size);
   ht->log_count = C_LOG_COUNT_MIN;
   ht->count = pow_two_perror(C_LOG_COUNT_MIN);
-  ht->max_sum = alpha * ht->count; /* 0 <= max_sum < count */
-  if (ht->max_sum >= ht->count) ht->max_sum = ht->count - 1;
+  /* 0 <= max_sum < count */
+  ht->max_sum = mul_alpha(ht->count, alpha_n, log_alpha_d);
+  if (ht->max_sum == ht->count) ht->max_sum = ht->count - 1;
   while (min_num > ht->max_sum && incr_count(ht));
   ht->max_num_probes = 1; /* at least one probe */
   ht->num_elts = 0;
   ht->num_phs = 0;
   ht->fprime = find_build_prime(C_FIRST_PRIME_PARTS);
   ht->sprime = find_build_prime(C_SECOND_PRIME_PARTS);
-  ht->alpha = alpha;
+  ht->alpha_n = alpha_n;
+  ht->log_alpha_d = log_alpha_d;
   ht->ph = ph_new();
   ht->key_elts = malloc_perror(ht->count, sizeof(key_elt_t *));
   for (i = 0; i < ht->count; i++){
@@ -463,6 +467,18 @@ static key_elt_t **search(const ht_muloa_t *ht, const void *key){
 }
 
 /**
+   Multiplies an unsigned integer n by a load factor upper bound, represented
+   by a numerator and log base 2 of a denominator unsigned integers.
+*/
+static size_t mul_alpha(size_t n, size_t alpha_n, size_t log_alpha_d){
+  size_t h, l;
+  mul_ext(n, alpha_n, &h, &l);
+  l >>= log_alpha_d;
+  h <<= (C_FULL_BIT - log_alpha_d);
+  return l + h;
+}
+
+/**
    Increases the count of a hash table to the next power of two that
    accomodates alpha as a load factor upper bound or to 2**C_LOG_COUNT_MAX.
    The operation is called if max_sum, representing alpha, was exceeded and
@@ -496,18 +512,15 @@ static void ht_grow(ht_muloa_t *ht){
    Attempts to increase the count of a hash table. Returns 1 if the count
    was increased. Returns 0 if the count could not be increased because
    C_LOG_COUNT_MAX was reached. Updates count, log_count, and max_sum of
-   a hash table accordingly. The representation of alpha with max_sum avoids
-   implementation-defined integer to float conversions when min_num or
-   num_elts cannot be represented as exact floats.
+   a hash table accordingly.
 */
 static int incr_count(ht_muloa_t *ht){
   if (ht->log_count == C_LOG_COUNT_MAX) return 0;
   ht->log_count++;
   ht->count <<= 1;
-  /* count 2**N is exact float; product with alpha is truncated */
-  ht->max_sum = ht->alpha * ht->count;
+  ht->max_sum = mul_alpha(ht->count, ht->alpha_n, ht->log_alpha_d);
   /* 0 <= max_sum < count; count >= 2**C_LOG_COUNT_MIN */
-  if (ht->max_sum >= ht->count) ht->max_sum = ht->count - 1;
+  if (ht->max_sum == ht->count) ht->max_sum = ht->count - 1;
   return 1;
 }
 

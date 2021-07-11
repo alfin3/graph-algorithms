@@ -66,20 +66,18 @@ const char *C_USAGE =
   "[0, # bits in size_t) : a given k = sizeof(size_t)\n"
   "[0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b\n"
   "> 0 : c\n"
-  "> 0 : d s.t. c / d <= 1.0\n"
-  "> 0 : e\n"
-  "> 0 : f s.t. e / f <= 1.0\n"
-  "> 0 : g s.t. c / d <= alpha <= e / f, in g steps\n"
+  "> 0 : d\n"
+  "> 0 : e log base 2 s.t. c <= d <= 2**e\n"
+  "> 0 : f s.t. c / 2**e <= alpha <= d / 2**e, in f steps\n"
   "[0, 1] : on/off insert search uint test\n"
   "[0, 1] : on/off remove delete uint test\n"
   "[0, 1] : on/off insert search uint_ptr test\n"
   "[0, 1] : on/off remove delete uint_ptr test\n"
   "[0, 1] : on/off corner cases test\n";
-const int C_ARGC_MAX = 14;
-const size_t C_ARGS_DEF[13] = {14, 0, 2, 1, 10, 10, 10, 10, 1, 1, 1, 1, 1};
+const int C_ARGC_MAX = 13;
+const size_t C_ARGS_DEF[12] = {14, 0, 2, 3277, 32768, 15, 1, 1, 1, 1, 1, 1};
 const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
-const float C_ALPHA_MAX = 1.0;
 
 /* insert, search, free, remove, delete tests */
 const size_t C_KEY_SIZE_FACTOR = sizeof(size_t);
@@ -89,12 +87,14 @@ const unsigned char C_CORNER_KEY_A = 2;
 const unsigned char C_CORNER_KEY_B = 1;
 const size_t C_CORNER_KEY_SIZE = sizeof(unsigned char);
 const size_t C_CORNER_HT_COUNT = 2048u;
-const float C_CORNER_ALPHA = 0.001;
+const size_t C_CORNER_ALPHA_N = 33;
+const size_t C_CORNER_LOG_ALPHA_D = 15; /* alpha is 33/32768 */
 
 void insert_search_free(size_t num_ins,
 			size_t key_size,
 			size_t elt_size,
-			float alpha,
+			size_t alpha_n,
+			size_t log_alpha_d,
                         size_t (*rdc_key)(const void *, size_t),
 			void (*new_elt)(void *, size_t),
 			size_t (*val_elt)(const void *),
@@ -102,7 +102,8 @@ void insert_search_free(size_t num_ins,
 void remove_delete(size_t num_ins,
 		   size_t key_size,
 		   size_t elt_size,
-		   float alpha,
+		   size_t alpha,
+		   size_t log_alpha_d,
                    size_t (*rdc_key)(const void *, size_t),
 		   void (*new_elt)(void *, size_t),
 		   size_t (*val_elt)(const void *),
@@ -133,34 +134,40 @@ size_t val_uint(const void *elt){
    size_t elements across key sizes >= C_KEY_SIZE_FACTOR and load factor
    upper bounds.
 */
-void run_insert_search_free_uint_test(int ins_pow,
-				      int key_pow_start,
-				      int key_pow_end,
-				      float alpha_start,
-				      float alpha_step,
-				      int num_alpha_steps){
-  int i, j;
+void run_insert_search_free_uint_test(size_t log_ins,
+				      size_t log_key_start,
+				      size_t log_key_end,
+				      size_t alpha_n_start,
+				      size_t alpha_n_end,
+                                      size_t log_alpha_d,
+				      size_t num_alpha_steps){
+  size_t i, j;
   size_t num_ins;
   size_t key_size;
   size_t elt_size = sizeof(size_t);
-  float alpha;
-  num_ins = pow_two(ins_pow);
-  for (i = key_pow_start; i <= key_pow_end; i++){
-    key_size = C_KEY_SIZE_FACTOR * pow_two(i);
+  size_t step, rem;
+  size_t alpha_n;
+  num_ins = pow_two_perror(log_ins);
+  step = (alpha_n_end - alpha_n_start) / num_alpha_steps;
+  rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
+  for (i = log_key_start; i <= log_key_end; i++){
+    alpha_n = alpha_n_start;
+    key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_muloa_{insert, search, free} test on distinct "
 	   "%lu-byte keys and size_t elements\n", TOLU(key_size));
-    for (j = 0; j < num_alpha_steps; j++){
-      alpha = alpha_start + j * alpha_step;
+    for (j = 0; j <= num_alpha_steps; j++){
       printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
-	     TOLU(num_ins), alpha);
+	     TOLU(num_ins), (float)alpha_n / pow_two_perror(log_alpha_d));
       insert_search_free(num_ins,
 			 key_size,
 			 elt_size,
-			 alpha,
+			 alpha_n,
+			 log_alpha_d,
                          NULL,
 			 new_uint,
 			 val_uint,
 			 NULL);
+      alpha_n += step + (j > 0 && j < num_alpha_steps && rem > 0 && rem--);
     }
   }
 }
@@ -170,34 +177,40 @@ void run_insert_search_free_uint_test(int ins_pow,
    elements across key sizes >= C_KEY_SIZE_FACTOR and load factor upper
    bounds.
 */
-void run_remove_delete_uint_test(int ins_pow,
-				 int key_pow_start,
-				 int key_pow_end,
-				 float alpha_start,
-				 float alpha_step,
-				 int num_alpha_steps){
-  int i, j;
+void run_remove_delete_uint_test(size_t log_ins,
+				 size_t log_key_start,
+				 size_t log_key_end,
+				 size_t alpha_n_start,
+				 size_t alpha_n_end,
+				 size_t log_alpha_d,
+				 size_t num_alpha_steps){
+  size_t i, j;
   size_t num_ins;
   size_t key_size;
   size_t elt_size = sizeof(size_t);
-  float alpha;
-  num_ins = pow_two(ins_pow);
-  for (i = key_pow_start; i <= key_pow_end; i++){
-    key_size = C_KEY_SIZE_FACTOR * pow_two(i);
+  size_t step, rem;
+  size_t alpha_n;
+  num_ins = pow_two_perror(log_ins);
+  step = (alpha_n_end - alpha_n_start) / num_alpha_steps;
+  rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
+  for (i = log_key_start; i <= log_key_end; i++){
+    alpha_n = alpha_n_start;
+    key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_muloa_{remove, delete} test on distinct "
 	   "%lu-byte keys and size_t elements\n", TOLU(key_size));
-    for (j = 0; j < num_alpha_steps; j++){
-      alpha = alpha_start + j * alpha_step;
+    for (j = 0; j <= num_alpha_steps; j++){
       printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
-	     TOLU(num_ins), alpha);
+	     TOLU(num_ins), (float)alpha_n / pow_two_perror(log_alpha_d));
       remove_delete(num_ins,
 		    key_size,
 		    elt_size,
-		    alpha,
+		    alpha_n,
+		    log_alpha_d,
                     NULL,
 		    new_uint,
 		    val_uint,
 		    NULL);
+      alpha_n += step + (j > 0 && j < num_alpha_steps && rem > 0 && rem--);
     }
   }
 }
@@ -241,35 +254,42 @@ void free_uint_ptr(void *elt){
    noncontiguous uint_ptr_t elements across key sizes >= C_KEY_SIZE_FACTOR
    and load factor upper bounds.
 */
-void run_insert_search_free_uint_ptr_test(int ins_pow,
-					  int key_pow_start,
-					  int key_pow_end,
-					  float alpha_start,
-					  float alpha_step,
-					  int num_alpha_steps){
-  int i, j;
+void run_insert_search_free_uint_ptr_test(size_t log_ins,
+					  size_t log_key_start,
+					  size_t log_key_end,
+					  size_t alpha_n_start,
+					  size_t alpha_n_end,
+					  size_t log_alpha_d,
+					  size_t num_alpha_steps){
+  size_t i, j;
   size_t num_ins;
   size_t key_size;
   size_t elt_size =  sizeof(uint_ptr_t *);
-  float alpha;
-  num_ins = pow_two(ins_pow);
-  for (i = key_pow_start; i <= key_pow_end; i++){
-    key_size = C_KEY_SIZE_FACTOR * pow_two(i);
+  size_t step, rem;
+  size_t alpha_n;
+  num_ins = pow_two_perror(log_ins);
+  step = (alpha_n_end - alpha_n_start) / num_alpha_steps;
+  rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
+ 
+  for (i = log_key_start; i <= log_key_end; i++){
+    alpha_n = alpha_n_start;
+    key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_muloa_{insert, search, free} test on distinct "
 	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
 	   TOLU(key_size));
-    for (j = 0; j < num_alpha_steps; j++){
-      alpha = alpha_start + j * alpha_step;
+    for (j = 0; j <= num_alpha_steps; j++){
       printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
-	     TOLU(num_ins), alpha);
+	     TOLU(num_ins), (float)alpha_n / pow_two_perror(log_alpha_d));
       insert_search_free(num_ins,
 			 key_size,
 			 elt_size,
-			 alpha,
+			 alpha_n,
+			 log_alpha_d,
                          NULL,
 			 new_uint_ptr,
 			 val_uint_ptr,
 			 free_uint_ptr);
+      alpha_n += step + (j > 0 && j < num_alpha_steps && rem > 0 && rem--);
     }
   }
 }
@@ -279,35 +299,41 @@ void run_insert_search_free_uint_ptr_test(int ins_pow,
    noncontiguous uint_ptr_t elements across key sizes >= C_KEY_SIZE_FACTOR
    and load factor upper bounds.
 */
-void run_remove_delete_uint_ptr_test(int ins_pow,
-				     int key_pow_start,
-				     int key_pow_end,
-				     float alpha_start,
-				     float alpha_step,
-				     int num_alpha_steps){
-  int i, j;
+void run_remove_delete_uint_ptr_test(size_t log_ins,
+				     size_t log_key_start,
+				     size_t log_key_end,
+				     size_t alpha_n_start,
+				     size_t alpha_n_end,
+				     size_t log_alpha_d,
+				     size_t num_alpha_steps){
+  size_t i, j;
   size_t num_ins;
   size_t key_size;
   size_t elt_size = sizeof(uint_ptr_t *);
-  float alpha;
-  num_ins = pow_two(ins_pow);
-  for (i = key_pow_start; i <= key_pow_end; i++){
-    key_size = C_KEY_SIZE_FACTOR * pow_two(i);
+  size_t step, rem;
+  size_t alpha_n;
+  num_ins = pow_two_perror(log_ins);
+  step = (alpha_n_end - alpha_n_start) / num_alpha_steps;
+  rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
+  for (i = log_key_start; i <= log_key_end; i++){
+    alpha_n = alpha_n_start;
+    key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_muloa_{remove, delete} test on distinct "
 	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
 	   TOLU(key_size));
-    for (j = 0; j < num_alpha_steps; j++){
-      alpha = alpha_start + j * alpha_step;
+    for (j = 0; j <= num_alpha_steps; j++){
       printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
-	     TOLU(num_ins), alpha);
+	     TOLU(num_ins), (float)alpha_n / pow_two_perror(log_alpha_d));
       remove_delete(num_ins,
 		    key_size,
 		    elt_size,
-		    alpha,
+		    alpha_n,
+		    log_alpha_d,
                     NULL,
 		    new_uint_ptr,
 		    val_uint_ptr,
 		    free_uint_ptr);
+      alpha_n += step + (j > 0 && j < num_alpha_steps && rem > 0 && rem--);
     }
   }
 }
@@ -403,7 +429,8 @@ void free_ht(ht_muloa_t *ht){
 void insert_search_free(size_t num_ins,
 			size_t key_size,
 			size_t elt_size,
-			float alpha,
+			size_t alpha_n,
+			size_t log_alpha_d,
                         size_t (*rdc_key)(const void *, size_t),
 			void (*new_elt)(void *, size_t),
 			size_t (*val_elt)(const void *),
@@ -425,10 +452,24 @@ void insert_search_free(size_t num_ins,
     *(size_t *)ptr(key, key_size - C_KEY_SIZE_FACTOR, 1) = i;
     new_elt((char *)ptr(key_elts, i, pair_size) + key_size, i);
   }
-  ht_muloa_init(&ht, key_size, elt_size, 0, alpha, rdc_key, NULL);
+  ht_muloa_init(&ht,
+		key_size,
+		elt_size,
+		0,
+		alpha_n,
+		log_alpha_d,
+		rdc_key,
+		NULL);
   insert_keys_elts(&ht, key_elts, num_ins, &res);
   free_ht(&ht);
-  ht_muloa_init(&ht, key_size, elt_size, num_ins, alpha, rdc_key, free_elt);
+  ht_muloa_init(&ht,
+		key_size,
+		elt_size,
+		num_ins,
+		alpha_n,
+		log_alpha_d,
+		rdc_key,
+		free_elt);
   insert_keys_elts(&ht, key_elts, num_ins, &res);
   search_in_ht(&ht, key_elts, num_ins, val_elt, &res);
   for (i = 0; i < num_ins; i++){
@@ -560,7 +601,8 @@ void delete_key_elts(ht_muloa_t *ht,
 void remove_delete(size_t num_ins,
 		   size_t key_size,
 		   size_t elt_size,
-		   float alpha,
+		   size_t alpha_n,
+		   size_t log_alpha_d,
                    size_t (*rdc_key)(const void *, size_t),
 		   void (*new_elt)(void *, size_t),
 		   size_t (*val_elt)(const void *),
@@ -580,7 +622,14 @@ void remove_delete(size_t num_ins,
     *(size_t *)ptr(key, key_size - C_KEY_SIZE_FACTOR, 1) = i;
     new_elt((char *)ptr(key_elts, i, pair_size) + key_size, i);
   }
-  ht_muloa_init(&ht, key_size, elt_size, 0, alpha, rdc_key, free_elt);
+  ht_muloa_init(&ht,
+		key_size,
+		elt_size,
+		0,
+		alpha_n,
+		log_alpha_d,
+		rdc_key,
+		free_elt);
   insert_keys_elts(&ht, key_elts, num_ins, &res);
   remove_key_elts(&ht, key_elts, num_ins, val_elt, &res);
   insert_keys_elts(&ht, key_elts, num_ins, &res);
@@ -601,7 +650,14 @@ void run_corner_cases_test(int log_ins){
   size_t elt_size = sizeof(size_t);
   size_t i, num_ins;
   ht_muloa_t ht;
-  ht_muloa_init(&ht, C_CORNER_KEY_SIZE, elt_size, 0, C_CORNER_ALPHA, NULL, NULL);
+  ht_muloa_init(&ht,
+		C_CORNER_KEY_SIZE,
+		elt_size,
+		0,
+		C_CORNER_ALPHA_N,
+		C_CORNER_LOG_ALPHA_D,
+		NULL,
+		NULL);
   num_ins = pow_two_perror(log_ins);
   printf("Run corner cases test --> ");
   for (i = 0; i < num_ins; i++){
@@ -654,9 +710,7 @@ void print_test_result(int res){
 
 int main(int argc, char *argv[]){
   int i;
-  int num_alpha_steps;
   size_t *args = NULL;
-  float alpha_start, alpha_end, alpha_step;
   RGENS_SEED();
   if (argc > C_ARGC_MAX){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
@@ -673,51 +727,48 @@ int main(int argc, char *argv[]){
       args[1] > args[2] ||
       args[3] < 1 ||
       args[4] < 1 ||
-      args[5] < 1 ||
+      args[5] > C_FULL_BIT - 1 ||
+      args[3] > args[4] ||
+      args[3] > pow_two_perror(args[5]) ||
+      args[4] > pow_two_perror(args[5]) ||
       args[6] < 1 ||
       args[7] < 1 ||
       args[8] > 1 ||
       args[9] > 1 ||
       args[10] > 1 ||
-      args[11] > 1 ||
-      args[12] > 1){
+      args[11] > 1){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
-  }
-  alpha_start = (float)args[3] / args[4];
-  alpha_end = (float)args[5] / args[6];
-  if (alpha_start > C_ALPHA_MAX ||
-      alpha_end > C_ALPHA_MAX){
-    fprintf(stderr, "USAGE:\n%s", C_USAGE);
-    exit(EXIT_FAILURE);
-  }
-  alpha_step = (alpha_end - alpha_start) / args[7];
-  num_alpha_steps = (alpha_end == alpha_start) ? args[7] : args[7] + 1;
-  if (args[8]) run_insert_search_free_uint_test(args[0],
+  };
+  if (args[7]) run_insert_search_free_uint_test(args[0],
 						args[1],
 						args[2],
-						alpha_start,
-						alpha_step,
-						num_alpha_steps);
-  if (args[9]) run_remove_delete_uint_test(args[0],
+						args[3],
+						args[4],
+						args[5],
+						args[6]);
+  if (args[8]) run_remove_delete_uint_test(args[0],
 					   args[1],
 					   args[2],
-					   alpha_start,
-					   alpha_step,
-					   num_alpha_steps);
-  if (args[10]) run_insert_search_free_uint_ptr_test(args[0],
+					   args[3],
+					   args[4],
+					   args[5],
+					   args[6]);
+  if (args[9]) run_insert_search_free_uint_ptr_test(args[0],
 						    args[1],
 						    args[2],
-						    alpha_start,
-						    alpha_step,
-						    num_alpha_steps);
-  if (args[11]) run_remove_delete_uint_ptr_test(args[0],
+						    args[3],
+						    args[4],
+						    args[5],
+						    args[6]);
+  if (args[10]) run_remove_delete_uint_ptr_test(args[0],
 						args[1],
 						args[2],
-						alpha_start,
-						alpha_step,
-						num_alpha_steps);
-  if (args[12]) run_corner_cases_test(args[0]);
+						args[3],
+						args[4],
+						args[5],
+						args[6]);
+  if (args[11]) run_corner_cases_test(args[0]);
   free(args);
   args = NULL;
   return 0;

@@ -26,8 +26,8 @@
 
    The implementation does not use stdint.h, and is portable under C89/C90
    and C99 with the only requirements that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even. The correctness of the implementation
-   does not depend on implementation-defined float conversions. 
+   greater or equal to 16 and is even. Integer arithmetic is used in load factor
+   operations, thereby eliminating the use of float. 
 */
 
 #ifndef HT_MULOA_H  
@@ -54,7 +54,8 @@ typedef struct{
   size_t num_phs;
   size_t fprime; /* >2^{n - 1}, <2^{n}, n = CHAR_BIT * sizeof(size_t) */
   size_t sprime; /* >2^{n - 1}, <2^{n}, n = CHAR_BIT * sizeof(size_t) */
-  float alpha;
+  size_t alpha_n;
+  size_t log_alpha_d;
   key_elt_t *ph;
   key_elt_t **key_elts;
   size_t (*rdc_key)(const void *, size_t);
@@ -77,9 +78,9 @@ typedef struct{
                  speedup by avoiding unnecessary growth steps of a hash
                  table; 0 if a positive value is not specified and all growth
                  steps are to be completed
-   alpha       : a load factor upper bound that is > 0.0 and <= 1.0; extremely
-                 low values of alpha relative to min_num and memory resources
-                 result in an allocation error message and exit
+   alpha_n     : > 0 numerator of load factor upper bound
+   log_alpha_d : < CHAR_BIT * sizeof(size_t) log base 2 of denominator of
+                 load factor upper bound; denominator is a power of two
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
                  - if NULL and key_size is greater than sizeof(size_t), then
@@ -102,7 +103,8 @@ void ht_muloa_init(ht_muloa_t *ht,
 		   size_t key_size,
 		   size_t elt_size,
 		   size_t min_num,
-		   float alpha,
+		   size_t alpha_n,
+		   size_t log_alpha_d,
 		   size_t (*rdc_key)(const void *, size_t),
 		   void (*free_elt)(void *));
 
