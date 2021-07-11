@@ -23,10 +23,18 @@
    Key size reduction methods may introduce regularities. An element is
    within a contiguous or noncontiguous block of memory.
 
+   The implementation only uses integer operations. Integer arithmetic is used
+   in load factor operations, thereby eliminating the use of float. Given
+   parameter values within the specified ranges, the behavior of the
+   implementation is defined as follows: i) a computation is completed or ii)
+   an error message is provided and exit is executed if an integer or buffer
+   overflow is attempted or an allocation is not completed due to
+   insufficient resources. The behavior outside the specified parameter
+   ranges is undefined.
+
    The implementation does not use stdint.h, and is portable under C89/C90
    and C99 with the only requirements that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even. Integer arithmetic is used in load factor
-   operations, thereby eliminating the use of float. 
+   greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
@@ -468,7 +476,8 @@ static key_elt_t **search(const ht_muloa_t *ht, const void *key){
 
 /**
    Multiplies an unsigned integer n by a load factor upper bound, represented
-   by a numerator and log base 2 of a denominator unsigned integers.
+   by a numerator and log base 2 of a denominator. The denominator is a
+   power of two.
 */
 static size_t mul_alpha(size_t n, size_t alpha_n, size_t log_alpha_d){
   size_t h, l;

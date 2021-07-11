@@ -75,7 +75,7 @@ const char *C_USAGE =
   "[0, 1] : on/off remove delete uint_ptr test\n"
   "[0, 1] : on/off corner cases test\n";
 const int C_ARGC_MAX = 13;
-const size_t C_ARGS_DEF[12] = {14, 0, 2, 3277, 32768, 15, 1, 1, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[12] = {14, 0, 2, 3277, 32768, 15, 8, 1, 1, 1, 1, 1};
 const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
@@ -149,9 +149,9 @@ void run_insert_search_free_uint_test(size_t log_ins,
   size_t alpha_n;
   num_ins = pow_two_perror(log_ins);
   step = (alpha_n_end - alpha_n_start) / num_alpha_steps;
-  rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
   for (i = log_key_start; i <= log_key_end; i++){
     alpha_n = alpha_n_start;
+    rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
     key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_muloa_{insert, search, free} test on distinct "
 	   "%lu-byte keys and size_t elements\n", TOLU(key_size));
@@ -167,7 +167,7 @@ void run_insert_search_free_uint_test(size_t log_ins,
 			 new_uint,
 			 val_uint,
 			 NULL);
-      alpha_n += step + (j > 0 && j < num_alpha_steps && rem > 0 && rem--);
+      alpha_n += (j < num_alpha_steps) * step + (rem > 0 && rem--);
     }
   }
 }
@@ -192,9 +192,9 @@ void run_remove_delete_uint_test(size_t log_ins,
   size_t alpha_n;
   num_ins = pow_two_perror(log_ins);
   step = (alpha_n_end - alpha_n_start) / num_alpha_steps;
-  rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
   for (i = log_key_start; i <= log_key_end; i++){
     alpha_n = alpha_n_start;
+    rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
     key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_muloa_{remove, delete} test on distinct "
 	   "%lu-byte keys and size_t elements\n", TOLU(key_size));
@@ -210,7 +210,7 @@ void run_remove_delete_uint_test(size_t log_ins,
 		    new_uint,
 		    val_uint,
 		    NULL);
-      alpha_n += step + (j > 0 && j < num_alpha_steps && rem > 0 && rem--);
+      alpha_n += (j < num_alpha_steps) * step + (rem > 0 && rem--);
     }
   }
 }
@@ -269,10 +269,9 @@ void run_insert_search_free_uint_ptr_test(size_t log_ins,
   size_t alpha_n;
   num_ins = pow_two_perror(log_ins);
   step = (alpha_n_end - alpha_n_start) / num_alpha_steps;
-  rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
- 
   for (i = log_key_start; i <= log_key_end; i++){
     alpha_n = alpha_n_start;
+    rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
     key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_muloa_{insert, search, free} test on distinct "
 	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
@@ -289,7 +288,7 @@ void run_insert_search_free_uint_ptr_test(size_t log_ins,
 			 new_uint_ptr,
 			 val_uint_ptr,
 			 free_uint_ptr);
-      alpha_n += step + (j > 0 && j < num_alpha_steps && rem > 0 && rem--);
+      alpha_n += (j < num_alpha_steps) * step + (rem > 0 && rem--);
     }
   }
 }
@@ -314,9 +313,9 @@ void run_remove_delete_uint_ptr_test(size_t log_ins,
   size_t alpha_n;
   num_ins = pow_two_perror(log_ins);
   step = (alpha_n_end - alpha_n_start) / num_alpha_steps;
-  rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
   for (i = log_key_start; i <= log_key_end; i++){
     alpha_n = alpha_n_start;
+    rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
     key_size = C_KEY_SIZE_FACTOR * pow_two_perror(i);
     printf("Run a ht_muloa_{remove, delete} test on distinct "
 	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
@@ -333,7 +332,7 @@ void run_remove_delete_uint_ptr_test(size_t log_ins,
 		    new_uint_ptr,
 		    val_uint_ptr,
 		    free_uint_ptr);
-      alpha_n += step + (j > 0 && j < num_alpha_steps && rem > 0 && rem--);
+      alpha_n += (j < num_alpha_steps) * step + (rem > 0 && rem--);
     }
   }
 }
