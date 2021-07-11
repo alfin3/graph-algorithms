@@ -11,7 +11,7 @@
       > 0 : a
       > 0 : b s.t. alpha of division hash table = a / b
       > 0 : c
-      > 0 : d s.t. alpha of multiplication hash table = c / d < 1.0
+      < # bits in size_t : d s.t. 0.0 < c / 2**d <= 1.0
       [0, 1] : on/off push pop free division hash table test
       [0, 1] : on/off update search division hash table test
       [0, 1] : on/off push pop free multiplication hash table test
@@ -52,20 +52,19 @@
 
 /* input handling */
 const char *C_USAGE =
-  "heap-test \n"
-  "[0, # bits in size_t - 1) : i s.t. # inserts = 2^i \n"
-   "> 0 : a \n"
-   "> 0 : b s.t. alpha of division hash table = a / b \n"
-   "> 0 : c \n"
-   "> 0 : d s.t. alpha of multiplication hash table = c / d < 1.0 \n"
-   "[0, 1] : on/off push pop free division hash table test \n"
-   "[0, 1] : on/off update search division hash table test \n"
-   "[0, 1] : on/off push pop free multiplication hash table test \n"
-   "[0, 1] : on/off update search multiplication hash table test \n";
+  "heap-test\n"
+  "[0, # bits in size_t - 1) : i s.t. # inserts = 2^i\n"
+   "> 0 : a\n"
+   "> 0 : b s.t. alpha of division hash table = a / b\n"
+   "> 0 : c\n"
+   "< # bits in size_t : d s.t. 0.0 < c / 2**d <= 1.0\n"
+   "[0, 1] : on/off push pop free division hash table test\n"
+   "[0, 1] : on/off update search division hash table test\n"
+   "[0, 1] : on/off push pop free multiplication hash table test\n"
+   "[0, 1] : on/off update search multiplication hash table test\n";
 const int C_ARGC_MAX = 10;
-const size_t C_ARGS_DEF[9] = {14, 1, 1, 1, 3, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[9] = {14, 1, 1, 341, 10, 1, 1, 1, 1};
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
-const float C_ALPHA_MULOA_MAX = 1.0;
 
 /* tests */
 const int C_PTY_TYPES_COUNT = 3;
@@ -171,7 +170,8 @@ typedef struct{
 } ht_divchn_context_t;
 
 typedef struct{
-  float alpha;
+  size_t alpha_n;
+  size_t log_alpha_d;
   size_t (*rdc_key)(const void *, size_t);
 } ht_muloa_context_t;
 
@@ -190,14 +190,21 @@ void ht_muloa_init_helper(ht_muloa_t *ht,
 			  void (*free_elt)(void *),
 			  void *context){
   ht_muloa_context_t * c = context;
-  ht_muloa_init(ht, key_size, elt_size, 0, c->alpha, c->rdc_key, free_elt);
+  ht_muloa_init(ht,
+		key_size,
+		elt_size,
+		0,
+		c->alpha_n,
+		c->log_alpha_d,
+		c->rdc_key,
+		free_elt);
 }
 
 /**
    Runs a heap_{push, pop, free} test with a ht_divchn_t hash table on
    size_t elements across priority types.
 */
-void run_push_pop_free_divchn_uint_test(int log_ins, float alpha){
+void run_push_pop_free_divchn_uint_test(size_t log_ins, float alpha){
   int i;
   size_t n;
   ht_divchn_t ht_divchn;
@@ -235,7 +242,7 @@ void run_push_pop_free_divchn_uint_test(int log_ins, float alpha){
    Runs a heap_{update, search} test with a ht_divchn_t hash table on
    size_t elements across priority types.
 */
-void run_update_search_divchn_uint_test(int log_ins, float alpha){
+void run_update_search_divchn_uint_test(size_t log_ins, float alpha){
   int i;
   size_t n;
   ht_divchn_t ht_divchn;
@@ -273,14 +280,17 @@ void run_update_search_divchn_uint_test(int log_ins, float alpha){
    Runs a heap_{push, pop, free} test with a ht_muloa_t hash table on
    size_t elements across priority types.
 */
-void run_push_pop_free_muloa_uint_test(int log_ins, float alpha){
+void run_push_pop_free_muloa_uint_test(size_t log_ins,
+				       size_t alpha_n,
+				       size_t log_alpha_d){
   int i;
   size_t n;
   ht_muloa_t ht_muloa;
   ht_muloa_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
-  context.alpha = alpha;
+  context.alpha_n = alpha_n;
+  context.log_alpha_d = log_alpha_d;
   context.rdc_key = NULL;
   hht.ht = &ht_muloa;
   hht.context = &context;
@@ -295,7 +305,9 @@ void run_push_pop_free_muloa_uint_test(int log_ins, float alpha){
     printf("\tnumber of elements:      %lu\n"
 	   "\tload factor upper bound: %.4f\n"
 	   "\tpriority type:           %s\n",
-	   TOLU(n), alpha, C_PTY_TYPES[i]);
+	   TOLU(n),
+	   (float)alpha_n / pow_two_perror(log_alpha_d),
+	   C_PTY_TYPES[i]);
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
@@ -312,14 +324,17 @@ void run_push_pop_free_muloa_uint_test(int log_ins, float alpha){
    Runs a heap_{update, search} test with a ht_muloa_t hash table on
    size_t elements across priority types.
 */
-void run_update_search_muloa_uint_test(int log_ins, float alpha){
+void run_update_search_muloa_uint_test(size_t log_ins,
+				       size_t alpha_n,
+				       size_t log_alpha_d){
   int i;
   size_t n;
   ht_muloa_t ht_muloa;
   ht_muloa_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
-  context.alpha = alpha;
+  context.alpha_n = alpha_n;
+  context.log_alpha_d = log_alpha_d;
   context.rdc_key = NULL;
   hht.ht = &ht_muloa;
   hht.context = &context;
@@ -334,7 +349,9 @@ void run_update_search_muloa_uint_test(int log_ins, float alpha){
     printf("\tnumber of elements:      %lu\n"
 	   "\tload factor upper bound: %.4f\n"
 	   "\tpriority type:           %s\n",
-	   TOLU(n), alpha, C_PTY_TYPES[i]);
+	   TOLU(n),
+	   (float)alpha_n / pow_two_perror(log_alpha_d),
+	   C_PTY_TYPES[i]);
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
@@ -390,7 +407,7 @@ void free_uint_ptr(void *a){
    Runs a heap_{push, pop, free} test with a ht_divchn_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_push_pop_free_divchn_uint_ptr_test(int log_ins, float alpha){
+void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins, float alpha){
   int i;
   size_t n;
   ht_divchn_t ht_divchn;
@@ -428,7 +445,7 @@ void run_push_pop_free_divchn_uint_ptr_test(int log_ins, float alpha){
    Runs a heap_{update, search} test with a ht_divchn_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_update_search_divchn_uint_ptr_test(int log_ins, float alpha){
+void run_update_search_divchn_uint_ptr_test(size_t log_ins, float alpha){
   int i;
   size_t n;
   ht_divchn_t ht_divchn;
@@ -466,14 +483,17 @@ void run_update_search_divchn_uint_ptr_test(int log_ins, float alpha){
    Runs a heap_{push, pop, free} test with a ht_muloa_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_push_pop_free_muloa_uint_ptr_test(int log_ins, float alpha){
+void run_push_pop_free_muloa_uint_ptr_test(size_t log_ins,
+					   size_t alpha_n,
+					   size_t log_alpha_d){
   int i;
   size_t n;
   ht_muloa_t ht_muloa;
   ht_muloa_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
-  context.alpha = alpha;
+  context.alpha_n = alpha_n;
+  context.log_alpha_d = log_alpha_d;
   context.rdc_key = NULL;
   hht.ht = &ht_muloa;
   hht.context = &context;
@@ -488,7 +508,9 @@ void run_push_pop_free_muloa_uint_ptr_test(int log_ins, float alpha){
     printf("\tnumber of elements:      %lu\n"
 	   "\tload factor upper bound: %.4f\n"
 	   "\tpriority type:           %s\n",
-	   TOLU(n), alpha, C_PTY_TYPES[i]);
+	   TOLU(n),
+	   (float)alpha_n / pow_two_perror(log_alpha_d),
+	   C_PTY_TYPES[i]);
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
@@ -505,15 +527,17 @@ void run_push_pop_free_muloa_uint_ptr_test(int log_ins, float alpha){
    Runs a heap_{update, search} test with a ht_muloa_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_update_search_muloa_uint_ptr_test(int log_ins, float alpha){
+void run_update_search_muloa_uint_ptr_test(size_t log_ins,
+					   size_t alpha_n,
+					   size_t log_alpha_d){
   int i;
   size_t n;
   ht_muloa_t ht_muloa;
   ht_muloa_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
-  context.alpha = alpha;
-  context.rdc_key = NULL;
+  context.alpha_n = alpha_n;
+  context.log_alpha_d = log_alpha_d;
   hht.ht = &ht_muloa;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_muloa_init_helper;
@@ -527,7 +551,9 @@ void run_update_search_muloa_uint_ptr_test(int log_ins, float alpha){
     printf("\tnumber of elements:      %lu\n"
 	   "\tload factor upper bound: %.4f\n"
 	   "\tpriority type:           %s\n",
-	   TOLU(n), alpha, C_PTY_TYPES[i]);
+	   TOLU(n),
+	   (float)alpha_n / pow_two_perror(log_alpha_d),
+	   C_PTY_TYPES[i]);
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
@@ -846,7 +872,7 @@ void print_test_result(int res){
 int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
-  float alpha_divchn, alpha_muloa;
+  float alpha_divchn;
   if (argc > C_ARGC_MAX){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
@@ -860,7 +886,8 @@ int main(int argc, char *argv[]){
       args[1] < 1 ||
       args[2] < 1 ||
       args[3] < 1 ||
-      args[4] < 1 ||
+      args[4] > C_FULL_BIT - 1 ||
+      args[3] > pow_two_perror(args[4]) ||
       args[5] > 1 ||
       args[6] > 1 ||
       args[7] > 1 ||
@@ -869,11 +896,6 @@ int main(int argc, char *argv[]){
     exit(EXIT_FAILURE);
   }
   alpha_divchn = (float)args[1] / args[2];
-  alpha_muloa = (float)args[3] / args[4];
-  if (alpha_muloa >= C_ALPHA_MULOA_MAX){
-    fprintf(stderr, "USAGE:\n%s", C_USAGE);
-    exit(EXIT_FAILURE);
-  }
   if (args[5]){
     run_push_pop_free_divchn_uint_test(args[0], alpha_divchn);
     run_push_pop_free_divchn_uint_ptr_test(args[0], alpha_divchn);
@@ -883,12 +905,12 @@ int main(int argc, char *argv[]){
     run_update_search_divchn_uint_ptr_test(args[0], alpha_divchn);
   }
   if (args[7]){
-    run_push_pop_free_muloa_uint_test(args[0], alpha_muloa);
-    run_push_pop_free_muloa_uint_ptr_test(args[0], alpha_muloa);
+    run_push_pop_free_muloa_uint_test(args[0], args[3], args[4]);
+    run_push_pop_free_muloa_uint_ptr_test(args[0], args[3], args[4]);
   }
   if (args[8]){
-    run_update_search_muloa_uint_test(args[0], alpha_muloa);
-    run_update_search_muloa_uint_ptr_test(args[0], alpha_muloa);
+    run_update_search_muloa_uint_test(args[0], args[3], args[4]);
+    run_update_search_muloa_uint_ptr_test(args[0], args[3], args[4]);
   }
   free(args);
   args = NULL;
