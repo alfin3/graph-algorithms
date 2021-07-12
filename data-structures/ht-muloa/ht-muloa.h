@@ -24,18 +24,21 @@
    Key size reduction methods may introduce regularities. An element is
    within a contiguous or noncontiguous block of memory.
 
-   The implementation only uses integer operations. Integer arithmetic is used
-   in load factor operations, thereby eliminating the use of float. Given
-   parameter values within the specified ranges, the behavior of the
+   The implementation only uses integer operations. Integer arithmetic is
+   used in load factor operations, thereby eliminating the use of float.
+   Given parameter values within the specified ranges, the behavior of the
    implementation is defined as follows: i) a computation is completed or ii)
-   an error message is provided and exit is executed if an integer or buffer
-   overflow is attempted or an allocation is not completed due to
+   an error message is provided and exit is executed if an integer* or
+   buffer overflow is attempted or an allocation is not completed due to
    insufficient resources. The behavior outside the specified parameter
    ranges is undefined.
 
    The implementation does not use stdint.h, and is portable under C89/C90
    and C99 with the only requirements that CHAR_BIT * sizeof(size_t) is
    greater or equal to 16 and is even.
+
+   * except intended wrapping around of unsigned integers in modulo
+     operations, which is defined
 */
 
 #ifndef HT_MULOA_H  
