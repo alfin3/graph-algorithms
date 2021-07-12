@@ -78,7 +78,8 @@ const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* hash table load factor upper bounds */
 const float C_ALPHA_DIVCHN = 1.0;
-const float C_ALPHA_MULOA = 0.4;
+const size_t C_ALPHA_N_MULOA = 13107;
+const size_t C_LOG_ALPHA_D_MULOA = 15;
 
 /* small graph test */
 const size_t C_NUM_VTS = 4;
@@ -154,7 +155,8 @@ typedef struct{
 } context_divchn_t;
 
 typedef struct{
-  float alpha;
+  size_t alpha_n;
+  size_t log_alpha_d;
   size_t (*rdc_key)(const void *, size_t);
 } context_muloa_t;
 
@@ -173,7 +175,14 @@ void ht_muloa_init_helper(ht_muloa_t *ht,
 			  void (*free_elt)(void *),
 			  void *context){
   context_muloa_t * c = context;
-  ht_muloa_init(ht, key_size, elt_size, 0, c->alpha, c->rdc_key, free_elt);
+  ht_muloa_init(ht,
+		key_size,
+		elt_size,
+		0,
+		c->alpha_n,
+		c->log_alpha_d,
+		c->rdc_key,
+		free_elt);
 }
 
 void run_def_uint_tsp(const adj_lst_t *a){
@@ -218,7 +227,8 @@ void run_muloa_uint_tsp(const adj_lst_t *a){
   ht_muloa_t ht_muloa;
   context_muloa_t context_muloa;
   tsp_ht_t tht;
-  context_muloa.alpha = C_ALPHA_MULOA;
+  context_muloa.alpha_n = C_ALPHA_N_MULOA;
+  context_muloa.log_alpha_d = C_LOG_ALPHA_D_MULOA;
   context_muloa.rdc_key = NULL;
   tht.ht = &ht_muloa;
   tht.context = &context_muloa;
@@ -349,7 +359,8 @@ void run_muloa_double_tsp(const adj_lst_t *a){
   ht_muloa_t ht_muloa;
   context_muloa_t context_muloa;
   tsp_ht_t tht;
-  context_muloa.alpha = C_ALPHA_MULOA;
+  context_muloa.alpha_n = C_ALPHA_N_MULOA;
+  context_muloa.log_alpha_d = C_LOG_ALPHA_D_MULOA;
   context_muloa.rdc_key = NULL;
   tht.ht = &ht_muloa;
   tht.context = &context_muloa;
@@ -506,7 +517,8 @@ void run_rand_uint_test(int num_vts_start, int num_vts_end){
   tht_divchn.search = (tsp_ht_search)ht_divchn_search;
   tht_divchn.remove = (tsp_ht_remove)ht_divchn_remove;
   tht_divchn.free = (tsp_ht_free)ht_divchn_free;
-  context_muloa.alpha = C_ALPHA_MULOA;
+  context_muloa.alpha_n = C_ALPHA_N_MULOA;
+  context_muloa.log_alpha_d = C_LOG_ALPHA_D_MULOA;
   context_muloa.rdc_key = NULL;
   tht_muloa.ht = &ht_muloa;
   tht_muloa.context = &context_muloa;
@@ -684,7 +696,8 @@ void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
   tht_divchn.search = (tsp_ht_search)ht_divchn_search;
   tht_divchn.remove = (tsp_ht_remove)ht_divchn_remove;
   tht_divchn.free = (tsp_ht_free)ht_divchn_free;
-  context_muloa.alpha = C_ALPHA_MULOA;
+  context_muloa.alpha_n = C_ALPHA_N_MULOA;
+  context_muloa.log_alpha_d = C_LOG_ALPHA_D_MULOA;
   context_muloa.rdc_key = NULL;
   tht_muloa.ht = &ht_muloa;
   tht_muloa.context = &context_muloa;
