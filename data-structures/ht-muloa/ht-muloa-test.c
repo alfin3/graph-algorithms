@@ -7,14 +7,13 @@
 
    The following command line arguments can be used to customize tests:
    ht-muloa-test
-      [0, # bits in size_t - 1) : i s.t. # inserts = 2^i
+      [0, # bits in size_t - 1) : i s.t. # inserts = 2**i
       [0, # bits in size_t) : a given k = sizeof(size_t)
-      [0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b
+      [0, # bits in size_t) : b s.t. k * 2**a <= key size <= k * 2**b
       > 0 : c
-      > 0 : d s.t. c / d <= 1.0
-      > 0 : e
-      > 0 : f s.t. e / f <= 1.0
-      > 0 : g s.t. c / d <= alpha <= e / f, in g steps
+      > 0 : d
+      > 0 : e log base 2 s.t. c <= d <= 2**e
+      > 0 : f s.t. c / 2**e <= alpha <= d / 2**e, in f steps
       [0, 1] : on/off insert search uint test
       [0, 1] : on/off remove delete uint test
       [0, 1] : on/off insert search uint_ptr test
@@ -25,8 +24,8 @@
    ./ht-muloa-test
    ./ht-muloa-test 18
    ./ht-muloa-test 17 5 6 
-   ./ht-muloa-test 19 0 2 2 10 3 10 10
-   ./ht-muloa-test 19 0 2 2 10 3 10 10 1 1 0 0 0
+   ./ht-muloa-test 19 0 2 3000 4000 15 10
+   ./ht-muloa-test 19 0 2 3000 4000 15 10 1 1 0 0 0
 
    ht-muloa-test can be run with any subset of command line arguments in the
    above-defined order. If the (i + 1)th argument is specified then the ith
@@ -62,9 +61,9 @@
 /* input handling */
 const char *C_USAGE =
   "ht-muloa-test\n"
-  "[0, # bits in size_t - 1) : i s.t. # inserts = 2^i\n"
+  "[0, # bits in size_t - 1) : i s.t. # inserts = 2**i\n"
   "[0, # bits in size_t) : a given k = sizeof(size_t)\n"
-  "[0, # bits in size_t) : b s.t. k * 2^a <= key size <= k * 2^b\n"
+  "[0, # bits in size_t) : b s.t. k * 2**a <= key size <= k * 2**b\n"
   "> 0 : c\n"
   "> 0 : d\n"
   "> 0 : e log base 2 s.t. c <= d <= 2**e\n"
@@ -75,7 +74,7 @@ const char *C_USAGE =
   "[0, 1] : on/off remove delete uint_ptr test\n"
   "[0, 1] : on/off corner cases test\n";
 const int C_ARGC_MAX = 13;
-const size_t C_ARGS_DEF[12] = {14, 0, 2, 3277, 32768, 15, 8, 1, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[12] = {14, 0, 2, 3277, 32768u, 15, 8, 1, 1, 1, 1, 1};
 const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
@@ -86,7 +85,7 @@ const size_t C_KEY_SIZE_FACTOR = sizeof(size_t);
 const unsigned char C_CORNER_KEY_A = 2;
 const unsigned char C_CORNER_KEY_B = 1;
 const size_t C_CORNER_KEY_SIZE = sizeof(unsigned char);
-const size_t C_CORNER_HT_COUNT = 2048u;
+const size_t C_CORNER_HT_COUNT = 2048;
 const size_t C_CORNER_ALPHA_N = 33;
 const size_t C_CORNER_LOG_ALPHA_D = 15; /* alpha is 33/32768 */
 
@@ -116,7 +115,7 @@ void print_test_result(int res);
    across key sizes and load factor upper bounds. For test purposes a key
    is random with the exception of a distinct non-random C_KEY_SIZE_FACTOR-
    sized block inside the key. A pointer to an element is passed as elt in
-   ht_mul_insert and the element is fully copied into the hash table.
+   ht_muloa_insert and the element is fully copied into the hash table.
    NULL as free_elt is sufficient to delete the element.
 */
 

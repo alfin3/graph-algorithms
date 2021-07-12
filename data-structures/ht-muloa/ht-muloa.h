@@ -63,8 +63,8 @@ typedef struct{
   size_t max_num_probes;
   size_t num_elts;
   size_t num_phs;
-  size_t fprime; /* >2^{n - 1}, <2^{n}, n = CHAR_BIT * sizeof(size_t) */
-  size_t sprime; /* >2^{n - 1}, <2^{n}, n = CHAR_BIT * sizeof(size_t) */
+  size_t fprime; /* >2**{n - 1}, <2**{n}, n = CHAR_BIT * sizeof(size_t) */
+  size_t sprime; /* >2**{n - 1}, <2**{n}, n = CHAR_BIT * sizeof(size_t) */
   size_t alpha_n;
   size_t log_alpha_d;
   key_elt_t *ph;
@@ -91,7 +91,8 @@ typedef struct{
                  steps are to be completed
    alpha_n     : > 0 numerator of load factor upper bound
    log_alpha_d : < CHAR_BIT * sizeof(size_t) log base 2 of denominator of
-                 load factor upper bound; denominator is a power of two
+                 load factor upper bound; denominator is a power of two and
+                 is greater or equal to alpha_n
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
                  - if NULL and key_size is greater than sizeof(size_t), then
@@ -122,13 +123,15 @@ void ht_muloa_init(ht_muloa_t *ht,
 /**
    Inserts a key and an associated element into a hash table. If the key is
    in the hash table, associates the key with the new element. The key and 
-   elt parameters are not NULL.
+   elt parameters are not NULL and point to blocks of size key_size and
+   elt_size respectively.
 */
 void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt);
 
 /**
    If a key is present in a hash table, returns a pointer to its associated 
-   element, otherwise returns NULL. The key parameter is not NULL.
+   element, otherwise returns NULL. The key parameter is not NULL and points
+   to a block of size key_size.
 */
 void *ht_muloa_search(const ht_muloa_t *ht, const void *key);
 
@@ -136,13 +139,15 @@ void *ht_muloa_search(const ht_muloa_t *ht, const void *key);
    Removes a key and its associated element from a hash table by copying 
    the element or its pointer into a block of size elt_size pointed to
    by elt. If the key is not in the hash table, leaves the block pointed
-   to by elt unchanged. The key and elt parameters are not NULL.
+   to by elt unchanged. The key and elt parameters are not NULL and point
+   to blocks of size key_size and elt_size respectively.
 */
 void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt);
 
 /**
    If a key is in a hash table, deletes the key and its associated element 
-   according to free_elt. The key parameter is not NULL.
+   according to free_elt. The key parameter is not NULL and points
+   to a block of size key_size.
 */
 void ht_muloa_delete(ht_muloa_t *ht, const void *key);
 

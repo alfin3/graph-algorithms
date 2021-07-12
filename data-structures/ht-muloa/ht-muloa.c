@@ -3,7 +3,7 @@
 
    A hash table with generic hash keys and generic elements. The 
    implementation is based on a multiplication method for hashing into upto 
-   2^{CHAR_BIT * sizeof(size_t) - 1} slots and an open addressing method
+   2**{CHAR_BIT * sizeof(size_t) - 1} slots and an open addressing method
    with double hashing for resolving collisions.
    
    The load factor of a hash table is the expected number of keys in a slot 
@@ -172,7 +172,8 @@ static size_t find_build_prime(const size_t *parts);
                  steps are to be completed
    alpha_n     : > 0 numerator of load factor upper bound
    log_alpha_d : < CHAR_BIT * sizeof(size_t) log base 2 of denominator of
-                 load factor upper bound; denominator is a power of two
+                 load factor upper bound; denominator is a power of two and
+                 is greater or equal to alpha_n
    rdc_key     : - if NULL and key_size is less or equal to sizeof(size_t),
                  then no reduction operation is performed on a key
                  - if NULL and key_size is greater than sizeof(size_t), then
@@ -228,7 +229,8 @@ void ht_muloa_init(ht_muloa_t *ht,
 /**
    Inserts a key and an associated element into a hash table. If the key is
    in the hash table, associates the key with the new element. The key and 
-   elt parameters are not NULL.
+   elt parameters are not NULL and point to blocks of size key_size and
+   elt_size respectively.
 */
 void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
   size_t num_probes = 1;
@@ -237,8 +239,8 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
   size_t ix, dist;
   key_elt_t **ke = NULL;
   std_key = convert_std_key(ht, key);
-  fval = ht->fprime * std_key; /* mod 2^FULL_BIT */
-  sval = ht->sprime * std_key; /* mod 2^FULL_BIT */
+  fval = ht->fprime * std_key; /* mod 2**C_FULL_BIT */
+  sval = ht->sprime * std_key; /* mod 2**C_FULL_BIT */
   ix = fval >> (C_FULL_BIT - ht->log_count);
   dist = adjust_dist(sval >> (C_FULL_BIT - ht->log_count));
   ke = &ht->key_elts[ix];
@@ -268,7 +270,8 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
 
 /**
    If a key is present in a hash table, returns a pointer to its associated 
-   element, otherwise returns NULL. The key parameter is not NULL.
+   element, otherwise returns NULL. The key parameter is not NULL and points
+   to a block of size key_size.
 */
 void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
   key_elt_t * const *ke = search(ht, key);
@@ -283,7 +286,8 @@ void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
    Removes a key and its associated element from a hash table by copying 
    the element or its pointer into a block of size elt_size pointed to
    by elt. If the key is not in the hash table, leaves the block pointed
-   to by elt unchanged. The key and elt parameters are not NULL.
+   to by elt unchanged. The key and elt parameters are not NULL and point
+   to blocks of size key_size and elt_size respectively.
 */
 void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt){
   key_elt_t **ke = search(ht, key);
@@ -299,7 +303,8 @@ void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt){
 
 /**
    If a key is in a hash table, deletes the key and its associated element 
-   according to free_elt. The key parameter is not NULL.
+   according to free_elt. The key parameter is not NULL and points
+   to a block of size key_size.
 */
 void ht_muloa_delete(ht_muloa_t *ht, const void *key){
   key_elt_t **ke = search(ht, key);
@@ -495,9 +500,9 @@ static size_t mul_alpha(size_t n, size_t alpha_n, size_t log_alpha_d){
    accomodates alpha as a load factor upper bound or to 2**C_LOG_COUNT_MAX.
    The operation is called if max_sum, representing alpha, was exceeded and
    the hash table log_count did not reach C_LOG_COUNT_MAX. A single call
-   lowers the load factor s.t. num_elts + num_phs <= max_sum if a sufficiently
-   large power of two is representable by size_t and a correponding array can
-   be allocated on a given system.
+   lowers the load factor s.t. num_elts + num_phs <= max_sum if a
+   sufficiently large power of two is representable by size_t and a
+   corresponding array can be allocated on a given system.
 */
 static void ht_grow(ht_muloa_t *ht){
   size_t i, prev_count = ht->count;
