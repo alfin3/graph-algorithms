@@ -26,9 +26,8 @@
 
    The implementation only uses integer operations. Integer arithmetic is
    used in load factor operations, thereby eliminating the use of float.
-   Given parameter values within the specified ranges, the behavior of the
-   implementation is defined as follows: i) a computation is completed or ii)
-   an error message is provided and exit is executed if an integer* or
+   Given parameter values within the specified ranges, the implementation
+   provides an error message and an exit is executed if an integer* or
    buffer overflow is attempted or an allocation is not completed due to
    insufficient resources. The behavior outside the specified parameter
    ranges is undefined.
