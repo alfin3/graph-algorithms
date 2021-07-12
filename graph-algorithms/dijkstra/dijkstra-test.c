@@ -25,8 +25,8 @@
    second argument, and 1 for the following arguments.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even.
+   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
+   is greater or equal to 16 and is even.
 */
 
 #include <stdio.h>
@@ -69,7 +69,8 @@ const size_t C_ARGS_DEF[5] = {0, 10, 1, 1, 1};
 
 /* hash table load factor upper bounds */
 const float C_ALPHA_DIVCHN = 1.0;
-const float C_ALPHA_MULOA = 0.4;
+const size_t C_ALPHA_N_MULOA = 13107;
+const size_t C_LOG_ALPHA_D_MULOA = 15;
 
 /* small graph tests */
 const size_t C_NUM_VTS = 5;
@@ -139,14 +140,19 @@ int cmp_uint(const void *a, const void *b){
 
 typedef struct{
   float alpha;
-} context_t;
+} context_divchn_t;
+
+typedef struct{
+  size_t alpha_n;
+  size_t log_alpha_d;
+} context_muloa_t;
 
 void ht_divchn_init_helper(ht_divchn_t *ht,
 			   size_t key_size,
 			   size_t elt_size,
 			   void (*free_elt)(void *),
 			   void *context){
-  context_t *c = context;
+  context_divchn_t *c = context;
   ht_divchn_init(ht, key_size, elt_size, 0, c->alpha, free_elt);
 }
 
@@ -155,8 +161,15 @@ void ht_muloa_init_helper(ht_muloa_t *ht,
 			  size_t elt_size,
 			  void (*free_elt)(void *),
 			  void *context){
-  context_t * c = context;
-  ht_muloa_init(ht, key_size, elt_size, 0, c->alpha, NULL, free_elt);
+  context_muloa_t * c = context;
+  ht_muloa_init(ht,
+		key_size,
+		elt_size,
+		0,
+		c->alpha_n,
+		c->log_alpha_d,
+		NULL,
+		free_elt);
 }
 
 void run_default_uint_dijkstra(const adj_lst_t *a){
@@ -183,7 +196,7 @@ void run_divchn_uint_dijkstra(const adj_lst_t *a){
   size_t *dist = NULL;
   size_t *prev = NULL;
   ht_divchn_t ht_divchn;
-  context_t context;
+  context_divchn_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(size_t));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
@@ -213,11 +226,12 @@ void run_muloa_uint_dijkstra(const adj_lst_t *a){
   size_t *dist = NULL;
   size_t *prev = NULL;
   ht_muloa_t ht_muloa;
-  context_t context;
+  context_muloa_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(size_t));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
-  context.alpha = C_ALPHA_MULOA;
+  context.alpha_n = C_ALPHA_N_MULOA;
+  context.log_alpha_d = C_LOG_ALPHA_D_MULOA;
   hht.ht = &ht_muloa;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_muloa_init_helper;
@@ -357,7 +371,7 @@ void run_divchn_double_dijkstra(const adj_lst_t *a){
   size_t *prev = NULL;
   double *dist = NULL;
   ht_divchn_t ht_divchn;
-  context_t context;
+  context_divchn_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(double));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
@@ -387,11 +401,12 @@ void run_muloa_double_dijkstra(const adj_lst_t *a){
   size_t *prev = NULL;
   double *dist = NULL;
   ht_muloa_t ht_muloa;
-  context_t context;
+  context_muloa_t context;
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(double));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
-  context.alpha = C_ALPHA_MULOA;
+  context.alpha_n = C_ALPHA_N_MULOA;
+  context.log_alpha_d = C_LOG_ALPHA_D_MULOA;
   hht.ht = &ht_muloa;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_muloa_init_helper;
@@ -556,7 +571,8 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
   bern_arg_t b;
   ht_divchn_t ht_divchn;
   ht_muloa_t ht_muloa;
-  context_t context_divchn, context_muloa;
+  context_divchn_t context_divchn;
+  context_muloa_t context_muloa;
   heap_ht_t hht_divchn, hht_muloa;
   clock_t t_bfs, t_def, t_divchn, t_muloa;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
@@ -572,7 +588,8 @@ void run_bfs_dijkstra_test(int pow_start, int pow_end){
   hht_divchn.search = (heap_ht_search)ht_divchn_search;
   hht_divchn.remove = (heap_ht_remove)ht_divchn_remove;
   hht_divchn.free = (heap_ht_free)ht_divchn_free;
-  context_muloa.alpha = C_ALPHA_MULOA;
+  context_muloa.alpha_n = C_ALPHA_N_MULOA;
+  context_muloa.log_alpha_d = C_LOG_ALPHA_D_MULOA;
   hht_muloa.ht = &ht_muloa;
   hht_muloa.context = &context_muloa;
   hht_muloa.init = (heap_ht_init)ht_muloa_init_helper;
@@ -714,7 +731,8 @@ void run_rand_uint_test(int pow_start, int pow_end){
   bern_arg_t b;
   ht_divchn_t ht_divchn;
   ht_muloa_t ht_muloa;
-  context_t context_divchn, context_muloa;
+  context_divchn_t context_divchn;
+  context_muloa_t context_muloa;
   heap_ht_t hht_divchn, hht_muloa;
   clock_t t_def, t_divchn, t_muloa;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
@@ -728,7 +746,8 @@ void run_rand_uint_test(int pow_start, int pow_end){
   hht_divchn.search = (heap_ht_search)ht_divchn_search;
   hht_divchn.remove = (heap_ht_remove)ht_divchn_remove;
   hht_divchn.free = (heap_ht_free)ht_divchn_free;
-  context_muloa.alpha = C_ALPHA_MULOA;
+  context_muloa.alpha_n = C_ALPHA_N_MULOA;
+  context_muloa.log_alpha_d = C_LOG_ALPHA_D_MULOA;
   hht_muloa.ht = &ht_muloa;
   hht_muloa.context = &context_muloa;
   hht_muloa.init = (heap_ht_init)ht_muloa_init_helper;
