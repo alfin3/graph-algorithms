@@ -529,9 +529,9 @@ static void ht_grow(ht_muloa_t *ht){
 		      
 /**
    Attempts to increase the count of a hash table. Returns 1 if the count
-   was increased, updating count, log_count, and max_sum of the hash table 
-   accordingly. Returns 0 if the count was not increased because log_count
-   is already equal to C_LOG_COUNT_MAX.
+   was increased. Otherwise returns 0. Updates count, log_count, and max_sum
+   of the hash table accordingly. If 2**C_LOG_COUNT_MAX is reached, log_count
+   is set to C_LOG_COUNT_MAX.
 */
 static int incr_count(ht_muloa_t *ht){
   if (ht->log_count == C_LOG_COUNT_MAX) return 0;
