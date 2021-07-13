@@ -37,8 +37,10 @@ typedef struct{
   size_t group_ix;
   size_t count_ix; /* max size_t value if last representable prime reached */
   size_t count;
+  size_t max_num_elts; /*  >= 0, <= C_SIZE_MAX, represents alpha */
   size_t num_elts;
-  float alpha; 
+  size_t alpha_n;
+  size_t log_alpha_d; 
   dll_node_t **key_elts; /* array of pointers to nodes */
   void (*free_elt)(void *);
 } ht_divchn_t;
@@ -69,11 +71,12 @@ typedef struct{
                  pointed to by the argument, is necessary to delete the element
 */
 void ht_divchn_init(ht_divchn_t *ht,
-		 size_t key_size,
-		 size_t elt_size,
-		 size_t min_num,
-		 float alpha,
-		 void (*free_elt)(void *));
+		    size_t key_size,
+		    size_t elt_size,
+		    size_t min_num,
+		    size_t alpha_n,
+		    size_t log_alpha_d,
+		    void (*free_elt)(void *));
 
 /**
    Inserts a key and an associated element into a hash table. If the key is
