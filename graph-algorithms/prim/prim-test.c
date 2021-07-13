@@ -65,7 +65,8 @@ const int C_ARGC_MAX = 5;
 const size_t C_ARGS_DEF[4] = {0, 10, 1, 1};
 
 /* hash table load factor upper bounds */
-const float C_ALPHA_DIVCHN = 1.0;
+const size_t C_ALPHA_N_DIVCHN = 1;
+const size_t C_LOG_ALPHA_D_DIVCHN = 0;
 const size_t C_ALPHA_N_MULOA = 13107;
 const size_t C_LOG_ALPHA_D_MULOA = 15;
 
@@ -132,7 +133,8 @@ int cmp_uint(const void *a, const void *b){
 }
 
 typedef struct{
-  float alpha;
+  size_t alpha_n;
+  size_t log_alpha_d;
 } context_divchn_t;
 
 typedef struct{
@@ -146,7 +148,13 @@ void ht_divchn_init_helper(ht_divchn_t *ht,
 			   void (*free_elt)(void *),
 			   void *context){
   context_divchn_t *c = context;
-  ht_divchn_init(ht, key_size, elt_size, 0, c->alpha, free_elt);
+  ht_divchn_init(ht,
+		 key_size,
+		 elt_size,
+		 0,
+		 c->alpha_n,
+		 c->log_alpha_d,
+		 free_elt);
 }
 
 void ht_muloa_init_helper(ht_muloa_t *ht,
@@ -193,7 +201,8 @@ void run_divchn_uint_prim(const adj_lst_t *a){
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(size_t));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
-  context.alpha = C_ALPHA_DIVCHN;
+  context.alpha_n = C_ALPHA_N_DIVCHN;
+  context.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
   hht.ht = &ht_divchn;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_divchn_init_helper;
@@ -341,7 +350,8 @@ void run_divchn_double_prim(const adj_lst_t *a){
   heap_ht_t hht;
   dist = malloc_perror(a->num_vts, sizeof(double));
   prev = malloc_perror(a->num_vts, sizeof(size_t));
-  context.alpha = C_ALPHA_DIVCHN;
+  context.alpha_n = C_ALPHA_N_DIVCHN;
+  context.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
   hht.ht = &ht_divchn;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_divchn_init_helper;
@@ -531,7 +541,8 @@ void run_rand_uint_test(int pow_start, int pow_end){
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
   dist = malloc_perror(pow_two(pow_end), sizeof(size_t));
   prev = malloc_perror(pow_two(pow_end), sizeof(size_t));
-  context_divchn.alpha = C_ALPHA_DIVCHN;
+  context_divchn.alpha_n = C_ALPHA_N_DIVCHN;
+  context_divchn.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
   hht_divchn.ht = &ht_divchn;
   hht_divchn.context = &context_divchn;
   hht_divchn.init = (heap_ht_init)ht_divchn_init_helper;

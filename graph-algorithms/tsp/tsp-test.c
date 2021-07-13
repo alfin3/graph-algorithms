@@ -77,7 +77,8 @@ const size_t C_SPARSE_GRAPH_V_MAX = 8 * CHAR_BIT * sizeof(size_t);
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* hash table load factor upper bounds */
-const float C_ALPHA_DIVCHN = 1.0;
+const size_t C_ALPHA_N_DIVCHN = 1;
+const size_t C_LOG_ALPHA_D_DIVCHN = 0;
 const size_t C_ALPHA_N_MULOA = 13107;
 const size_t C_LOG_ALPHA_D_MULOA = 15;
 
@@ -151,7 +152,8 @@ int cmp_uint(const void *a, const void *b){
 }
   
 typedef struct{
-  float alpha;
+  size_t alpha_n;
+  size_t log_alpha_d;
 } context_divchn_t;
 
 typedef struct{
@@ -166,7 +168,13 @@ void ht_divchn_init_helper(ht_divchn_t *ht,
 			   void (*free_elt)(void *),
 			   void *context){
   context_divchn_t *c = context;
-  ht_divchn_init(ht, key_size, elt_size, 0, c->alpha, free_elt);
+  ht_divchn_init(ht,
+		 key_size,
+		 elt_size,
+		 0,
+		 c->alpha_n,
+		 c->log_alpha_d,
+		 free_elt);
 }
 
 void ht_muloa_init_helper(ht_muloa_t *ht,
@@ -204,7 +212,8 @@ void run_divchn_uint_tsp(const adj_lst_t *a){
   ht_divchn_t ht_divchn;
   context_divchn_t context_divchn;
   tsp_ht_t tht;
-  context_divchn.alpha = C_ALPHA_DIVCHN;
+  context_divchn.alpha_n = C_ALPHA_N_DIVCHN;
+  context_divchn.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
   tht.ht = &ht_divchn;
   tht.context = &context_divchn;
   tht.init = (tsp_ht_init)ht_divchn_init_helper;
@@ -336,7 +345,8 @@ void run_divchn_double_tsp(const adj_lst_t *a){
   ht_divchn_t ht_divchn;
   context_divchn_t context_divchn;
   tsp_ht_t tht;
-  context_divchn.alpha = C_ALPHA_DIVCHN;
+  context_divchn.alpha_n = C_ALPHA_N_DIVCHN;
+  context_divchn.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
   tht.ht = &ht_divchn;
   tht.context = &context_divchn;
   tht.init = (tsp_ht_init)ht_divchn_init_helper;
@@ -509,7 +519,8 @@ void run_rand_uint_test(int num_vts_start, int num_vts_end){
   tsp_ht_t tht_divchn, tht_muloa;
   clock_t t_def, t_divchn, t_muloa;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
-  context_divchn.alpha = C_ALPHA_DIVCHN;
+  context_divchn.alpha_n = C_ALPHA_N_DIVCHN;
+  context_divchn.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
   tht_divchn.ht = &ht_divchn;
   tht_divchn.context = &context_divchn;
   tht_divchn.init = (tsp_ht_init)ht_divchn_init_helper;
@@ -688,7 +699,8 @@ void run_sparse_rand_uint_test(int num_vts_start, int num_vts_end){
   tsp_ht_t tht_divchn, tht_muloa;
   clock_t t_divchn, t_muloa;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
-  context_divchn.alpha = C_ALPHA_DIVCHN;
+  context_divchn.alpha_n = C_ALPHA_N_DIVCHN;
+  context_divchn.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
   tht_divchn.ht = &ht_divchn;
   tht_divchn.context = &context_divchn;
   tht_divchn.init = (tsp_ht_init)ht_divchn_init_helper;
