@@ -497,12 +497,14 @@ static size_t mul_alpha(size_t n, size_t alpha_n, size_t log_alpha_d){
 
 /**
    Increases the count of a hash table to the next power of two that
-   accomodates alpha as a load factor upper bound or to 2**C_LOG_COUNT_MAX.
-   The operation is called if max_sum, representing alpha, was exceeded and
-   the hash table log_count did not reach C_LOG_COUNT_MAX. A single call
-   lowers the load factor s.t. num_elts + num_phs <= max_sum if a
-   sufficiently large power of two is representable by size_t and a
-   corresponding array can be allocated on a given system.
+   accomodates alpha as a load factor upper bound. The operation is called
+   if alpha was exceeded (i.e. num_elts + num_phs > max_sum) and log_count
+   is not equal to C_LOG_COUNT_MAX. A single call:
+   i)  lowers the load factor s.t. num_elts + num_phs <= max_sum if a
+       sufficient power of two is available, or
+   ii) lowers the load factor as low as possible.
+   The count is doubled at least once. If 2**C_LOG_COUNT_MAX is reached
+   log_count is set to C_LOG_COUNT_MAX.
 */
 static void ht_grow(ht_muloa_t *ht){
   size_t i, prev_count = ht->count;
@@ -527,9 +529,9 @@ static void ht_grow(ht_muloa_t *ht){
 		      
 /**
    Attempts to increase the count of a hash table. Returns 1 if the count
-   was increased. Returns 0 if the count could not be increased because
-   C_LOG_COUNT_MAX was reached. Updates count, log_count, and max_sum of
-   a hash table accordingly.
+   was increased, updating count, log_count, and max_sum of the hash table 
+   accordingly. Returns 0 if the count was not increased because log_count
+   is already equal to C_LOG_COUNT_MAX.
 */
 static int incr_count(ht_muloa_t *ht){
   if (ht->log_count == C_LOG_COUNT_MAX) return 0;

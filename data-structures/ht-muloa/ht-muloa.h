@@ -59,7 +59,7 @@ typedef struct{
   size_t pair_size; /* key_size + elt_size for input iterations by user */
   size_t log_count;
   size_t count;
-  size_t max_sum;
+  size_t max_sum; /* >= 0, < count, represents alpha */
   size_t max_num_probes;
   size_t num_elts;
   size_t num_phs;
