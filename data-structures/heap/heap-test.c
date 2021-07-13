@@ -9,7 +9,7 @@
    heap-test
       [0, # bits in size_t - 1) : i s.t. # inserts = 2^i
       > 0 : a
-      > 0 : b s.t. alpha of division hash table = a / b
+      < # bits in size_t : b s.t. 0.0 < a / 2**b
       > 0 : c
       < # bits in size_t : d s.t. 0.0 < c / 2**d <= 1.0
       [0, 1] : on/off push pop free division hash table test
@@ -20,12 +20,12 @@
    usage examples:
    ./heap-test
    ./heap-test 21
-   ./heap-test 20 1 10
-   ./heap-test 20 1 1
-   ./heap-test 20 100 1
-   ./heap-test 20 1 1 1 100 0 0
-   ./heap-test 20 1 1 1 3 0 0
-   ./heap-test 20 1 1 9 10 0 0
+   ./heap-test 20 10 10
+   ./heap-test 20 1 0
+   ./heap-test 20 100 0
+   ./heap-test 20 1 0 10 10 0 0
+   ./heap-test 20 1 0 1 0 0 0
+   ./heap-test 20 1 0 100 0 0 0
 
    heap-test can be run with any subset of command line arguments in the
    above-defined order. If the (i + 1)th argument is specified then the ith
@@ -54,16 +54,16 @@
 const char *C_USAGE =
   "heap-test\n"
   "[0, # bits in size_t - 1) : i s.t. # inserts = 2^i\n"
-   "> 0 : a\n"
-   "> 0 : b s.t. alpha of division hash table = a / b\n"
-   "> 0 : c\n"
-   "< # bits in size_t : d s.t. 0.0 < c / 2**d <= 1.0\n"
-   "[0, 1] : on/off push pop free division hash table test\n"
-   "[0, 1] : on/off update search division hash table test\n"
-   "[0, 1] : on/off push pop free multiplication hash table test\n"
-   "[0, 1] : on/off update search multiplication hash table test\n";
+  "> 0 : a\n"
+  "< # bits in size_t : b s.t. 0.0 < a / 2**b\n"
+  "> 0 : c\n"
+  "< # bits in size_t : d s.t. 0.0 < c / 2**d <= 1.0\n"
+  "[0, 1] : on/off push pop free division hash table test\n"
+  "[0, 1] : on/off update search division hash table test\n"
+  "[0, 1] : on/off push pop free multiplication hash table test\n"
+  "[0, 1] : on/off update search multiplication hash table test\n";
 const int C_ARGC_MAX = 10;
-const size_t C_ARGS_DEF[9] = {14, 1, 1, 341, 10, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[9] = {14, 1, 0, 341, 10, 1, 1, 1, 1};
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* tests */
@@ -166,7 +166,8 @@ void new_long_double(void *a, size_t val){
 }
 
 typedef struct{
-  float alpha;
+  size_t alpha_n;
+  size_t log_alpha_d;
 } ht_divchn_context_t;
 
 typedef struct{
@@ -181,7 +182,13 @@ void ht_divchn_init_helper(ht_divchn_t *ht,
 			   void (*free_elt)(void *),
 			   void *context){
   ht_divchn_context_t *c = context;
-  ht_divchn_init(ht, key_size, elt_size, 0, c->alpha, free_elt);
+  ht_divchn_init(ht,
+		 key_size,
+		 elt_size,
+		 0,
+		 c->alpha_n,
+		 c->log_alpha_d,
+		 free_elt);
 }
 
 void ht_muloa_init_helper(ht_muloa_t *ht,
@@ -204,14 +211,17 @@ void ht_muloa_init_helper(ht_muloa_t *ht,
    Runs a heap_{push, pop, free} test with a ht_divchn_t hash table on
    size_t elements across priority types.
 */
-void run_push_pop_free_divchn_uint_test(size_t log_ins, float alpha){
+void run_push_pop_free_divchn_uint_test(size_t log_ins,
+					size_t alpha_n,
+					size_t log_alpha_d){
   int i;
   size_t n;
   ht_divchn_t ht_divchn;
   ht_divchn_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
-  context.alpha = alpha;
+  context.alpha_n = alpha_n;
+  context.log_alpha_d = log_alpha_d;
   hht.ht = &ht_divchn;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_divchn_init_helper;
@@ -225,7 +235,8 @@ void run_push_pop_free_divchn_uint_test(size_t log_ins, float alpha){
     printf("\tnumber of elements:      %lu\n"
 	   "\tload factor upper bound: %.4f\n"
 	   "\tpriority type:           %s\n",
-	   TOLU(n), alpha, C_PTY_TYPES[i]);
+	   TOLU(n),
+	   (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
@@ -242,14 +253,17 @@ void run_push_pop_free_divchn_uint_test(size_t log_ins, float alpha){
    Runs a heap_{update, search} test with a ht_divchn_t hash table on
    size_t elements across priority types.
 */
-void run_update_search_divchn_uint_test(size_t log_ins, float alpha){
+void run_update_search_divchn_uint_test(size_t log_ins,
+					size_t alpha_n,
+					size_t log_alpha_d){
   int i;
   size_t n;
   ht_divchn_t ht_divchn;
   ht_divchn_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
-  context.alpha = alpha;
+  context.alpha_n = alpha_n;
+  context.log_alpha_d = log_alpha_d;
   hht.ht = &ht_divchn;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_divchn_init_helper;
@@ -263,7 +277,8 @@ void run_update_search_divchn_uint_test(size_t log_ins, float alpha){
     printf("\tnumber of elements:      %lu\n"
 	   "\tload factor upper bound: %.4f\n"
 	   "\tpriority type:           %s\n",
-	   TOLU(n), alpha, C_PTY_TYPES[i]);
+	   TOLU(n),
+	   (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
@@ -407,14 +422,17 @@ void free_uint_ptr(void *a){
    Runs a heap_{push, pop, free} test with a ht_divchn_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins, float alpha){
+void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins,
+					    size_t alpha_n,
+					    size_t log_alpha_d){
   int i;
   size_t n;
   ht_divchn_t ht_divchn;
   ht_divchn_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
-  context.alpha = alpha;
+  context.alpha_n = alpha_n;
+  context.log_alpha_d = log_alpha_d;
   hht.ht = &ht_divchn;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_divchn_init_helper;
@@ -428,7 +446,8 @@ void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins, float alpha){
     printf("\tnumber of elements:      %lu\n"
 	   "\tload factor upper bound: %.4f\n"
 	   "\tpriority type:           %s\n",
-	   TOLU(n), alpha, C_PTY_TYPES[i]);
+	   TOLU(n),
+	   (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
@@ -445,14 +464,17 @@ void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins, float alpha){
    Runs a heap_{update, search} test with a ht_divchn_t hash table on
    noncontiguous uint_ptr_t elements across priority types.
 */
-void run_update_search_divchn_uint_ptr_test(size_t log_ins, float alpha){
+void run_update_search_divchn_uint_ptr_test(size_t log_ins,
+					    size_t alpha_n,
+					    size_t log_alpha_d){
   int i;
   size_t n;
   ht_divchn_t ht_divchn;
   ht_divchn_context_t context;
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
-  context.alpha = alpha;
+  context.alpha_n = alpha_n;
+  context.log_alpha_d = log_alpha_d;
   hht.ht = &ht_divchn;
   hht.context = &context;
   hht.init = (heap_ht_init)ht_divchn_init_helper;
@@ -466,7 +488,8 @@ void run_update_search_divchn_uint_ptr_test(size_t log_ins, float alpha){
     printf("\tnumber of elements:      %lu\n"
 	   "\tload factor upper bound: %.4f\n"
 	   "\tpriority type:           %s\n",
-	   TOLU(n), alpha, C_PTY_TYPES[i]);
+	   TOLU(n),
+	   (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
@@ -872,7 +895,6 @@ void print_test_result(int res){
 int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
-  float alpha_divchn;
   if (argc > C_ARGC_MAX){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
@@ -884,7 +906,7 @@ int main(int argc, char *argv[]){
   }
   if (args[0] > C_FULL_BIT - 2 ||
       args[1] < 1 ||
-      args[2] < 1 ||
+      args[2] > C_FULL_BIT - 1 ||
       args[3] < 1 ||
       args[4] > C_FULL_BIT - 1 ||
       args[3] > pow_two_perror(args[4]) ||
@@ -895,14 +917,13 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  alpha_divchn = (float)args[1] / args[2];
   if (args[5]){
-    run_push_pop_free_divchn_uint_test(args[0], alpha_divchn);
-    run_push_pop_free_divchn_uint_ptr_test(args[0], alpha_divchn);
+    run_push_pop_free_divchn_uint_test(args[0], args[1], args[2]);
+    run_push_pop_free_divchn_uint_ptr_test(args[0], args[1], args[2]);
   }
   if (args[6]){
-    run_update_search_divchn_uint_test(args[0], alpha_divchn);
-    run_update_search_divchn_uint_ptr_test(args[0], alpha_divchn);
+    run_update_search_divchn_uint_test(args[0], args[1], args[2]);
+    run_update_search_divchn_uint_ptr_test(args[0], args[1], args[2]);
   }
   if (args[7]){
     run_push_pop_free_muloa_uint_test(args[0], args[3], args[4]);
