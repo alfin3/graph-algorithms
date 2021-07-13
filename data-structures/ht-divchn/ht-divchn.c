@@ -18,9 +18,21 @@
    type, array, struct). An element is within a contiguous or noncontiguous
    memory block.
 
+   The implementation only uses integer and pointer operations. Integer
+   arithmetic is used in load factor operations, thereby eliminating the
+   use of float. Given parameter values within the specified ranges,
+   the implementation provides an error message and an exit is executed
+   if an integer overflow is attempted* or an allocation is not completed
+   due to insufficient resources. The behavior outside the specified
+   parameter ranges is undefined.
+
    The implementation does not use stdint.h and is portable under C89/C90
    and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
    greater or equal to 16 and is even.
+
+   * except intended wrapping around of unsigned integers in modulo
+     operations, which is defined, and overflow detection as a part
+     of computing bounds, which is defined by the implementation.
 */
 
 #include <stdio.h>
@@ -114,12 +126,13 @@ static size_t build_prime(size_t start, size_t count);
    Initializes a hash table. 
    ht          : a pointer to a preallocated block of size 
                  sizeof(ht_divchn_t).
-   key_size    : size of a key object
-   elt_size    : - size of an element, if the element is within a contiguous
-                 memory block and a copy of the element is inserted,
-                 - size of a pointer to an element, if the element is within
-                 a noncontiguous memory block or a pointer to a contiguous
-                 element is inserted
+   key_size    : non-zero size of a key object
+   elt_size    : - non-zero size of an element, if the element is within a
+                 contiguous memory block and a copy of the element is
+                 inserted,
+                 - size of a pointer to an element, if the element
+                 is within a noncontiguous memory block or a pointer to a
+                 contiguous element is inserted
    min_num     : minimum number of keys that are known or expected to become 
                  present simultaneously in a hash table, resulting in a
                  speedup by avoiding unnecessary growth steps of a hash
@@ -166,8 +179,9 @@ void ht_divchn_init(ht_divchn_t *ht,
 
 /**
    Inserts a key and an associated element into a hash table. If the key is
-   in the hash table, associates the key with the new element. The key and
-   elt parameters are not NULL.
+   in the hash table, associates the key with the new element. The key and 
+   elt parameters are not NULL and point to blocks of size key_size and
+   elt_size respectively.
 */
 void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
   size_t ix;
@@ -192,7 +206,8 @@ void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
 
 /**
    If a key is present in a hash table, returns a pointer to its associated 
-   element, otherwise returns NULL. The key parameter is not NULL.
+   element, otherwise returns NULL. The key parameter is not NULL and points
+   to a block of size key_size.
 */
 void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
   const dll_node_t *node = dll_search_key(&ht->key_elts[hash(ht, key)],
@@ -206,10 +221,11 @@ void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
 }
 
 /**
-   Removes a key and the associated element from a hash table by copying 
+   Removes a key and its associated element from a hash table by copying 
    the element or its pointer into a block of size elt_size pointed to
    by elt. If the key is not in the hash table, leaves the block pointed
-   to by elt unchanged. The key and elt parameters are not NULL.
+   to by elt unchanged. The key and elt parameters are not NULL and point
+   to blocks of size key_size and elt_size respectively.
 */
 void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
@@ -223,8 +239,9 @@ void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
 }
 
 /**
-   If a key is present in a hash table, deletes the key and its associated 
-   element according free_elt. The key parameter is not NULL.
+   If a key is in a hash table, deletes the key and its associated element 
+   according to free_elt. The key parameter is not NULL and points
+   to a block of size key_size.
 */
 void ht_divchn_delete(ht_divchn_t *ht, const void *key){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
@@ -237,7 +254,7 @@ void ht_divchn_delete(ht_divchn_t *ht, const void *key){
 
 /**
    Frees a hash table and leaves a block of size sizeof(ht_divchn_t)
-   pointed to by ht.
+   pointed to by the ht parameter.
 */
 void ht_divchn_free(ht_divchn_t *ht){
   size_t i;
@@ -282,9 +299,10 @@ static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
        large prime in the C_PRIME_PARTS array is available and is 
        representable as size_t, or 
    ii) lowers the load factor as low as possible.
-   The count may not increase. If the largest representable prime is reached,
-   count_ix may not yet be set to C_SIZE_MAX or C_PRIME_PARTS_COUNT, which
-   requires one additional call.
+   If the largest representable prime is reached, count_ix may not yet be set
+   to C_SIZE_MAX or C_PRIME_PARTS_COUNT, which requires one additional call
+   that does not increase the count. Otherwise, each call increases the
+   count.
 */
 static void ht_grow(ht_divchn_t *ht){
   size_t i, prev_count = ht->count;
@@ -313,7 +331,8 @@ static void ht_grow(ht_divchn_t *ht){
    was increased. Otherwise returns 0. Updates count_ix, group_ix, count,
    and max_num_elts accordingly. If the largest representable prime is
    reached, count_ix may not yet be set to C_SIZE_MAX or C_PRIME_PARTS_COUNT,
-   which requires one additional call.
+   which requires one additional call that does not increase the count.
+   Otherwise, each call increases the count.
 */
 static int incr_count(ht_divchn_t *ht){
   ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
