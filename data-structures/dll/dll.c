@@ -11,21 +11,35 @@
    pointer for searching and modifying the list from and at any position,
    including a fixed position if desired.
    
-   A list node contains i) a pointer to a key that is an object within a 
-   contiguous memory block (e.g. basic type, array, or struct), and ii) a 
-   pointer to a contiguous element or to a pointer to a contiguous
-   or noncontiguous element. The implementation provides a guarantee that
-   a node keeps its address in memory throughout its lifetime in a list.
+   A list node contains i) a dll_node_t struct for pointer operations, ii)
+   a contiguous key and iii) an element or a pointer to an element. A key is
+   an object within a contiguous memory block (e.g. basic type, array, or
+   struct). An element is contiguous or non-contiguous. Given a char *p
+   pointer to a node, its key is at p + sizeof(dll_node_t) and its
+   element/element pointer is at p + sizeof(key_elt_t) + key_size. Access
+   is simplified by the dll_ptr function.
 
-   The node implementation facilitates hashing applications, such as
-   mapping a key to a node pointer for fast in-list access and using a list
-   for chaining hash keys and their elements in a hash table. In combination
-   with the circular representation, the node implementation also facilitates
-   the parallelization of search in future versions.
+   The implementation provides a guarantee that a block with a dll_node_t
+   struct, a key, and an element/element pointer keeps its address in memory
+   throughout its lifetime in a list. The implementation may not be slower
+   (as tested) than a singly linked list due to instruction-level
+   parallelism.
 
-   The implementation may not be slower (as tested) than a singly linked
-   list due to instruction-level parallelism, does not use stdint.h, and
-   is portable under C89/C90 and C99.
+   The implementation only uses integer and pointer operations. Given
+   parameter values within the specified ranges, the implementation provides
+   an error message and an exit is executed if an integer overflow is
+   attempted or an allocation is not completed due to insufficient
+   resources. The behavior outside the specified parameter ranges is
+   undefined.
+
+   The node implementation reduces memory footprint and facilitates hashing
+   applications, such as mapping a key to a node pointer for fast in-list
+   access and using a list for chaining hash keys and their elements in a
+   hash table. In combination with the circular representation, the node
+   implementation also facilitates the parallelization of search.
+
+   The implementation does not use stdint.h, and is portable under C89/C90
+   and C99.
 */
 
 #include <stdio.h>
@@ -47,19 +61,19 @@ void dll_init(dll_node_t **head){
    NULL if the list is empty, or points to any node in the list to determine
    the position for the prepend operation.
    head        : pointer to a head pointer to an initialized list           
-   key         : pointer to a key object of size key_size within a contiguous
-                 memory block (e.g. basic type, array, struct)
-   elt         : - pointer to an element, if the element is within a contiguous
-                 memory block and a copy of the element is prepended,
-                 - pointer to a pointer to an element, if the element is within
-                 a noncontiguous memory block or a pointer to a contiguous
-                 element is prepended
-   key_size    : size of a key object
-   elt_size    : - size of an element, if the element is within a contiguous
-                 memory block and a copy of the element is prepended,
-                 - size of a pointer to an element, if the element is within
-                 a noncontiguous memory block or a pointer to a contiguous
-                 element is prepended
+   key         : non-NULL pointer to a key object of size key_size within a
+                 contiguous memory block (e.g. basic type, array, struct)
+   elt         : - non-NULL pointer to a block of size elt_size that
+                 is an element, if the element is contiguous, or pointer to
+                 an element, if the element is noncontiguous or a pointer to
+                 a contiguous element is prepended
+   key_size    : non-zero size of a key object
+   elt_size    : - non-zero size of an element, if the element is within a
+                 contiguous memory block and a copy of the element is
+                 prepended,
+                 - size of a pointer to an element, if the element
+                 is within a noncontiguous memory block or a pointer to a
+                 contiguous element is prepended
 */
 void dll_prepend_new(dll_node_t **head,
 		     const void *key,
@@ -70,10 +84,8 @@ void dll_prepend_new(dll_node_t **head,
   dll_node_t *node =
     malloc_perror(1, add_sz_perror(sizeof(dll_node_t),
 				   add_sz_perror(key_size, elt_size)));
-  node->key = (char *)node + sizeof(dll_node_t);
-  node->elt = (char *)node->key + key_size;
-  memcpy(node->key, key, key_size);
-  memcpy(node->elt, elt, elt_size);
+  memcpy(dll_ptr(node, 0), key, key_size);
+  memcpy(dll_ptr(node, key_size), elt, elt_size);
   if (*head == NULL){
     node->next = node;
     node->prev = node;
@@ -104,7 +116,7 @@ void dll_append_new(dll_node_t **head,
    the list is empty, or points to any node in the list to determine the
    position for a prepend operation.
    head        : pointer to a head pointer to an initialized list           
-   node        : pointer to a node to be prepended
+   node        : non-NULL pointer to a node to be prepended
 */
 void dll_prepend(dll_node_t **head, dll_node_t *node){
   if (*head == NULL){
@@ -129,27 +141,36 @@ void dll_append(dll_node_t **head, dll_node_t *node){
 }
 
 /**
+   Returns a pointer to the key of a node (size = 0) or the element 
+   of a node (size = key_size).
+   node        : non-NULL pointer to a node
+*/
+void *dll_ptr(const dll_node_t *node, size_t size){
+  return (char *)node + sizeof(dll_node_t) + size;
+}
+
+/**
    Relative to a head pointer, returns a pointer to the clockwise (next)
    first node with a key that has the same bit pattern as the block pointed
    to by key, or NULL if such a node in not found.
    head        : pointer to a head pointer to an initialized list
-   key         : pointer to a key object of size key_size within a contiguous
-                 memory block
-   key_size    : size of a key object in bytes
+   key         : non-NULL pointer to a key object of size key_size within a
+                 contiguous memory block
+   key_size    : non-zero size of a key object in bytes
 */
-dll_node_t *dll_search_key(dll_node_t **head,
+dll_node_t *dll_search_key(dll_node_t * const *head,
 			   const void *key,
 			   size_t key_size){
-  dll_node_t *node = *head;
-  if (node == NULL || key == NULL){
+  const dll_node_t *node = *head;
+  if (node == NULL){
     return NULL;
-  }else if (memcmp(node->key, key, key_size) == 0){
-    return node;
+  }else if (memcmp(dll_ptr(node, 0), key, key_size) == 0){
+    return (dll_node_t *)node;
   }else{
     node = node->next;
     while(node != *head){
-      if (memcmp(node->key, key, key_size) == 0){
-	return node;
+      if (memcmp(dll_ptr(node, 0), key, key_size) == 0){
+	return (dll_node_t *)node;
       }
       node = node->next;
     }
@@ -162,12 +183,10 @@ dll_node_t *dll_search_key(dll_node_t **head,
    first node with an element that satisfies cmp_elt, or NULL if such a node
    in not found.
    head        : pointer to a head pointer to an initialized list
-   elt         : - pointer to an element, if the element is within a contiguous
-                 memory block and a copy of the element was prepended or
-                 appended,
-                 - pointer to a pointer to an element, if the element is within
-                 a noncontiguous memory block or a pointer to a contiguous
-                 element was prepended or appended
+   elt         : - non-NULL pointer to a block of size elt_size that
+                 is an element, if the element is contiguous, or pointer to
+                 an element, if the element is noncontiguous or a pointer to
+                 a contiguous element was prepended or appended
    cmp_elt     : comparison function which returns a zero integer value iff
                  the two elements accessed through the first and the second 
                  arguments are equal; each argument is a pointer to an
@@ -175,19 +194,20 @@ dll_node_t *dll_search_key(dll_node_t **head,
                  element (see specification of dll_prepend_new)
                  
 */
-dll_node_t *dll_search_elt(dll_node_t **head,
+dll_node_t *dll_search_elt(dll_node_t * const *head,
 			   const void *elt,
+			   size_t key_size,
 			   int (*cmp_elt)(const void *, const void *)){
-  dll_node_t *node = *head;
+  const dll_node_t *node = *head;
   if (node == NULL){
     return NULL;
-  }else if (cmp_elt(node->elt, elt) == 0){
-    return node;
+  }else if (cmp_elt(dll_ptr(node, key_size), elt) == 0){
+    return (dll_node_t *)node;
   }else{
     node = node->next;
     while(node != *head){
-      if (cmp_elt(node->elt, elt) == 0){
-	return node;
+      if (cmp_elt(dll_ptr(node, key_size), elt) == 0){
+	return (dll_node_t *)node;
       }
       node = node->next;
     }
@@ -237,17 +257,18 @@ void dll_remove(dll_node_t **head, const dll_node_t *node){
 */
 void dll_delete(dll_node_t **head,
 		dll_node_t *node,
+		size_t key_size,
 		void (*free_elt)(void *)){
   if (*head == NULL || node == NULL){
     return;
   }else if (node->prev == node && node->next == node){
-    if (free_elt != NULL) free_elt(node->elt);
+    if (free_elt != NULL) free_elt(dll_ptr(node, key_size));
     *head = NULL;
     free(node);
     node = NULL;
   }else{
     /* at least two nodes */
-    if (free_elt != NULL) free_elt(node->elt);
+    if (free_elt != NULL) free_elt(dll_ptr(node, key_size));
     node->next->prev = node->prev;
     node->prev->next = node->next;
     if (*head == node){
@@ -262,16 +283,18 @@ void dll_delete(dll_node_t **head,
    Frees a doubly linked list. Please see the parameter specification in
    dll_delete.
 */
-void dll_free(dll_node_t **head, void (*free_elt)(void *)){
+void dll_free(dll_node_t **head,
+	      size_t key_size,
+	      void (*free_elt)(void *)){
   dll_node_t *node = *head, *next_node = NULL;
   if (node != NULL){
     next_node = node->next;
-    if (free_elt != NULL) free_elt(node->elt);
+    if (free_elt != NULL) free_elt(dll_ptr(node, key_size));
     free(node);
     node = next_node;
     while(node != *head){
       next_node = node->next;
-      if (free_elt != NULL) free_elt(node->elt);
+      if (free_elt != NULL) free_elt(dll_ptr(node, key_size));
       free(node);
       node = next_node;
     }

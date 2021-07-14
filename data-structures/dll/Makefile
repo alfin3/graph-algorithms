@@ -24,9 +24,9 @@ CC = gcc
 
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
-CFLAGS = -I$(UTILS_MEM_DIR)                     \
-         -I$(UTILS_MOD_DIR)                     \
-         ${CFLAGS_BUILD_MODE} -Wall -Wextra -O3
+CFLAGS = -I$(UTILS_MEM_DIR)                           \
+         -I$(UTILS_MOD_DIR)                           \
+         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = dll-test.o                      \
       dll.o                           \
