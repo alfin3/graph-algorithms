@@ -193,8 +193,8 @@ void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
     dll_prepend_new(head, key, elt, ht->key_size, ht->elt_size);
     ht->num_elts++;
   }else{
-    if (ht->free_elt != NULL) ht->free_elt(node->elt);
-    memcpy(node->elt, elt, ht->elt_size);
+    if (ht->free_elt != NULL) ht->free_elt(dll_ptr(node, ht->key_size));
+    memcpy(dll_ptr(node, ht->key_size), elt, ht->elt_size);
   }
   /* grow ht after ensuring it was insertion, not update */
   if (ht->num_elts > ht->max_num_elts && 
@@ -216,7 +216,7 @@ void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
   if (node == NULL){
     return NULL;
   }else{
-    return node->elt;
+    return dll_ptr(node, ht->key_size);
   }
 }
 
@@ -231,9 +231,9 @@ void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
   dll_node_t *node = dll_search_key(head, key, ht->key_size);
   if (node != NULL){
-    memcpy(elt, node->elt, ht->elt_size);
+    memcpy(elt, dll_ptr(node, ht->key_size), ht->elt_size);
     /* if an element is noncontiguous, only the pointer to it is deleted */
-    dll_delete(head, node, NULL);
+    dll_delete(head, node, ht->key_size, NULL);
     ht->num_elts--;
   }
 }
@@ -247,7 +247,7 @@ void ht_divchn_delete(ht_divchn_t *ht, const void *key){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
   dll_node_t *node = dll_search_key(head, key, ht->key_size);
   if (node != NULL){
-    dll_delete(head, node, ht->free_elt);
+    dll_delete(head, node, ht->key_size, ht->free_elt);
     ht->num_elts--;
   }
 }
@@ -259,7 +259,7 @@ void ht_divchn_delete(ht_divchn_t *ht, const void *key){
 void ht_divchn_free(ht_divchn_t *ht){
   size_t i;
   for (i = 0; i < ht->count; i++){
-    dll_free(&ht->key_elts[i], ht->free_elt);
+    dll_free(&ht->key_elts[i], ht->key_size, ht->free_elt);
   }
   free(ht->key_elts);
   ht->key_elts = NULL;
@@ -319,7 +319,7 @@ static void ht_grow(ht_divchn_t *ht){
     while (*head != NULL){
       node = *head;
       dll_remove(head, node);
-      dll_prepend(&ht->key_elts[hash(ht, node->key)], node);
+      dll_prepend(&ht->key_elts[hash(ht, dll_ptr(node, 0))], node);
     }
   }
   free(prev_key_elts);
