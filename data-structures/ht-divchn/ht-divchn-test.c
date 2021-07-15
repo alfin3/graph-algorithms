@@ -22,10 +22,9 @@
 
    usage examples:
    ./ht-divchn-test
-   ./ht-divchn-test 17 0 4 1 100
-   ./ht-divchn-test 17 0 4 2 10 0 8
-   ./ht-divchn-test 17 5 6 2 10 0 1
-   ./ht-divchn-test 17 5 6 2 10 0 1 0 0 1 1 0
+   ./ht-divchn-test 20
+   ./ht-divchn-test 17 5 6
+   ./ht-divchn-test 19 0 2 3000 4000 11 10
 
    ht-divchn-test can be run with any subset of command line arguments in the
    above-defined order. If the (i + 1)th argument is specified then the ith
@@ -75,7 +74,7 @@ const char *C_USAGE =
   "[0, 1] : on/off remove delete uint_ptr test\n"
   "[0, 1] : on/off corner cases test\n";
 const int C_ARGC_MAX = 13;
-const size_t C_ARGS_DEF[12] = {14, 0, 2, 819, 32768, 13, 8, 1, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[12] = {14, 0, 2, 1024, 30720u, 11, 10, 1, 1, 1, 1, 1};
 const size_t C_SIZE_MAX = (size_t)-1;
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
