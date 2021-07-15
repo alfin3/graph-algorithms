@@ -162,19 +162,17 @@ dll_node_t *dll_search_key(dll_node_t * const *head,
 			   const void *key,
 			   size_t key_size){
   const dll_node_t *node = *head;
-  if (node == NULL){
-    return NULL;
-  }else if (memcmp(dll_ptr(node, 0), key, key_size) == 0){
-    return (dll_node_t *)node;
-  }else{
-    node = node->next;
-    while(node != *head){
-      if (memcmp(dll_ptr(node, 0), key, key_size) == 0){
-	return (dll_node_t *)node;
-      }
-      node = node->next;
+  if (node == NULL) return NULL;
+  /* NULL marker to avoid undef. behavior of pointer comparison */
+  (*head)->prev->next = NULL;
+  while(node != NULL){
+    if (memcmp(dll_ptr(node, 0), key, key_size) == 0){
+      (*head)->prev->next = *head;
+      return (dll_node_t *)node;
     }
+    node = node->next;
   }
+  (*head)->prev->next = *head;
   return NULL;
 }
 
@@ -199,19 +197,17 @@ dll_node_t *dll_search_elt(dll_node_t * const *head,
 			   size_t key_size,
 			   int (*cmp_elt)(const void *, const void *)){
   const dll_node_t *node = *head;
-  if (node == NULL){
-    return NULL;
-  }else if (cmp_elt(dll_ptr(node, key_size), elt) == 0){
-    return (dll_node_t *)node;
-  }else{
-    node = node->next;
-    while(node != *head){
-      if (cmp_elt(dll_ptr(node, key_size), elt) == 0){
-	return (dll_node_t *)node;
-      }
-      node = node->next;
+  if (node == NULL) return NULL;
+  /* NULL marker to avoid undef. behavior of pointer comparison */
+  (*head)->prev->next = NULL;
+  while(node != NULL){
+    if (cmp_elt(dll_ptr(node, key_size), elt) == 0){
+      (*head)->prev->next = *head;
+      return (dll_node_t *)node;
     }
+    node = node->next;
   }
+  (*head)->prev->next = *head;
   return NULL;
 }
 
@@ -224,17 +220,20 @@ dll_node_t *dll_search_elt(dll_node_t * const *head,
                  removed node, or to NULL if the last node is removed
 */
 void dll_remove(dll_node_t **head, const dll_node_t *node){
-  if (*head == NULL || node == NULL){
-    return;
-  }else if (node->prev == node && node->next == node){
+  int is_same_node = 0;
+  if (*head == NULL || node == NULL) return;
+  /* NULL marker to avoid undef. behavior of pointer comparison */
+  (*head)->prev->next = NULL;
+  is_same_node = (node->prev->next == NULL);
+  if (is_same_node && node->next == NULL){
+    /* one node */
+    (*head)->prev->next = *head;
     *head = NULL;
   }else{
-    /* at least two nodes */
+    (*head)->prev->next = *head;
     node->next->prev = node->prev;
     node->prev->next = node->next;
-    if (*head == node){
-      *head = node->next;
-    }
+    if (is_same_node) *head = node->next;
   }
 }
 
@@ -259,21 +258,23 @@ void dll_delete(dll_node_t **head,
 		dll_node_t *node,
 		size_t key_size,
 		void (*free_elt)(void *)){
-  if (*head == NULL || node == NULL){
-    return;
-  }else if (node->prev == node && node->next == node){
+  int is_same_node = 0;
+  if (*head == NULL || node == NULL) return;
+  /* NULL marker to avoid undef. behavior of pointer comparison */
+  (*head)->prev->next = NULL;
+  is_same_node = (node->prev->next == NULL);
+  if (is_same_node && node->next == NULL){
+    /* one node */
     if (free_elt != NULL) free_elt(dll_ptr(node, key_size));
     *head = NULL;
     free(node);
     node = NULL;
   }else{
-    /* at least two nodes */
     if (free_elt != NULL) free_elt(dll_ptr(node, key_size));
+    (*head)->prev->next = *head;
     node->next->prev = node->prev;
     node->prev->next = node->next;
-    if (*head == node){
-      *head = node->next;
-    }
+    if (is_same_node) *head = node->next;
     free(node);
     node = NULL;
   }
@@ -287,17 +288,12 @@ void dll_free(dll_node_t **head,
 	      size_t key_size,
 	      void (*free_elt)(void *)){
   dll_node_t *node = *head, *next_node = NULL;
-  if (node != NULL){
+  if (node != NULL) (*head)->prev->next = NULL;
+  while(node != NULL){
     next_node = node->next;
     if (free_elt != NULL) free_elt(dll_ptr(node, key_size));
     free(node);
     node = next_node;
-    while(node != *head){
-      next_node = node->next;
-      if (free_elt != NULL) free_elt(dll_ptr(node, key_size));
-      free(node);
-      node = next_node;
-    }
-    *head = NULL;
   }
+  *head = NULL;
 }
