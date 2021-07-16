@@ -497,7 +497,7 @@ typedef struct{
 static void *reinsert_thread(void *arg){
   size_t i, ix, lock_ix;
   dll_node_t **head = NULL, *node = NULL;
-  reinsert_arg_t *ra = arg;
+  const reinsert_arg_t *ra = arg;
   for (i = 0; i < ra->count; i++){
     head = &ra->prev_key_elts[ra->start + i];
     while (*head != NULL){

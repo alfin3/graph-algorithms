@@ -1050,7 +1050,7 @@ int main(int argc, char *argv[]){
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
- if (args[0] > C_FULL_BIT - 2 || 
+  if (args[0] > C_FULL_BIT - 2 || 
       args[1] > C_FULL_BIT - 1 ||
       args[2] > C_FULL_BIT - 1 ||
       args[1] > args[2] ||
@@ -1059,7 +1059,7 @@ int main(int argc, char *argv[]){
       args[5] > C_FULL_BIT - 1 ||
       args[3] > args[4] ||
       args[6] < 1 ||
-      args[7] < 1 ||
+      args[7] > 1 ||
       args[8] > 1 ||
       args[9] > 1 ||
       args[10] > 1 ||
