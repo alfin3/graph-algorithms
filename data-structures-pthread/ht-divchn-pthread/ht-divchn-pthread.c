@@ -137,7 +137,9 @@ static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_SIZE_MAX = (size_t)-1;
 
 static size_t hash(const ht_divchn_pthread_t *ht, const void *key);
+static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d);
 static void ht_grow(ht_divchn_pthread_t *ht);
+static int incr_count(ht_divchn_pthread_t *ht);
 static int is_overflow(size_t start, size_t count);
 static size_t build_prime(size_t start, size_t count);
 static void *ptr(const void *block, size_t i, size_t size);
@@ -148,19 +150,22 @@ static void *ptr(const void *block, size_t i, size_t size);
    or search operation.
    ht               : a pointer to a preallocated block of size
                       sizeof(ht_divchn_pthread_t).
-   key_size         : size of a key object
-   elt_size         : - size of an element, if the element is within a
-                      contiguous memory block and a copy of the element is
-                      inserted,
-                      - size of a pointer to an element, if the element is
-                      within a noncontiguous memory block or a pointer to a
-                      contiguous element is inserted
+   key_size         : non-zero size of a key object
+   elt_size         : - non-zero size of an element, if the element is
+                      within a contiguous memory block and a copy of the
+                      element is inserted,
+                      - size of a pointer to an element, if the element
+                      is within a noncontiguous memory block or a pointer to
+                      a contiguous element is inserted
    min_num          : minimum number of keys that are known or expected to
-                      become present simultaneously (within a time slice)
-                      in a hash table, resulting in a speedup by avoiding
-                      unnecessary growth steps of a hash table; 0 if a
-                      positive value is not specified and all growth steps
-                      are to be completed
+                      become present simultaneously in a hash table,
+                      resulting in a speedup by avoiding unnecessary growth
+                      steps of a hash table; 0 if a positive value is not
+                      specified and all growth steps are to be completed
+   alpha_n           : > 0 numerator of load factor upper bound
+   log_alpha_d      : < CHAR_BIT * sizeof(size_t) log base 2 of denominator
+                      of load factor upper bound; denominator is a power of
+                      two
    log_num_locks    : log base 2 number of mutex locks for synchronizing
                       insert, remove, and delete operations; a larger number
                       reduces the size of a set of slots that maps to a lock
@@ -193,7 +198,8 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			    size_t key_size,
 			    size_t elt_size,
 			    size_t min_num,
-			    float alpha,
+			    size_t alpha_n,
+			    size_t log_alpha_d,
 			    size_t log_num_locks,
 			    size_t num_grow_threads,
 			    void (*rdc_elt)(void *, const void *, size_t),
@@ -203,25 +209,16 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
   /* hash table */
   ht->key_size = key_size;
   ht->elt_size = elt_size;
+  ht->pair_size = add_sz_perror(key_size, elt_size);
   ht->group_ix = 0;
   ht->count_ix = 0;
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-  while ((float)min_num / ht->count > alpha){
-    ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
-    if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
-    if (ht->count_ix == C_PRIME_PARTS_COUNT){
-      /* the largest prime in C_PRIME_PARTS built */
-      break;
-    }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-      /* the largest representable prime in C_PRIME_PARTS built */
-      ht->count_ix = C_SIZE_MAX;
-      break;
-    }else{
-      ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-    }
-  }
+  /* 0 <= max_num_elts */
+  ht->max_num_elts = mul_alpha_sz_max(ht->count, alpha_n, log_alpha_d);
+  while (min_num > ht->max_num_elts && incr_count(ht));
   ht->num_elts = 0;
-  ht->alpha = alpha;
+  ht->alpha_n = alpha_n;
+  ht->log_alpha_d = log_alpha_d;
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
@@ -285,12 +282,14 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
       increased++;
     }else{
       if (ht->rdc_elt != NULL){
-	ht->rdc_elt(node->elt,
+	ht->rdc_elt(dll_ptr(node, ht->key_size),
 		    ptr(batch_elts, i, ht->elt_size),
 		    ht->elt_size);
       }else{
-	if (ht->free_elt != NULL) ht->free_elt(node->elt);
-	memcpy(node->elt, ptr(batch_elts, i, ht->elt_size), ht->elt_size);
+	if (ht->free_elt != NULL) ht->free_elt(dll_ptr(node, ht->key_size));
+	memcpy(dll_ptr(node, ht->key_size),
+	       ptr(batch_elts, i, ht->elt_size),
+	       ht->elt_size);
       }
       mutex_unlock_perror(&ht->key_locks[lock_ix]);
     }
@@ -301,7 +300,7 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
       ht->count_ix != C_PRIME_PARTS_COUNT){
     mutex_lock_perror(&ht->gate_lock);
     ht->num_elts += increased;
-    if ((float)ht->num_elts / ht->count > ht->alpha && ht->gate_open){
+    if (ht->num_elts > ht->max_num_elts && ht->gate_open){
       ht->gate_open = FALSE;
       /* wait for threads that passed first critical section to finish */
       while (ht->num_in_threads > 1){
@@ -329,18 +328,21 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
    If a key is present in a hash table, returns a pointer to its associated 
    element, otherwise returns NULL. The key parameter is not NULL.
    The operation is called before/after all threads started/completed
-   insert, remove, and delete operations on ht. This is a non-modifying
-   query operation and has no synchronization overhead.
+   insert, remove, and delete operations on ht.
 */
 void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
 			       const void *key){
-  dll_node_t *node = dll_search_key(&ht->key_elts[hash(ht, key)],
-				     key,
-				     ht->key_size);
+  size_t ix, lock_ix;
+  const dll_node_t *node = NULL;
+  ix = hash(ht, key);
+  lock_ix = ix & ht->key_locks_mask;
+  mutex_lock_perror(&ht->key_locks[lock_ix]);
+  node = dll_search_key(&ht->key_elts[ix], key, ht->key_size);
+  mutex_unlock_perror(&ht->key_locks[lock_ix]);
   if (node == NULL){
     return NULL;
   }else{
-    return node->elt;
+    return dll_ptr(node, ht->key_size);
   }
 }
 
@@ -373,9 +375,11 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
 			  ptr(batch_keys, i, ht->key_size),
 			  ht->key_size);
     if (node != NULL){
-      memcpy(ptr(batch_elts, i, ht->elt_size), node->elt, ht->elt_size);
+      memcpy(ptr(batch_elts, i, ht->elt_size),
+	     dll_ptr(node, ht->key_size),
+	     ht->elt_size);
       /* if an element is noncontiguous, only the pointer to it is deleted */
-      dll_delete(head, node, NULL);
+      dll_delete(head, node, ht->key_size, NULL);
       mutex_unlock_perror(&ht->key_locks[lock_ix]);
       removed++;
     }else{
@@ -418,7 +422,7 @@ void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
 			  ptr(batch_keys, i, ht->key_size),
 			  ht->key_size);
     if (node != NULL){
-      dll_delete(head, node, ht->free_elt);
+      dll_delete(head, node, ht->key_size, ht->free_elt);
       mutex_unlock_perror(&ht->key_locks[lock_ix]);
       deleted++;
     }else{
@@ -440,7 +444,7 @@ void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
 void ht_divchn_pthread_free(ht_divchn_pthread_t *ht){
   size_t i;
   for (i = 0; i < ht->count; i++){
-    dll_free(&ht->key_elts[i], ht->free_elt);
+    dll_free(&ht->key_elts[i], ht->key_size, ht->free_elt);
   }
   free(ht->key_elts);
   free(ht->key_locks);
@@ -455,6 +459,21 @@ void ht_divchn_pthread_free(ht_divchn_pthread_t *ht){
 */
 static size_t hash(const ht_divchn_pthread_t *ht, const void *key){
   return fast_mem_mod(key, ht->key_size, ht->count); 
+}
+
+/**
+   Multiplies an unsigned integer n by a load factor upper bound, represented
+   by a numerator and log base 2 of a denominator. The denominator is a
+   power of two. Returns the product if it is representable as size_t.
+   Otherwise returns the maximal value of size_t.
+*/
+static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
+  size_t h, l;
+  mul_ext(n, alpha_n, &h, &l);
+  if (h >> log_alpha_d) return C_SIZE_MAX; /* overflow after division */
+  l >>= log_alpha_d;
+  h <<= (C_FULL_BIT - log_alpha_d);
+  return l + h;
 }
 
 /**
@@ -484,7 +503,7 @@ static void *reinsert_thread(void *arg){
     while (*head != NULL){
       node = *head;
       dll_remove(head, node);
-      ix = hash(ra->ht, node->key);
+      ix = hash(ra->ht, dll_ptr(node, 0));
       lock_ix = ix & ra->ht->key_locks_mask;
       mutex_lock_perror(&ra->ht->key_locks[lock_ix]);
       dll_prepend(&ra->ht->key_elts[ix], node);
@@ -501,30 +520,18 @@ static void ht_grow(ht_divchn_pthread_t *ht){
   dll_node_t **prev_key_elts = ht->key_elts;
   pthread_t *rids = NULL;
   reinsert_arg_t *ras = NULL;
+  /* initialize next ht; num_elts can be used without lock */
+  while (ht->num_elts > ht->max_num_elts && incr_count(ht));
+  if (prev_count == ht->count) return; /* load factor not lowered */
   rids = malloc_perror(ht->num_grow_threads, sizeof(pthread_t));
   ras = malloc_perror(ht->num_grow_threads, sizeof(reinsert_arg_t));
-  /* initialize next ht; num_elts can be used without lock */
-  while ((float)ht->num_elts / ht->count > ht->alpha){
-    ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
-    if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
-    if (ht->count_ix == C_PRIME_PARTS_COUNT){
-      /* the largest prime in C_PRIME_PARTS built */
-      break;
-    }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-      /* the largest representable prime in C_PRIME_PARTS built */
-      ht->count_ix = C_SIZE_MAX;
-      break;
-    }else{
-      ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-    }
-  }
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
     dll_init(&ht->key_elts[i]);
   }
   /* multithreaded reinsertion */
   seg_count = prev_count / ht->num_grow_threads;
-  rem_count = prev_count % ht->num_grow_threads;
+  rem_count = prev_count - seg_count * ht->num_grow_threads;
   for (i = 0; i < ht->num_grow_threads; i++){
     ras[i].start = start;
     ras[i].count = seg_count;
@@ -547,6 +554,32 @@ static void ht_grow(ht_divchn_pthread_t *ht){
   prev_key_elts = NULL;
   rids = NULL;
   ras = NULL;
+}
+
+/**
+   Attempts to increase the count of a hash table. Returns 1 if the count
+   was increased. Otherwise returns 0. Updates count_ix, group_ix, count,
+   and max_num_elts accordingly. If the largest representable prime is
+   reached, count_ix may not yet be set to C_SIZE_MAX or C_PRIME_PARTS_COUNT,
+   which requires one additional call that does not increase the count.
+   Otherwise, each call increases the count.
+*/
+static int incr_count(ht_divchn_pthread_t *ht){
+  ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
+  if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
+  if (ht->count_ix == C_PRIME_PARTS_COUNT){
+    return 0;
+  }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
+    ht->count_ix = C_SIZE_MAX;
+    return 0;
+  }else{
+    ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
+    /* 0 <= max_num_elts <= C_SIZE_MAX */
+    ht->max_num_elts = mul_alpha_sz_max(ht->count,
+					ht->alpha_n,
+					ht->log_alpha_d);
+  }
+  return 1;
 }
 
 /**

@@ -67,11 +67,14 @@ typedef struct{
   /* hash table */
   size_t key_size;
   size_t elt_size;
+  size_t pair_size; /* key_size + elt_size for input iterations by user */
   size_t group_ix;
   size_t count_ix; /* max size_t value if last representable prime reached */
   size_t count;
+  size_t max_num_elts; /*  >= 0, <= C_SIZE_MAX, represents alpha */
   size_t num_elts;
-  float alpha;
+  size_t alpha_n;
+  size_t log_alpha_d; 
   dll_node_t **key_elts; /* array of pointers to nodes */
 
   /* thread synchronization */
@@ -95,20 +98,22 @@ typedef struct{
    or search operation.
    ht               : a pointer to a preallocated block of size
                       sizeof(ht_divchn_pthread_t).
-   key_size         : size of a key object
-   elt_size         : - size of an element, if the element is within a
-                      contiguous memory block and a copy of the element is
-                      inserted,
-                      - size of a pointer to an element, if the element is
-                      within a noncontiguous memory block or a pointer to a
-                      contiguous element is inserted
+   key_size         : non-zero size of a key object
+   elt_size         : - non-zero size of an element, if the element is
+                      within a contiguous memory block and a copy of the
+                      element is inserted,
+                      - size of a pointer to an element, if the element
+                      is within a noncontiguous memory block or a pointer to
+                      a contiguous element is inserted
    min_num          : minimum number of keys that are known or expected to
-                      become present simultaneously (within a time slice)
-                      in a hash table, resulting in a speedup by avoiding
-                      unnecessary growth steps of a hash table; 0 if a
-                      positive value is not specified and all growth steps
-                      are to be completed
-   alpha            : > 0.0, a load factor upper bound
+                      become present simultaneously in a hash table,
+                      resulting in a speedup by avoiding unnecessary growth
+                      steps of a hash table; 0 if a positive value is not
+                      specified and all growth steps are to be completed
+   alpha_n           : > 0 numerator of load factor upper bound
+   log_alpha_d      : < CHAR_BIT * sizeof(size_t) log base 2 of denominator
+                      of load factor upper bound; denominator is a power of
+                      two
    log_num_locks    : log base 2 number of mutex locks for synchronizing
                       insert, remove, and delete operations; a larger number
                       reduces the size of a set of slots that maps to a lock
@@ -141,7 +146,8 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			    size_t key_size,
 			    size_t elt_size,
 			    size_t min_num,
-			    float alpha,
+			    size_t alpha_n,
+			    size_t log_alpha_d,
 			    size_t log_num_locks,
 			    size_t num_grow_threads,
 			    void (*rdc_elt)(void *, const void *, size_t),
