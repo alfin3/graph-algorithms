@@ -14,10 +14,11 @@
    A list node contains i) a dll_node_t struct for pointer operations, ii)
    a contiguous key and iii) an element or a pointer to an element. A key is
    an object within a contiguous memory block (e.g. basic type, array, or
-   struct). An element is contiguous or non-contiguous. Given a char *p
-   pointer to a node, its key is at p + sizeof(dll_node_t) and its
-   element/element pointer is at p + sizeof(key_elt_t) + key_size. Access
-   is simplified by the dll_ptr function.
+   struct), preallocated with calloc or pre-initialized with memset. An
+   element is contiguous or non-contiguous. Given a char *p pointer to a
+   node, its key is at p + sizeof(dll_node_t) and its element/element pointer
+   is at p + sizeof(key_elt_t) + key_size. Access is simplified by the
+   dll_ptr function.
 
    The implementation provides a guarantee that a block with a dll_node_t
    struct, a key, and an element/element pointer keeps its address in memory
@@ -65,6 +66,7 @@ void dll_init(dll_node_t **head);
    head        : pointer to a head pointer to an initialized list           
    key         : non-NULL pointer to a key object of size key_size within a
                  contiguous memory block (e.g. basic type, array, struct)
+                 pre-allocated with calloc or pre-initialized with memset
    elt         : - non-NULL pointer to a block of size elt_size that
                  is an element, if the element is contiguous, or pointer to
                  an element, if the element is noncontiguous or a pointer to
@@ -118,10 +120,12 @@ void *dll_ptr(const dll_node_t *node, size_t size);
 /**
    Relative to a head pointer, returns a pointer to the clockwise (next)
    first node with a key that has the same bit pattern as the block pointed
-   to by key, or NULL if such a node in not found.
+   to by key, or NULL if such a node in not found. Temporarily modifies a
+   node to mark the end of the list during search.
    head        : pointer to a head pointer to an initialized list
    key         : non-NULL pointer to a key object of size key_size within a
-                 contiguous memory block
+                 contiguous memory block pre-allocated with calloc or
+                 pre-initialized with memset
    key_size    : non-zero size of a key object in bytes
 */
 dll_node_t *dll_search_key(dll_node_t * const *head,
@@ -130,8 +134,26 @@ dll_node_t *dll_search_key(dll_node_t * const *head,
 
 /**
    Relative to a head pointer, returns a pointer to the clockwise (next)
+   first node with a key that has the same bit pattern as the block pointed
+   to by key, or NULL if such a node in not found. Assumes that every key
+   in a list is unique. The list is no modified during the operation which
+   does not require thread synchronization overhead for parallel search
+   queries.
+   head        : pointer to a head pointer to an initialized list
+   key         : non-NULL pointer to a key object of size key_size within a
+                 contiguous memory block pre-allocated with calloc or
+                 pre-initialized with memset
+   key_size    : non-zero size of a key object in bytes
+*/
+dll_node_t *dll_search_uq_key(dll_node_t * const *head,
+			      const void *key,
+			      size_t key_size);
+
+/**
+   Relative to a head pointer, returns a pointer to the clockwise (next)
    first node with an element that satisfies cmp_elt, or NULL if such a node
-   in not found.
+   in not found. Temporarily modifies a node to mark the end of the list
+   during search.
    head        : pointer to a head pointer to an initialized list
    elt         : - non-NULL pointer to a block of size elt_size that
                  is an element, if the element is contiguous, or pointer to
