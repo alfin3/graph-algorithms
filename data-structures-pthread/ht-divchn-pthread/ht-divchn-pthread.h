@@ -168,8 +168,8 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
    If a key is present in a hash table, returns a pointer to its associated 
    element, otherwise returns NULL. The key parameter is not NULL.
    The operation is called before/after all threads started/completed
-   insert, remove, and delete operations on ht. This is a non-modifying
-   query operation and has no synchronization overhead.
+   insert, remove, and delete operations on ht and does not require
+   thread synchronization overhead.
 */
 void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
 			       const void *key);

@@ -328,17 +328,14 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
    If a key is present in a hash table, returns a pointer to its associated 
    element, otherwise returns NULL. The key parameter is not NULL.
    The operation is called before/after all threads started/completed
-   insert, remove, and delete operations on ht.
+   insert, remove, and delete operations on ht and does not require
+   thread synchronization overhead.
 */
 void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
 			       const void *key){
-  size_t ix, lock_ix;
-  const dll_node_t *node = NULL;
-  ix = hash(ht, key);
-  lock_ix = ix & ht->key_locks_mask;
-  mutex_lock_perror(&ht->key_locks[lock_ix]);
-  node = dll_search_key(&ht->key_elts[ix], key, ht->key_size);
-  mutex_unlock_perror(&ht->key_locks[lock_ix]);
+  const dll_node_t *node = dll_search_uq_key(&ht->key_elts[hash(ht, key)],
+					     key,
+					     ht->key_size);
   if (node == NULL){
     return NULL;
   }else{
