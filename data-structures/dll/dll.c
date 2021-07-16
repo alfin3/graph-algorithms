@@ -14,7 +14,7 @@
    A list node contains i) a dll_node_t struct for pointer operations, ii)
    a contiguous key and iii) an element or a pointer to an element. A key is
    an object within a contiguous memory block (e.g. basic type, array, or
-   struct), preallocated with calloc or pre-initialized with memset. An
+   struct). If cmp_key is NULL it is treated as an array of bytes. An
    element is contiguous or non-contiguous. Given a char *p pointer to a
    node, its key is at p + sizeof(dll_node_t) and its element/element pointer
    is at p + sizeof(key_elt_t) + key_size. Access is simplified by the
@@ -63,8 +63,8 @@ void dll_init(dll_node_t **head){
    the position for the prepend operation.
    head        : pointer to a head pointer to an initialized list           
    key         : non-NULL pointer to a key object of size key_size within a
-                 contiguous memory block (e.g. basic type, array, struct)
-                 pre-allocated with calloc or pre-initialized with memset
+                 contiguous memory block (e.g. basic type, array, struct);
+                 if cmp_key is NULL it is treated as an array of bytes
    elt         : - non-NULL pointer to a block of size elt_size that
                  is an element, if the element is contiguous, or pointer to
                  an element, if the element is noncontiguous or a pointer to
@@ -158,8 +158,8 @@ void *dll_ptr(const dll_node_t *node, size_t size){
    node to mark the end of the list during search.
    head        : pointer to a head pointer to an initialized list
    key         : non-NULL pointer to a key object of size key_size within a
-                 contiguous memory block pre-allocated with calloc or
-                 pre-initialized with memset
+                 contiguous memory block; if cmp_key is NULL it is treated
+                 as an array of bytes
    key_size    : non-zero size of a key object in bytes
 */
 dll_node_t *dll_search_key(dll_node_t * const *head,
@@ -189,8 +189,8 @@ dll_node_t *dll_search_key(dll_node_t * const *head,
    queries.
    head        : pointer to a head pointer to an initialized list
    key         : non-NULL pointer to a key object of size key_size within a
-                 contiguous memory block pre-allocated with calloc or
-                 pre-initialized with memset
+                 contiguous memory block; if cmp_key is NULL it is treated
+                 as an array of bytes
    key_size    : non-zero size of a key object in bytes
 */
 dll_node_t *dll_search_uq_key(dll_node_t * const *head,
