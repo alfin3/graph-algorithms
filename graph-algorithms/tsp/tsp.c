@@ -185,13 +185,13 @@ int tsp(const adj_lst_t *a,
     stack_pop(&prev_s, prev_set);
     u = prev_set[0];
     p_start = a->vt_wts[u]->elts;
-    p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
-    for (p = p_start; p != p_end; p += a->step_size){
+    p_end = p_start + a->vt_wts[u]->num_elts * a->pair_size;
+    for (p = p_start; p != p_end; p += a->pair_size){
       v = *(const size_t *)p;
       if (v == start){
 	add_wt(sum_wt,
 	       thtp->search(thtp->ht, prev_set),
-	       p + sizeof(size_t));
+	       p + a->offset);
 	if (!final_dist_updated){
 	  memcpy(dist, sum_wt, wt_size);
 	  final_dist_updated = TRUE;
@@ -238,8 +238,8 @@ static void build_next(const adj_lst_t *a,
     tht->remove(tht->ht, prev_set, prev_wt);
     u = prev_set[0];
     p_start = a->vt_wts[u]->elts;
-    p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
-    for (p = p_start; p != p_end; p += a->step_size){
+    p_end = p_start + a->vt_wts[u]->num_elts * a->pair_size;
+    for (p = p_start; p != p_end; p += a->pair_size){
       v = *(const size_t *)p;
       set_init(&ibit, v);
       if (set_member(&ibit, &prev_set[1]) == NULL){
@@ -249,7 +249,7 @@ static void build_next(const adj_lst_t *a,
 	set_union(&ibit, &next_set[1]);
 	add_wt(sum_wt,
 	       prev_wt,
-	       p + sizeof(size_t));
+	       p + a->offset);
 	next_wt = tht->search(tht->ht, next_set);
 	if (next_wt == NULL){
 	  tht->insert(tht->ht, next_set, sum_wt);

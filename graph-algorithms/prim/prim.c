@@ -132,11 +132,11 @@ void prim(const adj_lst_t *a,
   while (h.num_elts > 0){
     heap_pop(&h, u_wt, &u);
     p_start = a->vt_wts[u]->elts;
-    p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
-    for (p = p_start; p != p_end; p += a->step_size){
+    p_end = p_start + a->vt_wts[u]->num_elts * a->pair_size;
+    for (p = p_start; p != p_end; p += a->pair_size){
       v = *(const size_t *)p;
       v_wt = wt_ptr(dist, v, wt_size);
-      uv_wt = p + sizeof(size_t);
+      uv_wt = p + a->offset;
       if (prev[v] == C_NREACHED){
 	memcpy(v_wt, uv_wt, wt_size);
 	heap_push(&h, v_wt, &v);

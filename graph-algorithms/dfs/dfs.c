@@ -80,7 +80,7 @@ static void search(const adj_lst_t *a,
   (*c)++;
   uvp.u = u;
   uvp.vp = a->vt_wts[uvp.u]->elts;
-  uvp.vp_end = uvp.vp + a->vt_wts[uvp.u]->num_elts * a->step_size;
+  uvp.vp_end = uvp.vp + a->vt_wts[uvp.u]->num_elts * a->pair_size;
   stack_push(s, &uvp);
   while (s->num_elts > 0){
     stack_pop(s, &uvp);
@@ -94,7 +94,7 @@ static void search(const adj_lst_t *a,
       (*c)++;
       uvp.u = *(const size_t *)uvp.vp;
       uvp.vp = a->vt_wts[uvp.u]->elts;
-      uvp.vp_end = uvp.vp + a->vt_wts[uvp.u]->num_elts * a->step_size;
+      uvp.vp_end = uvp.vp + a->vt_wts[uvp.u]->num_elts * a->pair_size;
       stack_push(s, &uvp); /* then push an unexplored vertex */
     }
   }
@@ -106,7 +106,7 @@ static void search(const adj_lst_t *a,
 */
 static void move_uvp(const adj_lst_t *a, uvp_t *uvp, const size_t *pre){
   const char *p = NULL;
-  for (p = uvp->vp; p != uvp->vp_end; p += a->step_size){
+  for (p = uvp->vp; p != uvp->vp_end; p += a->pair_size){
     if (pre[*(const size_t *)p] == NR){
       uvp->vp = p;
       return;

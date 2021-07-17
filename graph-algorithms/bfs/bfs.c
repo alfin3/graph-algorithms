@@ -49,8 +49,8 @@ void bfs(const adj_lst_t *a, size_t start, size_t *dist, size_t *prev){
   while (q.num_elts > 0){
     queue_pop(&q, &u);
     p_start = a->vt_wts[u]->elts;
-    p_end = p_start + a->vt_wts[u]->num_elts * a->step_size;
-    for (p = p_start; p != p_end; p += a->step_size){
+    p_end = p_start + a->vt_wts[u]->num_elts * a->pair_size;
+    for (p = p_start; p != p_end; p += a->pair_size){
       v = *(const size_t *)p;
       if (prev[v] == NR){
 	dist[v] = dist[u] + 1;
