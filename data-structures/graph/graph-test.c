@@ -23,8 +23,9 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
-   is even.
+   C89/C90 and C99 with the requirements that CHAR_BIT * sizeof(size_t)
+   is even, and sizeof(size_t) and the size of a weight are powers of two.
+   The size of weight can also be 0.
 */
 
 #include <stdio.h>
@@ -173,10 +174,10 @@ void uint_graph_helper(const adj_lst_t *a,
   for (i = 0; i < a->num_vts; i++){
     res *= (nums[i] == a->vt_wts[i]->num_elts);
     p_start = a->vt_wts[i]->elts;
-    p_end = p_start + nums[i] * a->step_size;
-    for (p = p_start; p != p_end; p += a->step_size){
+    p_end = p_start + nums[i] * a->pair_size;
+    for (p = p_start; p != p_end; p += a->pair_size){
       res *= (*(size_t *)p == vts[ix]);
-      res *= (*(size_t *)(p + sizeof(size_t)) == wts[ix]);
+      res *= (*(size_t *)(p + a->offset) == wts[ix]);
       ix++;
     }
   }
@@ -225,11 +226,11 @@ void double_graph_helper(const adj_lst_t *a,
   for (i = 0; i < a->num_vts; i++){
     res *= (nums[i] == a->vt_wts[i]->num_elts);
     p_start = a->vt_wts[i]->elts;
-    p_end = p_start + nums[i] * a->step_size;
-    for (p = p_start; p != p_end; p += a->step_size){
+    p_end = p_start + nums[i] * a->pair_size;
+    for (p = p_start; p != p_end; p += a->pair_size){
       res *= (*(size_t *)p == vts[ix]);
       /* == because of the same bit pattern */
-      res *= (*(double *)(p + sizeof(size_t)) == wts[ix]);
+      res *= (*(double *)(p + a->offset) == wts[ix]);
       ix++;
     }
   }
@@ -505,8 +506,8 @@ size_t sum_vts(const adj_lst_t *a, size_t i){
   char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t ret = 0;
   p_start = a->vt_wts[i]->elts;
-  p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
-  for (p = p_start; p != p_end; p += a->step_size){
+  p_end = p_start + a->vt_wts[i]->num_elts * a->pair_size;
+  for (p = p_start; p != p_end; p += a->pair_size){
     ret += *(size_t *)p;
   }
   return ret;
@@ -531,8 +532,8 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *)){
   for (i = 0; i < a->num_vts; i++){
     printf("\t%lu : ", TOLU(i));
     p_start = a->vt_wts[i]->elts;
-    p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
-    for (p = p_start; p != p_end; p += a->step_size){
+    p_end = p_start + a->vt_wts[i]->num_elts * a->pair_size;
+    for (p = p_start; p != p_end; p += a->pair_size){
       printf("%lu ", TOLU(*(size_t *)p));
     }
     printf("\n");
@@ -542,9 +543,9 @@ void print_adj_lst(const adj_lst_t *a, void (*print_wt)(const void *)){
     for (i = 0; i < a->num_vts; i++){
       printf("\t%lu : ", TOLU(i));
       p_start = a->vt_wts[i]->elts;
-      p_end = p_start + a->vt_wts[i]->num_elts * a->step_size;
-      for (p = p_start; p != p_end; p += a->step_size){
-	print_wt(p + sizeof(size_t));
+      p_end = p_start + a->vt_wts[i]->num_elts * a->pair_size;
+      for (p = p_start; p != p_end; p += a->pair_size){
+	print_wt(p + a->offset);
       }
       printf("\n");
     }

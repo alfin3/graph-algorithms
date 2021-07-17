@@ -9,10 +9,13 @@
    the edge weights are of any basic type (e.g. char, int, double).
 
    The implementation uses a single stack of adjacent vertex weight pairs
-   to achieve cache efficiency in graph algorithms. The value of step_size
+   to achieve cache efficiency in graph algorithms. The value of pair_size
    (in bytes) enables a user to iterate with a char *p pointer across a stack
-   and access a weight by p + sizeof(size_t) when p points to an adjacent
-   vertex.
+   and access a weight by p + offset when p points to a vertex of a pair.
+
+   Due to cache-efficient allocation, the implementation requires that
+   sizeof(size_t) and the size of a generic weight are powers of two.
+   The size of weight can also be 0.
 
    Optimization:
 
@@ -44,9 +47,10 @@ typedef struct{
   size_t num_vts;
   size_t num_es;
   size_t wt_size;
-  size_t step_size; /* sizeof(size_t) + wt_size */
-  void *buf; /* buffer that is only used by adj_lst_ functions */
-  stack_t **vt_wts;  /* stacks of vertex weight pairs, NULL if no vertices */
+  size_t pair_size; /* size of a vertex weight pair aligned in memory */
+  size_t offset;    /* number of bytes from beginning of pair to weight */
+  void *buf;        /* buffer that is only used by adj_lst_ functions */
+  stack_t **vt_wts; /* stacks of vertex weight pairs, NULL if no vertices */
 } adj_lst_t; /* vertex weight pairs are contiguous to decrease cache misses */
 
 /**

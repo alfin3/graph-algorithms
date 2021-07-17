@@ -8,10 +8,13 @@
    the edge weights are of any basic type (e.g. char, int, double).
 
    The implementation uses a single stack of adjacent vertex weight pairs
-   to achieve cache efficiency in graph algorithms. The value of step_size
+   to achieve cache efficiency in graph algorithms. The value of pair_size
    (in bytes) enables a user to iterate with a char *p pointer across a stack
-   and access a weight by p + sizeof(size_t) when p points to an adjacent
-   vertex.
+   and access a weight by p + offset when p points to a vertex of a pair.
+
+   Due to cache-efficient allocation, the implementation requires that
+   sizeof(size_t) and the size of a generic weight are powers of two.
+   The size of weight can also be 0.
 
    Optimization:
 
@@ -75,9 +78,20 @@ void adj_lst_init(adj_lst_t *a, const graph_t *g){
   a->num_vts = g->num_vts;
   a->num_es = 0; 
   a->wt_size = g->wt_size;
-  a->step_size =
-    add_sz_perror(sizeof(size_t), a->wt_size); /* >= sizeof(size_t) */
-  a->buf = malloc_perror(1, a->step_size);
+  /* compute vertex weight pair size with general alignment in memory */
+  if (a->wt_size == 0){
+    a->pair_size = sizeof(size_t);
+    a->offset = 0;
+  }else if (a->wt_size <= sizeof(size_t)){
+    /* sizeof(size_t) is mult. of  wt_size */
+    a->pair_size = mul_sz_perror(2, sizeof(size_t));
+    a->offset = sizeof(size_t);
+  }else{
+    /* wt_size is mult of sizeof(size_t); malloc's pointer is wt aligned */
+    a->pair_size = mul_sz_perror(2, a->wt_size);
+    a->offset = a->wt_size;
+  }
+  a->buf = malloc_perror(1, a->pair_size);
   a->vt_wts = NULL;
   if (a->num_vts > 0){
     a->vt_wts = malloc_perror(a->num_vts, sizeof(stack_t *));
@@ -85,9 +99,9 @@ void adj_lst_init(adj_lst_t *a, const graph_t *g){
   /* initialize stacks */
   for (i = 0; i < a->num_vts; i++){
     a->vt_wts[i] = malloc_perror(1, sizeof(stack_t));
-    stack_init(a->vt_wts[i], STACK_INIT_COUNT, a->step_size, NULL);
+    stack_init(a->vt_wts[i], STACK_INIT_COUNT, a->pair_size, NULL);
   }
-}
+}    
    
 /**
    Builds the adjacency list of a directed graph.
@@ -97,7 +111,7 @@ void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
   for (i = 0; i < g->num_es; i++){
     memcpy(a->buf, &g->v[i], sizeof(size_t));
     if (a->wt_size > 0){
-      memcpy((char *)a->buf + sizeof(size_t), wt_ptr(g, i), a->wt_size);
+      memcpy((char *)a->buf + a->offset, wt_ptr(g, i), a->wt_size);
     }
     stack_push(a->vt_wts[g->u[i]], a->buf);
     a->num_es++;
@@ -112,7 +126,7 @@ void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
   for (i = 0; i < g->num_es; i++){
     memcpy(a->buf, &g->v[i], sizeof(size_t));
     if (a->wt_size > 0){
-      memcpy((char *)a->buf + sizeof(size_t), wt_ptr(g, i), a->wt_size);
+      memcpy((char *)a->buf + a->offset, wt_ptr(g, i), a->wt_size);
     }
     stack_push(a->vt_wts[g->u[i]], a->buf);
     memcpy(a->buf, &g->u[i], sizeof(size_t));
@@ -136,7 +150,7 @@ void adj_lst_add_dir_edge(adj_lst_t *a,
   if (bern(arg)){
     memcpy(a->buf, &v, sizeof(size_t));
     if (a->wt_size > 0){
-      memcpy((char *)a->buf + sizeof(size_t), wt, a->wt_size);
+      memcpy((char *)a->buf + a->offset, wt, a->wt_size);
     }
     stack_push(a->vt_wts[u], a->buf);
     a->num_es++;
@@ -158,7 +172,7 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
   if (bern(arg)){
     memcpy(a->buf, &v, sizeof(size_t));
     if (a->wt_size > 0){
-      memcpy((char *)a->buf + sizeof(size_t), wt, a->wt_size);
+      memcpy((char *)a->buf + a->offset, wt, a->wt_size);
     }
     stack_push(a->vt_wts[u], a->buf);
     memcpy(a->buf, &u, sizeof(size_t));
