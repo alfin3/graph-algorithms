@@ -429,6 +429,7 @@ void insert_search_free(size_t num_ins,
 			void (*free_elt)(void *)){
   int res = 1;
   size_t i, j;
+  size_t val;
   size_t pair_size = add_sz_perror(key_size, elt_size);
   void *key = NULL;
   void *key_elts = NULL;
@@ -441,7 +442,9 @@ void insert_search_free(size_t num_ins,
     for (j = 0; j < key_size - C_KEY_SIZE_FACTOR; j++){
       *(unsigned char *)ptr(key, j, 1) = RANDOM(); /* mod 2^CHAR_BIT */
     }
-    *(size_t *)ptr(key, key_size - C_KEY_SIZE_FACTOR, 1) = i;
+    memcpy(ptr(key, key_size - C_KEY_SIZE_FACTOR, 1),
+	   &i,
+	   C_KEY_SIZE_FACTOR);
     new_elt((char *)ptr(key_elts, i, pair_size) + key_size, i);
   }
   ht_divchn_init(&ht,
@@ -464,10 +467,13 @@ void insert_search_free(size_t num_ins,
   search_in_ht(&ht, key_elts, num_ins, val_elt, &res);
   for (i = 0; i < num_ins; i++){
     key = ptr(nin_keys, i, key_size);
+    val = i + num_ins;
     for (j = 0; j < key_size - C_KEY_SIZE_FACTOR; j++){
       *(unsigned char *)ptr(key, j, 1) = RANDOM(); /* mod 2^CHAR_BIT */
     }
-    *(size_t *)ptr(key, key_size - C_KEY_SIZE_FACTOR, 1) = i + num_ins;
+    memcpy(ptr(key, key_size - C_KEY_SIZE_FACTOR, 1),
+	   &val,
+	   C_KEY_SIZE_FACTOR);
   }
   search_nin_ht(&ht, nin_keys, num_ins, &res);
   free_ht(&ht);
@@ -615,7 +621,7 @@ void remove_delete(size_t num_ins,
     for (j = 0; j < key_size - C_KEY_SIZE_FACTOR; j++){
       *(unsigned char *)ptr(key, j, 1) = RANDOM(); /* mod 2^CHAR_BIT */
     }
-    *(size_t *)ptr(key, key_size - C_KEY_SIZE_FACTOR, 1) = i;
+    memcpy(ptr(key, key_size - C_KEY_SIZE_FACTOR, 1), &i, C_KEY_SIZE_FACTOR);
     new_elt((char *)ptr(key_elts, i, pair_size) + key_size, i);
   }
   ht_divchn_init(&ht,
