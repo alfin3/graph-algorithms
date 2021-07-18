@@ -48,7 +48,9 @@ const size_t C_INT_BIT = CHAR_BIT * sizeof(int);
 /* tests */
 const int C_START_VAL = 0;
 
-void prepend_append_free(dll_node_t **head_prep,
+void prepend_append_free(const dll_t *ll_prep,
+			 const dll_t *ll_app,
+			 dll_node_t **head_prep,
 			 dll_node_t **head_app,
 			 int start_val,
 			 int num_ins,
@@ -86,18 +88,24 @@ int cmp_int(const void *a, const void *b){
 void run_prepend_append_free_int_test(int log_ins){
   int num_ins;
   int start_val = C_START_VAL;
+  size_t key_size = sizeof(int);
   size_t elt_size = sizeof(int);
+  dll_t ll_prep, ll_app;
   dll_node_t *head_prep, *head_app; /* uninitialized pointers for testing */
   num_ins = pow_two_perror(log_ins);
-  dll_init(&head_prep);
-  dll_init(&head_app);
+  dll_init(&ll_prep, &head_prep, key_size);
+  dll_init(&ll_app, &head_app, key_size);
+  dll_align_elt(&ll_prep, sizeof(int));
+  dll_align_elt(&ll_app, sizeof(int));
   printf("Run prepend, append, free test on int keys and int "
 	 "elements\n");
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
 	 start_val, start_val, num_ins);
-  prepend_append_free(&head_prep,
+  prepend_append_free(&ll_prep,
+		      &ll_app,
+		      &head_prep,
 		      &head_app,
 		      start_val,
 		      num_ins,
@@ -109,7 +117,9 @@ void run_prepend_append_free_int_test(int log_ins){
 	 "start elt value: %d, "
 	 "# nodes: %d (repeat test)\n",
 	 start_val, start_val, num_ins);
-  prepend_append_free(&head_prep,
+  prepend_append_free(&ll_prep,
+		      &ll_app,
+		      &head_prep,
 		      &head_app,
 		      start_val,
 		      num_ins,
@@ -122,7 +132,9 @@ void run_prepend_append_free_int_test(int log_ins){
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
 	 start_val, start_val, num_ins);
-  prepend_append_free(&head_prep,
+  prepend_append_free(&ll_prep,
+		      &ll_app,
+		      &head_prep,
 		      &head_app,
 		      start_val,
 		      num_ins,
@@ -176,18 +188,24 @@ void free_int_ptr(void *a){
 void run_prepend_append_free_int_ptr_test(int log_ins){
   int num_ins;
   int start_val = C_START_VAL;
+  size_t key_size = sizeof(int);
   size_t elt_size = sizeof(int_ptr_t *);
+  dll_t ll_prep, ll_app;
   dll_node_t *head_prep, *head_app; /* uninitialized pointers for testing */
   num_ins = pow_two_perror(log_ins);
-  dll_init(&head_prep);
-  dll_init(&head_app);
+  dll_init(&ll_prep, &head_prep, key_size);
+  dll_init(&ll_app, &head_app, key_size);
+  dll_align_elt(&ll_prep, sizeof(int_ptr_t *));
+  dll_align_elt(&ll_app, sizeof(int_ptr_t *));
   printf("Run prepend, append, free test on int keys and noncontiguous "
          "int_ptr_t elements \n");
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
 	 start_val, start_val, num_ins);
-  prepend_append_free(&head_prep,
+  prepend_append_free(&ll_prep,
+		      &ll_app,
+		      &head_prep,
 		      &head_app,
 		      start_val,
 		      num_ins,
@@ -199,7 +217,9 @@ void run_prepend_append_free_int_ptr_test(int log_ins){
 	 "start elt value: %d, "
 	 "# nodes: %d (repeat test)\n",
 	 start_val, start_val, num_ins);
-  prepend_append_free(&head_prep,
+  prepend_append_free(&ll_prep,
+		      &ll_app,
+		      &head_prep,
 		      &head_app,
 		      start_val,
 		      num_ins,
@@ -212,7 +232,9 @@ void run_prepend_append_free_int_ptr_test(int log_ins){
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
 	 start_val, start_val, num_ins);
-  prepend_append_free(&head_prep,
+  prepend_append_free(&ll_prep,
+		      &ll_app,
+		      &head_prep,
 		      &head_app,
 		      start_val,
 		      num_ins,
@@ -227,98 +249,88 @@ void run_prepend_append_free_int_ptr_test(int log_ins){
 */
 void run_corner_cases_test(){
   int res = 1;
-  int *key = NULL;
-  int elt;
+  int key;
   int i;
   size_t key_size = sizeof(int);
   size_t elt_size = sizeof(int);
-  dll_node_t *head_none;
-  dll_node_t *head_one_prep, *head_one_app;
-  dll_node_t *head_two_prep, *head_two_app;
-  key = calloc_perror(1, key_size);
-  dll_init(&head_none);
-  dll_init(&head_one_prep);
-  dll_init(&head_one_app);
-  dll_init(&head_two_prep);
-  dll_init(&head_two_app);
+  dll_t ll_n;
+  dll_t ll_prep1, ll_app1;
+  dll_t ll_prep2, ll_app2;
+  dll_node_t *head_n;
+  dll_node_t *head_prep1, *head_app1;
+  dll_node_t *head_prep2, *head_app2;
+  dll_init(&ll_n, &head_n, key_size);
+  dll_init(&ll_prep1, &head_prep1, key_size);
+  dll_init(&ll_app1, &head_app1, key_size);
+  dll_init(&ll_prep2, &head_prep2, key_size);
+  dll_init(&ll_app2, &head_app2, key_size);
+  dll_align_elt(&ll_n, sizeof(int));
+  dll_align_elt(&ll_prep1, sizeof(int));
+  dll_align_elt(&ll_app1, sizeof(int));
+  dll_align_elt(&ll_prep2, sizeof(int));
+  dll_align_elt(&ll_app2, sizeof(int));
   for (i = 0; i < 2; i++){
     if (i < 1){
-      dll_prepend_new(&head_one_prep, &i, &i, key_size, elt_size);
-      dll_append_new(&head_one_app, &i, &i, key_size, elt_size);
+      dll_prepend_new(&ll_prep1, &head_prep1, &i, &i, key_size, elt_size);
+      dll_append_new(&ll_app1, &head_app1, &i, &i, key_size, elt_size);
     }
-    dll_prepend_new(&head_two_prep, &i, &i, key_size, elt_size);
-    dll_append_new(&head_two_app, &i, &i, key_size, elt_size);
+    dll_prepend_new(&ll_prep2, &head_prep2, &i, &i, key_size, elt_size);
+    dll_append_new(&ll_app2, &head_app2, &i, &i, key_size, elt_size);
   }
   /* search */
-  *key = 0;
-  elt = 0;
-  res *= (NULL == dll_search_key(&head_none, key, key_size));
-  res *= (NULL == dll_search_elt(&head_none, &elt, key_size, cmp_int));
-  res *= (NULL != dll_search_key(&head_one_prep, key, key_size));
-  res *= (NULL != dll_search_elt(&head_one_prep, &elt, key_size, cmp_int));
-  res *= (NULL != dll_search_key(&head_one_app, key, key_size));
-  res *= (NULL != dll_search_elt(&head_one_app, &elt, key_size, cmp_int));
-  res *= (NULL != dll_search_key(&head_two_prep, key, key_size));
-  res *= (NULL != dll_search_elt(&head_two_prep, &elt, key_size, cmp_int));
-  res *= (NULL != dll_search_key(&head_two_app, key, key_size));
-  res *= (NULL != dll_search_elt(&head_two_app, &elt, key_size, cmp_int));
-  *key = 1;
-  elt = 1;
-  res *= (NULL == dll_search_key(&head_none, key, key_size));
-  res *= (NULL == dll_search_elt(&head_none, &elt, key_size, cmp_int));
-  res *= (NULL == dll_search_key(&head_one_prep, key, key_size));
-  res *= (NULL == dll_search_elt(&head_one_prep, &elt, key_size, cmp_int));
-  res *= (NULL == dll_search_key(&head_one_app, key, key_size));
-  res *= (NULL == dll_search_elt(&head_one_app, &elt, key_size, cmp_int));
-  res *= (NULL != dll_search_key(&head_two_prep, key, key_size));
-  res *= (NULL != dll_search_elt(&head_two_prep, &elt, key_size, cmp_int));
-  res *= (NULL != dll_search_key(&head_two_app, key, key_size));
-  res *= (NULL != dll_search_elt(&head_two_app, &elt, key_size, cmp_int));
-  *key = 2;
-  elt = 2;
-  res *= (NULL == dll_search_key(&head_none, key, key_size));
-  res *= (NULL == dll_search_elt(&head_none, &elt, key_size, cmp_int));
-  res *= (NULL == dll_search_key(&head_one_prep, key, key_size));
-  res *= (NULL == dll_search_elt(&head_one_prep, &elt, key_size, cmp_int));
-  res *= (NULL == dll_search_key(&head_one_app, key, key_size));
-  res *= (NULL == dll_search_elt(&head_one_app, &elt, key_size, cmp_int));
-  res *= (NULL == dll_search_key(&head_two_prep, key, key_size));
-  res *= (NULL == dll_search_elt(&head_two_prep, &elt, key_size, cmp_int));
-  res *= (NULL == dll_search_key(&head_two_app, key, key_size));
-  res *= (NULL == dll_search_elt(&head_two_app, &elt, key_size, cmp_int));
+  key = 0;
+  res *=
+    (NULL == dll_search_key(&ll_n, &head_n, &key, key_size, NULL) &&
+     NULL != dll_search_key(&ll_prep1, &head_prep1, &key, key_size, NULL) &&
+     NULL != dll_search_key(&ll_app1, &head_app1, &key, key_size, NULL) &&
+     NULL != dll_search_key(&ll_prep2, &head_prep2, &key, key_size, NULL) &&
+     NULL != dll_search_key(&ll_app2, &head_app2, &key, key_size, NULL));
+  key = 1;
+  res *=
+    (NULL == dll_search_key(&ll_n, &head_n, &key, key_size, NULL) &&
+     NULL == dll_search_key(&ll_prep1, &head_prep1, &key, key_size, NULL) &&
+     NULL == dll_search_key(&ll_app1, &head_app1, &key, key_size, NULL) &&
+     NULL != dll_search_key(&ll_prep2, &head_prep2, &key, key_size, NULL) &&
+     NULL != dll_search_key(&ll_app2, &head_app2, &key, key_size, NULL));
+  key = 2;
+  res *=
+    (NULL == dll_search_key(&ll_n, &head_n, &key, key_size, NULL) &&
+     NULL == dll_search_key(&ll_prep1, &head_prep1, &key, key_size, NULL) &&
+     NULL == dll_search_key(&ll_app1, &head_app1, &key, key_size, NULL) &&
+     NULL == dll_search_key(&ll_prep2, &head_prep2, &key, key_size, NULL) &&
+     NULL == dll_search_key(&ll_app2, &head_app2, &key, key_size, NULL));
   /* delete */
-  dll_delete(&head_none, NULL, key_size, NULL);
-  dll_delete(&head_one_prep, NULL, key_size, NULL);
-  dll_delete(&head_one_app, NULL, key_size, NULL);
-  dll_delete(&head_two_prep, NULL, key_size, NULL);
-  dll_delete(&head_two_app, NULL, key_size, NULL);
-  res *= (NULL == head_none);
-  res *= (0 == *(int *)dll_ptr(head_one_prep, key_size));
-  res *= (0 == *(int *)dll_ptr(head_one_prep, 0));
-  res *= (0 == *(int *)dll_ptr(head_one_app, key_size));
-  res *= (0 == *(int *)dll_ptr(head_one_app, 0));
-  res *= (1 == *(int *)dll_ptr(head_two_prep, key_size));
-  res *= (1 == *(int *)dll_ptr(head_two_prep, 0));
-  res *= (0 == *(int *)dll_ptr(head_two_app, key_size));
-  res *= (0 == *(int *)dll_ptr(head_two_app, 0));
-  dll_delete(&head_one_prep, head_one_prep, key_size, NULL);
-  dll_delete(&head_one_app, head_one_app, key_size, NULL);
-  dll_delete(&head_two_prep, head_two_prep, key_size, NULL);
-  dll_delete(&head_two_app, head_two_app, key_size, NULL);
-  res *= (NULL == head_one_prep);
-  res *= (NULL == head_one_app);
-  res *= (0 == *(int *)dll_ptr(head_two_prep, key_size));
-  res *= (0 == *(int *)dll_ptr(head_two_prep, 0));
-  res *= (1 == *(int *)dll_ptr(head_two_app, key_size));
-  res *= (1 == *(int *)dll_ptr(head_two_app, 0));
-  dll_delete(&head_two_prep, head_two_prep, key_size, NULL);
-  dll_delete(&head_two_app, head_two_app, key_size, NULL);
-  res *= (NULL == head_two_prep);
-  res *= (NULL == head_two_app);
+  dll_delete(&ll_n, &head_n, NULL, NULL);
+  dll_delete(&ll_prep1, &head_prep1, NULL, NULL);
+  dll_delete(&ll_app1, &head_app1, NULL, NULL);
+  dll_delete(&ll_prep2, &head_prep2, NULL, NULL);
+  dll_delete(&ll_app2, &head_app2, NULL, NULL);
+  res *=
+    (NULL == head_n &&
+     0 == *(int *)dll_elt_ptr(&ll_prep1, head_prep1) &&
+     0 == *(int *)dll_key_ptr(&ll_prep1, head_prep1) &&
+     0 == *(int *)dll_elt_ptr(&ll_app1, head_app1) &&
+     0 == *(int *)dll_key_ptr(&ll_app1, head_app1) &&
+     1 == *(int *)dll_elt_ptr(&ll_prep2, head_prep2) &&
+     1 == *(int *)dll_key_ptr(&ll_prep2, head_prep2) &&
+     0 == *(int *)dll_elt_ptr(&ll_app2, head_app2) &&
+     0 == *(int *)dll_key_ptr(&ll_app2, head_app2));
+  dll_delete(&ll_prep1, &head_prep1, head_prep1, NULL);
+  dll_delete(&ll_app1, &head_app1, head_app1, NULL);
+  dll_delete(&ll_prep2, &head_prep2, head_prep2, NULL);
+  dll_delete(&ll_app2, &head_app2, head_app2, NULL);
+  res *=
+    (NULL == head_prep1 &&
+     NULL == head_app1 &&
+     0 == *(int *)dll_elt_ptr(&ll_prep2, head_prep2) &&
+     0 == *(int *)dll_key_ptr(&ll_prep2, head_prep2) &&
+     1 == *(int *)dll_elt_ptr(&ll_app2, head_app2) &&
+     1 == *(int *)dll_key_ptr(&ll_app2, head_app2));
+  dll_delete(&ll_prep2, &head_prep2, head_prep2, NULL);
+  dll_delete(&ll_app2, &head_app2, head_app2, NULL);
+  res *= (NULL == head_prep2 && NULL == head_app2);
   printf("Run corner cases test --> ");
   print_test_result(res);
-  free(key);
-  key = NULL;
 }
 
 /** Helper functions */
@@ -326,7 +338,9 @@ void run_corner_cases_test(){
 /**
    Runs the prepend, append, and free test routine.
 */
-void prepend_append_free(dll_node_t **head_prep,
+void prepend_append_free(const dll_t *ll_prep,
+			 const dll_t *ll_app,
+			 dll_node_t **head_prep,
 			 dll_node_t **head_app,
 			 int start_val,
 			 int num_ins,
@@ -342,7 +356,7 @@ void prepend_append_free(dll_node_t **head_prep,
   void *elts_prep = NULL, *elts_app = NULL;
   dll_node_t *node_prep = NULL, *node_app = NULL;
   clock_t t_prep, t_app, t_free_prep, t_free_app;
-  keys = calloc_perror(num_ins, key_size);
+  keys = malloc_perror(num_ins, key_size);
   elts_prep = malloc_perror(num_ins, elt_size);
   elts_app = malloc_perror(num_ins, elt_size);
   for (i = 0; i < num_ins; i++){
@@ -352,7 +366,8 @@ void prepend_append_free(dll_node_t **head_prep,
   }  
   t_prep = clock();
   for (i = 0; i < num_ins; i++){
-    dll_prepend_new(head_prep,
+    dll_prepend_new(ll_prep,
+		    head_prep,
 		    &keys[i],
 		    ptr(elts_prep, i, elt_size),
 		    key_size,
@@ -361,7 +376,8 @@ void prepend_append_free(dll_node_t **head_prep,
   t_prep = clock() - t_prep;
   t_app = clock();
   for (i = 0; i < num_ins; i++){
-    dll_append_new(head_app,
+    dll_append_new(ll_app,
+		   head_app,
 		   &keys[i],
 		   ptr(elts_app, i, elt_size),
 		   key_size,
@@ -371,20 +387,20 @@ void prepend_append_free(dll_node_t **head_prep,
   node_prep = *head_prep;
   node_app = *head_app;
   for (i = 0; i < num_ins; i++){
-    res = (*(int *)dll_ptr(node_prep, 0) +
-	   *(int *)dll_ptr(node_app, 0) ==
+    res = (*(int *)dll_key_ptr(ll_prep, node_prep) +
+	   *(int *)dll_key_ptr(ll_app, node_app) ==
 	   sum_val);
-    res = (val_elt(dll_ptr(node_prep, key_size)) +
-	   val_elt(dll_ptr(node_app, key_size)) ==
+    res = (val_elt(dll_elt_ptr(ll_prep, node_prep)) +
+	   val_elt(dll_elt_ptr(ll_app, node_app)) ==
 	   sum_val);
     node_prep = node_prep->next;
     node_app = node_app->next;
   }
   t_free_prep = clock();
-  dll_free(head_prep, key_size, free_elt);
+  dll_free(ll_prep, head_prep, free_elt);
   t_free_prep = clock() - t_free_prep;
   t_free_app = clock();
-  dll_free(head_app, key_size, free_elt);
+  dll_free(ll_app, head_app, free_elt);
   t_free_app = clock() - t_free_app;
   res *= (head_prep != NULL && *head_prep == NULL);
   res *= (head_app != NULL && *head_app == NULL);
