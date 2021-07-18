@@ -51,7 +51,8 @@ typedef struct{
   size_t elt_offset; /* added */
 } dll_t; /* given char *p pointer to a dll_node_t,
             p - key_offset points to key_size block and 
-            p + elt_offset points to elt_size block */
+            p + elt_offset points to elt_size block;
+            see dll_key_ptr and dll_elt_ptr functions */
 
 typedef struct dll_node{
   struct dll_node *next;
@@ -63,10 +64,12 @@ typedef struct dll_node{
    and key_offset and elt_offset in a dll_t struct to values
    according to the memory alignment requirements. Given a char *p
    pointer to a dll_node_t struct, the key_size block is accessed with
-   p - key_offset and the elt_size block is accessed with p + elt_offset.
-   An in-list key_size block is accessed with a pointer to any type
+   p - key_offset and the elt_size block is accessed with p + elt_offset,
+   as implemented in dll_key_ptr and dll_elt_ptr functions.
+   An in-list key_size block can be accessed with a pointer to any type
    with which a malloc'ed block can be accessed. An in-list elt_size block
-   is accessed only with a pointer to a character (e.g. for memcpy).
+   can be accessed only with a pointer to a character (e.g. for memcpy),
+   unless additional alignment is performed by calling dll_align_elt.
    ll          : pointer to an initialized dll_t struct
    head        : pointer to a preallocated block of size of a head pointer
    elt_size    : - non-zero size of an element, if the element is within a
@@ -82,12 +85,12 @@ void dll_init(dll_t *ll,
 
 /**
    Aligns each in-list elt_size block to be accessible with a pointer to a 
-   type (in addition to character pointer) with alignment equal to
-   i) alignment requirement, or ii) type size if alignment requirement is
-   unkown. If alignment requirement is unknown, the type size can be used
-   as a value of the alignment parameter because type size >= alignment of
-   type (due to structure of arrays), which may result in overalignment.
-   The operation is optionally called after dll_init is completed.
+   type other than character (in addition to a character pointer). If
+   alignment requirement of the type is unknown, the type size can be used
+   as a value of the alignment parameter because type size >= alignment
+   requirement of the type (due to structure of arrays), which may result in
+   overalignment. The operation is optionally called after dll_init is
+   completed.
    ll          : pointer to an initialized dll_t struct
    alignment   : alignment requirement or size of the type, a pointer to
                  which is used to access an elt_size block
