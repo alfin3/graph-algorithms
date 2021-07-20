@@ -45,7 +45,7 @@
 typedef struct{
   size_t key_size;
   size_t elt_size;
-  size_t pair_size; /* key_size + elt_size for input iterations by user */
+  size_t elt_alignment;
   size_t group_ix;
   size_t count_ix; /* max size_t value if last representable prime reached */
   size_t count;
@@ -53,7 +53,9 @@ typedef struct{
   size_t num_elts;
   size_t alpha_n;
   size_t log_alpha_d; 
+  dll_t *ll;
   dll_node_t **key_elts; /* array of pointers to nodes */
+  int (*cmp_key)(const void *, const void *);
   void (*free_elt)(void *);
 } ht_divchn_t;
 
@@ -91,7 +93,22 @@ void ht_divchn_init(ht_divchn_t *ht,
 		    size_t min_num,
 		    size_t alpha_n,
 		    size_t log_alpha_d,
+		    int (*cmp_key)(const void *, const void *),
 		    void (*free_elt)(void *));
+
+/**
+   Aligns each in-list elt_size block to be accessible with a pointer to a 
+   type other than character (in addition to a character pointer). If
+   alignment requirement of the type is unknown, the type size can be used
+   as a value of the alignment parameter because type size >= alignment
+   requirement of the type (due to structure of arrays), which may result in
+   overalignment. The operation is optionally called after ht_divchn_init is
+   completed.
+   ht          : pointer to an initialized ht_divchn_t struct
+   alignment   : alignment requirement or size of the type, a pointer to
+                 which is used to access an elt_size block
+*/
+void ht_divchn_align_elt(ht_divchn_t *ht, size_t alignment);
 
 /**
    Inserts a key and an associated element into a hash table. If the key is

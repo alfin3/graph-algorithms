@@ -156,11 +156,12 @@ void ht_divchn_init(ht_divchn_t *ht,
 		    size_t min_num,
 		    size_t alpha_n,
 		    size_t log_alpha_d,
+		    int (*cmp_key)(const void *, const void *),
 		    void (*free_elt)(void *)){
   size_t i;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
-  ht->pair_size = add_sz_perror(key_size, elt_size);
+  ht->elt_alignment = 1;
   ht->group_ix = 0;
   ht->count_ix = 0;
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
@@ -170,11 +171,30 @@ void ht_divchn_init(ht_divchn_t *ht,
   ht->num_elts = 0;
   ht->alpha_n = alpha_n;
   ht->log_alpha_d = log_alpha_d;
+  ht->ll = malloc_perror(1, sizeof(dll_t));
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
-    dll_init(&ht->key_elts[i]);
+    dll_init(ht->ll, &ht->key_elts[i], ht->key_size);
   }
+  ht->cmp_key = cmp_key;
   ht->free_elt = free_elt;
+}
+
+/**
+   Aligns each in-list elt_size block to be accessible with a pointer to a 
+   type other than character (in addition to a character pointer). If
+   alignment requirement of the type is unknown, the type size can be used
+   as a value of the alignment parameter because type size >= alignment
+   requirement of the type (due to structure of arrays), which may result in
+   overalignment. The operation is optionally called after ht_divchn_init is
+   completed.
+   ht          : pointer to an initialized ht_divchn_t struct
+   alignment   : alignment requirement or size of the type, a pointer to
+                 which is used to access an elt_size block
+*/
+void ht_divchn_align_elt(ht_divchn_t *ht, size_t alignment){
+  ht->elt_alignment = alignment;
+  dll_align_elt(ht->ll, alignment);
 }
 
 /**
@@ -188,13 +208,13 @@ void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
   dll_node_t **head = NULL, *node = NULL;
   ix = hash(ht, key);
   head = &ht->key_elts[ix];
-  node = dll_search_key(head, key, ht->key_size);
+  node = dll_search_key(ht->ll, head, key, ht->key_size, ht->cmp_key);
   if (node == NULL){
-    dll_prepend_new(head, key, elt, ht->key_size, ht->elt_size);
+    dll_prepend_new(ht->ll, head, key, elt, ht->key_size, ht->elt_size);
     ht->num_elts++;
   }else{
-    if (ht->free_elt != NULL) ht->free_elt(dll_ptr(node, ht->key_size));
-    memcpy(dll_ptr(node, ht->key_size), elt, ht->elt_size);
+    if (ht->free_elt != NULL) ht->free_elt(dll_elt_ptr(ht->ll, node));
+    memcpy(dll_elt_ptr(ht->ll, node), elt, ht->elt_size);
   }
   /* grow ht after ensuring it was insertion, not update */
   if (ht->num_elts > ht->max_num_elts && 
@@ -207,16 +227,20 @@ void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
 /**
    If a key is present in a hash table, returns a pointer to its associated 
    element, otherwise returns NULL. The key parameter is not NULL and points
-   to a block of size key_size.
+   to a block of size key_size. The returned pointer can be dereference
+   according to ht_divchn_init and ht_divchn_align_elt.
 */
 void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
-  const dll_node_t *node = dll_search_key(&ht->key_elts[hash(ht, key)],
-					  key,
-					  ht->key_size);
+  const dll_node_t *node =
+    dll_search_key(ht->ll,
+		   &ht->key_elts[hash(ht, key)],
+		   key,
+		   ht->key_size,
+		   ht->cmp_key);
   if (node == NULL){
     return NULL;
   }else{
-    return dll_ptr(node, ht->key_size);
+    return dll_elt_ptr(ht->ll, node);
   }
 }
 
@@ -229,11 +253,12 @@ void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
 */
 void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
-  dll_node_t *node = dll_search_key(head, key, ht->key_size);
+  dll_node_t *node =
+    dll_search_key(ht->ll, head, key, ht->key_size, ht->cmp_key);
   if (node != NULL){
-    memcpy(elt, dll_ptr(node, ht->key_size), ht->elt_size);
+    memcpy(elt, dll_elt_ptr(ht->ll, node), ht->elt_size);
     /* if an element is noncontiguous, only the pointer to it is deleted */
-    dll_delete(head, node, ht->key_size, NULL);
+    dll_delete(ht->ll, head, node, NULL);
     ht->num_elts--;
   }
 }
@@ -245,9 +270,10 @@ void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
 */
 void ht_divchn_delete(ht_divchn_t *ht, const void *key){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
-  dll_node_t *node = dll_search_key(head, key, ht->key_size);
+  dll_node_t *node =
+    dll_search_key(ht->ll, head, key, ht->key_size, ht->cmp_key);
   if (node != NULL){
-    dll_delete(head, node, ht->key_size, ht->free_elt);
+    dll_delete(ht->ll, head, node, ht->free_elt);
     ht->num_elts--;
   }
 }
@@ -259,9 +285,11 @@ void ht_divchn_delete(ht_divchn_t *ht, const void *key){
 void ht_divchn_free(ht_divchn_t *ht){
   size_t i;
   for (i = 0; i < ht->count; i++){
-    dll_free(&ht->key_elts[i], ht->key_size, ht->free_elt);
+    dll_free(ht->ll, &ht->key_elts[i], ht->free_elt);
   }
+  free(ht->ll);
   free(ht->key_elts);
+  ht->ll = NULL;
   ht->key_elts = NULL;
 }
 
@@ -312,14 +340,15 @@ static void ht_grow(ht_divchn_t *ht){
   if (prev_count == ht->count) return; /* load factor not lowered */
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){
-    dll_init(&ht->key_elts[i]);
+    dll_init(ht->ll, &ht->key_elts[i], ht->key_size);
   }
+  if (ht->elt_alignment > 1) dll_align_elt(ht->ll, ht->elt_alignment);
   for (i = 0; i < prev_count; i++){
     head = &prev_key_elts[i];
     while (*head != NULL){
       node = *head;
       dll_remove(head, node);
-      dll_prepend(&ht->key_elts[hash(ht, dll_ptr(node, 0))], node);
+      dll_prepend(&ht->key_elts[hash(ht, dll_key_ptr(ht->ll, node))], node);
     }
   }
   free(prev_key_elts);
