@@ -422,7 +422,7 @@ void search_nin_ht(const ht_divchn_t *ht,
   }
   k = nin_keys;
   t = clock() - t;
-  for (i = 1; i < count; i++){
+  for (i = 0; i < count; i++){
     elt = ht_divchn_search(ht, k);
     *res *= (elt == NULL);
     k += ht->key_size;

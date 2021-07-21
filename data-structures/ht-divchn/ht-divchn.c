@@ -312,6 +312,36 @@ void ht_divchn_free(ht_divchn_t *ht){
   ht->key_elts = NULL;
 }
 
+/**
+   Help construct a hash table parameter value in algorithms and data
+   structures with a hash table parameter, complying with the stict aliasing
+   rules and compatibility rules for function types. In each case, a
+   (qualified) ht_divchn_t *p0 is converted to (qualified) void * and back
+   to a (qualified) ht_divchn_t *p1, thus guaranteeing that the value of p0
+   equals the value of p1. An initialization helper is constructed by the
+   user. 
+*/
+
+void ht_divchn_insert_helper(void *ht, const void *key, const void *elt){
+  ht_divchn_insert(ht, key, elt);
+}
+
+void *ht_divchn_search_helper(const void *ht, const void *key){
+  return ht_divchn_search(ht, key);
+}
+
+void ht_divchnn_remove_helper(void *ht, const void *key, void *elt){
+  ht_divchn_remove(ht, key, elt);
+}
+
+void ht_divchn_delete_helper(void *ht, const void *key){
+  ht_divchn_delete(ht, key);
+}
+
+void ht_divchn_free_helper(void *ht){
+  ht_divchn_free(ht);
+} 
+
 /** Helper functions */
 
 /**
