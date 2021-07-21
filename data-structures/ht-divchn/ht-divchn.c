@@ -143,10 +143,12 @@ static size_t build_prime(size_t start, size_t count);
    alpha_n     : > 0 numerator of load factor upper bound
    log_alpha_d : < CHAR_BIT * sizeof(size_t) log base 2 of denominator of
                  load factor upper bound; denominator is a power of two
-   cmp_key     : comparison function which returns a zero integer value iff
-                 the two keys accessed through the first and the second 
-                 arguments are equal; each argument is a pointer to a
-                 key_size block
+   cmp_key     : - if NULL then a default memcmp-based comparison of keys
+                 is performed
+                 - otherwise comparison function is applied which returns a
+                 zero integer value iff the two keys accessed through the
+                 first and the second arguments are equal; each argument is
+                 a pointer to a key_size block
    rdc_key     : - if NULL then a default conversion of a bit pattern
                  in the block pointed to by key is performed prior to
                  hashing, which may introduce regularities

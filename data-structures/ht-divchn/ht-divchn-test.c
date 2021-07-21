@@ -357,11 +357,10 @@ void insert_keys_elts(ht_divchn_t *ht,
   k = keys;
   e = elts;
   t = clock();
-  ht_divchn_insert(ht, k, e); /* avoid UB in ptr increment; 1 <= count */
-  for (i = 1; i < count; i++){
+  for (i = 0; i < count; i++){
+    ht_divchn_insert(ht, k, e);
     k += ht->key_size;
     e += ht->elt_size;
-    ht_divchn_insert(ht, k, e);
   }
   t = clock() - t;
   if (init_count < ht->count){
@@ -388,21 +387,18 @@ void search_in_ht(const ht_divchn_t *ht,
   clock_t t;
   k = keys;
   t = clock();
-  elt = ht_divchn_search(ht, k); /* avoid UB in ptr increment; 1 <= count */
-  for (i = 1; i < count; i++){
-    k += ht->key_size;
+  for (i = 0; i < count; i++){
     elt = ht_divchn_search(ht, k);
+    k += ht->key_size;
   }
   k = keys;
   e = elts;
   t = clock() - t;
-  elt = ht_divchn_search(ht, k); /* avoid UB in ptr increment; 1 <= count */
-  *res *= (val_elt(e) == val_elt(elt));
-  for (i = 1; i < count; i++){
-    k += ht->key_size;
-    e += ht->elt_size;
+  for (i = 0; i < count; i++){
     elt = ht_divchn_search(ht, k);
     *res *= (val_elt(e) == val_elt(elt));
+    k += ht->key_size;
+    e += ht->elt_size;
   }
   printf("\t\tin ht search time:              "
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
@@ -420,19 +416,16 @@ void search_nin_ht(const ht_divchn_t *ht,
   clock_t t;
   k = nin_keys;
   t = clock();
-  elt = ht_divchn_search(ht, k); /* avoid UB in ptr increment; 1 <= count */
-  for (i = 1; i < count; i++){
-    k += ht->key_size;
+  for (i = 0; i < count; i++){
     elt = ht_divchn_search(ht, k);
+    k += ht->key_size;
   }
   k = nin_keys;
   t = clock() - t;
-  elt = ht_divchn_search(ht, k); /* avoid UB in ptr increment; 1 <= count */
-  *res *= (elt == NULL);
   for (i = 1; i < count; i++){
-    k += ht->key_size;
     elt = ht_divchn_search(ht, k);
     *res *= (elt == NULL);
+    k += ht->key_size;
   }
   printf("\t\tnot in ht search time:          "
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
@@ -556,13 +549,13 @@ void remove_key_elts(ht_divchn_t *ht,
   k = keys;
   e = elts;
   for (i = 0; i < count; i++){
-    k += (i > 0) * ht->key_size;
-    e += (i > 0) * ht->elt_size;
     if (i & 1){
       *res *= (val_elt(e) == val_elt(ht_divchn_search(ht, k)));
     }else{
       *res *= (ht_divchn_search(ht, k) == NULL);
     }
+    k += ht->key_size;
+    e += ht->elt_size;
   }
   k = ptr(keys, 1, ht->key_size); /* 1 <= count */
   t_second_half = clock();
@@ -575,8 +568,8 @@ void remove_key_elts(ht_divchn_t *ht,
   *res *= (ht->num_elts == 0);
   k = keys;
   for (i = 0; i < count; i++){
-    k += (i > 0) * ht->key_size;
     *res *= (ht_divchn_search(ht, k) == NULL);
+    k += ht->key_size;
   }
   for (i = 0; i < ht->count; i++){
     *res *= (ht->key_elts[i] == NULL);
@@ -614,13 +607,13 @@ void delete_key_elts(ht_divchn_t *ht,
   k = keys;
   e = elts;
   for (i = 0; i < count; i++){
-    k += (i > 0) * ht->key_size;
-    e += (i > 0) * ht->elt_size;
     if (i & 1){
       *res *= (val_elt(e) == val_elt(ht_divchn_search(ht, k)));
     }else{
       *res *= (ht_divchn_search(ht, k) == NULL);
     }
+    k += ht->key_size;
+    e += ht->elt_size;
   }
   k = ptr(keys, 1, ht->key_size); /* 1 <= count */
   t_second_half = clock();
@@ -632,8 +625,8 @@ void delete_key_elts(ht_divchn_t *ht,
   *res *= (ht->num_elts == 0);
   k = keys;
   for (i = 0; i < count; i++){
-    k += (i > 0) * ht->key_size;
     *res *= (ht_divchn_search(ht, k) == NULL);
+    k += ht->key_size;
   }
   for (i = 0; i < ht->count; i++){
     *res *= (ht->key_elts[i] == NULL);
