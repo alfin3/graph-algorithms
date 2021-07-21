@@ -28,7 +28,8 @@
 
    The implementation does not use stdint.h and is portable under C89/C90
    and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even.
+   greater or equal to 16 and is even (every bit is required to participate
+   in the value at this time).
 
    * except intended wrapping around of unsigned integers in modulo
      operations, which is defined, and overflow detection as a part
@@ -112,6 +113,7 @@ static const size_t C_PARTS_ACC_COUNTS[4] = {6,
 					     6 + 16 * (2 + 3),
 					     6 + 16 * (2 + 3 + 4)};
 static const size_t C_BUILD_SHIFT = 16;
+static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 static const size_t C_SIZE_MAX = (size_t)-1;
 
@@ -141,6 +143,16 @@ static size_t build_prime(size_t start, size_t count);
    alpha_n     : > 0 numerator of load factor upper bound
    log_alpha_d : < CHAR_BIT * sizeof(size_t) log base 2 of denominator of
                  load factor upper bound; denominator is a power of two
+   cmp_key     : comparison function which returns a zero integer value iff
+                 the two keys accessed through the first and the second 
+                 arguments are equal; each argument is a pointer to a
+                 key_size block
+   rdc_key     : - if NULL then a default conversion of a bit pattern
+                 in the block pointed to by key is performed prior to
+                 hashing, which may introduce regularities
+                 - otherwise rdc_key is applied to a key prior to hashing;
+                 the first argument points to a key and the second argument
+                 provides the size of the key
    free_elt    : - if an element is within a contiguous memory block and
                  a copy of the element was inserted, then NULL as free_elt
                  is sufficient to delete the element,
@@ -157,6 +169,7 @@ void ht_divchn_init(ht_divchn_t *ht,
 		    size_t alpha_n,
 		    size_t log_alpha_d,
 		    int (*cmp_key)(const void *, const void *),
+		    size_t (*rdc_key)(const void *, size_t),
 		    void (*free_elt)(void *)){
   size_t i;
   ht->key_size = key_size;
@@ -177,17 +190,22 @@ void ht_divchn_init(ht_divchn_t *ht,
     dll_init(ht->ll, &ht->key_elts[i], ht->key_size);
   }
   ht->cmp_key = cmp_key;
+  ht->rdc_key = rdc_key;
   ht->free_elt = free_elt;
 }
 
 /**
-   Aligns each in-list elt_size block to be accessible with a pointer to a 
-   type other than character (in addition to a character pointer). If
-   alignment requirement of the type is unknown, the type size can be used
-   as a value of the alignment parameter because type size >= alignment
-   requirement of the type (due to structure of arrays), which may result in
-   overalignment. The operation is optionally called after ht_divchn_init is
-   completed.
+   Aligns each in-table elt_size block to be accessible with a pointer to a 
+   type T other than character (in addition to a character pointer). If
+   alignment requirement of T is unknown, the size of T can be used
+   as a value of the alignment parameter because size of T >= alignment
+   requirement of T (due to structure of arrays), which may result in
+   overalignment. The hash table keeps the effective type of a copied
+   elt_size block, if it had one at the time of insertion, and T must
+   be compatible with the type to comply with the strict aliasing rules.
+   T can be the same or a cvr-qualified/signed/unsigned version of the
+   type. The operation is optionally called after ht_divchn_init is
+   completed and before any other operation is called.
    ht          : pointer to an initialized ht_divchn_t struct
    alignment   : alignment requirement or size of the type, a pointer to
                  which is used to access an elt_size block
@@ -227,16 +245,15 @@ void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
 /**
    If a key is present in a hash table, returns a pointer to its associated 
    element, otherwise returns NULL. The key parameter is not NULL and points
-   to a block of size key_size. The returned pointer can be dereference
+   to a block of size key_size. The returned pointer can be dereferenced
    according to ht_divchn_init and ht_divchn_align_elt.
 */
 void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
-  const dll_node_t *node =
-    dll_search_key(ht->ll,
-		   &ht->key_elts[hash(ht, key)],
-		   key,
-		   ht->key_size,
-		   ht->cmp_key);
+  const dll_node_t *node = dll_search_key(ht->ll,
+					  &ht->key_elts[hash(ht, key)],
+					  key,
+					  ht->key_size,
+					  ht->cmp_key);
   if (node == NULL){
     return NULL;
   }else{
@@ -296,10 +313,41 @@ void ht_divchn_free(ht_divchn_t *ht){
 /** Helper functions */
 
 /**
+   Converts a key to a key of the standard size. This is a safe conversion
+   of any bit pattern in the block pointed to by key to size_t.
+*/
+static size_t convert_std_key(const ht_divchn_t *ht, const void *key){
+  size_t i;
+  size_t sz_count, rem_size;
+  size_t std_key = 0;
+  size_t buf_size = sizeof(size_t);
+  unsigned char buf[sizeof(size_t)];
+  const char *k = NULL, *k_start = NULL, *k_end = NULL;
+  if (ht->rdc_key != NULL) return ht->rdc_key(key, ht->key_size);
+  sz_count = ht->key_size / buf_size; /* division by sizeof(size_t) */
+  rem_size = ht->key_size - sz_count * buf_size;
+  k = key;
+  memset(buf, 0, buf_size);
+  memcpy(buf, k, rem_size);
+  for (i = 0; i < rem_size; i++){
+    std_key += (size_t)buf[i] << (i * C_BYTE_BIT);
+  }
+  k_start = k + rem_size;
+  k_end = k_start + sz_count * buf_size;
+  for (k = k_start; k != k_end; k += buf_size){
+    memcpy(buf, k, buf_size);
+    for (i = 0; i < buf_size; i++){
+      std_key += (size_t)buf[i] << (i * C_BYTE_BIT);
+    }
+  }
+  return std_key;
+}
+
+/**
    Maps a hash key to a slot index in a hash table with a division method. 
 */
 static size_t hash(const ht_divchn_t *ht, const void *key){
-  return fast_mem_mod(key, ht->key_size, ht->count); 
+  return convert_std_key(ht, key) % ht->count; 
 }
 
 /**
