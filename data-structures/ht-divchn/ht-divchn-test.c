@@ -118,7 +118,6 @@ void print_test_result(int res);
 void new_uint(void *elt, size_t val){
   size_t *s = elt;
   *s = val;
-  s = NULL;
 }
 
 size_t val_uint(const void *elt){
@@ -231,7 +230,6 @@ void new_uint_ptr(void *elt, size_t val){
   *s = malloc_perror(1, sizeof(uint_ptr_t));
   (*s)->val = malloc_perror(1, sizeof(size_t));
   *((*s)->val) = val;
-  s = NULL;
 }
 
 size_t val_uint_ptr(const void *elt){
@@ -723,14 +721,14 @@ void run_corner_cases_test(size_t log_ins){
       elt = k;
       ht_divchn_insert(&ht, key, &elt);
     }
-    res *= (ht.count_ix == 0);
-    res *= (ht.count == C_CORNER_HT_COUNT);
-    res *= (ht.num_elts == 1);
-    res *= (*(const size_t *)ht_divchn_search(&ht, key) == elt);
+    res *= (ht.count_ix == 0 &&
+	    ht.count == C_CORNER_HT_COUNT &&
+	    ht.num_elts == 1 &&
+	    *(const size_t *)ht_divchn_search(&ht, key) == elt);
     ht_divchn_delete(&ht, key);
-    res *= (ht.count == C_CORNER_HT_COUNT);
-    res *= (ht.num_elts == 0);
-    res *= (ht_divchn_search(&ht, key) == NULL);
+    res *= (ht.count == C_CORNER_HT_COUNT &&
+	    ht.num_elts == 0 &&
+	    ht_divchn_search(&ht, key) == NULL);
     ht_divchn_free(&ht);
   }
   print_test_result(res);

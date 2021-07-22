@@ -342,7 +342,7 @@ void ht_divchn_free_helper(void *ht){
   ht_divchn_free(ht);
 } 
 
-/** Helper functions */
+/** Auxiliary functions */
 
 /**
    Converts a key to a key of the standard size. This is a safe conversion
