@@ -195,6 +195,8 @@ void ht_muloa_free(ht_muloa_t *ht);
    user. 
 */
 
+void ht_muloa_align_elt_helper(void *ht, size_t alignment);
+
 void ht_muloa_insert_helper(void *ht, const void *key, const void *elt);
 
 void *ht_muloa_search_helper(const void *ht, const void *key);

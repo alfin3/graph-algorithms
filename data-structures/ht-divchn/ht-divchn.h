@@ -177,6 +177,8 @@ void ht_divchn_free(ht_divchn_t *ht);
    user. 
 */
 
+void ht_divchn_align_elt_helper(void *ht, size_t alignment);
+
 void ht_divchn_insert_helper(void *ht, const void *key, const void *elt);
 
 void *ht_divchn_search_helper(const void *ht, const void *key);

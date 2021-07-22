@@ -322,6 +322,10 @@ void ht_divchn_free(ht_divchn_t *ht){
    user. 
 */
 
+void ht_divchn_align_elt_helper(void *ht, size_t alignment){
+  ht_divchn_align_elt(ht, alignment);
+}
+
 void ht_divchn_insert_helper(void *ht, const void *key, const void *elt){
   ht_divchn_insert(ht, key, elt);
 }

@@ -392,6 +392,10 @@ void ht_muloa_free(ht_muloa_t *ht){
    user. 
 */
 
+void ht_muloa_align_elt_helper(void *ht, size_t alignment){
+  ht_muloa_align_elt(ht, alignment);
+}
+
 void ht_muloa_insert_helper(void *ht, const void *key, const void *elt){
   ht_muloa_insert(ht, key, elt);
 }
