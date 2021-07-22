@@ -50,59 +50,59 @@
 #include "utilities-mod.h"
 
 static const size_t C_FIRST_PRIME_PARTS[1 + 8 * (2 + 3 + 4)] =
-  {0xbe21u,                            /* 2^15 < 48673 < 2^16 */
-   0xd8d5u, 0x0002u,                   /* 2^17 < 186581 < 2^18 */
-   0x0077u, 0x000cu,                   /* 2^19 < 786551 < 2^20 */
-   0x2029u, 0x0031u,                   /* 2^21 < 3219497 < 2^22 */
-   0x5427u, 0x00bfu,                   /* 2^23 < 12538919 < 2^24 */
-   0x42bbu, 0x030fu,                   /* 2^25 < 51331771 < 2^26 */
-   0x96adu, 0x0c98u,                   /* 2^27 < 211326637 < 2^28 */
-   0xc10fu, 0x2ecfu,                   /* 2^29 < 785367311 < 2^30 */
-   0x72e9u, 0xad16u,                   /* 2^31 < 2903929577 < 2^32 */
-   0x9345u, 0xffc8u, 0x0002u,          /* 2^33 < 12881269573 < 2^34 */
-   0x1575u, 0x0a63u, 0x000cu,          /* 2^35 < 51713873269 < 2^36 */
-   0xc513u, 0x4d6bu, 0x0031u,          /* 2^37 < 211752305939 < 2^38 */
-   0xa021u, 0x5460u, 0x00beu,          /* 2^39 < 817459404833 < 2^40 */
-   0xeaafu, 0x7c3du, 0x02f5u,          /* 2^41 < 3253374675631 < 2^42 */
-   0x6b1fu, 0x29efu, 0x0c24u,          /* 2^43 < 13349461912351 < 2^44 */
-   0x57b7u, 0xccbeu, 0x2ffbu,          /* 2^45 < 52758518323127 < 2^46 */
-   0x82c3u, 0x2c9fu, 0xc2ccu,          /* 2^47 < 214182177768131 < 2^48 */
-   0x60adu, 0x46a1u, 0xf55eu, 0x0002u, /* 2^49 < 832735214133421 < 2^50 */
-   0xb24du, 0x6765u, 0x38b5u, 0x000bu, /* 2^51 < 3158576518771277 < 2^52 */
-   0x0d35u, 0x5443u, 0xff54u, 0x0030u, /* 2^53 < 13791536538127669 < 2^54 */
-   0xd017u, 0x90c7u, 0x37b3u, 0x00c6u, /* 2^55 < 55793289756397591 < 2^56 */
-   0x6f8fu, 0x423bu, 0x8949u, 0x0304u, /* 2^57 < 217449629757435791 < 2^58 */
-   0xbbc1u, 0x662cu, 0x4d90u, 0x0badu, /* 2^59 < 841413987972987841 < 2^60 */
-   0xc647u, 0x3c91u, 0x46b2u, 0x2e9bu, /* 2^61 < 3358355678469146183 < 2^62 */
-   0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u  /* 2^63 < 15769474759331449193 < 2^64 */
+  {0xbe21u,                            /* 2**15 < 48673 < 2**16 */
+   0xd8d5u, 0x0002u,                   /* 2**17 < 186581 < 2**18 */
+   0x0077u, 0x000cu,                   /* 2**19 < 786551 < 2**20 */
+   0x2029u, 0x0031u,                   /* 2**21 < 3219497 < 2**22 */
+   0x5427u, 0x00bfu,                   /* 2**23 < 12538919 < 2**24 */
+   0x42bbu, 0x030fu,                   /* 2**25 < 51331771 < 2**26 */
+   0x96adu, 0x0c98u,                   /* 2**27 < 211326637 < 2**28 */
+   0xc10fu, 0x2ecfu,                   /* 2**29 < 785367311 < 2**30 */
+   0x72e9u, 0xad16u,                   /* 2**31 < 2903929577 < 2**32 */
+   0x9345u, 0xffc8u, 0x0002u,          /* 2**33 < 12881269573 < 2**34 */
+   0x1575u, 0x0a63u, 0x000cu,          /* 2**35 < 51713873269 < 2**36 */
+   0xc513u, 0x4d6bu, 0x0031u,          /* 2**37 < 211752305939 < 2**38 */
+   0xa021u, 0x5460u, 0x00beu,          /* 2**39 < 817459404833 < 2**40 */
+   0xeaafu, 0x7c3du, 0x02f5u,          /* 2**41 < 3253374675631 < 2**42 */
+   0x6b1fu, 0x29efu, 0x0c24u,          /* 2**43 < 13349461912351 < 2**44 */
+   0x57b7u, 0xccbeu, 0x2ffbu,          /* 2**45 < 52758518323127 < 2**46 */
+   0x82c3u, 0x2c9fu, 0xc2ccu,          /* 2**47 < 214182177768131 < 2**48 */
+   0x60adu, 0x46a1u, 0xf55eu, 0x0002u, /* 2**49 < 832735214133421 < 2**50 */
+   0xb24du, 0x6765u, 0x38b5u, 0x000bu, /* 2**51 < 3158576518771277 < 2**52 */
+   0x0d35u, 0x5443u, 0xff54u, 0x0030u, /* 2**53 < 13791536538127669 < 2**54 */
+   0xd017u, 0x90c7u, 0x37b3u, 0x00c6u, /* 2**55 < 55793289756397591 < 2**56 */
+   0x6f8fu, 0x423bu, 0x8949u, 0x0304u, /* 2**57 < 217449629757435791 < 2**58 */
+   0xbbc1u, 0x662cu, 0x4d90u, 0x0badu, /* 2**59 < 841413987972987841 < 2**60 */
+   0xc647u, 0x3c91u, 0x46b2u, 0x2e9bu, /* 2**61 < 3358355678469146183 < 2**62 */
+   0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u  /* 2**63 < 15769474759331449193 < 2**64 */
   }; 
 
 static const size_t C_SECOND_PRIME_PARTS[1 + 8 * (2 + 3 + 4)] =
-  {0xc221u,                            /* 2^15 < 49697 < 2^16 */
-   0xe04bu, 0x0002u,                   /* 2^17 < 188491 < 2^18 */
-   0xf6a7u, 0x000bu,                   /* 2^19 < 784039 < 2^20 */
-   0x1b4fu, 0x0030u,                   /* 2^21 < 3152719 < 2^22 */
-   0x4761u, 0x00beu,                   /* 2^23 < 12470113 < 2^24 */
-   0x3eadu, 0x0312u,                   /* 2^25 < 51527341 < 2^26 */
-   0x08e9u, 0x0ca5u,                   /* 2^27 < 212142313 < 2^28 */
-   0x06b9u, 0x2eecu,                   /* 2^29 < 787220153 < 2^30 */
-   0x5391u, 0xbba6u,                   /* 2^31 < 3148239761 < 2^32 */
-   0x3739u, 0xf7fdu, 0x0002u,          /* 2^33 < 12750501689 < 2^34 */
-   0x852bu, 0x07f8u, 0x000cu,          /* 2^35 < 51673335083 < 2^36 */
-   0xa61bu, 0x457au, 0x0031u,          /* 2^37 < 211619063323 < 2^38 */
-   0xb041u, 0xbf9eu, 0x00bdu,          /* 2^39 < 814963667009 < 2^40 */
-   0x4515u, 0x3eafu, 0x0308u,          /* 2^41 < 3333946295573 < 2^42 */
-   0x6f4fu, 0xc0d9u, 0x0c3cu,          /* 2^43 < 13455073046351 < 2^44 */
-   0x0da1u, 0x6600u, 0x3025u,          /* 2^45 < 52937183202721 < 2^46 */
-   0xb229u, 0x8facu, 0xc1e5u,          /* 2^47 < 213191702131241 < 2^48 */
-   0x58f1u, 0x94e9u, 0xff18u, 0x0002u, /* 2^49 < 843430996039921 < 2^50 */
-   0x73abu, 0xda62u, 0x9da8u, 0x000bu, /* 2^51 < 3269573287769003 < 2^52 */
-   0x37f1u, 0xd800u, 0x135bu, 0x0031u, /* 2^53 < 13813559045666801 < 2^54 */
-   0xd909u, 0xa518u, 0xebc1u, 0x00c4u, /* 2^55 < 55428312366373129 < 2^56 */
-   0x03a7u, 0x5cb0u, 0xba89u, 0x0302u, /* 2^57 < 216940831195530151 < 2^58 */
-   0x12adu, 0x7477u, 0xb251u, 0x0c10u, /* 2^59 < 869390790998561453 < 2^60 */
-   0xe411u, 0x4bacu, 0x9c82u, 0x2f17u, /* 2^61 < 3393352927676261393 < 2^62 */
-   0xd047u, 0x33a5u, 0x5cb7u, 0xbd8fu  /* 2^63 < 13659238136753279047 < 2^64 */
+  {0xc221u,                            /* 2**15 < 49697 < 2**16 */
+   0xe04bu, 0x0002u,                   /* 2**17 < 188491 < 2**18 */
+   0xf6a7u, 0x000bu,                   /* 2**19 < 784039 < 2**20 */
+   0x1b4fu, 0x0030u,                   /* 2**21 < 3152719 < 2**22 */
+   0x4761u, 0x00beu,                   /* 2**23 < 12470113 < 2**24 */
+   0x3eadu, 0x0312u,                   /* 2**25 < 51527341 < 2**26 */
+   0x08e9u, 0x0ca5u,                   /* 2**27 < 212142313 < 2**28 */
+   0x06b9u, 0x2eecu,                   /* 2**29 < 787220153 < 2**30 */
+   0x5391u, 0xbba6u,                   /* 2**31 < 3148239761 < 2**32 */
+   0x3739u, 0xf7fdu, 0x0002u,          /* 2**33 < 12750501689 < 2**34 */
+   0x852bu, 0x07f8u, 0x000cu,          /* 2**35 < 51673335083 < 2**36 */
+   0xa61bu, 0x457au, 0x0031u,          /* 2**37 < 211619063323 < 2**38 */
+   0xb041u, 0xbf9eu, 0x00bdu,          /* 2**39 < 814963667009 < 2**40 */
+   0x4515u, 0x3eafu, 0x0308u,          /* 2**41 < 3333946295573 < 2**42 */
+   0x6f4fu, 0xc0d9u, 0x0c3cu,          /* 2**43 < 13455073046351 < 2**44 */
+   0x0da1u, 0x6600u, 0x3025u,          /* 2**45 < 52937183202721 < 2**46 */
+   0xb229u, 0x8facu, 0xc1e5u,          /* 2**47 < 213191702131241 < 2**48 */
+   0x58f1u, 0x94e9u, 0xff18u, 0x0002u, /* 2**49 < 843430996039921 < 2**50 */
+   0x73abu, 0xda62u, 0x9da8u, 0x000bu, /* 2**51 < 3269573287769003 < 2**52 */
+   0x37f1u, 0xd800u, 0x135bu, 0x0031u, /* 2**53 < 13813559045666801 < 2**54 */
+   0xd909u, 0xa518u, 0xebc1u, 0x00c4u, /* 2**55 < 55428312366373129 < 2**56 */
+   0x03a7u, 0x5cb0u, 0xba89u, 0x0302u, /* 2**57 < 216940831195530151 < 2**58 */
+   0x12adu, 0x7477u, 0xb251u, 0x0c10u, /* 2**59 < 869390790998561453 < 2**60 */
+   0xe411u, 0x4bacu, 0x9c82u, 0x2f17u, /* 2**61 < 3393352927676261393 < 2**62 */
+   0xd047u, 0x33a5u, 0x5cb7u, 0xbd8fu  /* 2**63 < 13659238136753279047 < 2**64 */
   };
 
 static const size_t C_LAST_PRIME_IX = 1 + 8 * (2 + 3 + 4) - 4;
@@ -285,8 +285,14 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
   dist = adjust_dist(sval >> (C_FULL_BIT - ht->log_count));
   ke = &ht->key_elts[ix];
   while (*ke != NULL){
-    if (!is_ph(*ke) &&
-	memcmp(ke_key_ptr(ht, *ke), key, ht->key_size) == 0){
+    if (ht->cmp_key != NULL && /* loop invariant */
+	!is_ph(*ke) &&
+	ht->cmp_key(ke_key_ptr(ht, *ke), key) == 0){
+      ke_elt_update(ht, *ke, elt);
+      return;
+    }else if (ht->cmp_key == NULL && /* loop invariant */
+	      !is_ph(*ke) &&
+	      memcmp(ke_key_ptr(ht, *ke), key, ht->key_size) == 0){
       ke_elt_update(ht, *ke, elt);
       return;
     }
@@ -528,14 +534,19 @@ static ke_t **search(const ht_muloa_t *ht, const void *key){
   size_t std_key, fval, sval, ix, dist;
   ke_t * const *ke = NULL;
   std_key = convert_std_key(ht, key);
-  fval = ht->fprime * std_key; /* mod 2^FULL_BIT */
-  sval = ht->sprime * std_key; /* mod 2^FULL_BIT */
+  fval = ht->fprime * std_key; /* mod 2**FULL_BIT */
+  sval = ht->sprime * std_key; /* mod 2**FULL_BIT */
   ix = fval >> (C_FULL_BIT - ht->log_count);
   dist = adjust_dist(sval >> (C_FULL_BIT - ht->log_count));
   ke = &ht->key_elts[ix];
   while (*ke != NULL){
-    if (!is_ph(*ke) &&
-	memcmp(ke_key_ptr(ht, *ke), key, ht->key_size) == 0){
+    if (ht->cmp_key != NULL && /* loop invariant */
+	!is_ph(*ke) &&
+	ht->cmp_key(ke_key_ptr(ht, *ke), key) == 0){
+      return (ke_t **)ke;
+    }else if (ht->cmp_key == NULL && /* loop invariant */
+	      !is_ph(*ke) &&
+	      memcmp(ke_key_ptr(ht, *ke), key, ht->key_size) == 0){
       return (ke_t **)ke;
     }else if (num_probes == ht->max_num_probes){
       break;
@@ -689,7 +700,7 @@ static size_t build_prime(const size_t *parts, size_t start, size_t count){
 }
 
 /**
-   Finds and builds a prime number p, s.t. 2^{n - 1} < p < 2^n where
+   Finds and builds a prime number p, s.t. 2**(n - 1) < p < 2**n where
    n = CHAR_BIT * sizeof(size_t), from parts in the C_FIRST_PRIME_PARTS or
    C_SECOND_PRIME_PARTS array.
 */
