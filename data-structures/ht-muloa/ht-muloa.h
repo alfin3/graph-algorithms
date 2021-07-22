@@ -139,7 +139,7 @@ void ht_muloa_init(ht_muloa_t *ht,
    elt_size block, if it had one at the time of insertion, and T must
    be compatible with the type to comply with the strict aliasing rules.
    T can be the same or a cvr-qualified/signed/unsigned version of the
-   type. The operation is optionally called after ht_divchn_init is
+   type. The operation is optionally called after ht_muloa_init is
    completed and before any other operation is called.
    ht          : pointer to an initialized ht_muloa_t struct
    alignment   : alignment requirement or size of the type, a pointer to

@@ -246,7 +246,7 @@ void ht_muloa_init(ht_muloa_t *ht,
    elt_size block, if it had one at the time of insertion, and T must
    be compatible with the type to comply with the strict aliasing rules.
    T can be the same or a cvr-qualified/signed/unsigned version of the
-   type. The operation is optionally called after ht_divchn_init is
+   type. The operation is optionally called after ht_muloa_init is
    completed and before any other operation is called.
    ht          : pointer to an initialized ht_muloa_t struct
    alignment   : alignment requirement or size of the type, a pointer to
@@ -376,7 +376,37 @@ void ht_muloa_free(ht_muloa_t *ht){
   ht->key_elts = NULL;
 }
 
-/** Helper functions */
+/**
+   Help construct a hash table parameter value in algorithms and data
+   structures with a hash table parameter, complying with the stict aliasing
+   rules and compatibility rules for function types. In each case, a
+   (qualified) ht_muloa_t *p0 is converted to (qualified) void * and back
+   to a (qualified) ht_muloa_t *p1, thus guaranteeing that the value of p0
+   equals the value of p1. An initialization helper is constructed by the
+   user. 
+*/
+
+void ht_muloa_insert_helper(void *ht, const void *key, const void *elt){
+  ht_muloa_insert(ht, key, elt);
+}
+
+void *ht_muloa_search_helper(const void *ht, const void *key){
+  return ht_muloa_search(ht, key);
+}
+
+void ht_muloa_remove_helper(void *ht, const void *key, void *elt){
+  ht_muloa_remove(ht, key, elt);
+}
+
+void ht_muloa_delete_helper(void *ht, const void *key){
+  ht_muloa_delete(ht, key);
+}
+
+void ht_muloa_free_helper(void *ht){
+  ht_muloa_free(ht);
+}
+
+/** Auxiliary functions */
 
 /**
    Create, test, and free a placeholder. The is_ph function can be used on
