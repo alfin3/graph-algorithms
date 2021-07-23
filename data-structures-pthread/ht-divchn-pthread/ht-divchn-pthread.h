@@ -42,7 +42,8 @@
 
    The implementation does not use stdint.h and is portable under C89/C90
    and C99. The requirements are: i) CHAR_BIT * sizeof(size_t) is greater
-   or equal to 16 and is even, and ii) pthreads API is available.
+   or equal to 16 and is even (every bit is required to participate
+   in the value at this time), and ii) pthreads API is available.
 
    * unless the growth step that follows does not lower the load factor
    below alpha because the maximum count of slots is reached during the
@@ -67,14 +68,15 @@ typedef struct{
   /* hash table */
   size_t key_size;
   size_t elt_size;
-  size_t pair_size; /* key_size + elt_size for input iterations by user */
+  size_t elt_alignment;
   size_t group_ix;
   size_t count_ix; /* max size_t value if last representable prime reached */
   size_t count;
   size_t max_num_elts; /*  >= 0, <= C_SIZE_MAX, represents alpha */
   size_t num_elts;
   size_t alpha_n;
-  size_t log_alpha_d; 
+  size_t log_alpha_d;
+  dll_t *ll;
   dll_node_t **key_elts; /* array of pointers to nodes */
 
   /* thread synchronization */
@@ -88,7 +90,9 @@ typedef struct{
   pthread_cond_t grow_cond;
 
   /* function pointers */
-  void (*rdc_elt)(void *, const void *, size_t); /* e.g. min, max, add */
+  int (*cmp_key)(const void *, const void *);
+  size_t (*rdc_key)(const void *, size_t);
+  void (*rdc_elts)(void *, const void *, size_t); /* e.g. min, max, add */
   void (*free_elt)(void *);
 } ht_divchn_pthread_t;
 
@@ -120,7 +124,19 @@ typedef struct{
                       and may reduce the time threads are blocked, depending
                       on the scheduler and at the expense of space
    num_grow_threads : >= 1, number of threads used in growing the hash table
-   rdc_elt          : - NULL, if a key is in the hash table when the key is
+   cmp_key          : - if NULL then a default memcmp-based comparison of 
+                      keys is performed
+                      - otherwise comparison function is applied which
+                      returns a zero integer value iff the two keys accessed
+                      through the first and the second arguments are equal;
+                      each argument is a pointer to a key_size block
+   rdc_key          : - if NULL then a default conversion of a bit pattern
+                      in the block pointed to by key is performed prior to
+                      hashing, which may introduce regularities
+                      - otherwise rdc_key is applied to a key prior to
+                      hashing; the first argument points to a key and the
+                      second argument provides the size of the key
+   rdc_elts         : - NULL, if a key is in the hash table when the key is
                       inserted, the key-associated element in the hash table
                       is updated to the inserted element
                       - non-NULL, if a key is in the hash table when the
@@ -150,14 +166,35 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 			    size_t log_alpha_d,
 			    size_t log_num_locks,
 			    size_t num_grow_threads,
-			    void (*rdc_elt)(void *, const void *, size_t),
+			    int (*cmp_key)(const void *, const void *),
+			    size_t (*rdc_key)(const void *, size_t),
+			    void (*rdc_elts)(void *, const void *, size_t),
 			    void (*free_elt)(void *));
 
 /**
+   Aligns each in-table elt_size block to be accessible with a pointer to a 
+   type T other than character (in addition to a character pointer). If
+   alignment requirement of T is unknown, the size of T can be used
+   as a value of the alignment parameter because size of T >= alignment
+   requirement of T (due to structure of arrays), which may result in
+   overalignment. The hash table keeps the effective type of a copied
+   elt_size block, if it had one at the time of insertion, and T must
+   be compatible with the type to comply with the strict aliasing rules.
+   T can be the same or a cvr-qualified/signed/unsigned version of the
+   type. The operation is optionally called after ht_divchn_pthread_init is
+   completed and before any other operation is called.
+   ht          : pointer to an initialized ht_divchn_pthread_t struct
+   alignment   : alignment requirement or size of the type, a pointer to
+                 which is used to access an elt_size block
+*/
+void ht_divchn_pthread_align_elt(ht_divchn_pthread_t *ht, size_t alignment);
+
+/**
    Inserts a batch of keys and associated elements into a hash table.
-   The batch_keys and batch_elts parameters are not NULL. The
+   The batch_keys and batch_elts parameters are not NULL and point to
+   arrays of blocks of size key_size and elt_size respectively. The
    batch_count parameter is the count of keys in a batch. See also the
-   specification of rdc_elt in ht_divchn_pthread_init.
+   specification of rdc_elts in ht_divchn_pthread_init.
 */
 void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,
@@ -175,9 +212,13 @@ void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
 			       const void *key);
 
 /**
-   Removes a batch of keys and associated elements from a hash table.
-   The batch_keys and batch_elts parameters are not NULL. The
-   batch_count parameter is the count of keys in a batch.
+   Removes a batch of keys and associated elements from a hash table by
+   copying the elements or its pointers into the array of elt_size blocks
+   pointed to by batch_elts. If a key is not in the hash table, leaves the
+   corresponding elt_size block unchanged. The batch_keys and batch_elts
+   parameters are not NULL and point to arrays of blocks of size key_size and
+   elt_size respectively. The batch_count parameter is the count of keys in a
+   batch.
 */
 void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,
@@ -186,8 +227,10 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
 
 /**
    Deletes a batch of keys and associated elements from a hash table.
-   The batch_keys and batch_elts parameters are not NULL. The
-   batch_count parameter is the count of keys in a batch.
+   If a key is not in the hash table, no operation with respect to the key
+   is performed. The batch_keys parameter is not NULL and points to an array
+   of blocks of size key_size. The batch_count parameter is the count of keys
+   in a batch.
 */
 void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
 			      const void *batch_keys,
@@ -195,7 +238,8 @@ void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
 
 /**
    Frees a hash table. The operation is called after all threads completed
-   insert, remove, delete, and search operations.
+   insert, remove, delete, and search operations. Leaves a block of size
+   sizeof(ht_divchn_pthread_t) pointed to by the ht parameter.
 */
 void ht_divchn_pthread_free(ht_divchn_pthread_t *ht);
 
