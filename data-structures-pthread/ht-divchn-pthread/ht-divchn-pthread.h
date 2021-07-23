@@ -243,4 +243,35 @@ void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
 */
 void ht_divchn_pthread_free(ht_divchn_pthread_t *ht);
 
+/**
+   Help construct a hash table parameter value in algorithms and data
+   structures with a hash table parameter, complying with the stict aliasing
+   rules and compatibility rules for function types. In each case, a
+   (qualified) ht_divchn_pthread_t *p0 is converted to (qualified) void * 
+   and back to a (qualified) ht_divchn_ptrhead_t *p1, thus guaranteeing that
+   the value of p0 equals the value of p1. An initialization helper is
+   constructed by the user. 
+*/
+
+void ht_divchn_pthread_align_elt_helper(void *ht, size_t alignment);
+
+void ht_divchn_pthread_insert_helper(void *ht,
+				     const void *batch_keys,
+				     const void *batch_elts,
+				     size_t batch_count);
+
+void *ht_divchn_pthread_search_helper(const void *ht,
+				      const void *key);
+
+void ht_divchn_pthread_remove_helper(void *ht,
+				     const void *batch_keys,
+				     void *batch_elts,
+				     size_t batch_count);
+
+void ht_divchn_pthread_delete_helper(void *ht,
+				     const void *batch_keys,
+				     size_t batch_count);
+
+void ht_divchn_pthread_free_helper(void *ht);
+
 #endif
