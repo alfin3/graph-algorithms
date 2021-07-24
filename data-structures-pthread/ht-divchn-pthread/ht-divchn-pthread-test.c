@@ -448,20 +448,18 @@ void insert_keys_elts(ht_divchn_pthread_t *ht,
   for (i = 0; i < num_threads; i++){
     ias[i].start = start;
     ias[i].count = seg_count;
+    ias[i].count += (rem_count > 0 && rem_count--);
     ias[i].batch_count = batch_count;
-    ias[i].batch_count += (rem_count > 0 && rem_count--);
     ias[i].keys = keys;
     ias[i].elts = elts;
     ias[i].ht = ht;
     start += ias[i].count;
   }
   t = timer();
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_create_perror(&iids[i], insert_thread, &ias[i]);
   }
-  /* use the parent thread as well */
-  insert_thread(&ias[0]);
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_join_perror(iids[i], NULL);
   }
   t = timer() - t;
@@ -550,21 +548,18 @@ size_t search_ht_helper(const ht_divchn_pthread_t *ht,
   }
   /* timing */
   *t = timer();
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_create_perror(&sids[i], search_thread, &sas[i]);
   }
-  search_thread(&sas[0]);
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_join_perror(sids[i], NULL);
   }
   *t = timer() - *t;
   /* correctness */
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_create_perror(&sids[i], search_res_thread, &sas[i]);
   }
-  search_res_thread(&sas[0]);
-  ret += elt_counts[0];
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_join_perror(sids[i], NULL);
     ret += elt_counts[i];
   }
@@ -775,20 +770,18 @@ void remove_key_elts(ht_divchn_pthread_t *ht,
   for (i = 0; i < num_threads; i++){
     ras[i].start = start;
     ras[i].count = seg_count;
+    ras[i].count += (rem_count > 0 && rem_count--);
     ras[i].batch_count = batch_count;
-    ras[i].batch_count += (rem_count > 0 && rem_count--);
     ras[i].keys = keys;
     ras[i].elts = elts;
     ras[i].ht = ht;
     start += ras[i].count;
   }
   t = timer();
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_create_perror(&rids[i], remove_thread, &ras[i]);
   }
-  /* use the parent thread as well */
-  remove_thread(&ras[0]);
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_join_perror(rids[i], NULL);
   }
   t = timer() - t;
@@ -852,19 +845,17 @@ void delete_key_elts(ht_divchn_pthread_t *ht,
   for (i = 0; i < num_threads; i++){
     das[i].start = start;
     das[i].count = seg_count;
+    das[i].count += (rem_count > 0 && rem_count--);
     das[i].batch_count = batch_count;
-    das[i].batch_count += (rem_count > 0 && rem_count--);
     das[i].keys = keys;
     das[i].ht = ht;
     start += das[i].count;
   }
   t = timer();
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_create_perror(&dids[i], delete_thread, &das[i]);
   }
-  /* use the parent thread as well */
-  delete_thread(&das[0]);
-  for (i = 1; i < num_threads; i++){
+  for (i = 0; i < num_threads; i++){
     thread_join_perror(dids[i], NULL);
   }
   t = timer() - t;

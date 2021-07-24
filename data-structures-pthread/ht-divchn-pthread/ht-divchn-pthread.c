@@ -663,11 +663,10 @@ static void ht_grow(ht_divchn_pthread_t *ht){
     ras[i].count += (rem_count > 0 && rem_count--);
     ras[i].prev_key_elts = prev_key_elts;
     ras[i].ht = ht;
-    if (i > 0) thread_create_perror(&rids[i], reinsert_thread, &ras[i]);
+    thread_create_perror(&rids[i], reinsert_thread, &ras[i]);
     start += ras[i].count;
   }
-  reinsert_thread(&ras[0]); /* use the parent threads as well */
-  for (i = 1; i < ht->num_grow_threads; i++){
+  for (i = 0; i < ht->num_grow_threads; i++){
     thread_join_perror(rids[i], NULL);
   }
   free(prev_key_elts);
