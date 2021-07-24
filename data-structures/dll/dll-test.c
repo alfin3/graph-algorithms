@@ -1,11 +1,13 @@
 /**
    dll-test.c
 
-   Tests of a generic doubly linked list in a circular representation.
+   Tests of a doubly linked list with cache-efficient allocation of
+   nodes with two type-generic data blocks. The list is in a circular
+   representation.
 
    The following command line arguments can be used to customize tests:
    dll-test
-      [0, # bits in int - 2) : i s.t. # inserts = 2**i
+      [0, bit width of int - 2) : i s.t. # inserts = 2**i
       [0, 1] : on/off prepend append free int test
       [0, 1] : on/off prepend append free int_ptr (noncontiguous) test
       [0, 1] : on/off corner cases test
@@ -21,8 +23,12 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
-   is even.
+   C89/C90 and C99 with the only requirement that the number of value 
+   bits (width) of size_t is even *. 
+
+   * currently CHAR_BIT * sizeof(size_t) and CHAR_BIT * sizeof(int) are used
+     to get bit widths under the assumption that all bits participate in
+     the value (and sign).
 */
 
 #include <stdio.h>
@@ -36,11 +42,11 @@
 
 /* input handling */
 const char *C_USAGE =
-  "dll-test \n"
-  "[0, # bits in int - 2) : i s.t. # inserts = 2**i \n"
-  "[0, 1] : on/off prepend append free int test \n"
-  "[0, 1] : on/off prepend append free int_ptr (noncontiguous) test \n"
-  "[0, 1] : on/off corner cases test \n";
+  "dll-test\n"
+  "[0, bit width of int - 2) : i s.t. # inserts = 2**i\n"
+  "[0, 1] : on/off prepend append free int test\n"
+  "[0, 1] : on/off prepend append free int_ptr (noncontiguous) test\n"
+  "[0, 1] : on/off corner cases test\n";
 const int C_ARGC_MAX = 5;
 const size_t C_ARGS_DEF[4] = {13, 1, 1, 1};
 const size_t C_INT_BIT = CHAR_BIT * sizeof(int);
@@ -245,7 +251,7 @@ void run_prepend_append_free_int_ptr_test(int log_ins){
 }
 
 /**
-   Runs a corner cases tests.
+   Runs a corner cases test.
 */
 void run_corner_cases_test(){
   int res = 1;

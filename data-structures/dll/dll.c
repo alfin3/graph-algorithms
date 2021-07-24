@@ -1,8 +1,8 @@
 /**
    dll.c
 
-   A generic dynamically allocated doubly linked list in a circular
-   representation.
+   A doubly linked list with cache-efficient allocation of nodes with two
+   type-generic data blocks. The list is in a circular representation.
 
    Given the circular representation of the list, the head pointer in the
    provided list operations is not limited to a fixed position in the list.
@@ -11,20 +11,18 @@
    pointer for searching and modifying the list from and at any position,
    including a fixed position if desired.
    
-   A list node contains i) a dll_node_t struct for pointer operations, ii)
-   a contiguous key and iii) an element or a pointer to an element. A key is
-   an object within a contiguous memory block (e.g. basic type, array, or
-   struct). If cmp_key is NULL it is treated as an array of bytes. An
-   element is contiguous or non-contiguous. Given a char *p pointer to a
-   node, its key is at p + sizeof(dll_node_t) and its element/element pointer
-   is at p + sizeof(key_elt_t) + key_size. Access is simplified by the
-   dll_ptr function.
+   A list node contains i) a malloc-aligned key, ii) a dll_node_t
+   struct for pointer operations, iii) and an optionally aligned element
+   or a pointer to an element, all within a single allocated block for
+   cache-efficiency and to reduce administrative bytes. A key is an
+   object within a contiguous memory block (e.g. basic type, array, or
+   struct). An element is contiguous or non-contiguous.
 
-   The implementation provides a guarantee that a block with a dll_node_t
-   struct, a key, and an element/element pointer keeps its address in memory
-   throughout its lifetime in a list. The implementation may not be slower
-   (as tested) than a singly linked list due to instruction-level
-   parallelism.
+   The implementation provides a guarantee that a key, a dll_node_t struct,
+   and an element/element pointer belonging to the same node keep their
+   addresses in memory throughout the lifetime of the node in a list. The
+   implementation may not be slower (as tested) than a singly linked list
+   due to instruction-level parallelism.
 
    The implementation only uses integer and pointer operations. Given
    parameter values within the specified ranges, the implementation provides
@@ -33,11 +31,11 @@
    resources. The behavior outside the specified parameter ranges is
    undefined.
 
-   The node implementation reduces memory footprint and facilitates hashing
-   applications, such as mapping a key to a node pointer for fast in-list
-   access and using a list for chaining hash keys and their elements in a
-   hash table. In combination with the circular representation, the node
-   implementation also facilitates the parallelization of search.
+   The node implementation facilitates type-generic hashing applications,
+   such as mapping a key to a node pointer for fast in-list access and
+   using a list for chaining hash keys and their elements in a hash table.
+   In combination with the circular representation, the node implementation
+   also facilitates the parallelization of search.
 
    The implementation does not use stdint.h, and is portable under C89/C90
    and C99.
@@ -51,15 +49,13 @@
 
 /**
    Initializes an empty doubly linked list by setting a head pointer to NULL
-   and key_offset and elt_offset in a dll_t struct to values
-   according to the memory alignment requirements. Given a char *p
-   pointer to a dll_node_t struct, the key_size block is accessed with
-   p - key_offset and the elt_size block is accessed with p + elt_offset,
-   as implemented in dll_key_ptr and dll_elt_ptr functions.
-   An in-list key_size block can be accessed with a pointer to any type
-   with which a malloc'ed block can be accessed. An in-list elt_size block
-   can be accessed only with a pointer to a character (e.g. for memcpy),
-   unless additional alignment is performed by calling dll_align_elt.
+   and key_offset and elt_offset in a dll_t struct to values according to
+   the memory alignment requirements. An in-list key (key_size block) can be
+   accessed with a pointer to any type with which a malloc'ed block can be
+   accessed. An in-list element/element pointer (elt_size block) is
+   guaranteed to be accessible only with a pointer to a character (e.g. for
+   memcpy), unless additional alignment is performed by calling
+   dll_align_elt.
    ll          : pointer to an initialized dll_t struct
    head        : pointer to a preallocated block of size of a head pointer
    elt_size    : - non-zero size of an element, if the element is within a
@@ -82,19 +78,23 @@ void dll_init(dll_t *ll,
     ll->key_offset = add_sz_perror(ll->key_offset,
 				   (rem > 0) * (sizeof(dll_node_t *) - rem));
   }
-  /* align elt_size block dereferencable with a character pointer */
+  /* elt_size block guaranteed to be accessible with a character pointer */
   ll->elt_offset = sizeof(dll_node_t);
   *head = NULL;
 }
 
 /**
-   Aligns in-list elt_size blocks to be accessible with a pointer to a 
-   type other than character (in addition to a character pointer). If
-   alignment requirement of the type is unknown, the type size can be used
-   as a value of the alignment parameter because type size >= alignment
-   requirement of the type (due to structure of arrays), which may result in
-   overalignment. The operation is optionally called after dll_init is
-   completed.
+   Aligns each in-list elt_size block to be accessible with a pointer to a 
+   type T other than character (in addition to a character pointer). If
+   alignment requirement of T is unknown, the size of T can be used
+   as a value of the alignment parameter because size of T >= alignment
+   requirement of T (due to structure of arrays), which may result in
+   overalignment. The list keeps the effective type of a copied
+   elt_size block, if it had one at the time of insertion, and T must
+   be compatible with the type to comply with the strict aliasing rules.
+   T can be the same or a cvr-qualified/signed/unsigned version of the
+   type. The operation is optionally called after dll_init is
+   completed and before any other operation is called.
    ll          : pointer to an initialized dll_t struct
    alignment   : alignment requirement or size of the type, a pointer to
                  which is used to access an elt_size block
@@ -120,8 +120,7 @@ void dll_align_elt(dll_t *ll, size_t alignment){
    ll          : pointer to an initialized dll_t struct
    head        : pointer to a head pointer to an initialized list           
    key         : non-NULL pointer to a key object of size key_size within a
-                 contiguous memory block (e.g. basic type, array, struct);
-                 if cmp_key is NULL it is treated as an array of bytes
+                 contiguous memory block (e.g. basic type, array, struct)
    elt         : - non-NULL pointer to a block of size elt_size that
                  is an element, if the element is contiguous, or pointer to
                  an element, if the element is noncontiguous or a pointer to
@@ -140,10 +139,9 @@ void dll_prepend_new(const dll_t *ll,
 		     const void *elt,
 		     size_t key_size,
 		     size_t elt_size){
-  /* allocate a single block to reduce admin and alignment bytes and
-     for cache efficiency */
   void *node_block = NULL;
   dll_node_t *node = NULL;
+  /* allocate single block for cache efficiency and to reduce admin bytes */
   node_block =  
     malloc_perror(1, add_sz_perror(ll->key_offset,
 				   add_sz_perror(ll->elt_offset, elt_size)));
@@ -206,14 +204,15 @@ void dll_append(dll_node_t **head, dll_node_t *node){
 }
 
 /**
-   Returns a pointer to the key_size block of a node.
+   Returns a pointer to the key object of a node.
 */
 void *dll_key_ptr(const dll_t *ll, const dll_node_t *node){
   return (void *)((char *)node - ll->key_offset);
 }
 
 /**
-   Returns a pointer to the elt_size block of a node.
+   Returns a pointer to the elt_size block of a node, which
+   is an element or a pointer to an element.
 */
 void *dll_elt_ptr(const dll_t *ll, const dll_node_t *node){
   return (void *)((char *)node + ll->elt_offset);
@@ -221,19 +220,21 @@ void *dll_elt_ptr(const dll_t *ll, const dll_node_t *node){
 
 /**
    Relative to a head pointer, returns a pointer to the clockwise (next)
-   first node with a key that has the same bit pattern as the block pointed
-   to by key, or NULL if such a node in not found. Temporarily modifies a
-   node to mark the end of the list during search.
+   first node with a key object that equals the key object pointed to by
+   the key parameter according to cmp_key, or NULL if such a node in not
+   found. Temporarily modifies a node to mark the end of the list during
+   search.
    ll          : pointer to an initialized dll_t struct
    head        : pointer to a head pointer to an initialized list
    key         : non-NULL pointer to a key object of size key_size within a
-                 contiguous memory block; if cmp_key is NULL it is treated
-                 as an array of bytes
+                 contiguous memory block
    key_size    : non-zero size of a key object in bytes
-   cmp_key     : comparison function which returns a zero integer value iff
-                 the two keys accessed through the first and the second 
-                 arguments are equal; each argument is a pointer to a
-                 key_size block
+   cmp_key     : - if NULL then a default memcmp-based comparison of keys
+                 is performed
+                 - otherwise comparison function is applied which returns a
+                 zero integer value iff the two keys accessed through the
+                 first and the second arguments are equal; each argument is
+                 a pointer to a key_size block
 */
 dll_node_t *dll_search_key(const dll_t *ll,
 			   dll_node_t * const *head,
@@ -244,9 +245,9 @@ dll_node_t *dll_search_key(const dll_t *ll,
   if (node == NULL) return NULL;
   /* NULL marker to avoid undef. behavior of pointer comparison */
   (*head)->prev->next = NULL;
-  if (cmp_key == NULL){
+  if (cmp_key != NULL){
     while(node != NULL){
-      if (memcmp(dll_key_ptr(ll, node), key, key_size) == 0){
+      if (cmp_key(dll_key_ptr(ll, node), key) == 0){
 	(*head)->prev->next = *head;
 	return (dll_node_t *)node;
       }
@@ -254,7 +255,7 @@ dll_node_t *dll_search_key(const dll_t *ll,
     }
   }else{
     while(node != NULL){
-      if (cmp_key(dll_key_ptr(ll, node), key) == 0){
+      if (memcmp(dll_key_ptr(ll, node), key, key_size) == 0){
 	(*head)->prev->next = *head;
 	return (dll_node_t *)node;
       }
@@ -267,21 +268,12 @@ dll_node_t *dll_search_key(const dll_t *ll,
 
 /**
    Relative to a head pointer, returns a pointer to the clockwise (next)
-   first node with a key that has the same bit pattern as the block pointed
-   to by key, or NULL if such a node in not found. Assumes that every key
-   in a list is unique. The list is no modified during the operation which
-   does not require thread synchronization overhead for parallel search
-   queries.
-   ll          : pointer to an initialized dll_t struct
-   head        : pointer to a head pointer to an initialized list
-   key         : non-NULL pointer to a key object of size key_size within a
-                 contiguous memory block; if cmp_key is NULL it is treated
-                 as an array of bytes
-   key_size    : non-zero size of a key object in bytes
-   cmp_key     : comparison function which returns a zero integer value iff
-                 the two keys accessed through the first and the second 
-                 arguments are equal; each argument is a pointer to a
-                 key_size block
+   first node with a key object that equals the key object pointed to by
+   the key parameter according to cmp_key, or NULL if such a node in not
+   found. Assumes that every key in a list is unique. The list is not 
+   modified during the operation which enables parallel queries without 
+   thread synchronization overhead. Please see the parameter specification
+   in dll_search_key.
 */
 dll_node_t *dll_search_uq_key(const dll_t *ll,
 			      dll_node_t * const *head,
@@ -295,9 +287,7 @@ dll_node_t *dll_search_uq_key(const dll_t *ll,
   last_key = dll_key_ptr(ll, (*head)->prev);
   if (cmp_key != NULL){
     while(cmp_key(dll_key_ptr(ll, node), last_key) != 0){
-      if (cmp_key(dll_key_ptr(ll, node), key) == 0){
-	return (dll_node_t *)node;
-      }
+      if (cmp_key(dll_key_ptr(ll, node), key) == 0) return (dll_node_t *)node;
       node = node->next;
     }
     /* compare last key */
@@ -310,7 +300,9 @@ dll_node_t *dll_search_uq_key(const dll_t *ll,
       node = node->next;
     }
     /* compare last key */
-    if (memcmp(dll_key_ptr(ll, node), key, key_size) == 0) return (dll_node_t *)node;
+    if (memcmp(dll_key_ptr(ll, node), key, key_size) == 0){
+      return (dll_node_t *)node;
+    }
   }
   return NULL;
 }
