@@ -2,20 +2,25 @@
    graph.h
 
    Struct declarations and declarations of accessible functions for 
-   representing a graph with generic weights.
+   representing a graph with generic vertices and weights.
 
    Each list in an adjacency list is represented by a dynamically growing 
-   stack. A vertex is a size_t index starting from 0. If a graph is weighted,
-   the edge weights are of any basic type (e.g. char, int, double).
+   stack. A vertex is of any inteter type starting with values starting from
+   0. If a graph is weighted, the edge weights are of any basic type (e.g.
+   char, int, double) or struct (e.g. two unsigned integer). A single stack
+   of adjacent vertex weight pairs with suitable alignment is used to
+   achieve cache efficiency in graph algorithms.
 
-   The implementation uses a single stack of adjacent vertex weight pairs
-   to achieve cache efficiency in graph algorithms. The value of pair_size
-   (in bytes) enables a user to iterate with a char *p pointer across a stack
-   and access a weight by p + offset when p points to a vertex of a pair.
+   The implementation only uses integer and pointer operations (any non-
+   integer operations on weights are defined by the user). Given
+   parameter values within the specified ranges, the implementation provides
+   an error message and an exit is executed if an integer overflow is
+   attempted or an allocation is not completed due to insufficient
+   resources. The behavior outside the specified parameter ranges is
+   undefined.
 
-   Due to cache-efficient allocation, the implementation requires that
-   sizeof(size_t) and the size of a generic weight are powers of two.
-   The size of weight can also be 0.
+   The implementation does not use stdint.h and is portable under
+   C89/C90 and C99.
 
    Optimization:
 
@@ -37,21 +42,27 @@
 typedef struct{
   size_t num_vts; 
   size_t num_es;
+  size_t vt_size;
   size_t wt_size; /* 0 if a graph is unweighted */
-  size_t *u;      /* u of (u, v) edges, NULL if no edges */
-  size_t *v;      /* v of (u, v) edges, NULL if no edges */
+  void *u;        /* u of (u, v) edges, NULL if no edges */
+  void *v;        /* v of (u, v) edges, NULL if no edges */
   void *wts;      /* NULL if no edges or wt_size is 0 */
+  size_t (*read_vt)(const void *);
+  void (*write_vt)(void *, size_t);
 } graph_t;
 
 typedef struct{
   size_t num_vts;
   size_t num_es;
+  size_t vt_size;
   size_t wt_size;
   size_t pair_size; /* size of a vertex weight pair aligned in memory */
-  size_t offset;    /* number of bytes from beginning of pair to weight */
+  size_t wt_offset; /* number of bytes from beginning of pair to weight */
   void *buf;        /* buffer that is only used by adj_lst_ functions */
   stack_t **vt_wts; /* stacks of vertex weight pairs, NULL if no vertices */
-} adj_lst_t; /* vertex weight pairs are contiguous to decrease cache misses */
+  size_t (*read_vt)(const void *);
+  void (*write_vt)(void *, size_t);
+} adj_lst_t;
 
 /**
    Initializes a weighted or unweighted graph with n vertices and no edges,
@@ -60,7 +71,12 @@ typedef struct{
    n           : number of vertices
    wt_size     : 0 if the graph is unweighted, > 0 otherwise
 */
-void graph_base_init(graph_t *g, size_t n, size_t wt_size);
+void graph_base_init(graph_t *g,
+		     size_t num_vts,
+		     size_t vt_size,
+		     size_t wt_size,
+		     size_t (*read_vt)(const void *),
+		     void (*write_vt)(void *, size_t));
 
 /**
    Frees a graph and leaves a block of size sizeof(graph_t) pointed to by 
@@ -69,18 +85,33 @@ void graph_base_init(graph_t *g, size_t n, size_t wt_size);
 void graph_free(graph_t *g);
 
 /**
-   Initializes the adjacency list of a graph.
+   Initializes an empty adjacency list according to a graph.
    a           : pointer to a preallocated block of size sizeof(adj_lst_t)
    g           : pointer to a graph previously constructed with at least
                  graph_base_init
 */
-void adj_lst_init(adj_lst_t *a, const graph_t *g);
+void adj_lst_base_init(adj_lst_t *a, const graph_t *g);
 
 /**
-   Frees an adjacency list and leaves a block of size sizeof(adj_lst_t)
-   pointed to by the a parameter.
+   Aligns the vertices and weights of an adjacency list according to 
+   the values of the alignment parameters. If the alignment requirement
+   of only one type is known, then the size of the other type can be used
+   as a value of the other alignment parameter because size of
+   type >= alignment requirement of type (due to structure of arrays), 
+   which may result in overalignment. The call to this operation may 
+   result in reduction of space requirements as compared to adj_lst_base_init
+   alone. The operation is optionally called after adj_lst_base_init is
+   completed and before any other operation is adj_list_ operation is
+   called. 
+   a            : pointer to a adj_lst_t struct initialized with
+                  adj_lst_base_init
+   vt_alignment : alignment requirement or size of the integer type of
+                  a vertex
+   wt_alignment : alignment requirement or size of the type of a weight
 */
-void adj_lst_free(adj_lst_t *a);
+void adj_lst_align(adj_lst_t *a,
+		   size_t vt_alignment,
+		   size_t wt_alignment);
 
 /**
    Builds the adjacency list of a directed graph.
@@ -125,7 +156,10 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
    added if bern returns nonzero.
 */
 void adj_lst_rand_dir(adj_lst_t *a,
-		      size_t n,
+		      size_t num_vts,
+		      size_t vt_size,
+		      size_t (*read_vt)(const void *),
+		      void (*write_vt)(void *, size_t),
 		      int (*bern)(void *),
 		      void *arg);
 
@@ -136,8 +170,17 @@ void adj_lst_rand_dir(adj_lst_t *a,
    parameter. An edge is added if bern returns nonzero.
 */
 void adj_lst_rand_undir(adj_lst_t *a,
-			size_t n,
+			size_t num_vts,
+			size_t vt_size,
+			size_t (*read_vt)(const void *),
+			void (*write_vt)(void *, size_t),
 			int (*bern)(void *),
 			void *arg);
+
+/**
+   Frees an adjacency list and leaves a block of size sizeof(adj_lst_t)
+   pointed to by the a parameter.
+*/
+void adj_lst_free(adj_lst_t *a);
 
 #endif
