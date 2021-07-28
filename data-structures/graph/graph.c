@@ -1,14 +1,20 @@
 /**
    graph.c
 
-   Functions for representing a graph with generic vertices and weights. 
+   Functions for representing a graph with generic integer vertices and
+   generic weights. 
 
    Each list in an adjacency list is represented by a dynamically growing 
-   stack. A vertex is of any inteter type starting with values starting from
-   0. If a graph is weighted, the edge weights are of any basic type (e.g.
-   char, int, double) or struct (e.g. two unsigned integer). A single stack
-   of adjacent vertex weight pairs with suitable alignment is used to
-   achieve cache efficiency in graph algorithms.
+   stack. A vertex is of any integer type with values starting from 0. If
+   a graph is weighted, an edge weight is an object within a contiguous 
+   memory block, such as an object of basic type (e.g. char, int, double)
+   or a struct (e.g. two unsigned integers).
+  
+   A single stack of adjacent vertex weight pairs with adjustable alignment
+   in memory is used to achieve cache efficiency in graph algorithms.
+   Depending on the problem size and a given system, the choice of an integer
+   type with a smaller size for vertices  may provide additional
+   cache efficiency in addition to reducing space requirements.
 
    The implementation only uses integer and pointer operations (any non-
    integer operations on weights are defined by the user). Given
@@ -21,7 +27,7 @@
    The implementation does not use stdint.h and is portable under
    C89/C90 and C99.
 
-   Optimization:
+   Optimization notes:
 
    -  The implementation resulted in upto 1.3 - 1.4x speedups for dijkstra
    and prim and upto 1.1x for tsp over an implementation with separate vertex
@@ -42,11 +48,61 @@
 const size_t STACK_INIT_COUNT = 1;
 
 /**
-   Initializes a weighted or unweighted graph with n vertices and no edges,
-   providing a basis for graph construction.
+   Read and write vertices of different integer types.
+*/
+
+size_t read_uchar(const void *a){
+  return (size_t)(*(const unsigned char *)a);
+}
+
+size_t read_ushort(const void *a){
+  return (size_t)(*(const unsigned short *)a);
+}
+
+size_t read_uint(const void *a){
+  return (size_t)(*(const unsigned int *)a);
+}
+
+size_t read_ulong(const void *a){
+  return (size_t)(*(const unsigned long *)a);
+}
+
+size_t read_sz(const void *a){
+  return *(const size_t *)a;
+}
+
+void write_uchar(void *a, size_t val){
+  *(unsigned char *)a = val;
+}
+
+void write_ushort(void *a, size_t val){
+  *(unsigned short *)a = val;
+}
+
+void write_uint(void *a, size_t val){
+  *(unsigned int *)a = val;
+}
+
+void write_ulong(void *a, size_t val){
+  *(unsigned long *)a = val;
+}
+
+void write_sz(void *a, size_t val){
+  *(size_t *)a = val;
+}
+
+/**
+   Initializes a weighted or unweighted graph with num_vts vertices and
+   no edges, providing a basis for graph construction.
    g           : pointer to a preallocated block of size sizeof(graph_t)
-   n           : number of vertices
-   wt_size     : 0 if the graph is unweighted, > 0 otherwise
+   num_vts     : number of vertices
+   vt_size     : > 0 size of the integer type used to represent a vertex
+   wt_size     : > 0 size of object used to represent a weight, if a graph
+                 is weighted; 0 if the graph is not weighted
+   read_vt     : non-NULL pointer to a function for reading a vertex, which
+                 may be one of the provided functions
+   write_vt    : non-NULL pointer to a function for writing a vertex, which
+                 may be one of the provided functions
 */
 void graph_base_init(graph_t *g,
 		     size_t num_vts,
@@ -79,7 +135,8 @@ void graph_free(graph_t *g){
 }
 
 /**
-   Initializes an empty adjacency list according to a graph.
+   Initializes an empty adjacency list according to a graph. Aligns vertices
+   and weights according to their sizes, which may result in overalignment.
    a           : pointer to a preallocated block of size sizeof(adj_lst_t)
    g           : pointer to a graph previously constructed with at least
                  graph_base_init
@@ -98,8 +155,7 @@ void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
     a->wt_offset = a->wt_size;
   }else{
     wt_rem = a->vt_size % a->wt_size;
-    a->wt_offset = a->vt_size;
-    a->wt_offset = add_sz_perror(a->wt_offset,
+    a->wt_offset = add_sz_perror(a->vt_size,
 				 (wt_rem > 0) * (a->wt_size - wt_rem));
     
   }
@@ -129,8 +185,7 @@ void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
    which may result in overalignment. The call to this operation may 
    result in reduction of space requirements as compared to adj_lst_base_init
    alone. The operation is optionally called after adj_lst_base_init is
-   completed and before any other operation is adj_list_ operation is
-   called. 
+   completed and before any other adj_list_ operation is called. 
    a            : pointer to a adj_lst_t struct initialized with
                   adj_lst_base_init
    vt_alignment : alignment requirement or size of the integer type of
@@ -148,8 +203,7 @@ void adj_lst_align(adj_lst_t *a,
     a->wt_offset = wt_alignment;
   }else{
     wt_rem = a->vt_size % wt_alignment;
-    a->wt_offset = a->vt_size;
-    a->wt_offset = add_sz_perror(a->wt_offset,
+    a->wt_offset = add_sz_perror(a->vt_size,
 				 (wt_rem > 0) * (wt_alignment - wt_rem));
   }
   vt_rem = add_sz_perror(a->wt_offset, a->wt_size) % vt_alignment;
@@ -176,14 +230,14 @@ void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
   char *buf_wt = (char *)a->buf + a->wt_offset;
   for (i = 0; i < g->num_es; i++){
     memcpy(a->buf, v, a->vt_size);
-    if (a->wt_size > 0){
+    if (a->wt_size > 0 && wt != NULL){
       memcpy(buf_wt, wt, a->wt_size);
+      wt += a->wt_size;
     }
     stack_push(a->vt_wts[a->read_vt(u)], a->buf);
     a->num_es++;
     u += a->vt_size;
     v += a->vt_size;
-    wt += a->wt_size;
   }
 }
 
@@ -198,8 +252,9 @@ void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
   char *buf_wt = (char *)a->buf + a->wt_offset;
   for (i = 0; i < g->num_es; i++){
     memcpy(a->buf, v, a->vt_size);
-    if (a->wt_size > 0){
+    if (a->wt_size > 0 && wt != NULL){
       memcpy(buf_wt, wt, a->wt_size);
+      wt += a->wt_size;
     }
     stack_push(a->vt_wts[a->read_vt(u)], a->buf);
     memcpy(a->buf, u, a->vt_size);
@@ -207,7 +262,6 @@ void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
     a->num_es += 2;
     u += a->vt_size;
     v += a->vt_size;
-    wt += a->wt_size;
   }
 }
 
@@ -258,10 +312,13 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
 }
 
 /**
-   Builds the adjacency list of a directed unweighted graph with n vertices,
-   where each of n(n - 1) possible edges is added according to the Bernoulli
-   distribution provided by bern that takes arg as its parameter. An edge is
-   added if bern returns nonzero.
+   Builds the adjacency list of a directed unweighted graph with num_vts
+   vertices, where each of num_vts(num_vts - 1) possible edges is added
+   according to the Bernoulli distribution provided by bern that takes arg
+   as its parameter. An edge is added if bern returns nonzero. a is pointer
+   to a preallocated block of size sizeof(adj_lst_t), not initialized.
+   Please see the parameter specification in graph_base_init and
+   adj_lst_base_init.
 */
 void adj_lst_rand_dir(adj_lst_t *a,
 		      size_t num_vts,
@@ -285,10 +342,13 @@ void adj_lst_rand_dir(adj_lst_t *a,
 }
 
 /**
-   Builds the adjacency list of an undirected unweighted graph with n 
-   vertices, where each of n(n - 1)/2 possible edges is added according to
-   the Bernoulli distribution provided by bern that takes arg as its
-   parameter. An edge is added if bern returns nonzero.
+   Builds the adjacency list of an undirected unweighted graph with num_vts 
+   vertices, where each of num_vts(num_vts - 1)/2 possible edges is added
+   according to the Bernoulli distribution provided by bern that takes arg
+   as its parameter. An edge is added if bern returns nonzero. a is pointer
+   to a preallocated block of size sizeof(adj_lst_t), not initialized.
+   Please see the parameter specification in graph_base_init and
+   adj_lst_base_init.
 */
 void adj_lst_rand_undir(adj_lst_t *a,
 			size_t num_vts,
