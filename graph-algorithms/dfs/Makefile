@@ -26,16 +26,19 @@ DS_DIR = ../../data-structures/
 GRAPH_DIR = $(DS_DIR)graph/
 STACK_DIR = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
+UTILS_MOD_DIR = ../../utilities/utilities-mod/
 CFLAGS = -I$(GRAPH_DIR)                               \
          -I$(STACK_DIR)                               \
          -I$(UTILS_MEM_DIR)                           \
+         -I$(UTILS_MOD_DIR)                           \
          ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = dfs-test.o                      \
       dfs.o                           \
       $(GRAPH_DIR)graph.o             \
       $(STACK_DIR)stack.o             \
-      $(UTILS_MEM_DIR)utilities-mem.o 
+      $(UTILS_MEM_DIR)utilities-mem.o \
+      $(UTILS_MOD_DIR)utilities-mod.o 
 
 
 dfs-test : $(OBJ)
@@ -44,7 +47,8 @@ dfs-test : $(OBJ)
 dfs-test.o                      : dfs.h                           \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
-                                  $(UTILS_MEM_DIR)utilities-mem.h
+                                  $(UTILS_MEM_DIR)utilities-mem.h \
+                                  $(UTILS_MOD_DIR)utilities-mod.h
 dfs.o                           : dfs.h                           \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h
@@ -54,6 +58,7 @@ $(GRAPH_DIR)graph.o             : $(GRAPH_DIR)graph.h             \
 $(STACK_DIR)stack.o             : $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
+$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h
 
 .PHONY : clean clean-all
 
