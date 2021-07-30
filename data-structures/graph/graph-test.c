@@ -82,15 +82,15 @@ void complete_ulong_graph_init(graph_t *g, size_t num_vts);
 void complete_sz_graph_init(graph_t *g, size_t num_vts);
 const size_t C_FN_COUNT = 4;
 size_t (* const C_READ[4])(const void *) ={
-  read_ushort,
-  read_uint,
-  read_ulong,
-  read_sz};
+  graph_read_ushort,
+  graph_read_uint,
+  graph_read_ulong,
+  graph_read_sz};
 void (* const C_WRITE[4])(void *, size_t) ={
-  write_ushort,
-  write_uint,
-  write_ulong,
-  write_sz};
+  graph_write_ushort,
+  graph_write_uint,
+  graph_write_ulong,
+  graph_write_sz};
 void (* const C_CMPL_GRAPH_INIT[4])(graph_t *, size_t) ={
   complete_ushort_graph_init,
   complete_uint_graph_init,
@@ -129,8 +129,8 @@ void uchar_uchar_graph_init(graph_t *g){
 		  C_NUM_VTS,
 		  sizeof(unsigned char),
 		  sizeof(unsigned char),
-		  read_uchar,
-		  write_uchar);
+		  graph_read_uchar,
+		  graph_write_uchar);
   g->num_es = C_NUM_ES;
   g->u = (unsigned char *)C_UCHAR_U;
   g->v = (unsigned char *)C_UCHAR_V;
@@ -142,8 +142,8 @@ void uchar_ulong_graph_init(graph_t *g){
 		  C_NUM_VTS,
 		  sizeof(unsigned char),
 		  sizeof(unsigned long),
-		  read_uchar,
-		  write_uchar);
+		  graph_read_uchar,
+		  graph_write_uchar);
   g->num_es = C_NUM_ES;
   g->u = (unsigned char *)C_UCHAR_U;
   g->v = (unsigned char *)C_UCHAR_V;
@@ -155,8 +155,8 @@ void uchar_double_graph_init(graph_t *g){
 		  C_NUM_VTS,
 		  sizeof(unsigned char),
 		  sizeof(double),
-		  read_uchar,
-		  write_uchar);
+		  graph_read_uchar,
+		  graph_write_uchar);
   g->num_es = C_NUM_ES;
   g->u = (unsigned char *)C_UCHAR_U;
   g->v = (unsigned char *)C_UCHAR_V;
@@ -173,8 +173,8 @@ void ulong_uchar_graph_init(graph_t *g){
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
 		  sizeof(unsigned char),
-		  read_ulong,
-		  write_ulong);
+		  graph_read_ulong,
+		  graph_write_ulong);
   g->num_es = C_NUM_ES;
   g->u = (unsigned long *)C_ULONG_U;
   g->v = (unsigned long *)C_ULONG_V;
@@ -186,8 +186,8 @@ void ulong_ulong_graph_init(graph_t *g){
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
 		  sizeof(unsigned long),
-		  read_ulong,
-		  write_ulong);
+		  graph_read_ulong,
+		  graph_write_ulong);
   g->num_es = C_NUM_ES;
   g->u = (unsigned long *)C_ULONG_U;
   g->v = (unsigned long *)C_ULONG_V;
@@ -199,8 +199,8 @@ void ulong_double_graph_init(graph_t *g){
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
 		  sizeof(double),
-		  read_ulong,
-		  write_ulong);
+		  graph_read_ulong,
+		  graph_write_ulong);
   g->num_es = C_NUM_ES;
   g->u = (unsigned long *)C_ULONG_U;
   g->v = (unsigned long *)C_ULONG_V;
@@ -311,7 +311,12 @@ void complete_ushort_graph_init(graph_t *g, size_t num_vts){
   size_t num_es = mul_sz_perror(num_vts, num_vts - 1) >> 1;
   char *up = NULL;
   char *vp = NULL;
-  graph_base_init(g, num_vts, vt_size, 0, read_ushort, write_ushort);
+  graph_base_init(g,
+		  num_vts,
+		  vt_size,
+		  0,
+		  graph_read_ushort,
+		  graph_write_ushort);
   g->num_es = num_es;
   g->u = malloc_perror(g->num_es, vt_size);
   g->v = malloc_perror(g->num_es, vt_size);
@@ -333,7 +338,7 @@ void complete_uint_graph_init(graph_t *g, size_t num_vts){
   size_t num_es = mul_sz_perror(num_vts, num_vts - 1) >> 1;
   char *up = NULL;
   char *vp = NULL;
-  graph_base_init(g, num_vts, vt_size, 0, read_uint, write_uint);
+  graph_base_init(g, num_vts, vt_size, 0, graph_read_uint, graph_write_uint);
   g->num_es = num_es;
   g->u = malloc_perror(g->num_es, vt_size);
   g->v = malloc_perror(g->num_es, vt_size);
@@ -355,7 +360,12 @@ void complete_ulong_graph_init(graph_t *g, size_t num_vts){
   size_t num_es = mul_sz_perror(num_vts, num_vts - 1) >> 1;
   char *up = NULL;
   char *vp = NULL;
-  graph_base_init(g, num_vts, vt_size, 0, read_ulong, write_ulong);
+  graph_base_init(g,
+		  num_vts,
+		  vt_size,
+		  0,
+		  graph_read_ulong,
+		  graph_write_ulong);
   g->num_es = num_es;
   g->u = malloc_perror(g->num_es, vt_size);
   g->v = malloc_perror(g->num_es, vt_size);
@@ -377,7 +387,7 @@ void complete_sz_graph_init(graph_t *g, size_t num_vts){
   size_t num_es = mul_sz_perror(num_vts, num_vts - 1) >> 1;
   char *up = NULL;
   char *vp = NULL;
-  graph_base_init(g, num_vts, vt_size, 0, read_sz, write_sz);
+  graph_base_init(g, num_vts, vt_size, 0, graph_read_sz, graph_write_sz);
   g->num_es = num_es;
   g->u = malloc_perror(g->num_es, vt_size);
   g->v = malloc_perror(g->num_es, vt_size);

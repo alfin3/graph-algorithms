@@ -74,16 +74,17 @@ typedef struct{
    Read and write vertices of different integer types.
 */
 
-size_t read_uchar(const void *a);
-size_t read_ushort(const void *a);
-size_t read_uint(const void *a);
-size_t read_ulong(const void *a);
-size_t read_sz(const void *a);
-void write_uchar(void *a, size_t val);
-void write_ushort(void *a, size_t val);
-void write_uint(void *a, size_t val);
-void write_ulong(void *a, size_t val);
-void write_sz(void *a, size_t val);
+size_t graph_read_uchar(const void *a);
+size_t graph_read_ushort(const void *a);
+size_t graph_read_uint(const void *a);
+size_t graph_read_ulong(const void *a);
+size_t graph_read_sz(const void *a);
+
+void graph_write_uchar(void *a, size_t val);
+void graph_write_ushort(void *a, size_t val);
+void graph_write_uint(void *a, size_t val);
+void graph_write_ulong(void *a, size_t val);
+void graph_write_sz(void *a, size_t val);
 
 /**
    Initializes a weighted or unweighted graph with num_vts vertices and

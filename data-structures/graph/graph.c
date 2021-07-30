@@ -51,43 +51,43 @@ const size_t STACK_INIT_COUNT = 1;
    Read and write vertices of different integer types.
 */
 
-size_t read_uchar(const void *a){
+size_t graph_read_uchar(const void *a){
   return (size_t)(*(const unsigned char *)a);
 }
 
-size_t read_ushort(const void *a){
+size_t graph_read_ushort(const void *a){
   return (size_t)(*(const unsigned short *)a);
 }
 
-size_t read_uint(const void *a){
+size_t graph_read_uint(const void *a){
   return (size_t)(*(const unsigned int *)a);
 }
 
-size_t read_ulong(const void *a){
+size_t graph_read_ulong(const void *a){
   return (size_t)(*(const unsigned long *)a);
 }
 
-size_t read_sz(const void *a){
+size_t graph_read_sz(const void *a){
   return *(const size_t *)a;
 }
 
-void write_uchar(void *a, size_t val){
+void graph_write_uchar(void *a, size_t val){
   *(unsigned char *)a = val;
 }
 
-void write_ushort(void *a, size_t val){
+void graph_write_ushort(void *a, size_t val){
   *(unsigned short *)a = val;
 }
 
-void write_uint(void *a, size_t val){
+void graph_write_uint(void *a, size_t val){
   *(unsigned int *)a = val;
 }
 
-void write_ulong(void *a, size_t val){
+void graph_write_ulong(void *a, size_t val){
   *(unsigned long *)a = val;
 }
 
-void write_sz(void *a, size_t val){
+void graph_write_sz(void *a, size_t val){
   *(size_t *)a = val;
 }
 
@@ -156,8 +156,7 @@ void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
   }else{
     wt_rem = a->vt_size % a->wt_size;
     a->wt_offset = add_sz_perror(a->vt_size,
-				 (wt_rem > 0) * (a->wt_size - wt_rem));
-    
+				 (wt_rem > 0) * (a->wt_size - wt_rem)); 
   }
   vt_rem = add_sz_perror(a->wt_offset, a->wt_size) % a->vt_size;
   a->pair_size = add_sz_perror(a->wt_offset + a->wt_size,
