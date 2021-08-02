@@ -58,7 +58,7 @@ const char *C_USAGE =
   "[0, 1] : on/off for no edges test\n"
   "[0, 1] : on/off for rand graph test\n";
 const int C_ARGC_MAX = 11;
-const size_t C_ARGS_DEF[10] = {0, 14, 0, 14, 0, 14, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[10] = {0, 10, 0, 6, 0, 14, 1, 1, 1, 1};
 const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
 
 /* small graph test */
@@ -95,6 +95,43 @@ const unsigned long C_ULONG_UNDIR_PRE_B[6] = {0, 1, 2, 3, 4, 5};
 const unsigned long C_ULONG_UNDIR_POST_B[6] = {11, 10, 9, 8, 7, 6};
 
 /* random graph tests */
+int cmp_ushort(const void *a, const void *b);
+int cmp_uint(const void *a, const void *b);
+int cmp_ulong(const void *a, const void *b);
+int cmp_sz(const void *a, const void *b);
+
+const size_t C_FN_COUNT = 4;
+size_t (* const C_READ[4])(const void *) ={
+  graph_read_ushort,
+  graph_read_uint,
+  graph_read_ulong,
+  graph_read_sz};
+void (* const C_WRITE[4])(void *, size_t) ={
+  graph_write_ushort,
+  graph_write_uint,
+  graph_write_ulong,
+  graph_write_sz};
+int (* const C_CMP[4])(const void *, const void *) ={
+  cmp_ushort,
+  cmp_uint,
+  cmp_ulong,
+  cmp_sz};
+int (* const C_CMPAT[4])(const void *, const void *, const void *) ={
+  dfs_cmpat_ushort,
+  dfs_cmpat_uint,
+  dfs_cmpat_ulong,
+  dfs_cmpat_sz};
+void (* const C_INCR[4])(void *) ={
+  dfs_incr_ushort,
+  dfs_incr_uint,
+  dfs_incr_ulong,
+  dfs_incr_sz};
+const size_t C_VT_SIZES[4] = {
+  sizeof(unsigned short),
+  sizeof(unsigned int),
+  sizeof(unsigned long),
+  sizeof(size_t)};
+const char *C_VT_TYPES[4] = {"ushort", "uint  ", "ulong ", "sz    "};
 const size_t C_ITER = 10;
 const size_t C_PROBS_COUNT = 5;
 const double C_PROBS[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
@@ -118,6 +155,7 @@ int cmp_arr(const void *a,
 	    size_t size,
 	    size_t n,
 	    int (*cmp)(const void *, const void *));
+static void *ptr(const void *block, size_t i, size_t size);
 void print_test_result(int res);
 
 /**  
@@ -137,7 +175,7 @@ int cmp_ulong(const void *a, const void *b){
 }
 
 int cmp_sz(const void *a, const void *b){
-  return !(*(const size_t *)a == *(const size_t *)b);
+  return  *(const size_t *)a != *(const size_t *)b;
 }
 
 /**
@@ -349,21 +387,28 @@ int bern(void *arg){
    Runs a dfs test on directed graphs with n(n - 1) edges. The test relies
    on the construction order in adj_lst_rand_dir.
 */
-void run_max_edges_graph_test(size_t pow_start, size_t pow_end){
+void run_max_edges_graph_test(size_t log_start, size_t log_end){
   int res = 1;
   size_t i, j;
   size_t n, start;
   size_t *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
-  pre = malloc_perror(pow_two_perror(pow_end), sizeof(size_t));
-  post = malloc_perror(pow_two_perror(pow_end), sizeof(size_t));
+  pre = malloc_perror(pow_two_perror(log_end), sizeof(size_t));
+  post = malloc_perror(pow_two_perror(log_end), sizeof(size_t));
   b.p = C_PROB_ONE;
   printf("Run a dfs test on graphs with n vertices, where "
-	 "2^%lu <= n <= 2^%lu, and n(n - 1) edges --> ", TOLU(pow_start),  TOLU(pow_end));
-  for (i = pow_start; i <= pow_end; i++){
+	 "2**%lu <= n <= 2**%lu, and n(n - 1) edges --> ",
+	 TOLU(log_start),  TOLU(log_end));
+  for (i = log_start; i <= log_end; i++){
     n = pow_two_perror(i); /* n > 0 */
-    adj_lst_rand_dir(&a, n, sizeof(size_t), graph_read_sz, graph_write_sz, bern, &b);
+    adj_lst_rand_dir(&a,
+		     n,
+		     sizeof(size_t),
+		     graph_read_sz,
+		     graph_write_sz,
+		     bern,
+		     &b);
     start =  RANDOM() % n;
     dfs(&a, start, pre, post, dfs_cmpat_sz, dfs_incr_sz);
     for (j = 0; j < n; j++){
@@ -391,30 +436,44 @@ void run_max_edges_graph_test(size_t pow_start, size_t pow_end){
 /**
    Runs a dfs test on graphs with no edges.
 */
-void run_no_edges_graph_test(size_t pow_start, size_t pow_end){
+void run_no_edges_graph_test(size_t log_start, size_t log_end){
   int res = 1;
-  size_t i, j;
-  size_t n;
+  size_t i, j, k;
+  size_t num_vts;
   size_t start;
-  unsigned short *pre = NULL, *post = NULL;
+  void *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
-  pre = malloc_perror(pow_two_perror(pow_end), sizeof(unsigned short));
-  post = malloc_perror(pow_two_perror(pow_end), sizeof(unsigned short));
+  pre = malloc_perror(1, 1); /* no declared type; starter for realloc */
+  post = malloc_perror(1, 1);
   b.p = C_PROB_ZERO;
-  printf("Run a dfs test on graphs with n vertices, where "
-	 "2^%lu <= n <= 2^%lu, and no edges --> ", TOLU(pow_start), TOLU(pow_end));
-  for (i = pow_start; i <= pow_end; i++){
-    n = pow_two_perror(i);
-    adj_lst_rand_dir(&a, n, sizeof(unsigned short), graph_read_ushort, graph_write_ushort, bern, &b);
-    start =  RANDOM() % n;
-    dfs(&a, start, pre, post, dfs_cmpat_ushort, dfs_incr_ushort);
-    for (j = 0; j < n; j++){
-      res *= (post[j] - pre[j] == 1);
+  printf("Run a dfs test on graphs with no edges\n");
+  for (i = log_start; i <= log_end; i++){
+    num_vts = pow_two_perror(i);
+    printf("\t\tvertices: %lu\n", TOLU(num_vts));
+    for (j = 0; j < C_FN_COUNT; j++){
+      /* no declared type after realloc; effective type is set by dfs */
+      pre = realloc_perror(pre, num_vts, C_VT_SIZES[j]);
+      post = realloc_perror(post, num_vts, C_VT_SIZES[j]);
+      adj_lst_rand_dir(&a,
+		       num_vts,
+		       C_VT_SIZES[j],
+		       C_READ[j],
+		       C_WRITE[j],
+		       bern,
+		       &b);
+      start =  RANDOM() % num_vts;
+      dfs(&a, start, pre, post, C_CMPAT[j], C_INCR[j]);
+      for (k = 0; k < num_vts; k++){
+        res *= (C_READ[j](ptr(post, k, C_VT_SIZES[j])) -
+		C_READ[j](ptr(pre, k, C_VT_SIZES[j])) == 1);
+      }
+      printf("\t\t\t%s correctness:     ", C_VT_TYPES[j]);
+      print_test_result(res);
+      res = 1;
+      adj_lst_free(&a); /* deallocates blocks with effective vertex type */
     }
-    adj_lst_free(&a);
   }
-  print_test_result(res);
   free(pre);
   free(post);
   pre = NULL;
@@ -424,47 +483,88 @@ void run_no_edges_graph_test(size_t pow_start, size_t pow_end){
 /**
    Runs a dfs test on random directed graphs.
 */
-void run_random_dir_graph_test(size_t pow_start, size_t pow_end){
-  size_t i, j, k;
-  size_t n;
+
+void run_random_dir_graph_helper(size_t num_vts,
+				 size_t vt_size,
+				 const char *type_string,
+				 size_t (* const read)(const void *),
+				 void (* const write)(void *, size_t),
+				 int (* const cmpat)(const void *,
+						     const void *,
+						     const void *),
+				 void (* const incr)(void *),
+				 int bern(void *),
+				 bern_arg_t *b){
+  size_t i;
   size_t *start = NULL;
-  unsigned short *pre = NULL, *post = NULL;
-  bern_arg_t b;
+  void *pre = NULL, *post = NULL;
   adj_lst_t a;
   clock_t t;
-  printf("Run a dfs test on random directed graphs from %lu random "
-	 "start vertices in each graph \n",  TOLU(C_ITER));
+  /* no declared type after realloc; effective type is set by dfs */
   start = malloc_perror(C_ITER, sizeof(size_t));
-  pre = malloc_perror(pow_two_perror(pow_end), sizeof(unsigned short));
-  post = malloc_perror(pow_two_perror(pow_end), sizeof(unsigned short));
-  for (i = 0; i < C_PROBS_COUNT; i++){
-    b.p = C_PROBS[i];
-    printf("\tP[an edge is in a graph] = %.2f\n", b.p);
-    for (j = pow_start; j <= pow_end; j++){
-      n = pow_two_perror(j);
-      adj_lst_rand_dir(&a, n, sizeof(unsigned short), graph_read_ushort, graph_write_ushort, bern, &b);
-      for (k = 0; k < C_ITER; k++){
-	start[k] =  RANDOM() % n;
-      }
-      t = clock();
-      for (k = 0; k < C_ITER; k++){
-	dfs(&a, start[k], pre, post, dfs_cmpat_ushort, dfs_incr_ushort);
-      }
-      t = clock() - t;
-      printf("\t\tvertices: %lu, E[# of directed edges]: %.1f, "
-	     "average runtime: %.6f seconds\n",
-	     TOLU(n), b.p * n * (n - 1), (float)t / C_ITER / CLOCKS_PER_SEC);
-      adj_lst_free(&a);
-    }
+  pre = realloc_perror(pre, num_vts, vt_size);
+  post = realloc_perror(post, num_vts, vt_size);
+  adj_lst_rand_dir(&a, num_vts, vt_size, read, write, bern, b);
+  for (i = 0; i < C_ITER; i++){
+    start[i] =  RANDOM() % num_vts;
   }
-  free(start);
+  t = clock();
+  for (i = 0; i < C_ITER; i++){
+    dfs(&a, start[i], pre, post, cmpat, incr);
+  }
+  t = clock() - t;
+  printf("\t\t\t%s ave runtime:     %.6f seconds\n",
+	 type_string, (float)t / C_ITER / CLOCKS_PER_SEC);
+  adj_lst_free(&a); /* deallocates blocks with effective vertex type */
   free(pre);
   free(post);
-  start = NULL;
   pre = NULL;
   post = NULL;
 }
 
+void run_random_dir_graph_test(size_t log_start, size_t log_end){
+  size_t i, j;
+  size_t num_vts;
+  bern_arg_t b;
+  printf("Run a dfs test on random directed graphs from %lu random "
+	 "start vertices in each graph\n",  TOLU(C_ITER));
+  for (i = 0; i < C_PROBS_COUNT; i++){
+    b.p = C_PROBS[i];
+    printf("\tP[an edge is in a graph] = %.2f\n", b.p);
+    for (j = log_start; j <= log_end; j++){
+      num_vts = pow_two_perror(j);
+      printf("\t\tvertices: %lu, E[# of directed edges]: %.1f\n",
+	     TOLU(num_vts), b.p * num_vts * (num_vts - 1));
+      run_random_dir_graph_helper(num_vts,
+				  C_VT_SIZES[0],
+				  C_VT_TYPES[0],
+				  C_READ[0],
+				  C_WRITE[0],
+				  C_CMPAT[0],
+				  C_INCR[0],
+				  bern,
+				  &b);
+      run_random_dir_graph_helper(num_vts,
+				  C_VT_SIZES[1],
+				  C_VT_TYPES[1],
+				  C_READ[1],
+				  C_WRITE[1],
+				  C_CMPAT[1],
+				  C_INCR[1],
+				  bern,
+				  &b);
+      run_random_dir_graph_helper(num_vts,
+				  C_VT_SIZES[2],
+				  C_VT_TYPES[2],
+				  C_READ[2],
+				  C_WRITE[2],
+				  C_CMPAT[2],
+				  C_INCR[2],
+				  bern,
+				  &b);
+    }
+  }
+}
 
 /**
    Auxiliary functions.
@@ -488,6 +588,13 @@ int cmp_arr(const void *a,
     bp += size;
   }
   return res;
+}
+
+/**
+   Computes a pointer to the ith element in the block of elements.
+*/
+static void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
 }
 
 /**

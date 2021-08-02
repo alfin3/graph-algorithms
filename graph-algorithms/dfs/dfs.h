@@ -14,15 +14,15 @@
 #include <stddef.h>
 #include "graph.h"
 
-void dfs_incr_ushort(void *a);
-void dfs_incr_uint(void *a);
-void dfs_incr_ulong(void *a);
-void dfs_incr_sz(void *a);
-
 int dfs_cmpat_ushort(const void *a, const void *i, const void *v);
 int dfs_cmpat_uint(const void *a, const void *i, const void *v);
 int dfs_cmpat_ulong(const void *a, const void *i, const void *v);
 int dfs_cmpat_sz(const void *a, const void *i, const void *v);
+
+void dfs_incr_ushort(void *a);
+void dfs_incr_uint(void *a);
+void dfs_incr_ulong(void *a);
+void dfs_incr_sz(void *a);
 
 /**
    Computes and copies to the arrays pointed to by pre and post the previsit
