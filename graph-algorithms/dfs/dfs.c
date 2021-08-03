@@ -19,7 +19,6 @@
 typedef struct{
   size_t u;
   const char *vp; /* vp is pointer to v in u's stack in an adj. list */
-  const char *vp_end; /* pointer to the end of u's stack */
 } uvp_t;
 
 static const size_t STACK_INIT_COUNT = 1;
@@ -136,31 +135,32 @@ static void search(const adj_lst_t *a,
 		   const void *nr,
                    int (*cmpat_vt)(const void *, const void *, const void *),
 		   void (*incr_vt)(void *)){
-  const char *p = NULL;
+  const char *p = NULL, *p_end = NULL;
   uvp_t uvp;
+  uvp.u = u;
+  uvp.vp = a->vt_wts[u]->elts;
   memcpy(ptr(pre, u, a->vt_size), c, a->vt_size);
   incr_vt(c);
-  uvp.u = u;
-  uvp.vp = a->vt_wts[uvp.u]->elts;
-  uvp.vp_end = uvp.vp + a->vt_wts[uvp.u]->num_elts * a->pair_size;
   stack_push(s, &uvp);
   while (s->num_elts > 0){
     stack_pop(s, &uvp);
     p = uvp.vp;
-    while (p != uvp.vp_end && cmpat_vt(pre, p, nr) != 0){
+    p_end = ptr(a->vt_wts[uvp.u]->elts,
+		a->vt_wts[uvp.u]->num_elts,
+		a->pair_size);
+    while (p != p_end && cmpat_vt(pre, p, nr) != 0){
       p += a->pair_size;
     }
-    uvp.vp = p;
-    if (uvp.vp == uvp.vp_end){
+    if (p == p_end){
       memcpy(ptr(post, uvp.u, a->vt_size), c, a->vt_size);
       incr_vt(c);
     }else{
+      uvp.vp = p;
       stack_push(s, &uvp); /* push the unfinished vertex */
-      memcpy(ptr(pre, a->read_vt(uvp.vp), a->vt_size), c, a->vt_size);
-      incr_vt(c);
-      uvp.u = a->read_vt(uvp.vp);
+      uvp.u = a->read_vt(p);
       uvp.vp = a->vt_wts[uvp.u]->elts;
-      uvp.vp_end = uvp.vp + a->vt_wts[uvp.u]->num_elts * a->pair_size;
+      memcpy(ptr(pre, uvp.u, a->vt_size), c, a->vt_size);
+      incr_vt(c);
       stack_push(s, &uvp); /* then push an unexplored vertex */
     }
   }
