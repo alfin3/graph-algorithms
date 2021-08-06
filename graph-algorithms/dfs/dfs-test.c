@@ -1,16 +1,17 @@
 /**
    dfs-test.c
 
-   Tests of the DFS algorithm.
+   Tests of the DFS algorithm across graphs with different integer types
+   of vertices.
 
    The following command line arguments can be used to customize tests:
    dfs-test
-     [0, width of size_t / 2] : a
-     [0, width of size_t / 2] : b s.t. 2**a <= V <= 2**b for max edges test
-     [0, width of size_t / 2] : c
-     [0, width of size_t / 2] : d s.t. 2**c <= V <= 2**d for no edges test
-     [0, width of size_t / 2] : e
-     [0, width of size_t / 2] : f s.t. 2**e <= V <= 2**f for rand graph test
+     [0, ushort width - 1) : a
+     [0, ushort width - 1) : b s.t. 2**a <= V <= 2**b for max edges test
+     [0, ushort width - 1) : c
+     [0, ushort width - 1) : d s.t. 2**c <= V <= 2**d for no edges test
+     [0, ushort width - 1) : e
+     [0, ushort width - 1) : f s.t. 2**e <= V <= 2**f for rand graph test
      [0, 1] : on/off for small graph tests
      [0, 1] : on/off for max edges test
      [0, 1] : on/off for no edges test
@@ -27,10 +28,11 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 *.
+   C89/C90 and C99 with the only requirement that the number of value 
+   bits (width) of unsigned short is not less than 16 and is even *. 
 
-   * currently CHAR_BIT * sizeof(size_t) is used to get bit width under the
-     assumption that all bits participate in the value.
+   * currently CHAR_BIT * sizeof(unsigned short) is used to get bit width
+     under the assumption that all bits participate in the value.
 */
 
 #include <stdio.h>
@@ -47,19 +49,19 @@
 /* input handling */
 const char *C_USAGE =
   "dfs-test\n"
-  "[0, width of size_t / 2] : a\n"
-  "[0, width of size_t / 2] : b s.t. 2**a <= V <= 2**b for max edges test\n"
-  "[0, width of size_t / 2] : c\n"
-  "[0, width of size_t / 2] : d s.t. 2**c <= V <= 2**d for no edges test\n"
-  "[0, width of size_t / 2] : e\n"
-  "[0, width of size_t / 2] : f s.t. 2**e <= V <= 2**f for rand graph test\n"
+  "[0, ushort width - 1) : a\n"
+  "[0, ushort width - 1) : b s.t. 2**a <= V <= 2**b for max edges test\n"
+  "[0, ushort width - 1) : c\n"
+  "[0, ushort width - 1) : d s.t. 2**c <= V <= 2**d for no edges test\n"
+  "[0, ushort width - 1) : e\n"
+  "[0, ushort width - 1) : f s.t. 2**e <= V <= 2**f for rand graph test\n"
   "[0, 1] : on/off for small graph tests\n"
   "[0, 1] : on/off for max edges test\n"
   "[0, 1] : on/off for no edges test\n"
   "[0, 1] : on/off for rand graph test\n";
 const int C_ARGC_MAX = 11;
 const size_t C_ARGS_DEF[10] = {0, 6, 0, 6, 0, 14, 1, 1, 1, 1};
-const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+const size_t C_USHORT_BIT = CHAR_BIT * sizeof(unsigned short);
 
 /* small graph test */
 const size_t C_NUM_VTS_A = 6;
@@ -67,12 +69,21 @@ const size_t C_NUM_ES_A = 7;
 const size_t C_START_A = 0;
 const unsigned short C_USHORT_U_A[7] = {0, 1, 2, 3, 0, 4, 4};
 const unsigned short C_USHORT_V_A[7] = {1, 2, 3, 1, 3, 2, 5};
+const unsigned short C_USHORT_WTS_A[7] = {(unsigned short)-1, 1,
+					  (unsigned short)-1, 2,
+					  (unsigned short)-1, 3,
+					  (unsigned short)-1};
 const unsigned short C_USHORT_DIR_PRE_A[6] = {0, 1, 2, 3, 8, 9};
 const unsigned short C_USHORT_DIR_POST_A[6] = {7, 6, 5, 4, 11, 10};
 const unsigned short C_USHORT_UNDIR_PRE_A[6] = {0, 1, 2, 3, 5, 6};
 const unsigned short C_USHORT_UNDIR_POST_A[6] = {11, 10, 9, 4, 8, 7};
+
 const unsigned long C_ULONG_U_A[7] = {0, 1, 2, 3, 0, 4, 4};
 const unsigned long C_ULONG_V_A[7] = {1, 2, 3, 1, 3, 2, 5};
+const unsigned long C_ULONG_WTS_A[7] = {(unsigned long)-1, 1,
+					(unsigned long)-1, 2,
+					(unsigned long)-1, 3,
+					(unsigned long)-1};
 const unsigned long C_ULONG_DIR_PRE_A[6] = {0, 1, 2, 3, 8, 9};
 const unsigned long C_ULONG_DIR_POST_A[6] = {7, 6, 5, 4, 11, 10};
 const unsigned long C_ULONG_UNDIR_PRE_A[6] = {0, 1, 2, 3, 5, 6};
@@ -83,12 +94,18 @@ const size_t C_NUM_ES_B = 5;
 const size_t C_START_B = 0;
 const unsigned short C_USHORT_U_B[5] = {0, 1, 2, 3, 4};
 const unsigned short C_USHORT_V_B[5] = {1, 2, 3, 4, 5};
+const unsigned long C_USHORT_WTS_B[5] = {1, (unsigned short)-1,
+					 2, (unsigned short)-1,
+					 3};
 const unsigned short C_USHORT_DIR_PRE_B[6] = {0, 1, 2, 3, 4, 5};
 const unsigned short C_USHORT_DIR_POST_B[6] = {11, 10, 9, 8, 7, 6};
 const unsigned short C_USHORT_UNDIR_PRE_B[6] = {0, 1, 2, 3, 4, 5};
 const unsigned short C_USHORT_UNDIR_POST_B[6] = {11, 10, 9, 8, 7, 6};
 const unsigned long C_ULONG_U_B[5] = {0, 1, 2, 3, 4};
 const unsigned long C_ULONG_V_B[5] = {1, 2, 3, 4, 5};
+const unsigned long C_ULONG_WTS_B[5] = {1, (unsigned long)-1,
+					2, (unsigned long)-1,
+					3};
 const unsigned long C_ULONG_DIR_PRE_B[6] = {0, 1, 2, 3, 4, 5};
 const unsigned long C_ULONG_DIR_POST_B[6] = {11, 10, 9, 8, 7, 6};
 const unsigned long C_ULONG_UNDIR_PRE_B[6] = {0, 1, 2, 3, 4, 5};
@@ -179,10 +196,10 @@ int cmp_sz(const void *a, const void *b){
 }
 
 /**
-   Initialize small graph.
+   Initialize small graphs.
 */
 
-void ushort_graph_a_init(graph_t *g){
+void ushort_none_graph_a_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS_A,
 		  sizeof(unsigned short),
@@ -194,7 +211,7 @@ void ushort_graph_a_init(graph_t *g){
   g->v = (unsigned short *)C_USHORT_V_A;
 }
 
-void ulong_graph_a_init(graph_t *g){
+void ulong_none_graph_a_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS_A,
 		  sizeof(unsigned long),
@@ -206,7 +223,33 @@ void ulong_graph_a_init(graph_t *g){
   g->v = (unsigned long *)C_ULONG_V_A;
 }
 
-void ushort_graph_b_init(graph_t *g){
+void ushort_ulong_graph_a_init(graph_t *g){
+  graph_base_init(g,
+		  C_NUM_VTS_A,
+		  sizeof(unsigned short),
+		  sizeof(unsigned long),
+		  graph_read_ushort,
+		  graph_write_ushort);
+  g->num_es = C_NUM_ES_A;
+  g->u = (unsigned short *)C_USHORT_U_A;
+  g->v = (unsigned short *)C_USHORT_V_A;
+  g->wts = (unsigned long *)C_ULONG_WTS_A;
+}
+
+void ulong_ushort_graph_a_init(graph_t *g){
+  graph_base_init(g,
+		  C_NUM_VTS_A,
+		  sizeof(unsigned long),
+		  sizeof(unsigned short),
+		  graph_read_ulong,
+		  graph_write_ulong);
+  g->num_es = C_NUM_ES_A;
+  g->u = (unsigned long *)C_ULONG_U_A;
+  g->v = (unsigned long *)C_ULONG_V_A;
+  g->wts = (unsigned short *)C_USHORT_WTS_A;
+}
+
+void ushort_none_graph_b_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS_B,
 		  sizeof(unsigned short),
@@ -218,7 +261,7 @@ void ushort_graph_b_init(graph_t *g){
   g->v = (unsigned short *)C_USHORT_V_B;
 }
 
-void ulong_graph_b_init(graph_t *g){
+void ulong_none_graph_b_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS_B,
 		  sizeof(unsigned long),
@@ -228,6 +271,32 @@ void ulong_graph_b_init(graph_t *g){
   g->num_es = C_NUM_ES_B;
   g->u = (unsigned long *)C_ULONG_U_B;
   g->v = (unsigned long *)C_ULONG_V_B;
+}
+
+void ushort_ulong_graph_b_init(graph_t *g){
+  graph_base_init(g,
+		  C_NUM_VTS_B,
+		  sizeof(unsigned short),
+		  sizeof(unsigned long),
+		  graph_read_ushort,
+		  graph_write_ushort);
+  g->num_es = C_NUM_ES_B;
+  g->u = (unsigned short *)C_USHORT_U_B;
+  g->v = (unsigned short *)C_USHORT_V_B;
+  g->wts = (unsigned long *)C_ULONG_WTS_B;
+}
+
+void ulong_ushort_graph_b_init(graph_t *g){
+  graph_base_init(g,
+		  C_NUM_VTS_B,
+		  sizeof(unsigned long),
+		  sizeof(unsigned short),
+		  graph_read_ulong,
+		  graph_write_ulong);
+  g->num_es = C_NUM_ES_B;
+  g->u = (unsigned long *)C_ULONG_U_B;
+  g->v = (unsigned long *)C_ULONG_V_B;
+  g->wts = (unsigned short *)C_USHORT_WTS_B;
 }
 
 /**
@@ -240,7 +309,9 @@ void small_graph_helper(const graph_t *g,
 			const void *ret_post,
 			void (*build)(adj_lst_t *, const graph_t *),
 			int (*cmp)(const void *, const void *),
-			int (*cmpat)(const void *, const void *, const void *),
+			int (*cmpat)(const void *,
+				     const void *,
+				     const void *),
 			void (*incr)(void *),
 			int *res);
 
@@ -249,7 +320,26 @@ void run_graph_a_test(){
   graph_t g;
   printf("Run a dfs test on the first small graph with ushort "
 	 "vertices --> ");
-  ushort_graph_a_init(&g);
+  ushort_none_graph_a_init(&g);
+  small_graph_helper(&g,
+		     C_START_A,
+		     C_USHORT_DIR_PRE_A,
+		     C_USHORT_DIR_POST_A,
+		     adj_lst_dir_build,
+		     cmp_ushort,
+		     dfs_cmpat_ushort,
+		     dfs_incr_ushort,
+		     &res);
+  small_graph_helper(&g,
+		     C_START_A,
+		     C_USHORT_UNDIR_PRE_A,
+		     C_USHORT_UNDIR_POST_A,
+		     adj_lst_undir_build,
+		     cmp_ushort,
+		     dfs_cmpat_ushort,
+		     dfs_incr_ushort,
+		     &res);
+  ushort_ulong_graph_a_init(&g);
   small_graph_helper(&g,
 		     C_START_A,
 		     C_USHORT_DIR_PRE_A,
@@ -269,9 +359,29 @@ void run_graph_a_test(){
 		     dfs_incr_ushort,
 		     &res);
   print_test_result(res);
+  res = 1;
   printf("Run a dfs test on the first small graph with ulong "
 	 "vertices --> ");
-  ulong_graph_a_init(&g);
+  ulong_none_graph_a_init(&g);
+  small_graph_helper(&g,
+		     C_START_A,
+		     C_ULONG_DIR_PRE_A,
+		     C_ULONG_DIR_POST_A,
+		     adj_lst_dir_build,
+		     cmp_ulong,
+		     dfs_cmpat_ulong,
+		     dfs_incr_ulong,
+		     &res);
+  small_graph_helper(&g,
+		     C_START_A,
+		     C_ULONG_UNDIR_PRE_A,
+		     C_ULONG_UNDIR_POST_A,
+		     adj_lst_undir_build,
+		     cmp_ulong,
+		     dfs_cmpat_ulong,
+		     dfs_incr_ulong,
+		     &res);
+  ulong_ushort_graph_a_init(&g);
   small_graph_helper(&g,
 		     C_START_A,
 		     C_ULONG_DIR_PRE_A,
@@ -298,7 +408,26 @@ void run_graph_b_test(){
   graph_t g;
   printf("Run a dfs test on the second small graph with ushort "
 	 "vertices --> ");
-  ushort_graph_b_init(&g);
+  ushort_none_graph_b_init(&g);
+  small_graph_helper(&g,
+		     C_START_B,
+		     C_USHORT_DIR_PRE_B,
+		     C_USHORT_DIR_POST_B,
+		     adj_lst_dir_build,
+		     cmp_ushort,
+		     dfs_cmpat_ushort,
+		     dfs_incr_ushort,
+		     &res);
+  small_graph_helper(&g,
+		     C_START_B,
+		     C_USHORT_UNDIR_PRE_B,
+		     C_USHORT_UNDIR_POST_B,
+		     adj_lst_undir_build,
+		     cmp_ushort,
+		     dfs_cmpat_ushort,
+		     dfs_incr_ushort,
+		     &res);
+  ushort_ulong_graph_b_init(&g);
   small_graph_helper(&g,
 		     C_START_B,
 		     C_USHORT_DIR_PRE_B,
@@ -318,9 +447,29 @@ void run_graph_b_test(){
 		     dfs_incr_ushort,
 		     &res);
   print_test_result(res);
+  res = 1;
   printf("Run a dfs test on the second small graph with ulong "
 	 "vertices --> ");
-  ulong_graph_b_init(&g);
+  ulong_none_graph_b_init(&g);
+  small_graph_helper(&g,
+		     C_START_B,
+		     C_ULONG_DIR_PRE_B,
+		     C_ULONG_DIR_POST_B,
+		     adj_lst_dir_build,
+		     cmp_ulong,
+		     dfs_cmpat_ulong,
+		     dfs_incr_ulong,
+		     &res);
+  small_graph_helper(&g,
+		     C_START_B,
+		     C_ULONG_UNDIR_PRE_B,
+		     C_ULONG_UNDIR_POST_B,
+		     adj_lst_undir_build,
+		     cmp_ulong,
+		     dfs_cmpat_ulong,
+		     dfs_incr_ulong,
+		     &res);
+  ulong_ushort_graph_b_init(&g);
   small_graph_helper(&g,
 		     C_START_B,
 		     C_ULONG_DIR_PRE_B,
@@ -348,7 +497,9 @@ void small_graph_helper(const graph_t *g,
 			const void *ret_post,
 			void (*build)(adj_lst_t *, const graph_t *),
 			int (*cmp)(const void *, const void *),
-			int (*cmpat)(const void *, const void *, const void *),
+			int (*cmpat)(const void *,
+				     const void *,
+				     const void *),
 			void (*incr)(void *),
 			int *res){
   void *pre = NULL, *post = NULL;
@@ -490,48 +641,20 @@ void run_no_edges_graph_test(size_t log_start, size_t log_end){
 }
 
 /**
-   Runs a dfs test on random directed graphs.
+   Run a dfs test on random directed graphs.
 */
 
 void run_random_dir_graph_helper(size_t num_vts,
 				 size_t vt_size,
 				 const char *type_string,
-				 size_t (* const read)(const void *),
-				 void (* const write)(void *, size_t),
-				 int (* const cmpat)(const void *,
-						     const void *,
-						     const void *),
-				 void (* const incr)(void *),
+				 size_t (*read)(const void *),
+				 void (*write)(void *, size_t),
+				 int (*cmpat)(const void *,
+					      const void *,
+					      const void *),
+				 void (*incr)(void *),
 				 int bern(void *),
-				 bern_arg_t *b){
-  size_t i;
-  size_t *start = NULL;
-  void *pre = NULL, *post = NULL;
-  adj_lst_t a;
-  clock_t t;
-  /* no declared type after realloc; effective type is set by dfs */
-  start = malloc_perror(C_ITER, sizeof(size_t));
-  pre = realloc_perror(pre, num_vts, vt_size);
-  post = realloc_perror(post, num_vts, vt_size);
-  adj_lst_rand_dir(&a, num_vts, vt_size, read, write, bern, b);
-  for (i = 0; i < C_ITER; i++){
-    start[i] =  RANDOM() % num_vts;
-  }
-  t = clock();
-  for (i = 0; i < C_ITER; i++){
-    dfs(&a, start[i], pre, post, cmpat, incr);
-  }
-  t = clock() - t;
-  printf("\t\t\t%s ave runtime:     %.6f seconds\n",
-	 type_string, (float)t / C_ITER / CLOCKS_PER_SEC);
-  adj_lst_free(&a); /* deallocates blocks with effective vertex type */
-  free(start);
-  free(pre);
-  free(post);
-  start = NULL;
-  pre = NULL;
-  post = NULL;
-}
+				 bern_arg_t *b);
 
 void run_random_dir_graph_test(size_t log_start, size_t log_end){
   size_t i, j;
@@ -564,17 +687,48 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
 				  C_INCR[1],
 				  bern,
 				  &b);
-      run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[2],
-				  C_VT_TYPES[2],
-				  C_READ[2],
-				  C_WRITE[2],
-				  C_CMPAT[2],
-				  C_INCR[2],
-				  bern,
-				  &b);
     }
   }
+}
+
+void run_random_dir_graph_helper(size_t num_vts,
+				 size_t vt_size,
+				 const char *type_string,
+				 size_t (*read)(const void *),
+				 void (*write)(void *, size_t),
+				 int (*cmpat)(const void *,
+					      const void *,
+					      const void *),
+				 void (*incr)(void *),
+				 int bern(void *),
+				 bern_arg_t *b){
+  size_t i;
+  size_t *start = NULL;
+  void *pre = NULL, *post = NULL;
+  adj_lst_t a;
+  clock_t t;
+  /* no declared type after realloc; effective type is set by dfs */
+  start = malloc_perror(C_ITER, sizeof(size_t));
+  pre = realloc_perror(pre, num_vts, vt_size);
+  post = realloc_perror(post, num_vts, vt_size);
+  adj_lst_rand_dir(&a, num_vts, vt_size, read, write, bern, b);
+  for (i = 0; i < C_ITER; i++){
+    start[i] =  RANDOM() % num_vts;
+  }
+  t = clock();
+  for (i = 0; i < C_ITER; i++){
+    dfs(&a, start[i], pre, post, cmpat, incr);
+  }
+  t = clock() - t;
+  printf("\t\t\t%s ave runtime:     %.6f seconds\n",
+	 type_string, (float)t / C_ITER / CLOCKS_PER_SEC);
+  adj_lst_free(&a); /* deallocates blocks with effective vertex type */
+  free(start);
+  free(pre);
+  free(post);
+  start = NULL;
+  pre = NULL;
+  post = NULL;
 }
 
 /**
@@ -632,12 +786,12 @@ int main(int argc, char *argv[]){
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
-  if (args[0] > C_FULL_BIT / 2 ||
-      args[1] > C_FULL_BIT / 2 ||
-      args[2] > C_FULL_BIT / 2 ||
-      args[3] > C_FULL_BIT / 2 ||
-      args[4] > C_FULL_BIT / 2 ||
-      args[5] > C_FULL_BIT / 2 ||
+  if (args[0] > C_USHORT_BIT - 2 ||
+      args[1] > C_USHORT_BIT - 2 ||
+      args[2] > C_USHORT_BIT - 2 ||
+      args[3] > C_USHORT_BIT - 2 ||
+      args[4] > C_USHORT_BIT - 2 ||
+      args[5] > C_USHORT_BIT - 2 ||
       args[1] < args[0] ||
       args[3] < args[2] ||
       args[5] < args[4] ||
