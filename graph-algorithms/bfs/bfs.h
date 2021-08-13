@@ -11,6 +11,16 @@
 #include <stddef.h>
 #include "graph.h"
 
+int bfs_cmpat_ushort(const void *a, const void *i, const void *v);
+int bfs_cmpat_uint(const void *a, const void *i, const void *v);
+int bfs_cmpat_ulong(const void *a, const void *i, const void *v);
+int bfs_cmpat_sz(const void *a, const void *i, const void *v);
+
+void bfs_incr_ushort(void *a);
+void bfs_incr_uint(void *a);
+void bfs_incr_ulong(void *a);
+void bfs_incr_sz(void *a);
+
 /**
    Computes and copies to an array pointed to by dist the lowest # of edges
    from start to each reached vertex, and provides the previous vertex in the
@@ -24,6 +34,11 @@
    prev        : pointer to a preallocated array with the count equal to the
                  number of vertices in the adjacency list
 */
-void bfs(const adj_lst_t *a, size_t start, size_t *dist, size_t *prev);
+void bfs(const adj_lst_t *a,
+	 size_t start,
+	 void *dist,
+	 void *prev,
+	 int (*cmpat_vt)(const void *, const void *, const void *),
+	 void (*incr_vt)(void *));
 
 #endif

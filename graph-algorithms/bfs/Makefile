@@ -27,10 +27,12 @@ GRAPH_DIR     = $(DS_DIR)graph/
 QUEUE_DIR     = $(DS_DIR)queue/
 STACK_DIR     = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
+UTILS_MOD_DIR = ../../utilities/utilities-mod/
 CFLAGS = -I$(GRAPH_DIR)                               \
          -I$(QUEUE_DIR)                               \
          -I$(STACK_DIR)                               \
          -I$(UTILS_MEM_DIR)                           \
+         -I$(UTILS_MOD_DIR)                           \
          ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = bfs-test.o                      \
@@ -39,6 +41,7 @@ OBJ = bfs-test.o                      \
       $(QUEUE_DIR)queue.o             \
       $(STACK_DIR)stack.o             \
       $(UTILS_MEM_DIR)utilities-mem.o \
+      $(UTILS_MOD_DIR)utilities-mod.o 
 
 bfs-test : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
@@ -46,7 +49,8 @@ bfs-test : $(OBJ)
 bfs-test.o                      : bfs.h                           \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
-                                  $(UTILS_MEM_DIR)utilities-mem.h
+                                  $(UTILS_MEM_DIR)utilities-mem.h \
+                                  $(UTILS_MOD_DIR)utilities-mod.h
 bfs.o                           : bfs.h                           \
                                   $(GRAPH_DIR)graph.h             \
                                   $(QUEUE_DIR)queue.h             \
@@ -60,6 +64,7 @@ $(QUEUE_DIR)queue.o             : $(QUEUE_DIR)queue.h             \
 $(STACK_DIR)stack.o             : $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
+$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h
 
 .PHONY : clean clean-all
 
