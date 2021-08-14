@@ -1,7 +1,8 @@
 /**
    bfs-test.c
 
-   Tests of the BFS algorithm.
+   Tests of the BFS algorithm across graphs with different integer types
+   of vertices.
 
    The following command line arguments can be used to customize tests:
    bfs-test
@@ -26,7 +27,14 @@
    argument must be specified for i >= 0. Default values are used for the
    unspecified arguments according to the C_ARGS_DEF array.
 
-   The implementation does not use stdint.h and is portable under C89/C90.
+   The implementation of tests does not use stdint.h and is portable under
+   C89/C90 and C99 with the only requirement that the number of value 
+   bits (width == precision) of unsigned short is not less than 16 and is
+   even *.
+
+   * currently CHAR_BIT * sizeof(unsigned short) is used to get the width
+     of an unsigned short integer under the assumption that all bits
+     participate in the value.
 */
 
 #include <stdio.h>
