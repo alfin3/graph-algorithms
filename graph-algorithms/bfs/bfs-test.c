@@ -5,12 +5,12 @@
 
    The following command line arguments can be used to customize tests:
    bfs-test
-     [0, # bits in size_t / 2] : a
-     [0, # bits in size_t / 2] : b s.t. 2^a <= V <= 2^b for max edges test
-     [0, # bits in size_t / 2] : c
-     [0, # bits in size_t / 2] : d s.t. 2^c <= V <= 2^d for no edges test
-     [0, # bits in size_t / 2] : e
-     [0, # bits in size_t / 2] : f s.t. 2^e <= V <= 2^f for random graph test
+     [0, ushort width - 1] : a
+     [0, ushort width - 1] : b s.t. 2**a <= V <= 2**b for max edges test
+     [0, ushort width - 1] : c
+     [0, ushort width - 1] : d s.t. 2**c <= V <= 2**d for no edges test
+     [0, ushort width - 1] : e
+     [0, ushort width - 1] : f s.t. 2**e <= V <= 2**f for rand graph test
      [0, 1] : on/off for small graph tests
      [0, 1] : on/off for max edges test
      [0, 1] : on/off for no edges test
@@ -41,11 +41,6 @@
 #include "utilities-mod.h"
 
 /**
-   Set the type of vertices in performance tests.
-*/
-#define VT_TYPE (2) /* [0, 3] for ushort, uint, ulong, size_t */
-
-/**
    Generate random numbers in a portable way for test purposes only; rand()
    in the Linux C Library uses the same generator as random(), which may not
    be the case on older rand() implementations, and on current
@@ -66,10 +61,10 @@ const char *C_USAGE =
   "[0, ushort width - 1] : d s.t. 2**c <= V <= 2**d for no edges test\n"
   "[0, ushort width - 1] : e\n"
   "[0, ushort width - 1] : f s.t. 2**e <= V <= 2**f for rand graph test\n"
-  "[0, 1] : on/off for small graph tests \n"
-  "[0, 1] : on/off for max edges test \n"
-  "[0, 1] : on/off for no edges test \n"
-  "[0, 1] : on/off for random graph test \n";
+  "[0, 1] : on/off for small graph tests\n"
+  "[0, 1] : on/off for max edges test\n"
+  "[0, 1] : on/off for no edges test\n"
+  "[0, 1] : on/off for random graph test\n";
 const int C_ARGC_MAX = 11;
 const size_t C_ARGS_DEF[10] = {0, 6, 0, 6, 0, 14, 1, 1, 1, 1};
 const size_t C_USHORT_BIT = CHAR_BIT * sizeof(unsigned short);
@@ -598,6 +593,105 @@ int bern(void *arg){
   return 0;
 }
 
+void run_max_edges_graph_test(size_t log_start, size_t log_end){
+  int res = 1;
+  size_t i, j, k;
+  size_t num_vts;
+  size_t start;
+  void *dist = NULL, *prev = NULL;
+  bern_arg_t b;
+  adj_lst_t a;
+  b.p = C_PROB_ONE;
+  printf("Run a bfs test on graphs with n vertices, where "
+	 "2**%lu <= n <= 2**%lu, and n(n - 1) edges\n",
+	 TOLU(log_start), TOLU(log_end));
+  for (i = log_start; i <= log_end; i++){
+    num_vts = pow_two_perror(i);
+    printf("\t\tvertices: %lu\n", TOLU(num_vts));
+    for (j = 0; j < C_FN_COUNT; j++){
+      /* no declared type after realloc; effective type is set by bfs */
+      dist = realloc_perror(dist, num_vts, C_VT_SIZES[j]);
+      prev = realloc_perror(prev, num_vts, C_VT_SIZES[j]);
+      adj_lst_rand_dir(&a,
+		       num_vts,
+		       C_VT_SIZES[j],
+		       C_READ[j],
+		       C_WRITE[j],
+		       bern,
+		       &b);
+      start =  RANDOM() % num_vts;
+      bfs(&a, start, dist, prev, C_CMPAT[j], C_INCR[j]);
+      for (k = 0; k < num_vts; k++){
+	if (k == start){
+	  res *= (C_READ[j](ptr(dist, k, C_VT_SIZES[j]))  == 0);
+	}else{
+	  res *= (C_READ[j](ptr(dist, k, C_VT_SIZES[j]))  == 1);
+	}
+	res *= (C_READ[j](ptr(prev, k, C_VT_SIZES[j]))  == start);
+      }
+      printf("\t\t\t%s correctness:     ", C_VT_TYPES[j]);
+      print_test_result(res);
+      res = 1;
+      adj_lst_free(&a); /* deallocates blocks with effective vertex type */
+    }
+  }
+  free(dist);
+  free(prev);
+  dist = NULL;
+  prev = NULL;
+}
+
+/**
+   Runs a bfs test on directed graphs with no edges.
+*/
+void run_no_edges_graph_test(size_t log_start, size_t log_end){
+  int res = 1;
+  size_t i, j, k;
+  size_t num_vts;
+  size_t start;
+  void *dist = NULL, *prev = NULL;
+  bern_arg_t b;
+  adj_lst_t a;
+  b.p = C_PROB_ZERO;
+  printf("Run a bfs test on graphs with n vertices, where "
+	 "2**%lu <= n <= 2**%lu, and no edges\n",
+	 TOLU(log_start), TOLU(log_end));
+  for (i = log_start; i <= log_end; i++){
+    num_vts = pow_two_perror(i);
+    printf("\t\tvertices: %lu\n", TOLU(num_vts));
+    for (j = 0; j < C_FN_COUNT; j++){
+      /* no declared type after realloc; effective type is set by bfs */
+      dist = realloc_perror(dist, num_vts, C_VT_SIZES[j]);
+      prev = realloc_perror(prev, num_vts, C_VT_SIZES[j]);
+      adj_lst_rand_dir(&a,
+		       num_vts,
+		       C_VT_SIZES[j],
+		       C_READ[j],
+		       C_WRITE[j],
+		       bern,
+		       &b);
+      start =  RANDOM() % num_vts;
+      bfs(&a, start, dist, prev, C_CMPAT[j], C_INCR[j]);
+      for (k = 0; k < num_vts; k++){
+	if (k == start){
+	  res *= (C_READ[j](ptr(prev, k, C_VT_SIZES[j])) == start &&
+		  C_READ[j](ptr(dist, k, C_VT_SIZES[j])) == 0);
+        }else{
+	  res *= (C_READ[j](ptr(prev, k, C_VT_SIZES[j])) == num_vts);
+	}
+      }
+      printf("\t\t\t%s correctness:     ", C_VT_TYPES[j]);
+      print_test_result(res);
+      res = 1;
+      adj_lst_free(&a); /* deallocates blocks with effective vertex type */
+    }
+  }
+  free(dist);
+  free(prev);
+  dist = NULL;
+  prev = NULL;
+}
+
 /**
    Run a bfs test on random directed graphs.
 */
@@ -634,15 +728,6 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
 				  C_WRITE[0],
 				  C_CMPAT[0],
 				  C_INCR[0],
-				  bern,
-				  &b);
-      run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[1],
-				  C_VT_TYPES[1],
-				  C_READ[1],
-				  C_WRITE[1],
-				  C_CMPAT[1],
-				  C_INCR[1],
 				  bern,
 				  &b);
     }
@@ -741,10 +826,8 @@ int main(int argc, char *argv[]){
     run_graph_a_test();
     run_graph_b_test();
   }
-  /*
   if (args[7]) run_max_edges_graph_test(args[0], args[1]);
   if (args[8]) run_no_edges_graph_test(args[2], args[3]);
-  */
   if (args[9]) run_random_dir_graph_test(args[4], args[5]);
   free(args);
   args = NULL;

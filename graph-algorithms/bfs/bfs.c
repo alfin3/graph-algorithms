@@ -30,22 +30,6 @@ static const size_t QUEUE_INIT_COUNT = 1;
 
 static void *ptr(const void *block, size_t i, size_t size);
 
-void bfs_incr_ushort(void *a){
-  (*(unsigned short *)a)++;
-}
-
-void bfs_incr_uint(void *a){
-  (*(unsigned int *)a)++;
-}
-
-void bfs_incr_ulong(void *a){
-  (*(unsigned long *)a)++;
-}
-
-void bfs_incr_sz(void *a){
-  (*(size_t *)a)++;
-}
-
 int bfs_cmpat_ushort(const void *a, const void *i, const void *v){
   return ((const unsigned short *)a)[*(const unsigned short *)i] !=
     *(const unsigned short *)v;
@@ -63,6 +47,22 @@ int bfs_cmpat_ulong(const void *a, const void *i, const void *v){
 
 int bfs_cmpat_sz(const void *a, const void *i, const void *v){
   return ((const size_t *)a)[*(const size_t *)i] != *(const size_t *)v;
+}
+
+void bfs_incr_ushort(void *a){
+  (*(unsigned short *)a)++;
+}
+
+void bfs_incr_uint(void *a){
+  (*(unsigned int *)a)++;
+}
+
+void bfs_incr_ulong(void *a){
+  (*(unsigned long *)a)++;
+}
+
+void bfs_incr_sz(void *a){
+  (*(size_t *)a)++;
 }
 
 /**
