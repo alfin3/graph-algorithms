@@ -46,6 +46,18 @@
 #include "utilities-mem.h"
 #include "utilities-mod.h"
 
+/**
+   Generate random numbers in a portable way for test purposes only; rand()
+   in the Linux C Library uses the same generator as random(), which may not
+   be the case on older rand() implementations, and on current
+   implementations on different systems.
+*/
+#define RGENS_SEED() do{srand(time(NULL));}while (0)
+#define RANDOM() (rand()) /* [0, RAND_MAX] */
+#define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
+
+#define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
+
 /* input handling */
 const char *C_USAGE =
   "dfs-test\n"
@@ -154,18 +166,6 @@ const size_t C_PROBS_COUNT = 5;
 const double C_PROBS[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
 const double C_PROB_ONE = 1.0;
 const double C_PROB_ZERO = 0.0;
-
-/**
-   Generate random numbers in a portable way for test purposes only; rand()
-   in the Linux C Library uses the same generator as random(), which may not
-   be the case on older rand() implementations, and on current
-   implementations on different systems.
-*/
-#define RGENS_SEED() do{srand(time(NULL));}while (0)
-#define RANDOM() (rand()) /* [0, RAND_MAX] */
-#define DRAND() ((double)rand() / RAND_MAX) /* [0.0, 1.0] */
-
-#define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
 
 int cmp_arr(const void *a,
 	    const void *b,
@@ -546,8 +546,6 @@ void run_max_edges_graph_test(size_t log_start, size_t log_end){
   size_t *pre = NULL, *post = NULL;
   bern_arg_t b;
   adj_lst_t a;
-  pre = malloc_perror(pow_two_perror(log_end), sizeof(size_t));
-  post = malloc_perror(pow_two_perror(log_end), sizeof(size_t));
   b.p = C_PROB_ONE;
   printf("Run a dfs test on graphs with n vertices, where "
 	 "2**%lu <= n <= 2**%lu, and n(n - 1) edges\n",

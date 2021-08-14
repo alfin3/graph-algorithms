@@ -58,22 +58,6 @@ static void search(const adj_lst_t *a,
 		   void (*incr_vt)(void *));
 static void *ptr(const void *block, size_t i, size_t size);
 
-void dfs_incr_ushort(void *a){
-  (*(unsigned short *)a)++;
-}
-
-void dfs_incr_uint(void *a){
-  (*(unsigned int *)a)++;
-}
-
-void dfs_incr_ulong(void *a){
-  (*(unsigned long *)a)++;
-}
-
-void dfs_incr_sz(void *a){
-  (*(size_t *)a)++;
-}
-
 int dfs_cmpat_ushort(const void *a, const void *i, const void *v){
   return ((const unsigned short *)a)[*(const unsigned short *)i] !=
     *(const unsigned short *)v;
@@ -91,6 +75,22 @@ int dfs_cmpat_ulong(const void *a, const void *i, const void *v){
 
 int dfs_cmpat_sz(const void *a, const void *i, const void *v){
   return ((const size_t *)a)[*(const size_t *)i] != *(const size_t *)v;
+}
+
+void dfs_incr_ushort(void *a){
+  (*(unsigned short *)a)++;
+}
+
+void dfs_incr_uint(void *a){
+  (*(unsigned int *)a)++;
+}
+
+void dfs_incr_ulong(void *a){
+  (*(unsigned long *)a)++;
+}
+
+void dfs_incr_sz(void *a){
+  (*(size_t *)a)++;
 }
 
 /**
