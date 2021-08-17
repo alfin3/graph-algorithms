@@ -29,10 +29,12 @@
 
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 and C99 with the only requirement that the number of value 
-   bits (width) of unsigned short is not less than 16 and is even *. 
+   bits (precision == width) of unsigned short is not less than 16 and is
+   even *. 
 
-   * currently CHAR_BIT * sizeof(unsigned short) is used to get bit width
-     under the assumption that all bits participate in the value.
+   * currently CHAR_BIT * sizeof(unsigned short) is used to get the width
+     of an unsigned short integer under the assumption that all bits
+     participate in the value.
 */
 
 #include <stdio.h>
@@ -707,8 +709,8 @@ void run_random_dir_graph_helper(size_t num_vts,
   clock_t t;
   /* no declared type after realloc; effective type is set by dfs */
   start = malloc_perror(C_ITER, sizeof(size_t));
-  pre = realloc_perror(pre, num_vts, vt_size);
-  post = realloc_perror(post, num_vts, vt_size);
+  pre = malloc_perror(num_vts, vt_size);
+  post = malloc_perror(num_vts, vt_size);
   adj_lst_rand_dir(&a, num_vts, vt_size, read, write, bern, b);
   for (i = 0; i < C_ITER; i++){
     start[i] =  RANDOM() % num_vts;

@@ -53,21 +53,23 @@ void dfs_incr_sz(void *a);
    and postvisit values of a DFS search from a start vertex. Assumes start
    is valid and there is at least one vertex.
    a           : pointer to an adjacency list with at least one and at most
-                 2**(W - 1) - 1 vertices, where W is the bit width of the
+                 2**(P - 1) - 1 vertices, where P is the precision of the
                  integer type used to represent vertices
    start       : a start vertex for running dfs
-   pre         : pointer to a preallocated array with the count of elements
-                 equal to the number of vertices in the adjacency list; the
-                 size of each element is equal to the size of the integer
-                 type used to represent vertices; if the pointed block has
-                 no declared type then dfs sets the effective type of the
-                 block to the integer type of vertices
+   pre         : pointer to a preallocated array with the count equal to the
+                 number of vertices in the adjacency list; each element is
+                 of the integer type used to represent vertices and the
+                 value of every element is set by the algorithm; if the
+                 pointed block has no declared type then dfs sets the
+                 effective type of every element to the integer type of
+                 vertices
    post        : pointer to a preallocated array with the count equal to the
-                 number of vertices in the adjacency list; the size of each
-                 element is equal to the size of the integer type used to
-                 represent vertices; if the pointed block has no declared
-                 type then dfs sets the effective type of the block to the
-                 integer type of vertices
+                 number of vertices in the adjacency list; each element is
+                 of the integer type used to represent vertices and the
+                 value of every element is set by the algorithm; if the
+                 pointed block has no declared type then dfs sets the
+                 effective type of every element to the integer type of
+                 vertices
    cmpat_vt    : non-NULL pointer to a function for comparing the element in
                  the array pointed to by the first argument at the index
                  pointed to by the second argument, to the value pointed to
