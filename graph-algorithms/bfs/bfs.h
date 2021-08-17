@@ -62,17 +62,22 @@ void bfs_incr_sz(void *a);
    a           : pointer to an adjacency list with at least one vertex
    start       : a start vertex for running bfs
    dist        : pointer to a preallocated array with the count of elements
-                 equal to the number of vertices in the adjacency list; the
-                 size of each element is equal to the size of the integer
-                 type used to represent vertices; if the pointed block has
-                 no declared type then bfs sets the effective type of the
-                 block to the integer type of vertices
+                 equal to the number of vertices in the adjacency list; each
+                 element is of the integer type used to represent vertices
+                 in the adjacency list; if the pointed block has no declared
+                 type then bfs sets the effective type of each element
+                 corresponding to a reached vertex to the integer type of
+                 vertices; if the block was allocated with calloc then
+                 under C99 and C11 each element corresponding to an
+                 unreached vertex, can be safely read as an integer of the
+                 type used to represent vertices and will represent 0 value
    prev        : pointer to a preallocated array with the count equal to the
-                 number of vertices in the adjacency list; the size of each
-                 element is equal to the size of the integer type used to
-                 represent vertices; if the pointed block has no declared
-                 type then bfs sets the effective type of the block to the
-                 integer type of vertices
+                 number of vertices in the adjacency list; each element is
+                 of the integer type used to represent vertices and the
+                 value of every element is set by the algorithm; if the
+                 pointed block has no declared type then bfs sets the
+                 effective type of every element to the integer type of
+                 vertices
    cmpat_vt    : non-NULL pointer to a function for comparing the element in
                  the array pointed to by the first argument at the index
                  pointed to by the second argument, to the value pointed to

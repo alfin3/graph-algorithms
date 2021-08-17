@@ -567,7 +567,7 @@ void small_graph_helper(const graph_t *g,
   for (i = 0; i < a.num_vts; i++){
     bfs(&a, i, dist, prev, cmpat, incr);
     for (j = 0; j < a.num_vts; j++){
-      *res *= (cmp(ptr(prev, j , a.vt_size),
+      *res *= (cmp(ptr(prev, j, a.vt_size),
 		   ptr(ret_prev, j + vt_offset, a.vt_size)) == 0);
       if (a.read_vt(ptr(prev, j, a.vt_size)) != a.num_vts){
         /* no trap representation if vertex reached */
@@ -631,11 +631,11 @@ void run_max_edges_graph_test(size_t log_start, size_t log_end){
       bfs(&a, start, dist, prev, C_CMPAT[j], C_INCR[j]);
       for (k = 0; k < num_vts; k++){
 	if (k == start){
-	  res *= (C_READ[j](ptr(dist, k, C_VT_SIZES[j]))  == 0);
+	  res *= (C_READ[j](ptr(dist, k, C_VT_SIZES[j])) == 0);
 	}else{
-	  res *= (C_READ[j](ptr(dist, k, C_VT_SIZES[j]))  == 1);
+	  res *= (C_READ[j](ptr(dist, k, C_VT_SIZES[j])) == 1);
 	}
-	res *= (C_READ[j](ptr(prev, k, C_VT_SIZES[j]))  == start);
+	res *= (C_READ[j](ptr(prev, k, C_VT_SIZES[j])) == start);
       }
       printf("\t\t\t%s correctness:     ", C_VT_TYPES[j]);
       print_test_result(res);
@@ -721,7 +721,7 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
   size_t num_vts;
   bern_arg_t b;
   printf("Run a bfs test on random directed graphs from %lu random "
-	 "start vertices in each graph\n",  TOLU(C_ITER));
+	 "start vertices in each graph\n", TOLU(C_ITER));
   for (i = 0; i < C_PROBS_COUNT; i++){
     b.p = C_PROBS[i];
     printf("\tP[an edge is in a graph] = %.2f\n", b.p);
