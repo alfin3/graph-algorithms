@@ -758,10 +758,10 @@ void run_random_dir_graph_helper(size_t num_vts,
   void *dist = NULL, *prev = NULL;
   adj_lst_t a;
   clock_t t;
-  /* no declared type after realloc; effective type is set by bfs */
+  /* no declared type after malloc; effective type is set by bfs */
   start = malloc_perror(C_ITER, sizeof(size_t));
-  dist = realloc_perror(dist, num_vts, vt_size);
-  prev = realloc_perror(prev, num_vts, vt_size);
+  dist = malloc_perror(num_vts, vt_size);
+  prev = malloc_perror(num_vts, vt_size);
   adj_lst_rand_dir(&a, num_vts, vt_size, read, write, bern, b);
   for (i = 0; i < C_ITER; i++){
     start[i] =  RANDOM() % num_vts;
