@@ -150,19 +150,16 @@ int cmp_long_double(const void *a, const void *b){
 void new_uint(void *a, size_t val){
   size_t *s = a;
   *s = val;
-  s = NULL;
 }
 
 void new_double(void *a, size_t val){
   double *s = a;
   *s = val;
-  s = NULL;
 }
 
 void new_long_double(void *a, size_t val){
   long double *s = a;
   *s = val;
-  s = NULL;
 }
 
 typedef struct{
@@ -176,7 +173,7 @@ typedef struct{
   size_t (*rdc_key)(const void *, size_t);
 } ht_muloa_context_t;
 
-void ht_divchn_init_helper(ht_divchn_t *ht,
+void ht_divchn_uint_init_helper(ht_divchn_t *ht,
 			   size_t key_size,
 			   size_t elt_size,
 			   void (*free_elt)(void *),

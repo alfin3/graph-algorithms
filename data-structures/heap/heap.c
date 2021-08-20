@@ -75,27 +75,73 @@ static void fprintf_stderr_exit(const char *s, int line);
                  pointed to by the argument, is necessary to delete the element
 */
 void heap_init(heap_t *h,
-	       size_t init_count,
 	       size_t pty_size,
 	       size_t elt_size,
+	       size_t min_num,
+	       size_t alpha_n;
+	       size_t log_alpha_d;
 	       const heap_ht_t *hht,
 	       int (*cmp_pty)(const void *, const void *),
+	       int (*cmp_elt)(const void *, const void *),
 	       void (*free_elt)(void *)){
-  h->count = init_count;
-  h->count_max = HEAP_COUNT_MAX;
-  if (h->count > h->count_max){
-    fprintf_stderr_exit("init_count > count maximum", __LINE__);
-  }
-  h->num_elts = 0;
   h->pty_size = pty_size;
   h->elt_size = elt_size;
-  h->pair_size = add_sz_perror(pty_size, elt_size);
-  h->pty_elts = malloc_perror(init_count, h->pair_size);
+  /* align priority relative to a malloc's pointer and compute pair_size */
+  if (h->pty_size <= h->elt_size){
+    h->elt_offset = h->elt_size;
+  }else{
+    elt_rem = h->pty_size % h->elt_size;
+    h->elt_offset = add_sz_perror(h->pty_size,
+				  (elt_rem > 0) * (h->elt_size - elt_rem));
+  }
+  pty_rem = add_sz_perror(h->elt_offset, h->elt_size) % h->pty_size;
+  h->pair_size = add_sz_perror(h->elt_offset + h->elt_size,
+			       (pty_rem > 0) * (h->pty_size - pty_rem));
+  h->count = min_num;
+  h->num_elts = 0;
   h->buf = malloc_perror(2, h->pair_size); /* 1st heapify, 2nd swap */
+  h->pty_elts = malloc_perror(h->count, h->pair_size);
   h->hht = hht;
   h->cmp_pty = cmp_pty;
+  h->cmp_elt = cmp_elt;
   h->free_elt = free_elt;
-  h->hht->init(hht->ht, elt_size, sizeof(size_t), NULL, hht->context);
+  /* hash table maps an elt_size block to an index (key and element in ht);
+     elt_size block may be a pointer and h->cmp_elt (cmp_key in ht) may
+     dereference it */ 
+  h->hht->init(hht->ht,
+	       elt_size,
+	       sizeof(size_t),
+	       h->count,
+	       alpha_n,
+	       log_alpha_d,
+	       h->cmp_elt,
+	       NULL,
+	       NULL);
+}
+
+/**
+*/
+void heap_align(heap_t *h,
+		size_t pty_alignment,
+		size_t elt_alignment,
+		size_t sz_alignment){
+  size_t elt_rem, pty_rem;
+  if (h->elt_size == 0){
+    h->elt_offset = h->pty_size;
+  }else if (h->pty_size <= elt_alignment){
+    h->elt_offset = elt_alignment;
+  }else{
+    elt_rem = h->pty_size % elt_alignment;
+    h->elt_offset = add_sz_perror(h->pty_size,
+				  (elt_rem > 0) * (elt_alignment - elt_rem));
+  }
+  pty_rem = add_sz_perror(h->elt_offset, h->elt_size) % pty_alignment;
+  h->pair_size = add_sz_perror(h->elt_offset + h->elt_size,
+			       (pty_rem > 0) * (pty_alignment - pty_rem));
+  h->buf = realloc_perror(h->buf, 2, h->pair_size);
+  memset(a->buf, 0, 2 * a->pair_size);
+  h->pty_elts = realloc_perror(h->pty_elts, init_count, h->pair_size);
+  h->hht->align(hht->ht, sz_alignment);
 }
 
 /**

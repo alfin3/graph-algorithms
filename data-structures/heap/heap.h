@@ -27,37 +27,40 @@
 
 #include <stddef.h>
 
-typedef void (*heap_ht_init)(void *,
-			     size_t,
-			     size_t,
-			     void (*)(void *), /* free_elt */
-			     void *); /* pointer to context */
-typedef void (*heap_ht_insert)(void *, const void *, const void *);
-typedef void *(*heap_ht_search)(const void *, const void *);
-typedef void (*heap_ht_remove)(void *, const void *, void *);
-typedef void (*heap_ht_free)(void *);
-
 typedef struct{
-  void *ht; /* points to a block of hash table struct size */
-  void *context; /* points to initialization context */
-  heap_ht_init init;
-  heap_ht_insert insert;
-  heap_ht_search search;
-  heap_ht_remove remove;
-  heap_ht_free free;
+  void *ht; /* points to a preallocated hash table struct */
+  
+  /* pointers to hash table op helpers, pre-defined in each hash table */
+  void (*init)(void *,
+	       size_t,
+	       size_t,
+	       size_t,
+	       size_t,
+	       size_t,
+	       int (*)(const void *, const void *),
+	       size_t (*)(const void *, size_t),
+	       void (*)(void *));
+  void (*align)(void *, size_t);
+  void (*insert)(void *, const void *, const void *);
+  void *(*search)(const void *, const void *);
+  void (*remove)(void *, const void *, void *);
+  void (*free)(void *);
 } heap_ht_t;
 
 typedef struct{
-  size_t count;
-  size_t count_max;
-  size_t num_elts;
   size_t pty_size;
   size_t elt_size;
-  size_t pair_size; /* pty_size + elt_size */
-  void *pty_elts;
+  size_t pair_size; /* size of a pty elt pair aligned in memory */
+  size_t elt_offset; /* number of bytes from beginning of pair to elt */
+  size_t count;
+  size_t num_elts;
+  size_t alpha_n;
+  size_t log_alpha_d;
   void *buf; /* only used by heap operations internally */
+  void *pty_elts;
   const heap_ht_t *hht;
   int (*cmp_pty)(const void *, const void *);
+  int (*cmp_elt)(const void *, const void *);
   void (*free_elt)(void *);
 } heap_t;
 
