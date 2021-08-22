@@ -489,7 +489,7 @@ void insert_search_free(size_t num_ins,
 		 NULL,
 		 NULL,
 		 free_elt);
-  ht_divchn_align_elt(&ht, elt_alignment);
+  ht_divchn_align(&ht, elt_alignment);
   insert_keys_elts(&ht, keys, elts, num_ins, &res);
   search_in_ht(&ht, keys, elts, num_ins, val_elt, &res);
   for (i = 0; i < num_ins; i++){
@@ -671,7 +671,7 @@ void remove_delete(size_t num_ins,
 		 NULL,
 		 NULL,
 		 free_elt);
-  ht_divchn_align_elt(&ht, elt_alignment);
+  ht_divchn_align(&ht, elt_alignment);
   insert_keys_elts(&ht, keys, elts, num_ins, &res);
   remove_key_elts(&ht, keys, elts, num_ins, val_elt, &res);
   insert_keys_elts(&ht, keys, elts, num_ins, &res);
@@ -716,7 +716,7 @@ void run_corner_cases_test(size_t log_ins){
 		   NULL,
 		   NULL,
 		   NULL);
-    ht_divchn_align_elt(&ht, elt_alignment);
+    ht_divchn_align(&ht, elt_alignment);
     for (k = 0; k < num_ins; k++){
       elt = k;
       ht_divchn_insert(&ht, key, &elt);

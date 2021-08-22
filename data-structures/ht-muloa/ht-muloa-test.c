@@ -491,7 +491,7 @@ void insert_search_free(size_t num_ins,
 		NULL,
 		NULL,
 		free_elt);
-  ht_muloa_align_elt(&ht, elt_alignment);
+  ht_muloa_align(&ht, elt_alignment);
   insert_keys_elts(&ht, keys, elts, num_ins, &res);
   search_in_ht(&ht, keys, elts, num_ins, val_elt, &res);
   for (i = 0; i < num_ins; i++){
@@ -672,7 +672,7 @@ void remove_delete(size_t num_ins,
 		NULL,
 		NULL,
 		free_elt);
-  ht_muloa_align_elt(&ht, elt_alignment);
+  ht_muloa_align(&ht, elt_alignment);
   insert_keys_elts(&ht, keys, elts, num_ins, &res);
   remove_key_elts(&ht, keys, elts, num_ins, val_elt, &res);
   insert_keys_elts(&ht, keys, elts, num_ins, &res);
@@ -705,7 +705,7 @@ void run_corner_cases_test(int log_ins){
 		NULL,
 		NULL,
 		NULL);
-  ht_muloa_align_elt(&ht, elt_alignment);
+  ht_muloa_align(&ht, elt_alignment);
   num_ins = pow_two_perror(log_ins);
   printf("Run corner cases test --> ");
   for (i = 0; i < num_ins; i++){

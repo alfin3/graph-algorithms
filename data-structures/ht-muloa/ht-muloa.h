@@ -141,11 +141,11 @@ void ht_muloa_init(ht_muloa_t *ht,
    T can be the same or a cvr-qualified/signed/unsigned version of the
    type. The operation is optionally called after ht_muloa_init is
    completed and before any other operation is called.
-   ht          : pointer to an initialized ht_muloa_t struct
-   alignment   : alignment requirement or size of the type, a pointer to
-                 which is used to access an elt_size block
+   ht            : pointer to an initialized ht_muloa_t struct
+   elt_alignment : alignment requirement or size of the type, a pointer to
+                   which is used to access an elt_size block
 */
-void ht_muloa_align_elt(ht_muloa_t *ht, size_t alignment);
+void ht_muloa_align(ht_muloa_t *ht, size_t elt_alignment);
 
 /**
    Inserts a key and an associated element into a hash table. If the key is
@@ -191,11 +191,20 @@ void ht_muloa_free(ht_muloa_t *ht);
    rules and compatibility rules for function types. In each case, a
    (qualified) ht_muloa_t *p0 is converted to (qualified) void * and back
    to a (qualified) ht_muloa_t *p1, thus guaranteeing that the value of p0
-   equals the value of p1. An initialization helper is constructed by the
-   user. 
+   equals the value of p1.
 */
 
-void ht_muloa_align_elt_helper(void *ht, size_t alignment);
+void ht_muloa_init_helper(void *ht,
+			  size_t key_size,
+			  size_t elt_size,
+			  size_t min_num,
+			  size_t alpha_n,
+			  size_t log_alpha_d,
+			  int (*cmp_key)(const void *, const void *),
+			  size_t (*rdc_key)(const void *, size_t),
+			  void (*free_elt)(void *));
+
+void ht_muloa_align_helper(void *ht, size_t alignment);
 
 void ht_muloa_insert_helper(void *ht, const void *key, const void *elt);
 

@@ -208,13 +208,13 @@ void ht_divchn_init(ht_divchn_t *ht,
    T can be the same or a cvr-qualified/signed/unsigned version of the
    type. The operation is optionally called after ht_divchn_init is
    completed and before any other operation is called.
-   ht          : pointer to an initialized ht_divchn_t struct
-   alignment   : alignment requirement or size of the type, a pointer to
-                 which is used to access an elt_size block
+   ht            : pointer to an initialized ht_divchn_t struct
+   elt_alignment : alignment requirement or size of the type, a pointer to
+                   which is used to access an elt_size block
 */
-void ht_divchn_align_elt(ht_divchn_t *ht, size_t alignment){
-  ht->elt_alignment = alignment;
-  dll_align_elt(ht->ll, alignment);
+void ht_divchn_align(ht_divchn_t *ht, size_t elt_alignment){
+  ht->elt_alignment = elt_alignment;
+  dll_align_elt(ht->ll, elt_alignment);
 }
 
 /**
@@ -318,12 +318,31 @@ void ht_divchn_free(ht_divchn_t *ht){
    rules and compatibility rules for function types. In each case, a
    (qualified) ht_divchn_t *p0 is converted to (qualified) void * and back
    to a (qualified) ht_divchn_t *p1, thus guaranteeing that the value of p0
-   equals the value of p1. An initialization helper is constructed by the
-   user. 
+   equals the value of p1.
 */
 
-void ht_divchn_align_elt_helper(void *ht, size_t alignment){
-  ht_divchn_align_elt(ht, alignment);
+void ht_divchn_init_helper(void *ht,
+			   size_t key_size,
+			   size_t elt_size,
+			   size_t min_num,
+			   size_t alpha_n,
+			   size_t log_alpha_d,
+			   int (*cmp_key)(const void *, const void *),
+			   size_t (*rdc_key)(const void *, size_t),
+			   void (*free_elt)(void *)){
+  ht_divchn_init(ht,
+		 key_size,
+		 elt_size,
+		 min_num,
+		 alpha_n,
+		 log_alpha_d,
+		 cmp_key,
+		 rdc_key,
+		 free_elt);
+}
+
+void ht_divchn_align_helper(void *ht, size_t elt_alignment){
+  ht_divchn_align(ht, elt_alignment);
 }
 
 void ht_divchn_insert_helper(void *ht, const void *key, const void *elt){
