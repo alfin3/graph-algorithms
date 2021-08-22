@@ -37,12 +37,10 @@
 
 static void swap(heap_t *h, size_t i, size_t j);
 static void half_swap(heap_t *h, size_t t, size_t s);
-static void heap_grow(heap_t *h);
 static void heapify_up(heap_t *h, size_t i);
 static void heapify_down(heap_t *h, size_t i);
 static void *pty_ptr(const heap_t *h, size_t i);
 static void *elt_ptr(const heap_t *h, size_t i);
-static void fprintf_stderr_exit(const char *s, int line);
 
 /**
    Initializes a heap.
@@ -65,6 +63,10 @@ static void fprintf_stderr_exit(const char *s, int line);
                  the first argument is greater than the priority value 
                  pointed to by the second, and zero integer value if the two
                  priority values are equal
+   cmp_elt     : 
+   rdc_elt     : both have to work on the same subset of bits in the element,
+                 whether the element is within a contiguous or non-contiguous
+                 memory block
    free_elt    : - if an element is within a contiguous memory block and
                  a copy of the element was inserted, then NULL as free_elt
                  is sufficient to delete the element,
@@ -83,6 +85,7 @@ void heap_init(heap_t *h,
 	       const heap_ht_t *hht,
 	       int (*cmp_pty)(const void *, const void *),
 	       int (*cmp_elt)(const void *, const void *),
+	       size_t (*rdc_elt)(const void *, size_t),
 	       void (*free_elt)(void *)){
   h->pty_size = pty_size;
   h->elt_size = elt_size;
@@ -104,10 +107,9 @@ void heap_init(heap_t *h,
   h->hht = hht;
   h->cmp_pty = cmp_pty;
   h->cmp_elt = cmp_elt;
+  h->rdc_elt = rdc_elt;
   h->free_elt = free_elt;
-  /* hash table maps an elt_size block to an index (key and element in ht);
-     elt_size block may be a pointer and h->cmp_elt (cmp_key in ht) may
-     dereference it */ 
+  /* hash table maps an elt_size block to an index */ 
   h->hht->init(hht->ht,
 	       elt_size,
 	       sizeof(size_t),
@@ -115,7 +117,7 @@ void heap_init(heap_t *h,
 	       alpha_n,
 	       log_alpha_d,
 	       h->cmp_elt,
-	       NULL,
+	       h->rdc_elt,
 	       NULL);
 }
 
@@ -159,7 +161,12 @@ void heap_align(heap_t *h,
 */
 void heap_push(heap_t *h, const void *pty, const void *elt){
   size_t ix = h->num_elts;
-  if (h->count == ix) heap_grow(h);
+  if (h->count == ix){
+    /* grow heap; amortized constant overhead per push, 
+       without considering realloc's search */
+    h->count *= mul_sz_perror(2, h->count);
+    h->pty_elts = realloc_perror(h->pty_elts, h->count, h->pair_size);
+  }
   memcpy(pty_ptr(h, ix), pty, h->pty_size);
   memcpy(elt_ptr(h, ix), elt, h->elt_size);
   h->hht->insert(h->hht->ht, elt, &ix);
@@ -260,23 +267,6 @@ static void half_swap(heap_t *h, size_t t, size_t s){
 }
 
 /**
-   Doubles the size of a heap upto the maximal heap count. Amortized
-   constant overhead per push operation, without considering realloc's
-   search of the memory heap.
-*/
-static void heap_grow(heap_t *h){
-  if (h->count == h->count_max){
-    fprintf_stderr_exit("tried to exceed the count maximum", __LINE__);
-  }
-  if (h->count_max - h->count < h->count){
-    h->count = h->count_max;
-  }else{
-    h->count *= 2;
-  }
-  h->pty_elts = realloc_perror(h->pty_elts, h->count, h->pair_size);
-}
-
-/**
    Heapifies the heap structure from the ith element upwards.
 */
 static void heapify_up(heap_t *h, size_t i){
@@ -341,13 +331,5 @@ static void *pty_ptr(const heap_t *h, size_t i){
    Computes a pointer to a priority in the element-priority array of a heap.
 */
 static void *elt_ptr(const heap_t *h, size_t i){
-  return (void *)((char *)h->pty_elts + i * h->pair_size + h->pty_size);
-}
-
-/**
-   Prints an error message and exits.
-*/
-static void fprintf_stderr_exit(const char *s, int line){
-  fprintf(stderr, "%s in %s at line %d\n", s,  __FILE__, line);
-  exit(EXIT_FAILURE);
+  return (void *)((char *)h->pty_elts + i * h->pair_size + h->elt_offset);
 }

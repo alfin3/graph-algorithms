@@ -61,6 +61,7 @@ typedef struct{
   const heap_ht_t *hht;
   int (*cmp_pty)(const void *, const void *);
   int (*cmp_elt)(const void *, const void *);
+  size_t (*rdc_elt)(const void *, size_t);
   void (*free_elt)(void *);
 } heap_t;
 
@@ -95,12 +96,23 @@ typedef struct{
                  pointed to by the argument, is necessary to delete the element
 */
 void heap_init(heap_t *h,
-	       size_t init_count,
 	       size_t pty_size,
 	       size_t elt_size,
+	       size_t min_num,
+	       size_t alpha_n;
+	       size_t log_alpha_d;
 	       const heap_ht_t *hht,
 	       int (*cmp_pty)(const void *, const void *),
+	       int (*cmp_elt)(const void *, const void *),
+	       size_t (*rdc_elt)(const void *, size_t),
 	       void (*free_elt)(void *));
+
+/**
+*/
+void heap_align(heap_t *h,
+		size_t pty_alignment,
+		size_t elt_alignment,
+		size_t sz_alignment);
 
 /**
    Pushes an element not in a heap and an associated priority value. 
@@ -149,18 +161,5 @@ void heap_pop(heap_t *h, void *pty, void *elt);
    an argument passed as the h parameter.
 */
 void heap_free(heap_t *h);
-
-/**
-   Sets the heap count maximum that may be reached, if possible, as a heap
-   grows by repetitive doubling from its initial count and by adding, if
-   necessary, the difference between HEAP_COUNT_MAX and the last count in
-   the last step.
-
-   The program exits with an error message, if a) the value of the init_count
-   parameter in heap_init is greater than HEAP_COUNT_MAX, or b) if a heap
-   growth step is attempted after HEAP_COUNT_MAX was reached. The macro is
-   set to the maximal value of size_t by default and is used as size_t.
-*/
-#define HEAP_COUNT_MAX ((size_t)-1)
 
 #endif
