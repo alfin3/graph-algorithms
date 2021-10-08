@@ -60,19 +60,24 @@ void prepend_append_free(const dll_t *ll_prep,
 			 dll_node_t **head_app,
 			 int start_val,
 			 int num_ins,
+			 size_t key_size,
 			 size_t elt_size,
+			 void (*new_key)(void *, int),
 			 void (*new_elt)(void *, int),
+			 int (*val_key)(const void *),
 			 int (*val_elt)(const void *),
+			 void (*free_key)(void *),
 			 void (*free_elt)(void *));
 void *ptr(const void *block, size_t i, size_t size);
-void print_dll(dll_node_t **head, int (*val)(const dll_node_t *));
 void print_test_result(int res);
 
 /**
    Run tests of a doubly linked list of integer keys and integer elements. 
-   A pointer to an integer is passed as elt in prepend and append ops,
-   and the integer is copied into the list. NULL as free_elt is sufficient
-   to delete a node.
+   A pointer to an integer is passed as key parameter value in prepend and
+   append ops, and the integer is copied into a node as a key_size block.
+   A pointer to an integer is passed as elt parameter value in prepend_new
+   and append_new ops, and the integer is copied into a node as an elt_size
+   block. NULL as free_key and free_elt is sufficient to delete a node.
 */
 
 void new_int(void *a, int val){
@@ -103,8 +108,7 @@ void run_prepend_append_free_int_test(int log_ins){
   dll_init(&ll_app, &head_app, key_size);
   dll_align_elt(&ll_prep, sizeof(int));
   dll_align_elt(&ll_app, sizeof(int));
-  printf("Run prepend, append, free test on int keys and int "
-	 "elements\n");
+  printf("Run prepend, append, free test on int keys and int elements\n");
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
@@ -115,9 +119,13 @@ void run_prepend_append_free_int_test(int log_ins){
 		      &head_app,
 		      start_val,
 		      num_ins,
+		      key_size,
 		      elt_size,
 		      new_int,
+		      new_int,
 		      val_int,
+		      val_int,
+		      NULL,
 		      NULL);
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
@@ -129,9 +137,13 @@ void run_prepend_append_free_int_test(int log_ins){
 		      &head_app,
 		      start_val,
 		      num_ins,
+		      key_size,
 		      elt_size,
 		      new_int,
+		      new_int,
 		      val_int,
+		      val_int,
+		      NULL,
 		      NULL);
   start_val += num_ins;
   printf("\tstart key value: %d, "
@@ -144,18 +156,23 @@ void run_prepend_append_free_int_test(int log_ins){
 		      &head_app,
 		      start_val,
 		      num_ins,
+		      key_size,
 		      elt_size,
 		      new_int,
+		      new_int,
 		      val_int,
+		      val_int,
+		      NULL,
 		      NULL);
 }
 
 /**
-   Run tests of a doubly linked list of integer keys and int_ptr_t elements. 
-   A pointer to a pointer to an int_ptr_t element is passed as elt in 
-   prepend and append ops and the pointer to the int_ptr_t element is
-   copied into the list. A int_ptr_t-specific free_elt is necessary to
-   delete a node.
+   Run tests of a doubly linked list of non-contiguous int_ptr_t keys and
+   int_ptr_t elements. A pointer to a pointer to an int_ptr_t key is passed
+   as key parameter value in prepend_new and append_new ops and the pointer
+   to the int_ptr_t key is copied into a node as a key_size block. A
+   int_ptr_t-specific free_key is necessary to delete a node. The same
+   applies to an element.
 */
 
 typedef struct{
@@ -194,7 +211,7 @@ void free_int_ptr(void *a){
 void run_prepend_append_free_int_ptr_test(int log_ins){
   int num_ins;
   int start_val = C_START_VAL;
-  size_t key_size = sizeof(int);
+  size_t key_size = sizeof(int_ptr_t *);
   size_t elt_size = sizeof(int_ptr_t *);
   dll_t ll_prep, ll_app;
   dll_node_t *head_prep, *head_app; /* uninitialized pointers for testing */
@@ -203,8 +220,8 @@ void run_prepend_append_free_int_ptr_test(int log_ins){
   dll_init(&ll_app, &head_app, key_size);
   dll_align_elt(&ll_prep, sizeof(int_ptr_t *));
   dll_align_elt(&ll_app, sizeof(int_ptr_t *));
-  printf("Run prepend, append, free test on int keys and noncontiguous "
-         "int_ptr_t elements \n");
+  printf("Run prepend, append, free test on noncontiguous int_ptr_t "
+	 "keys and elements \n");
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
 	 "# nodes: %d\n",
@@ -215,9 +232,13 @@ void run_prepend_append_free_int_ptr_test(int log_ins){
 		      &head_app,
 		      start_val,
 		      num_ins,
+		      key_size,
 		      elt_size,
 		      new_int_ptr,
+		      new_int_ptr,
 		      val_int_ptr,
+		      val_int_ptr,
+		      free_int_ptr,
 		      free_int_ptr);
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
@@ -229,9 +250,13 @@ void run_prepend_append_free_int_ptr_test(int log_ins){
 		      &head_app,
 		      start_val,
 		      num_ins,
+		      key_size,
 		      elt_size,
 		      new_int_ptr,
+		      new_int_ptr,
 		      val_int_ptr,
+		      val_int_ptr,
+		      free_int_ptr,
 		      free_int_ptr);
   start_val += num_ins;
   printf("\tstart key value: %d, "
@@ -244,9 +269,13 @@ void run_prepend_append_free_int_ptr_test(int log_ins){
 		      &head_app,
 		      start_val,
 		      num_ins,
+		      key_size,
 		      elt_size,
 		      new_int_ptr,
+		      new_int_ptr,
 		      val_int_ptr,
+		      val_int_ptr,
+		      free_int_ptr,
 		      free_int_ptr);
 }
 
@@ -306,11 +335,11 @@ void run_corner_cases_test(){
      NULL == dll_search_key(&ll_prep2, &head_prep2, &key, key_size, NULL) &&
      NULL == dll_search_key(&ll_app2, &head_app2, &key, key_size, NULL));
   /* delete */
-  dll_delete(&ll_n, &head_n, NULL, NULL);
-  dll_delete(&ll_prep1, &head_prep1, NULL, NULL);
-  dll_delete(&ll_app1, &head_app1, NULL, NULL);
-  dll_delete(&ll_prep2, &head_prep2, NULL, NULL);
-  dll_delete(&ll_app2, &head_app2, NULL, NULL);
+  dll_delete(&ll_n, &head_n, NULL, NULL, NULL);
+  dll_delete(&ll_prep1, &head_prep1, NULL, NULL, NULL);
+  dll_delete(&ll_app1, &head_app1, NULL, NULL, NULL);
+  dll_delete(&ll_prep2, &head_prep2, NULL, NULL, NULL);
+  dll_delete(&ll_app2, &head_app2, NULL, NULL, NULL);
   res *=
     (NULL == head_n &&
      0 == *(int *)dll_elt_ptr(&ll_prep1, head_prep1) &&
@@ -321,10 +350,10 @@ void run_corner_cases_test(){
      1 == *(int *)dll_key_ptr(&ll_prep2, head_prep2) &&
      0 == *(int *)dll_elt_ptr(&ll_app2, head_app2) &&
      0 == *(int *)dll_key_ptr(&ll_app2, head_app2));
-  dll_delete(&ll_prep1, &head_prep1, head_prep1, NULL);
-  dll_delete(&ll_app1, &head_app1, head_app1, NULL);
-  dll_delete(&ll_prep2, &head_prep2, head_prep2, NULL);
-  dll_delete(&ll_app2, &head_app2, head_app2, NULL);
+  dll_delete(&ll_prep1, &head_prep1, head_prep1, NULL, NULL);
+  dll_delete(&ll_app1, &head_app1, head_app1, NULL, NULL);
+  dll_delete(&ll_prep2, &head_prep2, head_prep2, NULL, NULL);
+  dll_delete(&ll_app2, &head_app2, head_app2, NULL, NULL);
   res *=
     (NULL == head_prep1 &&
      NULL == head_app1 &&
@@ -332,8 +361,8 @@ void run_corner_cases_test(){
      0 == *(int *)dll_key_ptr(&ll_prep2, head_prep2) &&
      1 == *(int *)dll_elt_ptr(&ll_app2, head_app2) &&
      1 == *(int *)dll_key_ptr(&ll_app2, head_app2));
-  dll_delete(&ll_prep2, &head_prep2, head_prep2, NULL);
-  dll_delete(&ll_app2, &head_app2, head_app2, NULL);
+  dll_delete(&ll_prep2, &head_prep2, head_prep2, NULL, NULL);
+  dll_delete(&ll_app2, &head_app2, head_app2, NULL, NULL);
   res *= (NULL == head_prep2 && NULL == head_app2);
   printf("Run corner cases test --> ");
   print_test_result(res);
@@ -350,23 +379,28 @@ void prepend_append_free(const dll_t *ll_prep,
 			 dll_node_t **head_app,
 			 int start_val,
 			 int num_ins,
+			 size_t key_size,
 			 size_t elt_size,
+			 void (*new_key)(void *, int),
 			 void (*new_elt)(void *, int),
+			 int (*val_key)(const void *),
 			 int (*val_elt)(const void *),
+			 void (*free_key)(void *),
 			 void (*free_elt)(void *)){
   int res = 1;
   int sum_val = 2 * start_val + num_ins - 1; /* < 2**(C_INT_BIT - 1) - 1 */
   int i;
-  int *keys = NULL;
-  size_t key_size = sizeof(int);
+  void *keys_prep = NULL, *keys_app = NULL;
   void *elts_prep = NULL, *elts_app = NULL;
   dll_node_t *node_prep = NULL, *node_app = NULL;
   clock_t t_prep, t_app, t_free_prep, t_free_app;
-  keys = malloc_perror(num_ins, key_size);
+  keys_prep = malloc_perror(num_ins, key_size);
+  keys_app = malloc_perror(num_ins, key_size);
   elts_prep = malloc_perror(num_ins, elt_size);
   elts_app = malloc_perror(num_ins, elt_size);
   for (i = 0; i < num_ins; i++){
-    keys[i] = start_val + i;
+    new_key(ptr(keys_prep, i, key_size), start_val + i);
+    new_key(ptr(keys_app, i, key_size), start_val + i);
     new_elt(ptr(elts_prep, i, elt_size), start_val + i);
     new_elt(ptr(elts_app, i, elt_size), start_val + i);
   }  
@@ -374,7 +408,7 @@ void prepend_append_free(const dll_t *ll_prep,
   for (i = 0; i < num_ins; i++){
     dll_prepend_new(ll_prep,
 		    head_prep,
-		    &keys[i],
+		    ptr(keys_prep, i, key_size),
 		    ptr(elts_prep, i, elt_size),
 		    key_size,
 		    elt_size);
@@ -384,7 +418,7 @@ void prepend_append_free(const dll_t *ll_prep,
   for (i = 0; i < num_ins; i++){
     dll_append_new(ll_app,
 		   head_app,
-		   &keys[i],
+		   ptr(keys_app, i, key_size),
 		   ptr(elts_app, i, elt_size),
 		   key_size,
 		   elt_size);
@@ -393,8 +427,8 @@ void prepend_append_free(const dll_t *ll_prep,
   node_prep = *head_prep;
   node_app = *head_app;
   for (i = 0; i < num_ins; i++){
-    res = (*(int *)dll_key_ptr(ll_prep, node_prep) +
-	   *(int *)dll_key_ptr(ll_app, node_app) ==
+    res = (val_key(dll_key_ptr(ll_prep, node_prep)) +
+	   val_key(dll_key_ptr(ll_app, node_app)) ==
 	   sum_val);
     res = (val_elt(dll_elt_ptr(ll_prep, node_prep)) +
 	   val_elt(dll_elt_ptr(ll_app, node_app)) ==
@@ -403,10 +437,10 @@ void prepend_append_free(const dll_t *ll_prep,
     node_app = node_app->next;
   }
   t_free_prep = clock();
-  dll_free(ll_prep, head_prep, free_elt);
+  dll_free(ll_prep, head_prep, free_key, free_elt);
   t_free_prep = clock() - t_free_prep;
   t_free_app = clock();
-  dll_free(ll_app, head_app, free_elt);
+  dll_free(ll_app, head_app, free_key, free_elt);
   t_free_app = clock() - t_free_app;
   res *= (head_prep != NULL && *head_prep == NULL);
   res *= (head_app != NULL && *head_app == NULL);
@@ -420,10 +454,12 @@ void prepend_append_free(const dll_t *ll_prep,
 	 (float)t_free_app / CLOCKS_PER_SEC);
   printf("\t\tcorrectness:             ");
   print_test_result(res);
-  free(keys);
+  free(keys_prep);
+  free(keys_app);
   free(elts_prep);
   free(elts_app);
-  keys = NULL;
+  keys_prep = NULL;
+  keys_app = NULL;
   elts_prep = NULL;
   elts_app = NULL;
 }
