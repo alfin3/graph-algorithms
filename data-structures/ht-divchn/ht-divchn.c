@@ -1,8 +1,10 @@
 /**
    ht-divchn.c
 
-   A hash table with generic hash keys and generic elements. The 
-   implementation is based on a division method for hashing into upto  
+   A hash table with generic contiguous or non-contiguous keys and generic
+   contiguous or non-contiguous elements. 
+
+   The implementation is based on a division method for hashing into upto  
    the number of slots determined by the largest prime number in the
    C_PRIME_PARTS array, representable as size_t on a given system, and a
    chaining method for resolving collisions. Due to chaining, the number
@@ -11,13 +13,31 @@
    
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by the 
-   alpha parameter. The alpha parameter does not provide an upper bound 
+   alpha parameters. The alpha parameters do not provide an upper bound 
    after the maximum count of slots in a hash table is reached.
 
-   A hash key is an object within a contiguous block of memory (e.g. a basic 
-   type, array, struct). An element is within a contiguous or noncontiguous
-   memory block.
+   A distinction is made between a key and a "key_size block", and an
+   element and an "elt_size block". During an insertion, a contiguous block
+   of size key_size ("key_size block") and a contiguous block of size
+   elt_size ("elt_size block") are copied into a hash table. A key may be
+   within a contiguous or non-contiguous memory block. Given a key, the user
+   decides what is copied into the key_size block of the hash table. If the
+   key is within a contiguous memory block, then it can be entirely copied
+   as a key_size block, or a pointer to it can be copied as a key_size
+   block. If the key is within a non-contiguous memory block, then a pointer
+   to it is copied as a key_size block. The same applies to an element. 
 
+   When a pointer to a key is copied into a hash table as a key_size block,
+   the user can also decide if only the pointer or the entire key is deleted
+   during the insert (in case of update), remove, delete, and free
+   operations. By setting free_key to NULL, only the pointer is deleted.
+   Otherwise, the deletion is performed according to a non-NULL free_key.
+   For example, when an in-memory set of images are used as keys (e.g. with
+   a subset of bits in each image used for hashing) and pointers are copied
+   into a hash table, then setting free_key to NULL will not affect the
+   original set of images throughout the lifetime of the hash table. The
+   same applies to elements and free_elt.
+   
    The implementation only uses integer and pointer operations. Integer
    arithmetic is used in load factor operations, thereby eliminating the
    use of float. Given parameter values within the specified ranges,
@@ -28,12 +48,14 @@
 
    The implementation does not use stdint.h and is portable under C89/C90
    and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even (every bit is required to participate
-   in the value at this time).
+   greater or equal to 16 and is even (at this time, every bit is required
+   to participate in the value).
 
    * except intended wrapping around of unsigned integers in modulo
      operations, which is defined, and overflow detection as a part
      of computing bounds, which is defined by the implementation.
+
+   TODO: add division with magic number multiplication.
 */
 
 #include <stdio.h>
@@ -128,41 +150,47 @@ static size_t build_prime(size_t start, size_t count);
    Initializes a hash table. 
    ht          : a pointer to a preallocated block of size 
                  sizeof(ht_divchn_t).
-   key_size    : non-zero size of a key object
-   elt_size    : - non-zero size of an element, if the element is within a
-                 contiguous memory block and a copy of the element is
-                 inserted,
-                 - size of a pointer to an element, if the element
-                 is within a noncontiguous memory block or a pointer to a
-                 contiguous element is inserted
-   min_num     : minimum number of keys that are known or expected to become 
-                 present simultaneously in a hash table, resulting in a
+   key_size    : non-zero size of a key_size block
+   elt_size    : non-zero size of an elt_size block
+   min_num     : minimum number of keys that are known to be or expected to
+                 be present simultaneously in a hash table; results in a
                  speedup by avoiding unnecessary growth steps of a hash
-                 table; 0 if a positive value is not specified and all growth
-                 steps are to be completed
-   alpha_n     : > 0 numerator of load factor upper bound
-   log_alpha_d : < CHAR_BIT * sizeof(size_t) log base 2 of denominator of
-                 load factor upper bound; denominator is a power of two
-   cmp_key     : - if NULL then a default memcmp-based comparison of keys
-                 is performed
+                 table; 0 if a positive value is not specified and all
+                 growth steps are to be completed
+   alpha_n     : > 0 numerator of a load factor upper bound
+   log_alpha_d : < CHAR_BIT * sizeof(size_t); log base 2 of the denominator
+                 of the load factor upper bound; the denominator is a power of
+                 two
+   cmp_key     : - if NULL then a default memcmp-based comparison of key_size
+                 blocks of keys is performed
                  - otherwise comparison function is applied which returns a
                  zero integer value iff the two keys accessed through the
                  first and the second arguments are equal; each argument is
-                 a pointer to a key_size block
+                 a pointer to the key_size block of a key; cmp_key must use
+                 the same subset of bits in a key as rdc_key
    rdc_key     : - if NULL then a default conversion of a bit pattern
-                 in the block pointed to by key is performed prior to
+                 in the key_size block of a key is performed prior to
                  hashing, which may introduce regularities
-                 - otherwise rdc_key is applied to a key prior to hashing;
-                 the first argument points to a key and the second argument
-                 provides the size of the key
-   free_elt    : - if an element is within a contiguous memory block and
-                 a copy of the element was inserted, then NULL as free_elt
-                 is sufficient to delete the element,
-                 - if an element is within a noncontiguous memory block or
-                 a pointer to a contiguous element was inserted, then an
-                 element-specific free_elt, taking a pointer to a pointer to an
-                 element as its argument and leaving a block of size elt_size
-                 pointed to by the argument, is necessary to delete the element
+                 - otherwise rdc_key is applied to a key to reduce the key
+                 to a size_t integer value prior to hashing; the argument
+                 points to the key_size block of a key; rdc_key must use
+                 the same subset of bits in a key as cmp_key
+   free_key    : - NULL if only key_size blocks should be deleted throughout
+                 the lifetime of the hash table (e.g. because keys were
+                 entirely copied as key_size blocks, or because pointers
+                 were copied as key_size blocks and only pointers should
+                 be deleted)
+                 - otherwise takes a pointer to the key_size block of a key
+                 as an argument, frees the memory of the key except the
+                 key_size block pointed to by the argument
+   free_elt    : - NULL if only elt_size blocks should be deleted throughout
+                 the lifetime of the hash table (e.g. because elements were
+                 entirely copied as elt_size blocks, or because pointers
+                 were copied as elt_size blocks and only pointers should
+                 be deleted)
+                 - otherwise takes a pointer to the elt_size block of an
+                 element as an argument, frees the memory of the element
+                 except the elt_size block pointed to by the argument
 */
 void ht_divchn_init(ht_divchn_t *ht,
 		    size_t key_size,
@@ -171,7 +199,8 @@ void ht_divchn_init(ht_divchn_t *ht,
 		    size_t alpha_n,
 		    size_t log_alpha_d,
 		    int (*cmp_key)(const void *, const void *),
-		    size_t (*rdc_key)(const void *, size_t),
+		    size_t (*rdc_key)(const void *),
+		    void (*free_key)(void *),
 		    void (*free_elt)(void *)){
   size_t i;
   ht->key_size = key_size;
@@ -193,11 +222,12 @@ void ht_divchn_init(ht_divchn_t *ht,
   }
   ht->cmp_key = cmp_key;
   ht->rdc_key = rdc_key;
+  ht->free_key = free_key;
   ht->free_elt = free_elt;
 }
 
 /**
-   Aligns each in-table elt_size block to be accessible with a pointer to a 
+   Aligns each in-table elt_size block to be accessible with a pointer to a
    type T other than character (in addition to a character pointer). If
    alignment requirement of T is unknown, the size of T can be used
    as a value of the alignment parameter because size of T >= alignment
@@ -210,7 +240,8 @@ void ht_divchn_init(ht_divchn_t *ht,
    completed and before any other operation is called.
    ht            : pointer to an initialized ht_divchn_t struct
    elt_alignment : alignment requirement or size of the type, a pointer to
-                   which is used to access an elt_size block
+                   which is used to access the elt_size block of an element
+                   in a hash table
 */
 void ht_divchn_align(ht_divchn_t *ht, size_t elt_alignment){
   ht->elt_alignment = elt_alignment;
@@ -218,10 +249,15 @@ void ht_divchn_align(ht_divchn_t *ht, size_t elt_alignment){
 }
 
 /**
-   Inserts a key and an associated element into a hash table. If the key is
-   in the hash table, associates the key with the new element. The key and 
-   elt parameters are not NULL and point to blocks of size key_size and
-   elt_size respectively.
+   Inserts a key and an associated element into a hash table by copying
+   the corresponding key_size and elt_size blocks. If the key pointed to by
+   the key parameter is already in the hash table according to cmp_key,
+   then deletes the previous key element pair according to free_key and
+   free_elt and inserts the new key element pair by copying the respective
+   key_size and elt_size blocks.
+   ht          : pointer to an initialized ht_divchn_t struct   
+   key         : non-NULL pointer to the key_size block of a key
+   elt         : non-NULL pointer to the elt_size block of an element
 */
 void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
   size_t ix;
@@ -233,7 +269,10 @@ void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
     dll_prepend_new(ht->ll, head, key, elt, ht->key_size, ht->elt_size);
     ht->num_elts++;
   }else{
+    /* update both key_size and elt_size blocks */
+    if (ht->free_key != NULL) ht->free_key(dll_key_ptr(ht->ll, node));
     if (ht->free_elt != NULL) ht->free_elt(dll_elt_ptr(ht->ll, node));
+    memcpy(dll_key_ptr(ht->ll, node), key, ht->key_size);
     memcpy(dll_elt_ptr(ht->ll, node), elt, ht->elt_size);
   }
   /* grow ht after ensuring it was insertion, not update */
@@ -245,10 +284,12 @@ void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
 }
 
 /**
-   If a key is present in a hash table, returns a pointer to its associated 
-   element, otherwise returns NULL. The key parameter is not NULL and points
-   to a block of size key_size. The returned pointer can be dereferenced
-   according to ht_divchn_init and ht_divchn_align_elt.
+   If a key is present in a hash table, according to cmp_key, then returns a
+   pointer to the elt_size block of its associated element in the hash table.
+   Otherwise returns NULL. The returned pointer can be dereferenced according
+   to the preceding calls to ht_divchn_init and ht_divchn_align_elt.
+   ht          : pointer to an initialized ht_divchn_t struct   
+   key         : non-NULL pointer to the key_size block of a key
 */
 void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
   const dll_node_t *node = dll_search_key(ht->ll,
@@ -264,11 +305,16 @@ void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
 }
 
 /**
-   Removes a key and its associated element from a hash table by copying 
-   the element or its pointer into a block of size elt_size pointed to
-   by elt. If the key is not in the hash table, leaves the block pointed
-   to by elt unchanged. The key and elt parameters are not NULL and point
-   to blocks of size key_size and elt_size respectively.
+   Removes the element associated with a key in a hash table that equals to
+   the key pointed to by the key parameter according to cmp_key, by copying
+   the elt_size block of the element to the elt_size block pointed to by the
+   elt parameter. Deletes the in-table key associated with the removed
+   element according to free_key. If there is no matching key in the hash
+   table according to cmp_key, leaves the hash table and the block pointed
+   to by elt unchanged.
+   ht          : pointer to an initialized ht_divchn_t struct   
+   key         : non-NULL pointer to the key_size block of a key
+   elt         : non-NULL pointer to a preallocated elt_size block
 */
 void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
@@ -276,35 +322,39 @@ void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
     dll_search_key(ht->ll, head, key, ht->key_size, ht->cmp_key);
   if (node != NULL){
     memcpy(elt, dll_elt_ptr(ht->ll, node), ht->elt_size);
-    /* if an element is noncontiguous, only the pointer to it is deleted */
-    dll_delete(ht->ll, head, node, NULL);
+    /* NULL: only the elt_size block of the element is deleted in ht */
+    dll_delete(ht->ll, head, node, ht->free_key, NULL);
     ht->num_elts--;
   }
 }
 
 /**
-   If a key is in a hash table, deletes the key and its associated element 
-   according to free_elt. The key parameter is not NULL and points
-   to a block of size key_size.
+   If there is a key in a hash table that equals to the key pointed to
+   by the key parameter according to cmp_key, then deletes the in-table key
+   element pair according to free_key and free_elt.
+   ht          : pointer to an initialized ht_divchn_t struct   
+   key         : non-NULL pointer to the key_size block of a key
 */
 void ht_divchn_delete(ht_divchn_t *ht, const void *key){
   dll_node_t **head = &ht->key_elts[hash(ht, key)];
   dll_node_t *node =
     dll_search_key(ht->ll, head, key, ht->key_size, ht->cmp_key);
   if (node != NULL){
-    dll_delete(ht->ll, head, node, ht->free_elt);
+    dll_delete(ht->ll, head, node, ht->free_key, ht->free_elt);
     ht->num_elts--;
   }
 }
 
 /**
-   Frees a hash table and leaves a block of size sizeof(ht_divchn_t)
-   pointed to by the ht parameter.
+   Frees the memory of all keys and elements that are in a hash table
+   according to free_key and free_elt, frees the memory of the hash table,
+   and leaves the block of size sizeof(ht_divchn_t) pointed to by the ht
+   parameter.
 */
 void ht_divchn_free(ht_divchn_t *ht){
   size_t i;
   for (i = 0; i < ht->count; i++){
-    dll_free(ht->ll, &ht->key_elts[i], ht->free_elt);
+    dll_free(ht->ll, &ht->key_elts[i], ht->free_key, ht->free_elt);
   }
   free(ht->ll);
   free(ht->key_elts);
@@ -328,7 +378,8 @@ void ht_divchn_init_helper(void *ht,
 			   size_t alpha_n,
 			   size_t log_alpha_d,
 			   int (*cmp_key)(const void *, const void *),
-			   size_t (*rdc_key)(const void *, size_t),
+			   size_t (*rdc_key)(const void *),
+			   void (*free_key)(void *),
 			   void (*free_elt)(void *)){
   ht_divchn_init(ht,
 		 key_size,
@@ -338,6 +389,7 @@ void ht_divchn_init_helper(void *ht,
 		 log_alpha_d,
 		 cmp_key,
 		 rdc_key,
+		 free_key,
 		 free_elt);
 }
 
@@ -368,8 +420,10 @@ void ht_divchn_free_helper(void *ht){
 /** Auxiliary functions */
 
 /**
-   Converts a key to a key of the standard size. This is a safe conversion
-   of any bit pattern in the block pointed to by key to size_t.
+   Converts a key to a size_t value (standard key). If rdc_key is NULL, 
+   applies a safe conversion of any bit pattern in the key_size block of a
+   key to reduce it to size_t. Otherwise, returns the value after applying
+   rdc_key to the key.
 */
 static size_t convert_std_key(const ht_divchn_t *ht, const void *key){
   size_t i;
@@ -378,7 +432,7 @@ static size_t convert_std_key(const ht_divchn_t *ht, const void *key){
   size_t buf_size = sizeof(size_t);
   unsigned char buf[sizeof(size_t)];
   const char *k = NULL, *k_start = NULL, *k_end = NULL;
-  if (ht->rdc_key != NULL) return ht->rdc_key(key, ht->key_size);
+  if (ht->rdc_key != NULL) return ht->rdc_key(key);
   sz_count = ht->key_size / buf_size; /* division by sizeof(size_t) */
   rem_size = ht->key_size - sz_count * buf_size;
   k = key;
@@ -422,18 +476,17 @@ static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
 
 /**
    Increases the count of a hash table to the next prime number in the
-   C_PRIME_PARTS array that accomodates alpha as a load factor upper bound.
-   The operation is called if alpha was exceeded (i.e. num_elts > 
-   max_num_elts) and count_ix is not equal to C_SIZE_MAX or
+   C_PRIME_PARTS array that accomodates a load factor upper bound.
+   The operation is called if the load factor upper bound was exceeded (i.e.
+   num_elts > max_num_elts) and count_ix is not equal to C_SIZE_MAX or
    C_PRIME_PARTS_COUNT. A single call:
    i)  lowers the load factor s.t. num_elts <= max_num_elts if a sufficiently
        large prime in the C_PRIME_PARTS array is available and is 
        representable as size_t, or 
    ii) lowers the load factor as low as possible.
-   If the largest representable prime is reached, count_ix may not yet be set
-   to C_SIZE_MAX or C_PRIME_PARTS_COUNT, which requires one additional call
-   that does not increase the count. Otherwise, each call increases the
-   count.
+   If the largest representable prime was reached, count_ix may not yet be set
+   to C_SIZE_MAX or C_PRIME_PARTS_COUNT, which requires one additional call.
+   Otherwise, each call increases the count.
 */
 static void ht_grow(ht_divchn_t *ht){
   size_t i, prev_count = ht->count;
@@ -461,10 +514,10 @@ static void ht_grow(ht_divchn_t *ht){
 /**
    Attempts to increase the count of a hash table. Returns 1 if the count
    was increased. Otherwise returns 0. Updates count_ix, group_ix, count,
-   and max_num_elts accordingly. If the largest representable prime is
-   reached, count_ix may not yet be set to C_SIZE_MAX or C_PRIME_PARTS_COUNT,
-   which requires one additional call that does not increase the count.
-   Otherwise, each call increases the count.
+   and max_num_elts accordingly. If the largest representable prime was
+   reached, count_ix may not yet be set to C_SIZE_MAX or
+   C_PRIME_PARTS_COUNT, which requires one additional call. Otherwise, each
+   call increases the count.
 */
 static int incr_count(ht_divchn_t *ht){
   ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
@@ -485,7 +538,7 @@ static int incr_count(ht_divchn_t *ht){
 }
 
 /**
-   Tests if the next prime number results in an overflow of size_t
+   Tests if the next prime number results in the overflow of size_t
    on a given system. Returns 0 if no overflow, otherwise returns 1.
 */
 static int is_overflow(size_t start, size_t count){
