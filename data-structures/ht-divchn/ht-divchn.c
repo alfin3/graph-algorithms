@@ -29,14 +29,13 @@
 
    When a pointer to a key is copied into a hash table as a key_size block,
    the user can also decide if only the pointer or the entire key is deleted
-   during the insert (in case of update), remove, delete, and free
-   operations. By setting free_key to NULL, only the pointer is deleted.
-   Otherwise, the deletion is performed according to a non-NULL free_key.
-   For example, when an in-memory set of images are used as keys (e.g. with
-   a subset of bits in each image used for hashing) and pointers are copied
-   into a hash table, then setting free_key to NULL will not affect the
-   original set of images throughout the lifetime of the hash table. The
-   same applies to elements and free_elt.
+   during the delete and free operations. By setting free_key to NULL, only
+   the pointer is deleted. Otherwise, the deletion is performed according to
+   a non-NULL free_key. For example, when an in-memory set of images are
+   used as keys (e.g. with a subset of bits in each image used for hashing)
+   and pointers are copied into a hash table, then setting free_key to NULL
+   will not affect the original set of images throughout the lifetime of the
+   hash table. The same applies to elements and free_elt.
    
    The implementation only uses integer and pointer operations. Integer
    arithmetic is used in load factor operations, thereby eliminating the
@@ -252,9 +251,8 @@ void ht_divchn_align(ht_divchn_t *ht, size_t elt_alignment){
    Inserts a key and an associated element into a hash table by copying
    the corresponding key_size and elt_size blocks. If the key pointed to by
    the key parameter is already in the hash table according to cmp_key,
-   then deletes the previous key element pair according to free_key and
-   free_elt and inserts the new key element pair by copying the respective
-   key_size and elt_size blocks.
+   then deletes the previous element according to free_elt and copies
+   the elt_size block pointed to by the elt parameter.
    ht          : pointer to an initialized ht_divchn_t struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
@@ -269,10 +267,8 @@ void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
     dll_prepend_new(ht->ll, head, key, elt, ht->key_size, ht->elt_size);
     ht->num_elts++;
   }else{
-    /* update both key_size and elt_size blocks */
-    if (ht->free_key != NULL) ht->free_key(dll_key_ptr(ht->ll, node));
+    /* updates the elt_size block */
     if (ht->free_elt != NULL) ht->free_elt(dll_elt_ptr(ht->ll, node));
-    memcpy(dll_key_ptr(ht->ll, node), key, ht->key_size);
     memcpy(dll_elt_ptr(ht->ll, node), elt, ht->elt_size);
   }
   /* grow ht after ensuring it was insertion, not update */
@@ -306,12 +302,12 @@ void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
 
 /**
    Removes the element associated with a key in a hash table that equals to
-   the key pointed to by the key parameter according to cmp_key, by copying
-   the elt_size block of the element to the elt_size block pointed to by the
-   elt parameter. Deletes the in-table key associated with the removed
-   element according to free_key. If there is no matching key in the hash
-   table according to cmp_key, leaves the hash table and the block pointed
-   to by elt unchanged.
+   the key pointed to by the key parameter according to cmp_key, by a)
+   copying the elt_size block of the element to the elt_size block pointed
+   to by the elt parameter and b) deleting the corresponding key_size and
+   elt_size blocks in the hash table. If there is no matching key in the
+   hash table according to cmp_key, leaves the hash table and the block
+   pointed to by elt unchanged.
    ht          : pointer to an initialized ht_divchn_t struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to a preallocated elt_size block
@@ -322,8 +318,8 @@ void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
     dll_search_key(ht->ll, head, key, ht->key_size, ht->cmp_key);
   if (node != NULL){
     memcpy(elt, dll_elt_ptr(ht->ll, node), ht->elt_size);
-    /* NULL: only the elt_size block of the element is deleted in ht */
-    dll_delete(ht->ll, head, node, ht->free_key, NULL);
+    /* NULL: only the key_size and elt_size blocks are deleted in ht */
+    dll_delete(ht->ll, head, node, NULL, NULL);
     ht->num_elts--;
   }
 }
