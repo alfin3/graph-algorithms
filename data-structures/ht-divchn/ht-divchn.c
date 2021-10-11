@@ -46,9 +46,8 @@
    parameter ranges is undefined.
 
    The implementation does not use stdint.h and is portable under C89/C90
-   and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even (at this time, every bit is required
-   to participate in the value).
+   and C99 with the only requirement that the width of size_t is
+   greater or equal to 16, less than 2040, and is even.
 
    * except intended wrapping around of unsigned integers in modulo
      operations, which is defined, and overflow detection as a part
@@ -65,6 +64,7 @@
 #include "dll.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
+#include "utilities-lim.h"
 
 /**
    An array of primes in the increasing order, approximately doubling in 
@@ -135,7 +135,7 @@ static const size_t C_PARTS_ACC_COUNTS[4] = {6,
 					     6 + 16 * (2 + 3 + 4)};
 static const size_t C_BUILD_SHIFT = 16;
 static const size_t C_BYTE_BIT = CHAR_BIT;
-static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 static const size_t C_SIZE_MAX = (size_t)-1;
 
 static size_t hash(const ht_divchn_t *ht, const void *key);
