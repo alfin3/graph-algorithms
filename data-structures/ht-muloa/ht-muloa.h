@@ -2,27 +2,45 @@
    ht-muloa.h
 
    Struct declarations and declarations of accessible functions of a hash 
-   table with generic hash keys and generic elements. The implementation
-   is based on a multiplication method for hashing into upto
-   2**(CHAR_BIT * sizeof(size_t) - 1) slots and an open addressing method
-   with double hashing for resolving collisions.
+   table with generic contiguous or non-contiguous keys and generic
+   contiguous or non-contiguous elements.
+   
+   The implementation is based on a multiplication method for hashing into
+   upto 2**(size_t width - 1) slots and an open addressing method with
+   double hashing for resolving collisions.
    
    The load factor of a hash table is the expected number of keys in a slot 
    under the simple uniform hashing assumption, and is upper-bounded by 
-   the alpha parameter. The expected number of probes in a search is 
-   upper-bounded by 1/(1 - alpha), under the uniform hashing assumption. 
+   the alpha parameters. The expected number of probes in a search is 
+   upper-bounded by 1/(1 - load factor bound), under the uniform hashing
+   assumption. 
 
-   The alpha parameter does not provide an upper bound after the maximum 
-   count of slots in a hash table is reached. After exceeding the alpha
-   parameter value, the load factor is <= 1.0 due to open addressing, and the
+   The alpha parameters do not provide an upper bound after the maximum 
+   count of slots in a hash table is reached. After exceeding the load
+   factor bound, the load factor is <= 1.0 due to open addressing, and the
    expected number of probes is upper-bounded by 1/(1 - load factor) before
    the full occupancy is reached.
 
-   A hash key is an object within a contiguous block of memory (e.g. a basic
-   type, array, struct). If the key size is greater than sizeof(size_t)
-   bytes, then it is reduced to a sizeof(size_t)-byte block prior to hashing.
-   Key size reduction methods may introduce regularities. An element is
-   within a contiguous or noncontiguous block of memory.
+   A distinction is made between a key and a "key_size block", and an
+   element and an "elt_size block". During an insertion, a contiguous block
+   of size key_size ("key_size block") and a contiguous block of size
+   elt_size ("elt_size block") are copied into a hash table. A key may be
+   within a contiguous or non-contiguous memory block. Given a key, the user
+   decides what is copied into the key_size block of the hash table. If the
+   key is within a contiguous memory block, then it can be entirely copied
+   as a key_size block, or a pointer to it can be copied as a key_size
+   block. If the key is within a non-contiguous memory block, then a pointer
+   to it is copied as a key_size block. The same applies to an element. 
+
+   When a pointer to a key is copied into a hash table as a key_size block,
+   the user can also decide if only the pointer or the entire key is deleted
+   during the delete and free operations. By setting free_key to NULL, only
+   the pointer is deleted. Otherwise, the deletion is performed according to
+   a non-NULL free_key. For example, when an in-memory set of images are
+   used as keys (e.g. with a subset of bits in each image used for hashing)
+   and pointers are copied into a hash table, then setting free_key to NULL
+   will not affect the original set of images throughout the lifetime of the
+   hash table. The same applies to elements and free_elt.
 
    The implementation only uses integer and pointer operations. Integer
    arithmetic is used in load factor operations, thereby eliminating the
@@ -33,9 +51,8 @@
    parameter ranges is undefined.
 
    The implementation does not use stdint.h and is portable under C89/C90
-   and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even (every bit is required to participate
-   in the value at this time).
+   and C99 with the only requirement that the width of size_t is
+   greater or equal to 16, less than 2040, and is even.
 
    * except intended wrapping around of unsigned integers in modulo
      operations, which is defined, and overflow detection as a part
@@ -63,61 +80,67 @@ typedef struct{
   size_t elt_alignment;
   size_t log_count;
   size_t count;
-  size_t max_sum; /* >= 0, < count, represents alpha */
+  size_t max_sum; /* >= 0, < count, represents load factor upper bound */
   size_t max_num_probes;
   size_t num_elts;
   size_t num_phs;
-  size_t fprime; /* >2**(n - 1), <2**n, n = CHAR_BIT * sizeof(size_t) */
-  size_t sprime; /* >2**(n - 1), <2**n, n = CHAR_BIT * sizeof(size_t) */
+  size_t fprime; /* >2**(n - 1), <2**n, where n is size_t width */
+  size_t sprime; /* >2**(n - 1), <2**n, where n is size_t width */
   size_t alpha_n;
   size_t log_alpha_d;
   ke_t *ph;
   ke_t **key_elts;
   int (*cmp_key)(const void *, const void *);
-  size_t (*rdc_key)(const void *, size_t);
+  size_t (*rdc_key)(const void *);
+  void (*free_key)(void *);
   void (*free_elt)(void *);
 } ht_muloa_t;
 
 /**
    Initializes a hash table. 
-   ht          : a pointer to a preallocated block of size
+   ht          : a pointer to a preallocated block of size 
                  sizeof(ht_muloa_t).
-   key_size    : non-zero size of a key object.
-   elt_size    : - non-zero size of an element, if the element is within a
-                 contiguous memory block and a copy of the element is
-                 inserted,
-                 - size of a pointer to an element, if the element
-                 is within a noncontiguous memory block or a pointer to a
-                 contiguous element is inserted
-   min_num     : minimum number of keys that are known or expected to become 
-                 present simultaneously in a hash table, resulting in a
+   key_size    : non-zero size of a key_size block
+   elt_size    : non-zero size of an elt_size block
+   min_num     : minimum number of keys that are known to be or expected to
+                 be present simultaneously in a hash table; results in a
                  speedup by avoiding unnecessary growth steps of a hash
-                 table; 0 if a positive value is not specified and all growth
-                 steps are to be completed
-   alpha_n     : > 0 numerator of load factor upper bound
-   log_alpha_d : < CHAR_BIT * sizeof(size_t) log base 2 of denominator of
-                 load factor upper bound; denominator is a power of two and
+                 table; 0 if a positive value is not specified and all
+                 growth steps are to be completed
+   alpha_n     : > 0 numerator of a load factor upper bound
+   log_alpha_d : < size_t width; log base 2 of the denominator of the load
+                 factor upper bound; the denominator is a power of two and
                  is greater or equal to alpha_n
-    cmp_key     : - if NULL then a default memcmp-based comparison of keys
-                 is performed
+   cmp_key     : - if NULL then a default memcmp-based comparison of key_size
+                 blocks of keys is performed
                  - otherwise comparison function is applied which returns a
                  zero integer value iff the two keys accessed through the
                  first and the second arguments are equal; each argument is
-                 a pointer to a key_size block
+                 a pointer to the key_size block of a key; cmp_key must use
+                 the same subset of bits in a key as rdc_key
    rdc_key     : - if NULL then a default conversion of a bit pattern
-                 in the block pointed to by key is performed prior to
+                 in the key_size block of a key is performed prior to
                  hashing, which may introduce regularities
-                 - otherwise rdc_key is applied to a key prior to hashing;
-                 the first argument points to a key and the second argument
-                 provides the size of the key
-   free_elt    : - if an element is within a contiguous memory block and
-                 a copy of the element was inserted, then NULL as free_elt
-                 is sufficient to delete the element,
-                 - if an element is within a noncontiguous memory block or
-                 a pointer to a contiguous element was inserted, then an
-                 element-specific free_elt, taking a pointer to a pointer to an
-                 element as its argument and leaving a block of size elt_size
-                 pointed to by the argument, is necessary to delete the element
+                 - otherwise rdc_key is applied to a key to reduce the key
+                 to a size_t integer value prior to hashing; the argument
+                 points to the key_size block of a key; rdc_key must use
+                 the same subset of bits in a key as cmp_key
+   free_key    : - NULL if only key_size blocks should be deleted throughout
+                 the lifetime of the hash table (e.g. because keys were
+                 entirely copied as key_size blocks, or because pointers
+                 were copied as key_size blocks and only pointers should
+                 be deleted)
+                 - otherwise takes a pointer to the key_size block of a key
+                 as an argument, frees the memory of the key except the
+                 key_size block pointed to by the argument
+   free_elt    : - NULL if only elt_size blocks should be deleted throughout
+                 the lifetime of the hash table (e.g. because elements were
+                 entirely copied as elt_size blocks, or because pointers
+                 were copied as elt_size blocks and only pointers should
+                 be deleted)
+                 - otherwise takes a pointer to the elt_size block of an
+                 element as an argument, frees the memory of the element
+                 except the elt_size block pointed to by the argument
 */
 void ht_muloa_init(ht_muloa_t *ht,
 		   size_t key_size,
@@ -126,11 +149,12 @@ void ht_muloa_init(ht_muloa_t *ht,
 		   size_t alpha_n,
 		   size_t log_alpha_d,
 		   int (*cmp_key)(const void *, const void *),
-		   size_t (*rdc_key)(const void *, size_t),
+		   size_t (*rdc_key)(const void *),
+		   void (*free_key)(void *),
 		   void (*free_elt)(void *));
 
 /**
-   Aligns each in-table elt_size block to be accessible with a pointer to a 
+   Aligns each in-table elt_size block to be accessible with a pointer to a
    type T other than character (in addition to a character pointer). If
    alignment requirement of T is unknown, the size of T can be used
    as a value of the alignment parameter because size of T >= alignment
@@ -143,45 +167,61 @@ void ht_muloa_init(ht_muloa_t *ht,
    completed and before any other operation is called.
    ht            : pointer to an initialized ht_muloa_t struct
    elt_alignment : alignment requirement or size of the type, a pointer to
-                   which is used to access an elt_size block
+                   which is used to access the elt_size block of an element
+                   in a hash table
 */
 void ht_muloa_align(ht_muloa_t *ht, size_t elt_alignment);
 
 /**
-   Inserts a key and an associated element into a hash table. If the key is
-   in the hash table, associates the key with the new element. The key and 
-   elt parameters are not NULL and point to blocks of size key_size and
-   elt_size respectively.
+   Inserts a key and an associated element into a hash table by copying
+   the corresponding key_size and elt_size blocks. If the key pointed to by
+   the key parameter is already in the hash table according to cmp_key,
+   then deletes the previous element according to free_elt and copies
+   the elt_size block pointed to by the elt parameter.
+   ht          : pointer to an initialized ht_muloa_t struct   
+   key         : non-NULL pointer to the key_size block of a key
+   elt         : non-NULL pointer to the elt_size block of an element
 */
 void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt);
 
 /**
-   If a key is present in a hash table, returns a pointer to its associated 
-   element, otherwise returns NULL. The key parameter is not NULL and points
-   to a block of size key_size. The returned pointer can be dereferenced
-   according to ht_muloa_init and ht_muloa_align_elt.
+   If a key is present in a hash table, according to cmp_key, then returns a
+   pointer to the elt_size block of its associated element in the hash table.
+   Otherwise returns NULL. The returned pointer can be dereferenced according
+   to the preceding calls to ht_muloa_init and ht_muloa_align_elt.
+   ht          : pointer to an initialized ht_muloa_t struct   
+   key         : non-NULL pointer to the key_size block of a key
 */
 void *ht_muloa_search(const ht_muloa_t *ht, const void *key);
 
 /**
-   Removes a key and its associated element from a hash table by copying 
-   the element or its pointer into a block of size elt_size pointed to
-   by elt. If the key is not in the hash table, leaves the block pointed
-   to by elt unchanged. The key and elt parameters are not NULL and point
-   to blocks of size key_size and elt_size respectively.
+   Removes the element associated with a key in a hash table that equals to
+   the key pointed to by the key parameter according to cmp_key, by a)
+   copying the elt_size block of the element to the elt_size block pointed
+   to by the elt parameter and b) deleting the corresponding key_size and
+   elt_size blocks in the hash table. If there is no matching key in the
+   hash table according to cmp_key, leaves the hash table and the block
+   pointed to by elt unchanged.
+   ht          : pointer to an initialized ht_muloa_t struct   
+   key         : non-NULL pointer to the key_size block of a key
+   elt         : non-NULL pointer to a preallocated elt_size block
 */
 void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt);
 
 /**
-   If a key is in a hash table, deletes the key and its associated element 
-   according to free_elt. The key parameter is not NULL and points
-   to a block of size key_size.
+   If there is a key in a hash table that equals to the key pointed to
+   by the key parameter according to cmp_key, then deletes the in-table key
+   element pair according to free_key and free_elt.
+   ht          : pointer to an initialized ht_muloa_t struct   
+   key         : non-NULL pointer to the key_size block of a key
 */
 void ht_muloa_delete(ht_muloa_t *ht, const void *key);
 
 /**
-   Frees a hash table and leaves a block of size sizeof(ht_muloa_t)
-   pointed to by the ht parameter.
+   Frees the memory of all keys and elements that are in a hash table
+   according to free_key and free_elt, frees the memory of the hash table,
+   and leaves the block of size sizeof(ht_muloa_t) pointed to by the ht
+   parameter.
 */
 void ht_muloa_free(ht_muloa_t *ht);
 
@@ -201,10 +241,11 @@ void ht_muloa_init_helper(void *ht,
 			  size_t alpha_n,
 			  size_t log_alpha_d,
 			  int (*cmp_key)(const void *, const void *),
-			  size_t (*rdc_key)(const void *, size_t),
+			  size_t (*rdc_key)(const void *),
+			  void (*free_key)(void *),
 			  void (*free_elt)(void *));
 
-void ht_muloa_align_helper(void *ht, size_t alignment);
+void ht_muloa_align_helper(void *ht, size_t elt_alignment);
 
 void ht_muloa_insert_helper(void *ht, const void *key, const void *elt);
 

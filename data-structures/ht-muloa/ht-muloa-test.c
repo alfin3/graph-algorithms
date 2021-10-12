@@ -1,19 +1,20 @@
 /**
    ht-muloa-test.c
 
-   Tests of a hash table with generic hash keys and generic elements.
-   The implementation is based on a multiplication method for hashing and an 
-   open addressing method for resolving collisions.
+   Tests of a hash table with generic contiguous keys and generic
+   contiguous and non-contiguous elements.The implementation is based on a
+   multiplication method for hashing and an open addressing method for
+   resolving collisions.
 
    The following command line arguments can be used to customize tests:
    ht-muloa-test
-      [0, # bits in size_t - 1) : i s.t. # inserts = 2**i
-      [0, # bits in size_t) : a given k = sizeof(size_t)
-      [0, # bits in size_t) : b s.t. k * 2**a <= key size <= k * 2**b
+      [0, size_t width - 1) : i s.t. # inserts = 2**i
+      [0, size_t width) : a given k = sizeof(size_t)
+      [0, size_t width) : b s.t. k * 2**a <= key size <= k * 2**b
       > 0 : c
       > 0 : d
       > 0 : e log base 2 s.t. c <= d <= 2**e
-      > 0 : f s.t. c / 2**e <= alpha <= d / 2**e, in f steps
+      > 0 : f s.t. c / 2**e <= load factor bound <= d / 2**e, in f steps
       [0, 1] : on/off insert search uint test
       [0, 1] : on/off remove delete uint test
       [0, 1] : on/off insert search uint_ptr test
@@ -32,10 +33,9 @@
    argument must be specified for i >= 0. Default values are used for the
    unspecified arguments according to the C_ARGS_DEF array.
 
-   The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
-   is greater or equal to 16 and is even (every bit is required to
-   participate in the value at this time).
+   The implementation does not use stdint.h and is portable under C89/C90
+   and C99 with the only requirement that the width of size_t is
+   greater or equal to 16, less than 2040, and is even.
 */
 
 #include <stdio.h>
@@ -46,6 +46,7 @@
 #include "ht-muloa.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
+#include "utilities-lim.h"
 
 /**
    Generate random numbers in a portable way for test purposes only; rand()
@@ -62,30 +63,31 @@
 /* input handling */
 const char *C_USAGE =
   "ht-muloa-test\n"
-  "[0, # bits in size_t - 1) : i s.t. # inserts = 2**i\n"
-  "[0, # bits in size_t) : a given k = sizeof(size_t)\n"
-  "[0, # bits in size_t) : b s.t. k * 2**a <= key size <= k * 2**b\n"
+  "[0, size_t width - 1) : i s.t. # inserts = 2**i\n"
+  "[0, size_t width) : a given k = sizeof(size_t)\n"
+  "[0, size_t width) : b s.t. k * 2**a <= key size <= k * 2**b\n"
   "> 0 : c\n"
   "> 0 : d\n"
   "> 0 : e log base 2 s.t. c <= d <= 2**e\n"
-  "> 0 : f s.t. c / 2**e <= alpha <= d / 2**e, in f steps\n"
+  "> 0 : f s.t. c / 2**e <= load factor bound <= d / 2**e, in f steps\n"
   "[0, 1] : on/off insert search uint test\n"
   "[0, 1] : on/off remove delete uint test\n"
   "[0, 1] : on/off insert search uint_ptr test\n"
   "[0, 1] : on/off remove delete uint_ptr test\n"
   "[0, 1] : on/off corner cases test\n";
 const int C_ARGC_MAX = 13;
-const size_t C_ARGS_DEF[12] = {14, 0, 2, 3277, 32768u, 15, 8, 1, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[12] = {14u, 0u, 2u, 3277u, 32768u, 15u,
+			       8u, 1u, 1u, 1u, 1u, 1u};
 const size_t C_SIZE_MAX = (size_t)-1;
-const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 
 /* corner cases test */
-const unsigned char C_CORNER_KEY_A = 2;
-const unsigned char C_CORNER_KEY_B = 1;
+const unsigned char C_CORNER_KEY_A = 2u;
+const unsigned char C_CORNER_KEY_B = 1u;
 const size_t C_CORNER_KEY_SIZE = sizeof(unsigned char);
-const size_t C_CORNER_HT_COUNT = 2048;
-const size_t C_CORNER_ALPHA_N = 33;
-const size_t C_CORNER_LOG_ALPHA_D = 15; /* alpha is 33/32768 */
+const size_t C_CORNER_HT_COUNT = 2048u;
+const size_t C_CORNER_ALPHA_N = 33u;
+const size_t C_CORNER_LOG_ALPHA_D = 15u; /* lf bound is 33/32768 */
 
 void insert_search_free(size_t num_ins,
 			size_t key_size,
@@ -109,12 +111,13 @@ void *ptr(const void *block, size_t i, size_t size);
 void print_test_result(int res);
 
 /**
-   Test hash table operations on distinct keys and size_t elements 
-   across key sizes and load factor upper bounds. For test purposes a key
-   is random with the exception of a distinct non-random sizeof(size_t)-
-   sized block inside the key. A pointer to an element is passed as elt in
-   ht_muloa_insert and the element is fully copied into the hash table.
-   NULL as free_elt is sufficient to delete the element.
+   Test hash table operations on distinct contiguous keys and contiguous
+   size_t elements across key sizes and load factor upper bounds. For test
+   purposes a key is a random key_size block with the exception of a
+   distinct non-random sizeof(size_t)-sized sub-block inside the key_size
+   block. An element is an elt_size block of size sizeof(size_t) with a
+   size_t value. Keys and elements are entirely copied into a hash table and
+   free_key and free_elt are NULL.
 */
 
 void new_uint(void *elt, size_t val){
@@ -215,13 +218,14 @@ void run_remove_delete_uint_test(size_t log_ins,
 }
 
 /**
-   Test hash table operations on distinct keys and noncontiguous
-   uint_ptr_t elements across key sizes and load factor upper bounds. 
-   For test purposes a key is random with the exception of a distinct
-   non-random sizeof(size_t)-sized block inside the key. A pointer to a
-   pointer to an element is passed as elt in ht_muloa_insert, and the pointer
-   to the element is copied into the hash table. An element-specific
-   free_elt is necessary to delete the element (see specification).
+   Test hash table operations on distinct contiguous keys and noncontiguous
+   uint_ptr_t elements across key sizes and load factor upper bounds. For
+   test purposes a key is a random key_size block with the exception of a
+   distinct non-random sizeof(size_t)-sized sub-block inside the key_size
+   block. A key is fully copied into a hash table as a key_size block.
+   Because an element is noncontiguous, a pointer to an element is copied as
+   an elt_size block. free_key is NULL. An element-specific free_elt is
+   necessary to delete an element.
 */
 
 typedef struct{
@@ -479,6 +483,7 @@ void insert_search_free(size_t num_ins,
 		log_alpha_d,
 		NULL,
 		NULL,
+		NULL,
 		NULL);
   insert_keys_elts(&ht, keys, elts, num_ins, &res); /* no dereferencing */
   free_ht(&ht);
@@ -488,6 +493,7 @@ void insert_search_free(size_t num_ins,
 		num_ins,
 		alpha_n,
 		log_alpha_d,
+		NULL,
 		NULL,
 		NULL,
 		free_elt);
@@ -671,6 +677,7 @@ void remove_delete(size_t num_ins,
 		log_alpha_d,
 		NULL,
 		NULL,
+		NULL,
 		free_elt);
   ht_muloa_align(&ht, elt_alignment);
   insert_keys_elts(&ht, keys, elts, num_ins, &res);
@@ -702,6 +709,7 @@ void run_corner_cases_test(int log_ins){
 		0,
 		C_CORNER_ALPHA_N,
 		C_CORNER_LOG_ALPHA_D,
+		NULL,
 		NULL,
 		NULL,
 		NULL);
