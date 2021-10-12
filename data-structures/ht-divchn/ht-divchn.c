@@ -127,13 +127,13 @@ static const size_t C_PRIME_PARTS[6 * 1 + 16 * (2 + 3 + 4)] =
    0x58a1u, 0xbd96u, 0x2836u, 0x5f8cu,    /* 6884922145916737697 */
    0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u};   /* 15769474759331449193 */
 
-static const size_t C_PRIME_PARTS_COUNT = 6 + 16 * (2 + 3 + 4);
-static const size_t C_PARTS_PER_PRIME[4] = {1, 2, 3, 4};
-static const size_t C_PARTS_ACC_COUNTS[4] = {6,
-					     6 + 16 * 2,
-					     6 + 16 * (2 + 3),
-					     6 + 16 * (2 + 3 + 4)};
-static const size_t C_BUILD_SHIFT = 16;
+static const size_t C_PRIME_PARTS_COUNT = 6u + 16u * (2u + 3u + 4u);
+static const size_t C_PARTS_PER_PRIME[4] = {1u, 2u, 3u, 4u};
+static const size_t C_PARTS_ACC_COUNTS[4] = {6u,
+					     6u + 16u * 2u,
+					     6u + 16u * (2u + 3u),
+					     6u + 16u * (2u + 3u + 4u)};
+static const size_t C_BUILD_SHIFT = 16u;
 static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 static const size_t C_SIZE_MAX = (size_t)-1;
@@ -157,9 +157,8 @@ static size_t build_prime(size_t start, size_t count);
                  table; 0 if a positive value is not specified and all
                  growth steps are to be completed
    alpha_n     : > 0 numerator of a load factor upper bound
-   log_alpha_d : < CHAR_BIT * sizeof(size_t); log base 2 of the denominator
-                 of the load factor upper bound; the denominator is a power of
-                 two
+   log_alpha_d : < size_t width; log base 2 of the denominator of the load
+                 factor upper bound; the denominator is a power of two
    cmp_key     : - if NULL then a default memcmp-based comparison of key_size
                  blocks of keys is performed
                  - otherwise comparison function is applied which returns a
@@ -480,7 +479,7 @@ static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
        large prime in the C_PRIME_PARTS array is available and is 
        representable as size_t, or 
    ii) lowers the load factor as low as possible.
-   If the largest representable prime was reached, count_ix may not yet be set
+   If the largest representable prime is reached, count_ix may not yet be set
    to C_SIZE_MAX or C_PRIME_PARTS_COUNT, which requires one additional call.
    Otherwise, each call increases the count.
 */

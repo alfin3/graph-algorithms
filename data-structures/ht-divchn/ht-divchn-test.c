@@ -14,7 +14,7 @@
       > 0 : c
       > 0 : d
       > 0 : e log base 2
-      > 0 : f s.t. c / 2**e <= alpha <= d / 2**e, in f steps
+      > 0 : f s.t. c / 2**e <= load factor bound <= d / 2**e, in f steps
       [0, 1] : on/off insert search uint test
       [0, 1] : on/off remove delete uint test
       [0, 1] : on/off insert search uint_ptr test
@@ -69,7 +69,7 @@ const char *C_USAGE =
   "> 0 : c\n"
   "> 0 : d\n"
   "> 0 : e log base 2\n"
-  "> 0 : f s.t. c / 2**e <= alpha <= d / 2**e, in f steps\n"
+  "> 0 : f s.t. c / 2**e <= load factor bound <= d / 2**e, in f steps\n"
   "[0, 1] : on/off insert search uint test\n"
   "[0, 1] : on/off remove delete uint test\n"
   "[0, 1] : on/off insert search uint_ptr test\n"
@@ -86,7 +86,7 @@ const size_t C_CORNER_LOG_KEY_START = 0u;
 const size_t C_CORNER_LOG_KEY_END = 8u;
 const size_t C_CORNER_HT_COUNT = 1543u;
 const size_t C_CORNER_ALPHA_N = 33u;
-const size_t C_CORNER_LOG_ALPHA_D = 15u; /* alpha is 33/32768 */
+const size_t C_CORNER_LOG_ALPHA_D = 15u; /* lf bound is 33/32768 */
 
 void insert_search_free(size_t num_ins,
 			size_t key_size,

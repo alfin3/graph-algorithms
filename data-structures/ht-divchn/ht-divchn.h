@@ -95,9 +95,8 @@ typedef struct{
                  table; 0 if a positive value is not specified and all
                  growth steps are to be completed
    alpha_n     : > 0 numerator of a load factor upper bound
-   log_alpha_d : < CHAR_BIT * sizeof(size_t); log base 2 of the denominator
-                 of the load factor upper bound; the denominator is a power of
-                 two
+   log_alpha_d : < size_t width; log base 2 of the denominator of the load
+                 factor upper bound; the denominator is a power of two
    cmp_key     : - if NULL then a default memcmp-based comparison of key_size
                  blocks of keys is performed
                  - otherwise comparison function is applied which returns a
