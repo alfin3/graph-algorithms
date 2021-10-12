@@ -40,7 +40,8 @@ dll-test : $(OBJ)
 
 dll-test.o                      : dll.h                           \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 dll.o                           : dll.h                           \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
