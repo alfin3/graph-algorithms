@@ -24,8 +24,10 @@ CC = gcc
 
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
+UTILS_LIM_DIR = ../../utilities/utilities-lim/
 CFLAGS = -I$(UTILS_MEM_DIR)                           \
          -I$(UTILS_MOD_DIR)                           \
+         -I$(UTILS_LIM_DIR)                           \
          ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = dll-test.o                      \
