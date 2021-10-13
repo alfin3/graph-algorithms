@@ -38,7 +38,8 @@ typedef struct{
 	       size_t,
 	       size_t,
 	       int (*)(const void *, const void *),
-	       size_t (*)(const void *, size_t),
+	       size_t (*)(const void *),
+	       void (*)(void *),
 	       void (*)(void *));
   void (*align)(void *, size_t);
   void (*insert)(void *, const void *, const void *);
@@ -61,7 +62,7 @@ typedef struct{
   const heap_ht_t *hht;
   int (*cmp_pty)(const void *, const void *);
   int (*cmp_elt)(const void *, const void *);
-  size_t (*rdc_elt)(const void *, size_t);
+  size_t (*rdc_elt)(const void *);
   void (*free_elt)(void *);
 } heap_t;
 
@@ -99,12 +100,12 @@ void heap_init(heap_t *h,
 	       size_t pty_size,
 	       size_t elt_size,
 	       size_t min_num,
-	       size_t alpha_n;
-	       size_t log_alpha_d;
+	       size_t alpha_n,
+	       size_t log_alpha_d,
 	       const heap_ht_t *hht,
 	       int (*cmp_pty)(const void *, const void *),
 	       int (*cmp_elt)(const void *, const void *),
-	       size_t (*rdc_elt)(const void *, size_t),
+	       size_t (*rdc_elt)(const void *),
 	       void (*free_elt)(void *));
 
 /**

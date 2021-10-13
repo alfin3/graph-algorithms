@@ -27,11 +27,13 @@ HT_MULOA_DIR = ../ht-muloa/
 DLL_DIR = ../dll/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
+UTILS_LIM_DIR = ../../utilities/utilities-lim/
 CFLAGS = -I$(HT_DIVCHN_DIR)                           \
-         -I$(HT_MULOA_DIR)                              \
+         -I$(HT_MULOA_DIR)                            \
          -I$(DLL_DIR)                                 \
          -I$(UTILS_MEM_DIR)                           \
          -I$(UTILS_MOD_DIR)                           \
+         -I$(UTILS_LIM_DIR)                           \
          ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = heap-test.o                     \
@@ -49,17 +51,20 @@ heap-test.o                     : heap.h                          \
                                   $(HT_DIVCHN_DIR)ht-divchn.h     \
                                   $(HT_MULOA_DIR)ht-muloa.h       \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 heap.o                          : heap.h                          \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(HT_DIVCHN_DIR)ht-divchn.o     : $(HT_DIVCHN_DIR)ht-divchn.h     \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 $(HT_MULOA_DIR)ht-muloa.o       : $(HT_MULOA_DIR)ht-muloa.h       \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 $(DLL_DIR)dll.o                 : $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h

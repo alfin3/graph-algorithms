@@ -80,13 +80,14 @@ void heap_init(heap_t *h,
 	       size_t pty_size,
 	       size_t elt_size,
 	       size_t min_num,
-	       size_t alpha_n;
-	       size_t log_alpha_d;
+	       size_t alpha_n,
+	       size_t log_alpha_d,
 	       const heap_ht_t *hht,
 	       int (*cmp_pty)(const void *, const void *),
 	       int (*cmp_elt)(const void *, const void *),
-	       size_t (*rdc_elt)(const void *, size_t),
+	       size_t (*rdc_elt)(const void *),
 	       void (*free_elt)(void *)){
+  size_t elt_rem, pty_rem;
   h->pty_size = pty_size;
   h->elt_size = elt_size;
   /* align priority relative to a malloc's pointer and compute pair_size */
@@ -109,7 +110,7 @@ void heap_init(heap_t *h,
   h->cmp_elt = cmp_elt;
   h->rdc_elt = rdc_elt;
   h->free_elt = free_elt;
-  /* hash table maps an elt_size block to an index */ 
+  /* hash table maps an element to a size_t index */ 
   h->hht->init(hht->ht,
 	       elt_size,
 	       sizeof(size_t),
@@ -118,7 +119,9 @@ void heap_init(heap_t *h,
 	       log_alpha_d,
 	       h->cmp_elt,
 	       h->rdc_elt,
+	       NULL, /* only elt_size block is deleted in hash table */
 	       NULL);
+  h->hht->align(h->hht->ht, sizeof(size_t)); /* size_t * to be dereferenced */ 
 }
 
 /**
@@ -128,9 +131,7 @@ void heap_align(heap_t *h,
 		size_t elt_alignment,
 		size_t sz_alignment){
   size_t elt_rem, pty_rem;
-  if (h->elt_size == 0){
-    h->elt_offset = h->pty_size;
-  }else if (h->pty_size <= elt_alignment){
+  if (h->pty_size <= elt_alignment){
     h->elt_offset = elt_alignment;
   }else{
     elt_rem = h->pty_size % elt_alignment;
@@ -141,9 +142,9 @@ void heap_align(heap_t *h,
   h->pair_size = add_sz_perror(h->elt_offset + h->elt_size,
 			       (pty_rem > 0) * (pty_alignment - pty_rem));
   h->buf = realloc_perror(h->buf, 2, h->pair_size);
-  memset(a->buf, 0, 2 * a->pair_size);
-  h->pty_elts = realloc_perror(h->pty_elts, init_count, h->pair_size);
-  h->hht->align(hht->ht, sz_alignment);
+  memset(h->buf, 0, 2 * h->pair_size);
+  h->pty_elts = realloc_perror(h->pty_elts, h->count, h->pair_size);
+  h->hht->align(h->hht->ht, sz_alignment);
 }
 
 /**
@@ -164,7 +165,7 @@ void heap_push(heap_t *h, const void *pty, const void *elt){
   if (h->count == ix){
     /* grow heap; amortized constant overhead per push, 
        without considering realloc's search */
-    h->count *= mul_sz_perror(2, h->count);
+    h->count = mul_sz_perror(2, h->count);
     h->pty_elts = realloc_perror(h->pty_elts, h->count, h->pair_size);
   }
   memcpy(pty_ptr(h, ix), pty, h->pty_size);
@@ -233,11 +234,11 @@ void heap_free(heap_t *h){
       h->free_elt(elt_ptr(h, i));
     } 
   }
-  free(h->pty_elts);
   free(h->buf);
-  h->hht->free(h->hht->ht);
-  h->pty_elts = NULL;
+  free(h->pty_elts);
+  h->hht->free(h->hht->ht); /* leaves a block of size of ht struct */
   h->buf = NULL;
+  h->pty_elts = NULL;
 }
 
 /** Helper functions */
@@ -252,7 +253,7 @@ static void swap(heap_t *h, size_t i, size_t j){
   memcpy(buf, pty_ptr(h, i), h->pair_size);
   memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pair_size);
   memcpy(pty_ptr(h, j), buf, h->pair_size);
-  h->hht->insert(h->hht->ht, elt_ptr(h, i), &i);
+  h->hht->insert(h->hht->ht, elt_ptr(h, i), &i); /* two updates */
   h->hht->insert(h->hht->ht, elt_ptr(h, j), &j);
 }
 
@@ -263,7 +264,7 @@ static void swap(heap_t *h, size_t i, size_t j){
 static void half_swap(heap_t *h, size_t t, size_t s){
   if (s == t) return;
   memcpy(pty_ptr(h, t), pty_ptr(h, s), h->pair_size);
-  h->hht->insert(h->hht->ht, elt_ptr(h, t), &t);
+  h->hht->insert(h->hht->ht, elt_ptr(h, t), &t); /* update */
 }
 
 /**
@@ -271,18 +272,19 @@ static void half_swap(heap_t *h, size_t t, size_t s){
 */
 static void heapify_up(heap_t *h, size_t i){
   size_t ju;
-  memcpy(h->buf, pty_ptr(h, i), h->pair_size);
-  while(i > 0){
-    ju = (i - 1) >> 1; /* divide by 2 */;
+  size_t ix = i;
+  memcpy(h->buf, pty_ptr(h, ix), h->pair_size);
+  while (ix > 0){
+    ju = (ix - 1) >> 1; /* divide by 2 */;
     if (h->cmp_pty(pty_ptr(h, ju), h->buf) > 0){
-      half_swap(h, i, ju);
-      i = ju;
+      half_swap(h, ix, ju);
+      ix = ju;
     }else{
       break;
     }
   }
-  memcpy(pty_ptr(h, i), h->buf, h->pair_size);
-  h->hht->insert(h->hht->ht, elt_ptr(h, i), &i);
+  memcpy(pty_ptr(h, ix), h->buf, h->pair_size);
+  h->hht->insert(h->hht->ht, elt_ptr(h, ix), &ix);
 }
 
 /**
@@ -291,33 +293,34 @@ static void heapify_up(heap_t *h, size_t i){
 */
 static void heapify_down(heap_t *h, size_t i){
   size_t jl, jr;
-  memcpy(h->buf, pty_ptr(h, i), h->pair_size);
-  /* 0 <= i <= num_elts - 1 <= SIZE_MAX - 2 */
-  while (i + 2 <= h->num_elts - 1 - i){
+  size_t ix = i;
+  memcpy(h->buf, pty_ptr(h, ix), h->pair_size);
+  /* 0 <= ix <= num_elts - 1 <= SIZE_MAX - 2 */
+  while (ix + 2 <= h->num_elts - 1 - ix){
     /* both next left and next right indices have elements */
-    jl = 2 * i + 1;
-    jr = 2 * i + 2;
+    jl = 2 * ix + 1;
+    jr = 2 * ix + 2;
     if (h->cmp_pty(h->buf, pty_ptr(h, jl)) > 0 &&
 	h->cmp_pty(pty_ptr(h, jl), pty_ptr(h, jr)) <= 0){
-      half_swap(h, i, jl);
-      i = jl;
+      half_swap(h, ix, jl);
+      ix = jl;
     }else if (h->cmp_pty(h->buf, pty_ptr(h, jr)) > 0){
       /* jr has min pty relative to jl and the ith pty is greater */
-      half_swap(h, i, jr);
-      i = jr;
+      half_swap(h, ix, jr);
+      ix = jr;
     }else{
       break;
     }
   }
-  if (i + 1 == h->num_elts - 1 - i){
-    jl = 2 * i + 1;
+  if (ix + 1 == h->num_elts - 1 - ix){
+    jl = 2 * ix + 1;
     if (h->cmp_pty(h->buf, pty_ptr(h, jl)) > 0){
-      half_swap(h, i, jl);
-      i = jl;
+      half_swap(h, ix, jl);
+      ix = jl;
     }
   }
-  memcpy(pty_ptr(h, i), h->buf, h->pair_size);
-  h->hht->insert(h->hht->ht, elt_ptr(h, i), &i);
+  memcpy(pty_ptr(h, ix), h->buf, h->pair_size);
+  h->hht->insert(h->hht->ht, elt_ptr(h, ix), &ix);
 }
 
 /**
