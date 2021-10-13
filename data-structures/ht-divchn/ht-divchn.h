@@ -237,7 +237,7 @@ void ht_divchn_insert_helper(void *ht, const void *key, const void *elt);
 
 void *ht_divchn_search_helper(const void *ht, const void *key);
 
-void ht_divchnn_remove_helper(void *ht, const void *key, void *elt);
+void ht_divchn_remove_helper(void *ht, const void *key, void *elt);
 
 void ht_divchn_delete_helper(void *ht, const void *key);
 

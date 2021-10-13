@@ -400,7 +400,7 @@ void *ht_divchn_search_helper(const void *ht, const void *key){
   return ht_divchn_search(ht, key);
 }
 
-void ht_divchnn_remove_helper(void *ht, const void *key, void *elt){
+void ht_divchn_remove_helper(void *ht, const void *key, void *elt){
   ht_divchn_remove(ht, key, elt);
 }
 
