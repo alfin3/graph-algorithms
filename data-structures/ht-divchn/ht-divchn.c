@@ -207,12 +207,12 @@ void ht_divchn_init(ht_divchn_t *ht,
   ht->group_ix = 0;
   ht->count_ix = 0;
   ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
+  ht->alpha_n = alpha_n;
+  ht->log_alpha_d = log_alpha_d;
   /* 0 <= max_num_elts */
   ht->max_num_elts = mul_alpha_sz_max(ht->count, alpha_n, log_alpha_d);
   while (min_num > ht->max_num_elts && incr_count(ht));
   ht->num_elts = 0;
-  ht->alpha_n = alpha_n;
-  ht->log_alpha_d = log_alpha_d;
   ht->ll = malloc_perror(1, sizeof(dll_t));
   ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
   for (i = 0; i < ht->count; i++){

@@ -239,6 +239,8 @@ void ht_muloa_init(ht_muloa_t *ht,
   ht->elt_alignment = 1;
   ht->log_count = C_LOG_COUNT_MIN;
   ht->count = pow_two_perror(C_LOG_COUNT_MIN);
+  ht->alpha_n = alpha_n;
+  ht->log_alpha_d = log_alpha_d;
   /* 0 <= max_sum < count */
   ht->max_sum = mul_alpha(ht->count, alpha_n, log_alpha_d);
   if (ht->max_sum == ht->count) ht->max_sum = ht->count - 1;
@@ -248,8 +250,6 @@ void ht_muloa_init(ht_muloa_t *ht,
   ht->num_phs = 0;
   ht->fprime = find_build_prime(C_FIRST_PRIME_PARTS);
   ht->sprime = find_build_prime(C_SECOND_PRIME_PARTS);
-  ht->alpha_n = alpha_n;
-  ht->log_alpha_d = log_alpha_d;
   ht->ph = ph_new();
   ht->key_elts = malloc_perror(ht->count, sizeof(ke_t *));
   for (i = 0; i < ht->count; i++){

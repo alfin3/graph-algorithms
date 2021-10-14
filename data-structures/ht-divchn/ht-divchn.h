@@ -71,10 +71,10 @@ typedef struct{
   size_t group_ix;
   size_t count_ix; /* max size_t value if last representable prime reached */
   size_t count;
+  size_t alpha_n;
+  size_t log_alpha_d;
   size_t max_num_elts; /*  >= 0, <= C_SIZE_MAX, alpha wrt a count */
   size_t num_elts;
-  size_t alpha_n;
-  size_t log_alpha_d; 
   dll_t *ll;
   dll_node_t **key_elts; /* array of pointers to nodes */
   int (*cmp_key)(const void *, const void *); /* cmp_key and rdc_key must */

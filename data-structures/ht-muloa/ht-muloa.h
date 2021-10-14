@@ -80,14 +80,14 @@ typedef struct{
   size_t elt_alignment;
   size_t log_count;
   size_t count;
+  size_t alpha_n;
+  size_t log_alpha_d;
   size_t max_sum; /* >= 0, < count, represents load factor upper bound */
   size_t max_num_probes;
   size_t num_elts;
   size_t num_phs;
   size_t fprime; /* >2**(n - 1), <2**n, where n is size_t width */
   size_t sprime; /* >2**(n - 1), <2**n, where n is size_t width */
-  size_t alpha_n;
-  size_t log_alpha_d;
   ke_t *ph;
   ke_t **key_elts;
   int (*cmp_key)(const void *, const void *);
