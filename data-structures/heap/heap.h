@@ -78,12 +78,12 @@ typedef struct{
 typedef struct{
   size_t pty_size;
   size_t elt_size;
-  size_t pair_size; /* size of a pty elt pair aligned in memory */
   size_t elt_offset; /* number of bytes from beginning of pair to elt */
+  size_t pair_size; /* size of a pty elt pair aligned in memory */
   size_t count;
-  size_t num_elts;
   size_t alpha_n;
   size_t log_alpha_d;
+  size_t num_elts;
   void *buf; /* only used by heap operations internally */
   void *pty_elts;
   const heap_ht_t *hht;
@@ -99,13 +99,14 @@ typedef struct{
    sizes because size of a type T >= alignment requirement of T (due to the
    structure of arrays).
    h           : pointer to a preallocated block of size sizeof(heap_t)
-   pty_size    : non-zero size of a pty_size block
-   elt_size    : non-zero size of an elt_size block
-   min_num     : minimum number of elements that are known to be or expected to
-                 be present simultaneously in a heap; may result in a
-                 speedup by avoiding the unnecessary growth steps of the
-                 hash table; 0 if a positive value is not specified and all
-                 growth steps are to be completed
+   pty_size    : non-zero size of a pty_size block; must account for internal
+                 and trailing padding according to sizeof
+   elt_size    : non-zero size of an elt_size block; must account for internal
+                 and trailing padding according to sizeof
+   min_num     : > 0 minimum number of elements that are known to be or
+                 expected to be present simultaneously in a heap; may result
+                 in a speedup by avoiding the unnecessary growth steps of the
+                 hash table
    alpha_n     : > 0 numerator of a load factor upper bound
    log_alpha_d : < size_t width; log base 2 of the denominator of the load
                  factor upper bound; the denominator is a power of two;
@@ -169,9 +170,11 @@ void heap_init(heap_t *h,
    operation is called.
    ht            : pointer to an initialized heap_t struct
    pty_alignment : alignment requirement or size of the priority type copied
-                   as pty_size block
+                   as pty_size block; if size, must account for internal and
+                   trailing padding according to sizeof
    elt_alignment : alignment requirement or size of the type of the elt_size
-                   block of an element
+                   block of an element; if size, must account for internal
+                   and trailing padding according to sizeof
    sz_alignment  : alignment requirement or size of size_t
 */
 void heap_align(heap_t *h,

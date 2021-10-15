@@ -1,9 +1,9 @@
 /**
    heap-test.c
 
-   Tests of a generic (min) heap with a hash table parameter across 
-   i) division- and mutliplication-based hash tables, ii) contiguous and
-   noncontiguous elements, and iii) priority types.
+   Tests of a (min) heap across i) division- and mutliplication-based hash
+   tables, ii) contiguous and noncontiguous elements, and iii) basic 
+   priority types.
 
    The following command line arguments can be used to customize tests:
    heap-test
@@ -32,9 +32,9 @@
    argument must be specified for i >= 0. Default values are used for the
    unspecified arguments according to the C_ARGS_DEF array.
 
-   The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the only requirement that CHAR_BIT * sizeof(size_t)
-   is greater or equal to 16 and is even.
+   The implementation does not use stdint.h and is portable under C89/C90
+   and C99 with the only requirement that the width of size_t is
+   greater or equal to 16, less than 2040, and is even.
 
    TODO: add portable size_t printing
 */
@@ -89,7 +89,7 @@ int (*const C_CMP_PTY_ARR[3])(const void *, const void *) ={cmp_uint,
 void (*const C_NEW_PTY_ARR[3])(void *, size_t) = {new_uint,
 						  new_double,
 						  new_long_double};
-const size_t C_H_INIT_COUNT = 1u;
+const size_t C_H_MIN_NUM = 1u;
 
 void push_pop_free(size_t num_ins,
 		   size_t pty_size,
@@ -121,10 +121,25 @@ void print_test_result(int res);
 /**
    Run heap_{push, pop, free} and heap_{update, search} tests with division-
    and mutliplication-based hash tables on size_t elements across
-   priority types. A pointer to an element is passed as elt in heap_push
-   and the element is fully copied into a heap. NULL as free_elt is
-   sufficient to free the heap.
+   priority types. An element is an elt_size block of size sizeof(size_t)
+   with a size_t value. Elements are entirely copied into the heap and
+   free_elt is NULL.
 */
+
+void new_uint(void *a, size_t val){
+  size_t *s = a;
+  *s = val;
+}
+
+void new_double(void *a, size_t val){
+  double *s = a;
+  *s = val;
+}
+
+void new_long_double(void *a, size_t val){
+  long double *s = a;
+  *s = val;
+}
 
 int cmp_uint(const void *a, const void *b){
   if (*(size_t *)a > *(size_t *)b){
@@ -156,19 +171,8 @@ int cmp_long_double(const void *a, const void *b){
   }
 }
 
-void new_uint(void *a, size_t val){
-  size_t *s = a;
-  *s = val;
-}
-
-void new_double(void *a, size_t val){
-  double *s = a;
-  *s = val;
-}
-
-void new_long_double(void *a, size_t val){
-  long double *s = a;
-  *s = val;
+size_t rdc_uint(const void *a){
+  return *(size_t *)a;
 }
 
 /**
@@ -208,7 +212,7 @@ void run_push_pop_free_divchn_uint_test(size_t log_ins,
 		  new_uint,
 		  C_CMP_PTY_ARR[i],
 		  cmp_uint,
-		  NULL,
+		  rdc_uint,
 		  NULL);
   }
 }
@@ -250,7 +254,7 @@ void run_update_search_divchn_uint_test(size_t log_ins,
 		  new_uint,
 		  C_CMP_PTY_ARR[i],
 		  cmp_uint,
-		  NULL,
+		  rdc_uint,
 		  NULL);
   }
 }
@@ -293,7 +297,7 @@ void run_push_pop_free_muloa_uint_test(size_t log_ins,
 		  new_uint,
 		  C_CMP_PTY_ARR[i],
 		  cmp_uint,
-		  NULL,
+		  rdc_uint,
 		  NULL);
   }
 }
@@ -336,7 +340,7 @@ void run_update_search_muloa_uint_test(size_t log_ins,
 		  new_uint,
 		  C_CMP_PTY_ARR[i],
 		  cmp_uint,
-		  NULL,
+		  rdc_uint,
 		  NULL);
   }
 }
@@ -344,14 +348,21 @@ void run_update_search_muloa_uint_test(size_t log_ins,
 /**
    Run heap_{push, pop, free} and heap_{update, search} tests with division-
    and mutliplication-based hash tables on noncontiguous uint_ptr_t
-   elements across priority types. A pointer to a pointer to an element is
-   passed as elt in heap_push, and the pointer to the element is copied into
-   a heap. An element-specific free_elt is necessary to free the heap.
+   elements across priority types. Because an element is noncontiguous, a
+   pointer to an element is copied as an elt_size block. An element-specific
+   free_elt is necessary to delete an element.
 */
 
 typedef struct{
   size_t *val;
 } uint_ptr_t;
+
+void new_uint_ptr(void *a, size_t val){
+  uint_ptr_t **s = a;
+  *s = malloc_perror(1, sizeof(uint_ptr_t));
+  (*s)->val = malloc_perror(1, sizeof(size_t));
+  *((*s)->val) = val;
+}
 
 int cmp_uint_ptr(const void *a, const void *b){
   if (*((*(uint_ptr_t **)a)->val) > *((*(uint_ptr_t **)b)->val)){
@@ -365,13 +376,6 @@ int cmp_uint_ptr(const void *a, const void *b){
 
 size_t rdc_uint_ptr(const void *a){
   return *((*(uint_ptr_t **)a)->val);
-}
-
-void new_uint_ptr(void *a, size_t val){
-  uint_ptr_t **s = a;
-  *s = malloc_perror(1, sizeof(uint_ptr_t));
-  (*s)->val = malloc_perror(1, sizeof(size_t));
-  *((*s)->val) = val;
 }
 
 void free_uint_ptr(void *a){
@@ -772,7 +776,7 @@ void push_pop_free(size_t num_ins,
   heap_init(&h,
 	    pty_size,
 	    elt_size,
-	    C_H_INIT_COUNT,
+	    C_H_MIN_NUM,
 	    alpha_n,
 	    log_alpha_d,
 	    hht,
@@ -817,7 +821,7 @@ void update_search(size_t num_ins,
   heap_init(&h,
 	    pty_size,
 	    elt_size,
-	    C_H_INIT_COUNT,
+	    C_H_MIN_NUM,
 	    alpha_n,
 	    log_alpha_d,
 	    hht, cmp_pty,

@@ -67,13 +67,14 @@ static void *elt_ptr(const heap_t *h, size_t i);
    sizes because size of a type T >= alignment requirement of T (due to the
    structure of arrays).
    h           : pointer to a preallocated block of size sizeof(heap_t)
-   pty_size    : non-zero size of a pty_size block
-   elt_size    : non-zero size of an elt_size block
-   min_num     : minimum number of elements that are known to be or expected to
-                 be present simultaneously in a heap; may result in a
-                 speedup by avoiding the unnecessary growth steps of the
-                 hash table; 0 if a positive value is not specified and all
-                 growth steps are to be completed
+   pty_size    : non-zero size of a pty_size block; must account for internal
+                 and trailing padding according or equivalent to sizeof
+   elt_size    : non-zero size of an elt_size block; must account for internal
+                 and trailing padding according or equivalent to sizeof
+   min_num     : > 0 minimum number of elements that are known to be or
+                 expected to be present simultaneously in a heap; may result
+                 in a speedup by avoiding the unnecessary growth steps of the
+                 hash table
    alpha_n     : > 0 numerator of a load factor upper bound
    log_alpha_d : < size_t width; log base 2 of the denominator of the load
                  factor upper bound; the denominator is a power of two;
@@ -137,6 +138,8 @@ void heap_init(heap_t *h,
   h->pair_size = add_sz_perror(h->elt_offset + h->elt_size,
 			       (pty_rem > 0) * (h->pty_size - pty_rem));
   h->count = min_num;
+  h->alpha_n = alpha_n;
+  h->log_alpha_d = log_alpha_d;
   h->num_elts = 0;
   h->buf = malloc_perror(2, h->pair_size); /* 1st heapify, 2nd swap */
   h->pty_elts = malloc_perror(h->count, h->pair_size);
@@ -147,11 +150,11 @@ void heap_init(heap_t *h,
   h->free_elt = free_elt;
   /* hash table maps an element to a size_t index */ 
   h->hht->init(hht->ht,
-	       elt_size,
+	       h->elt_size,
 	       sizeof(size_t),
 	       h->count,
-	       alpha_n,
-	       log_alpha_d,
+	       h->alpha_n,
+	       h->log_alpha_d,
 	       h->cmp_elt,
 	       h->rdc_elt,
 	       NULL, /* only elt_size block is deleted in hash table */
@@ -174,9 +177,11 @@ void heap_init(heap_t *h,
    operation is called.
    ht            : pointer to an initialized heap_t struct
    pty_alignment : alignment requirement or size of the priority type copied
-                   as pty_size block
+                   as pty_size block; if size, must account for internal and
+                   trailing padding according to sizeof
    elt_alignment : alignment requirement or size of the type of the elt_size
-                   block of an element
+                   block of an element; if size, must account for internal
+                   and trailing padding according to sizeof
    sz_alignment  : alignment requirement or size of size_t
 */
 void heap_align(heap_t *h,
