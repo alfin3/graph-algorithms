@@ -24,7 +24,16 @@
    block, then it can be entirely copied as a key_size block, or a pointer
    to it can be copied as a key_size block. If the key is within a non-
    contiguous memory block, then a pointer to it is copied as a key_size
-   block. The same applies to an element. 
+   block. The same applies to an element.
+
+   When a pointer to a key is copied into a node as a key_size block,
+   the user can also decide if only the pointer or the entire key is deleted
+   during the delete and free operations. By using NULL as free_key, only
+   the pointer is deleted. Otherwise, the deletion is performed according to
+   a non-NULL free_key. For example, when an in-memory set of images are
+   used as keys and pointers are copied into the nodes of a list, then
+   using NULL as free_key will not affect the original set of images.
+   The same applies to elements and free_elt.
 
    The implementation provides a guarantee that a key_size block, a
    dll_node_t struct, and an elt_size block belonging to the same node keep
@@ -67,8 +76,8 @@
    ll          : pointer to a preallocated block of size of a dll_t struct
    head        : pointer to a preallocated block of size of a dll_node_t
                  pointer (head pointer)
-   key_size    : non-zero size of a contiguous malloc-aligned block of size
-                 key_size in a node
+   key_size    : non-zero size of a key_size block; must account for internal
+                 and trailing padding according to sizeof
 */
 void dll_init(dll_t *ll,
 	      dll_node_t **head,
@@ -102,7 +111,9 @@ void dll_init(dll_t *ll,
    completed and before any other operation is called.
    ll          : pointer to an initialized dll_t struct
    alignment   : alignment requirement or size of the type, a pointer to
-                 which is used to access the elt_size block of a node
+                 which is used to access the elt_size block of a node; if
+                 size, must account for internal and trailing padding
+                 according to sizeof
 */
 void dll_align_elt(dll_t *ll, size_t alignment){
   size_t alloc_ptr_offset = add_sz_perror(ll->key_offset, ll->elt_offset);
@@ -124,12 +135,12 @@ void dll_align_elt(dll_t *ll, size_t alignment){
    the position for the prepend operation.
    ll          : pointer to an initialized dll_t struct
    head        : pointer to a head pointer to an initialized list           
-   key         : non-NULL pointer to a key_size block to be copied into a
-                 new node that is prepended
-   elt         : non-NULL pointer to an elt_size block to be copied into a
-                 new node that is prepended
-   key_size    : non-zero size of a key_size block
-   elt_size    : non-zero size of an elt_size block
+   key         : non-NULL pointer to the key_size block of a key
+   elt         : non-NULL pointer to the elt_size block of an element
+   key_size    : non-zero size of a key_size block; must account for internal
+                 and trailing padding according to sizeof
+   elt_size    : non-zero size of an elt_size block; must account for
+                 internal and trailing padding according to sizeof
 */
 void dll_prepend_new(const dll_t *ll,
 		     dll_node_t **head,
@@ -223,7 +234,8 @@ void *dll_elt_ptr(const dll_t *ll, const dll_node_t *node){
    ll          : pointer to an initialized dll_t struct
    head        : pointer to a head pointer to an initialized list
    key         : non-NULL pointer to the key_size block of a key
-   key_size    : non-zero size of a key_size block in bytes
+   key_size    : non-zero size of a key_size block; must account for internal
+                 and trailing padding according to sizeof
    cmp_key     : - if NULL then a default memcmp-based comparison of key_size
                  blocks is performed
                  - otherwise comparison function is applied which returns a
@@ -329,18 +341,25 @@ void dll_remove(dll_node_t **head, const dll_node_t *node){
 }
 
 /**
-   Deletes a node in a doubly linked list.
+   Deletes a node in a doubly linked list. Deletes the key and element
+   in the node according to free_key and free_elt.
    ll          : pointer to an initialized dll_t struct
    head        : pointer to a head pointer to an initialized list
    node        : pointer to a node in an initialized list; if the pointer
                  points to the node pointed to by the head pointer, then the
                  head pointer is set to point to the next node from the
                  deleted node, or to NULL if the last node is deleted
-   free_key    : - NULL if a key was entirely copied as a key_size block
+   free_key    : - NULL if only a key_size block should be deleted (e.g.
+                 because a key was entirely copied as a key_size block, or
+                 because a pointer was copied as a key_size block and only 
+                 the pointer should be deleted)
                  - otherwise takes a pointer to the key_size block of a key
                  as an argument, frees the memory of the key except the
                  key_size block pointed to by the argument
-   free_elt    : - NULL if an element was entirely copied as an elt_size block
+   free_elt   : - NULL if only an elt_size block should be deleted (e.g.
+                 because an element was entirely copied as an elt_size
+                 block, or because a pointer was copied as an elt_size
+                 block and only the pointer should be deleted)
                  - otherwise takes a pointer to the elt_size block of an
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
@@ -375,8 +394,10 @@ void dll_delete(const dll_t *ll,
 }
 
 /**
-   Frees a doubly linked list. Please see the parameter specification in
-   dll_delete.
+   Frees the memory of all keys and elements that are in a list
+   according to free_key and free_elt, frees the memory of the list,
+   and leaves the block of size sizeof(dll_t) pointed to by the ll
+   parameter. Please see the parameter specification in dll_delete.
 */
 void dll_free(const dll_t *ll,
 	      dll_node_t **head,
