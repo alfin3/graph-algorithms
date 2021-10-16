@@ -84,11 +84,15 @@ typedef struct{
 } ht_divchn_t;
 
 /**
-   Initializes a hash table. 
+   Initializes a hash table. An in-table elt_size block is guaranteed to
+   be accessible only with a pointer to a character, unless additional
+   alignment is performed by calling ht_divchn_align.
    ht          : a pointer to a preallocated block of size 
                  sizeof(ht_divchn_t).
-   key_size    : non-zero size of a key_size block
-   elt_size    : non-zero size of an elt_size block
+   key_size    : non-zero size of a key_size block; must account for internal
+                 and trailing padding according to sizeof
+   elt_size    : non-zero size of an elt_size block; must account for internal
+                 and trailing padding according to sizeof
    min_num     : minimum number of keys that are known to be or expected to
                  be present simultaneously in a hash table; results in a
                  speedup by avoiding unnecessary growth steps of a hash
@@ -154,7 +158,8 @@ void ht_divchn_init(ht_divchn_t *ht,
    ht            : pointer to an initialized ht_divchn_t struct
    elt_alignment : alignment requirement or size of the type, a pointer to
                    which is used to access the elt_size block of an element
-                   in a hash table
+                   in a hash table; if size, must account for internal
+                   and trailing padding according to sizeof
 */
 void ht_divchn_align(ht_divchn_t *ht, size_t alignment);
 

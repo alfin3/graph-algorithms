@@ -167,11 +167,15 @@ static void reinsert(ht_muloa_t *ht, const ke_t *prev_ke);
 static size_t find_build_prime(const size_t *parts);
 
 /**
-   Initializes a hash table. 
+   Initializes a hash table. An in-table elt_size block is guaranteed to
+   be accessible only with a pointer to a character, unless additional
+   alignment is performed by calling ht_divchn_align.
    ht          : a pointer to a preallocated block of size 
                  sizeof(ht_muloa_t).
-   key_size    : non-zero size of a key_size block
-   elt_size    : non-zero size of an elt_size block
+   key_size    : non-zero size of a key_size block; must account for internal
+                 and trailing padding according to sizeof
+   elt_size    : non-zero size of an elt_size block; must account for internal
+                 and trailing padding according to sizeof
    min_num     : minimum number of keys that are known to be or expected to
                  be present simultaneously in a hash table; results in a
                  speedup by avoiding unnecessary growth steps of a hash
@@ -276,7 +280,8 @@ void ht_muloa_init(ht_muloa_t *ht,
    ht            : pointer to an initialized ht_muloa_t struct
    elt_alignment : alignment requirement or size of the type, a pointer to
                    which is used to access the elt_size block of an element
-                   in a hash table
+                   in a hash table; if size, must account for internal
+                   and trailing padding according to sizeof
 */
 void ht_muloa_align(ht_muloa_t *ht, size_t elt_alignment){
   size_t alloc_ptr_offset = add_sz_perror(ht->key_offset, ht->elt_offset);
