@@ -54,7 +54,6 @@
 #include "heap.h"
 #include "utilities-mem.h"
 
-static void swap(heap_t *h, size_t i, size_t j);
 static void half_swap(heap_t *h, size_t t, size_t s);
 static void heapify_up(heap_t *h, size_t i);
 static void heapify_down(heap_t *h, size_t i);
@@ -141,7 +140,7 @@ void heap_init(heap_t *h,
   h->alpha_n = alpha_n;
   h->log_alpha_d = log_alpha_d;
   h->num_elts = 0;
-  h->buf = malloc_perror(2, h->pair_size); /* 1st heapify, 2nd swap */
+  h->buf = malloc_perror(1, h->pair_size); /* heapify */
   h->pty_elts = malloc_perror(h->count, h->pair_size);
   h->hht = hht;
   h->cmp_pty = cmp_pty;
@@ -284,7 +283,7 @@ void heap_pop(heap_t *h, void *pty, void *elt){
   if (h->num_elts == 0) return;
   memcpy(pty, pty_ptr(h, ix), h->pty_size);
   memcpy(elt, elt_ptr(h, ix), h->elt_size);
-  swap(h, ix, h->num_elts - 1);
+  half_swap(h, ix, h->num_elts - 1);
   h->hht->remove(h->hht->ht, elt, &ix_buf);
   h->num_elts--;
   if (h->num_elts > 0) heapify_down(h, ix);
@@ -312,20 +311,6 @@ void heap_free(heap_t *h){
 }
 
 /** Helper functions */
-
-/**
-   Swaps priorities and elements at indices i and j and maps the elements
-   to their new indices in the hash table.
-*/
-static void swap(heap_t *h, size_t i, size_t j){
-  void *buf = (char *)h->buf + h->pair_size; /* second subbuffer */
-  if (i == j) return;
-  memcpy(buf, pty_ptr(h, i), h->pair_size);
-  memcpy(pty_ptr(h, i), pty_ptr(h, j), h->pair_size);
-  memcpy(pty_ptr(h, j), buf, h->pair_size);
-  h->hht->insert(h->hht->ht, elt_ptr(h, i), &i); /* two updates */
-  h->hht->insert(h->hht->ht, elt_ptr(h, j), &j);
-}
 
 /**
    Copies the priority and element at index s to index t, and maps the
