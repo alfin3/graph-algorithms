@@ -47,9 +47,8 @@
    parameter ranges is undefined.
 
    The implementation does not use stdint.h and is portable under C89/C90
-   and C99 with the only requirement that CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even (at this time, every bit is required
-   to participate in the value).
+   and C99 with the only requirement that the width of size_t is
+   greater or equal to 16, less than 2040, and is even.
 
    * except intended wrapping around of unsigned integers in modulo
      operations, which is defined, and overflow detection as a part
@@ -161,7 +160,7 @@ void ht_divchn_init(ht_divchn_t *ht,
                    in a hash table; if size, must account for internal
                    and trailing padding according to sizeof
 */
-void ht_divchn_align(ht_divchn_t *ht, size_t alignment);
+void ht_divchn_align(ht_divchn_t *ht, size_t elt_alignment);
 
 /**
    Inserts a key and an associated element into a hash table by copying
