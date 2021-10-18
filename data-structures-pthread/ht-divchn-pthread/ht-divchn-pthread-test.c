@@ -1,15 +1,17 @@
 /**
    ht-divchn-pthread-test.c
 
-   Tests of a hash table with generic hash keys and generic elements that 
-   is concurrently accessible and modifiable. The implementation is based
-   on a division method for hashing and a chaining method for resolving
-   collisions.
+   Tests of a hash table with generic contiguous or non-contiguous keys and
+   generic contiguous or non-contiguous elements that is concurrently
+   accessible and modifiable. The implementation is based on a division
+   method for hashing and a chaining method for resolving collisions.
 
-   The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99. The requirements are: i) CHAR_BIT * sizeof(size_t) is
-   greater or equal to 16 and is even (every bit is required to participate
-   in the value at this time), and ii) pthreads API is available.
+   The implementation does not use stdint.h and is portable under C89/C90
+   and C99. The requirements are: i) the width of size_t is greater or
+   equal to 16, less than 2040, and is even, and ii) pthreads API is
+   available.
+   
+   TODO: add portable printing of size_t
 */
 
 #define _XOPEN_SOURCE 600
@@ -24,6 +26,7 @@
 #include "dll.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
+#include "utilities-lim.h"
 #include "utilities-pthread.h"
 
 /**
@@ -41,32 +44,33 @@
 /* input handling */
 const char *C_USAGE =
   "ht-divchn-pthread-test\n"
-  "[0, # bits in size_t - 1) : i s.t. # inserts = 2**i\n"
-  "[0, # bits in size_t) : a given k = sizeof(size_t)\n"
-  "[0, # bits in size_t) : b s.t. k * 2**a <= key size <= k * 2**b\n"
+  "[0, size_t width - 1) : i s.t. # inserts = 2**i\n"
+  "[0, size_t width) : a given k = sizeof(size_t)\n"
+  "[0, size_t width) : b s.t. k * 2**a <= key size <= k * 2**b\n"
   "> 0 : c\n"
   "> 0 : d\n"
   "> 0 : e log base 2\n"
-  "> 0 : f s.t. c / 2**e <= alpha <= d / 2**e, in f steps\n"
+  "> 0 : f s.t. c / 2**e <= load factor bound <= d / 2**e, in f steps\n"
   "[0, 1] : on/off insert search uint test\n"
   "[0, 1] : on/off remove delete uint test\n"
   "[0, 1] : on/off insert search uint_ptr test\n"
   "[0, 1] : on/off remove delete uint_ptr test\n"
   "[0, 1] : on/off corner cases test\n";
 const int C_ARGC_MAX = 13;
-const size_t C_ARGS_DEF[12] = {14, 0, 2, 1024, 30720u, 11, 10, 1, 1, 1, 1, 1};
+const size_t C_ARGS_DEF[12] = {14u, 0u, 2u, 1024u, 30720u, 11u,
+			       10u, 1u, 1u, 1u, 1u, 1u};
 const size_t C_SIZE_MAX = (size_t)-1;
-const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 
 /* corner cases test */
-const size_t C_CORNER_LOG_KEY_START = 0;
-const size_t C_CORNER_LOG_KEY_END = 8;
-const size_t C_CORNER_HT_COUNT = 1543;
-const size_t C_CORNER_ALPHA_N = 33;
-const size_t C_CORNER_LOG_ALPHA_D = 15; /* alpha is 33/32768 */
-const size_t C_CORNER_MIN_NUM = 0;
-const size_t C_CORNER_NUM_LOCKS = 1;
-const size_t C_CORNER_NUM_GROW_THREADS = 1;
+const size_t C_CORNER_LOG_KEY_START = 0u;
+const size_t C_CORNER_LOG_KEY_END = 8u;
+const size_t C_CORNER_HT_COUNT = 1543u;
+const size_t C_CORNER_ALPHA_N = 33u;
+const size_t C_CORNER_LOG_ALPHA_D = 15u; /* lf bound is 33/32768 */
+const size_t C_CORNER_MIN_NUM = 0u;
+const size_t C_CORNER_NUM_LOCKS = 1u;
+const size_t C_CORNER_NUM_GROW_THREADS = 1u;
 
 void insert_search_free(size_t num_ins,
 			size_t key_size,
@@ -99,12 +103,13 @@ void print_test_result(int res);
 double timer();
 
 /**
-   Test hash table operations on distinct keys and size_t elements 
-   across key sizes and load factor upper bounds. For test purposes a key
-   is random with the exception of a distinct non-random C_KEY_SIZE_FACTOR-
-   sized block inside the key. A pointer to an element is passed as elt in
-   ht_divchn_pthread_insert and the element is fully copied into the hash
-   table. NULL as free_elt is sufficient to delete the element.
+   Test hash table operations on distinct contiguous keys and contiguous
+   size_t elements across key sizes and load factor upper bounds. For test
+   purposes a key is a random key_size block with the exception of a
+   distinct non-random sizeof(size_t)-sized sub-block inside the key_size
+   block. An element is an elt_size block of size sizeof(size_t) with a
+   size_t value. Keys and elements are entirely copied into a hash table and
+   free_key and free_elt are NULL.
 */
 
 void new_uint(void *elt, size_t val){
@@ -147,7 +152,7 @@ void run_insert_search_free_uint_test(size_t log_ins,
     key_size = sizeof(size_t) * pow_two_perror(i);
     printf("Run a ht_divchn_pthread_{insert, search, free} test on distinct "
 	   "%lu-byte keys and size_t elements\n", TOLU(key_size));
-    printf("\t# threads (nt):   %lu\n"
+    printf("\t# threads (t):    %lu\n"
 	   "\t# locks:          %lu\n"
 	   "\t# grow threads:   %lu\n"
 	   "\tbatch count:      %lu\n",
@@ -207,7 +212,7 @@ void run_remove_delete_uint_test(size_t log_ins,
     key_size = sizeof(size_t) * pow_two_perror(i);
     printf("Run a ht_divchn_pthread_{remove, delete} test on distinct "
 	   "%lu-byte keys and size_t elements\n", TOLU(key_size));
-    printf("\t# threads (nt):   %lu\n"
+    printf("\t# threads (t):    %lu\n"
 	   "\t# locks:          %lu\n"
 	   "\t# grow threads:   %lu\n"
 	   "\tbatch count:      %lu\n",
@@ -237,13 +242,14 @@ void run_remove_delete_uint_test(size_t log_ins,
 }
 
 /**
-   Test hash table operations on distinct keys and noncontiguous
-   uint_ptr_t elements across key sizes and load factor upper bounds. 
-   For test purposes a key is random with the exception of a distinct
-   non-random sizeof(size_t)-sized block inside the key. A pointer to a
-   pointer to an element is passed as elt in ht_divchn_pthread_insert, and
-   the pointer to the element is copied into the hash table. An element-
-   specific free_elt is necessary to delete the element.
+   Test hash table operations on distinct contiguous keys and noncontiguous
+   uint_ptr_t elements across key sizes and load factor upper bounds. For
+   test purposes a key is a random key_size block with the exception of a
+   distinct non-random sizeof(size_t)-sized sub-block inside the key_size
+   block. A key is fully copied into a hash table as a key_size block.
+   Because an element is noncontiguous, a pointer to an element is copied as
+   an elt_size block. free_key is NULL. An element-specific free_elt is
+   necessary to delete an element.
 */
 
 typedef struct{
@@ -302,7 +308,7 @@ void run_insert_search_free_uint_ptr_test(size_t log_ins,
     printf("Run a ht_divchn_pthread_{insert, search, free} test on distinct "
 	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
 	   TOLU(key_size));
-    printf("\t# threads (nt):   %lu\n"
+    printf("\t# threads (t):    %lu\n"
 	   "\t# locks:          %lu\n"
 	   "\t# grow threads:   %lu\n"
 	   "\tbatch count:      %lu\n",
@@ -363,7 +369,7 @@ void run_remove_delete_uint_ptr_test(size_t log_ins,
     printf("Run a ht_divchn_pthread_{remove, delete} test on distinct "
 	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
 	   TOLU(key_size));
-    printf("\t# threads (nt):   %lu\n"
+    printf("\t# threads (t):    %lu\n"
 	   "\t# locks:          %lu\n"
 	   "\t# grow threads:   %lu\n"
 	   "\tbatch count:      %lu\n",
@@ -586,7 +592,7 @@ void search_in_ht(const ht_divchn_pthread_t *ht,
      ht->num_elts);
   *res *= (n == ht->num_elts);
   if (num_threads == 1){
-    printf("\t\tin ht search time (nt = 1):         "
+    printf("\t\tin ht search time (t = 1):          "
 	   "%.4f seconds\n", t);
   }else{
     printf("\t\tin ht search time:                  "
@@ -607,7 +613,7 @@ void search_nin_ht(const ht_divchn_pthread_t *ht,
     (search_ht_helper(ht, keys, elts, count, num_threads, val_elt, &t) == 0);
   *res *= (n == ht->num_elts);
   if (num_threads == 1){
-    printf("\t\tnot in ht search time (nt = 1):     " 
+    printf("\t\tnot in ht search time (t = 1):      " 
 	   "%.4f seconds\n", t);
   }else{
     printf("\t\tnot in ht search time:              "
@@ -677,6 +683,7 @@ void insert_search_free(size_t num_ins,
 			 NULL,
 			 NULL,
 			 NULL,
+			 NULL,
 			 NULL); /* NULL to reinsert non-contig. elements */
   insert_keys_elts(&ht, keys, elts, num_ins, num_threads, batch_count, &res);
   free_ht(&ht, 0);
@@ -691,8 +698,9 @@ void insert_search_free(size_t num_ins,
 			 NULL,
 			 NULL,
 			 NULL,
+			 NULL,
 			 free_elt);
-  ht_divchn_pthread_align_elt(&ht, elt_alignment);
+  ht_divchn_pthread_align(&ht, elt_alignment);
   insert_keys_elts(&ht, keys, elts, num_ins, num_threads, batch_count, &res);
   search_in_ht(&ht, keys, elts, num_ins, num_threads, val_elt, &res);
   search_in_ht(&ht, keys, elts, num_ins, 1, val_elt, &res);
@@ -921,8 +929,9 @@ void remove_delete(size_t num_ins,
 			 NULL,
 			 NULL,
 			 NULL,
+			 NULL,
 			 free_elt);
-  ht_divchn_pthread_align_elt(&ht, elt_alignment);
+  ht_divchn_pthread_align(&ht, elt_alignment);
   insert_keys_elts(&ht, keys, elts, num_ins, num_threads, batch_count, &res);
   for (i = 1; i < num_ins; i++){
     memcpy(ptr(elts, i, elt_size), ptr(elts, 0, elt_size), elt_size);
@@ -973,8 +982,9 @@ void run_corner_cases_test(size_t log_ins){
 			   NULL,
 			   NULL,
 			   NULL,
+			   NULL,
 			   NULL);
-    ht_divchn_pthread_align_elt(&ht, elt_alignment);
+    ht_divchn_pthread_align(&ht, elt_alignment);
     for (j = 0; j < num_ins; j++){
       elt = j;
       ht_divchn_pthread_insert(&ht, key, &elt, 1);
