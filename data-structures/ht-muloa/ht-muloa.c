@@ -21,15 +21,16 @@
    the full occupancy is reached.
 
    A distinction is made between a key and a "key_size block", and an
-   element and an "elt_size block". During an insertion, a contiguous block
-   of size key_size ("key_size block") and a contiguous block of size
-   elt_size ("elt_size block") are copied into a hash table. A key may be
-   within a contiguous or non-contiguous memory block. Given a key, the user
-   decides what is copied into the key_size block of the hash table. If the
-   key is within a contiguous memory block, then it can be entirely copied
-   as a key_size block, or a pointer to it can be copied as a key_size
-   block. If the key is within a non-contiguous memory block, then a pointer
-   to it is copied as a key_size block. The same applies to an element. 
+   element and an "elt_size block". During an insertion without update*,
+   a contiguous block of size key_size ("key_size block") and a contiguous
+   block of size elt_size ("elt_size block") are copied into a hash table.
+   A key may be within a contiguous or non-contiguous memory block. Given
+   a key, the user decides what is copied into the key_size block of the
+   hash table. If the key is within a contiguous memory block, then it can
+   be entirely copied as a key_size block, or a pointer to it can be copied
+   as a key_size block. If the key is within a non-contiguous memory block,
+   then a pointer to it is copied as a key_size block. The same applies to
+   an element.
 
    When a pointer to a key is copied into a hash table as a key_size block,
    the user can also decide if only the pointer or the entire key is deleted
@@ -45,7 +46,7 @@
    arithmetic is used in load factor operations, thereby eliminating the
    use of float. Given parameter values within the specified ranges,
    the implementation provides an error message and an exit is executed
-   if an integer overflow is attempted* or an allocation is not completed
+   if an integer overflow is attempted** or an allocation is not completed
    due to insufficient resources. The behavior outside the specified
    parameter ranges is undefined.
 
@@ -53,9 +54,12 @@
    and C99 with the only requirement that the width of size_t is
    greater or equal to 16, less than 2040, and is even.
 
-   * except intended wrapping around of unsigned integers in modulo
-     operations, which is defined, and overflow detection as a part
-     of computing bounds, which is defined by the implementation.
+   * if there is an update during an insertion, a key_size block is not
+   copied and an elt_size block is copied.
+
+   ** except intended wrapping around of unsigned integers in modulo
+   operations, which is defined, and overflow detection as a part
+   of computing bounds, which is defined by the implementation.
 */
 
 #include <stdio.h>
@@ -133,7 +137,7 @@ static const size_t C_BUILD_SHIFT = 16u;
 static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 static const size_t C_LOG_COUNT_MIN = 8u; /* > 0 */
-static const size_t C_LOG_COUNT_MAX = UINT_WIDTH_FROM_MAX((size_t)-1) - 1;
+static const size_t C_LOG_COUNT_MAX = UINT_WIDTH_FROM_MAX((size_t)-1) - 1u;
 
 /* placeholder handling */
 static ke_t *ph_new();
@@ -169,7 +173,7 @@ static size_t find_build_prime(const size_t *parts);
 /**
    Initializes a hash table. An in-table elt_size block is guaranteed to
    be accessible only with a pointer to a character, unless additional
-   alignment is performed by calling ht_divchn_align.
+   alignment is performed by calling ht_muloa_align.
    ht          : a pointer to a preallocated block of size 
                  sizeof(ht_muloa_t).
    key_size    : non-zero size of a key_size block; must account for internal
@@ -267,12 +271,12 @@ void ht_muloa_init(ht_muloa_t *ht,
 
 /**
    Aligns each in-table elt_size block to be accessible with a pointer to a
-   type T other than character (in addition to a character pointer). If
-   alignment requirement of T is unknown, the size of T can be used
-   as a value of the alignment parameter because size of T >= alignment
-   requirement of T (due to structure of arrays), which may result in
-   overalignment. The hash table keeps the effective type of a copied
-   elt_size block, if it had one at the time of insertion, and T must
+   type T other than character through ht_muloa_search (in addition to a
+   character pointer). If alignment requirement of T is unknown, the size
+   of T can be used as a value of the alignment parameter because size of
+   T >= alignment requirement of T (due to structure of arrays), which may
+   result in overalignment. The hash table keeps the effective type of a
+   copied elt_size block, if it had one at the time of insertion, and T must
    be compatible with the type to comply with the strict aliasing rules.
    T can be the same or a cvr-qualified/signed/unsigned version of the
    type. The operation is optionally called after ht_muloa_init is

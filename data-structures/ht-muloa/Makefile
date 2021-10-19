@@ -47,7 +47,8 @@ ht-muloa.o                      : ht-muloa.h                      \
                                   $(UTILS_MOD_DIR)utilities-mod.h \
                                   $(UTILS_LIM_DIR)utilities-lim.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
-$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h
+$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 
 .PHONY : clean clean-all
 
