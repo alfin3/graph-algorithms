@@ -17,15 +17,16 @@
    after the maximum count of slots in a hash table is reached.
 
    A distinction is made between a key and a "key_size block", and an
-   element and an "elt_size block". During an insertion, a contiguous block
-   of size key_size ("key_size block") and a contiguous block of size
-   elt_size ("elt_size block") are copied into a hash table. A key may be
-   within a contiguous or non-contiguous memory block. Given a key, the user
-   decides what is copied into the key_size block of the hash table. If the
-   key is within a contiguous memory block, then it can be entirely copied
-   as a key_size block, or a pointer to it can be copied as a key_size
-   block. If the key is within a non-contiguous memory block, then a pointer
-   to it is copied as a key_size block. The same applies to an element. 
+   element and an "elt_size block". During an insertion without update*,
+   a contiguous block of size key_size ("key_size block") and a contiguous
+   block of size elt_size ("elt_size block") are copied into a hash table.
+   A key may be within a contiguous or non-contiguous memory block. Given
+   a key, the user decides what is copied into the key_size block of the
+   hash table. If the key is within a contiguous memory block, then it can
+   be entirely copied as a key_size block, or a pointer to it can be copied
+   as a key_size block. If the key is within a non-contiguous memory block,
+   then a pointer to it is copied as a key_size block. The same applies to
+   an element.
 
    When a pointer to a key is copied into a hash table as a key_size block,
    the user can also decide if only the pointer or the entire key is deleted
@@ -41,7 +42,7 @@
    arithmetic is used in load factor operations, thereby eliminating the
    use of float. Given parameter values within the specified ranges,
    the implementation provides an error message and an exit is executed
-   if an integer overflow is attempted* or an allocation is not completed
+   if an integer overflow is attempted** or an allocation is not completed
    due to insufficient resources. The behavior outside the specified
    parameter ranges is undefined.
 
@@ -49,9 +50,12 @@
    and C99 with the only requirement that the width of size_t is
    greater or equal to 16, less than 2040, and is even.
 
-   * except intended wrapping around of unsigned integers in modulo
-     operations, which is defined, and overflow detection as a part
-     of computing bounds, which is defined by the implementation.
+   * if there is an update during an insertion, a key_size block is not
+   copied and an elt_size block is copied
+
+   ** except intended wrapping around of unsigned integers in modulo
+   operations, which is defined, and overflow detection as a part
+   of computing bounds, which is defined by the implementation.
 
    TODO: add division with magic number multiplication.
 */
@@ -230,12 +234,12 @@ void ht_divchn_init(ht_divchn_t *ht,
 
 /**
    Aligns each in-table elt_size block to be accessible with a pointer to a
-   type T other than character (in addition to a character pointer). If
-   alignment requirement of T is unknown, the size of T can be used
-   as a value of the alignment parameter because size of T >= alignment
-   requirement of T (due to structure of arrays), which may result in
-   overalignment. The hash table keeps the effective type of a copied
-   elt_size block, if it had one at the time of insertion, and T must
+   type T other than character through ht_divchn_search (in addition to a
+   character pointer). If alignment requirement of T is unknown, the size
+   of T can be used as a value of the alignment parameter because size of
+   T >= alignment requirement of T (due to structure of arrays), which may
+   result in overalignment. The hash table keeps the effective type of a
+   copied elt_size block, if it had one at the time of insertion, and T must
    be compatible with the type to comply with the strict aliasing rules.
    T can be the same or a cvr-qualified/signed/unsigned version of the
    type. The operation is optionally called after ht_divchn_init is
