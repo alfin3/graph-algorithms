@@ -181,7 +181,7 @@ typedef struct{
                       be updated with the element accessed through the
                       second argument; each argument is a pointer to an
                       elt_size block; cmp_elt accesses an in-table elt_size
-                      block according to the alignment set after the calls
+                      block according to the alignment set by the calls
                       to ht_divchn_pthread_init and ht_divchn_pthread_align
    rdc_key          : - if NULL then a default conversion of a bit pattern
                       in the key_size block of a key is performed prior to
@@ -225,16 +225,17 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
 
 /**
    Aligns each in-table elt_size block to be accessible with a pointer to a
-   type T other than character (in addition to a character pointer). If
-   alignment requirement of T is unknown, the size of T can be used
-   as a value of the alignment parameter because size of T >= alignment
-   requirement of T (due to structure of arrays), which may result in
-   overalignment. The hash table keeps the effective type of a copied
-   elt_size block, if it had one at the time of insertion, and T must
-   be compatible with the type to comply with the strict aliasing rules.
-   T can be the same or a cvr-qualified/signed/unsigned version of the
-   type. The operation is optionally called after ht_divchn_pthread_init
-   is completed and before any other operation is called.
+   type T other than character through ht_divchn_pthread_search and cmp_elt
+   (in addition to a character pointer). If alignment requirement of T is
+   unknown, the size of T can be used as a value of the alignment parameter
+   because size of T >= alignment requirement of T (due to structure of
+   arrays), which may result in overalignment. The hash table keeps the
+   effective type of a copied elt_size block, if it had one at the time of
+   insertion, and T must be compatible with the type to comply with the
+   strict aliasing rules. T can be the same or a cvr-
+   qualified/signed/unsigned version of the type. The operation is
+   optionally called after ht_divchn_pthread_init is completed and before
+   any other operation is called.
    ht            : pointer to an initialized ht_divchn_pthread_t struct
    elt_alignment : alignment requirement or size of the type, a pointer to
                    which is used to access the elt_size block of an element
