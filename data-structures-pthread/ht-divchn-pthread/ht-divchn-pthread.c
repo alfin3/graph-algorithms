@@ -91,7 +91,6 @@
 
    TODO: add division with magic number multiplication.   
 */   
-*/
 
 #define _XOPEN_SOURCE 600
 
