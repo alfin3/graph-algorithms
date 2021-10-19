@@ -19,7 +19,7 @@
    after the maximum count of slots in a hash table is reached.
 
    A distinction is made between a key and a "key_size block", and an
-   element and an "elt_size block". During an insertion without update,
+   element and an "elt_size block". During an insertion without update*,
    a contiguous block of size key_size ("key_size block") and a contiguous
    block of size elt_size ("elt_size block") are copied into a hash table.
    A key may be within a contiguous or non-contiguous memory block. Given
@@ -59,7 +59,7 @@
    number of insertions. According to the hash table design, a thread
    completes a batch operation i) before a load factor upper bound is
    exceeded, ii) before the hash table grows when the load factor bound
-   is temporarily* exceeded, or iii) after the hash table reaches its
+   is temporarily** exceeded, or iii) after the hash table reaches its
    maximum count of slots on a given system and the load factor is no
    longer bounded. In ii) and iii) a thread is guaranteed to complete its
    operation, because for any load factor upper bound, if it is
@@ -70,7 +70,7 @@
    arithmetic is used in load factor operations, thereby eliminating the
    use of float. Given parameter values within the specified ranges,
    the implementation provides an error message and an exit is executed
-   if an integer overflow is attempted** or an allocation is not completed
+   if an integer overflow is attempted*** or an allocation is not completed
    due to insufficient resources. The behavior outside the specified
    parameter ranges is undefined.
 
@@ -79,11 +79,14 @@
    equal to 16, less than 2040, and is even, and ii) pthreads API is
    available.
 
-   * unless the growth step that follows does not lower the load factor
+   * if there is an update during an insertion, a key_size block is not
+   copied and an elt_size block is copied according to cmp_elt
+
+   ** unless the growth step that follows does not lower the load factor
    sufficiently because the maximum count of slots on a given system is
    reached during the growth step and the load factor is no longer bounded
 
-   ** except intended wrapping around of unsigned integers in modulo
+   *** except intended wrapping around of unsigned integers in modulo
    operations, which is defined, and overflow detection as a part
    of computing bounds, which is defined by the implementation
 
@@ -169,7 +172,7 @@ typedef struct{
                       key; cmp_key must use the same subset of bits in a key
                       as rdc_key
    cmp_elt          : comparison function that determines if a thread updates
-                      an element in a hash table if there is a key match
+                      an element in a hash table when there is a key match
                       according to cmp_key during insertion:
                       - if NULL then the element is always updated, 
                       - otherwise comparison function is applied which
@@ -177,7 +180,9 @@ typedef struct{
                       hash table accessed through the first argument should
                       be updated with the element accessed through the
                       second argument; each argument is a pointer to an
-                      elt_size block
+                      elt_size block; cmp_elt accesses an in-table elt_size
+                      block according to the alignment set after the calls
+                      to ht_divchn_pthread_init and ht_divchn_pthread_align
    rdc_key          : - if NULL then a default conversion of a bit pattern
                       in the key_size block of a key is performed prior to
                       hashing, which may introduce regularities
