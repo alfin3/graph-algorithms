@@ -12,6 +12,9 @@
 #include "utilities-mod.h"
 #include "utilities-lim.h"
 
+static const size_t C_SIZE_HALF = (((size_t)1 <<
+				    (UINT_WIDTH_FROM_MAX((size_t)-1) / 2u)) -
+				   1u);
 static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 static const size_t C_HALF_BIT = UINT_WIDTH_FROM_MAX((size_t)-1) / 2u;
@@ -50,7 +53,7 @@ size_t mul_mod(size_t a, size_t b, size_t n){
   size_t i;
   /* comparisons for speed up */
   if (n == 1 || a == 0 || b == 0) return 0;
-  if (a < pow_two_perror(C_HALF_BIT) && b < pow_two_perror(C_HALF_BIT)){
+  if (a <= C_SIZE_HALF && b <= C_SIZE_HALF){
     return (a * b) % n;
   }
   al = a & C_LOW_MASK;
@@ -101,6 +104,21 @@ size_t sum_mod(size_t a, size_t b, size_t n){
    if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
    a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
    Does not require a little-endian machine.
+
+   Strict aliasing and effective type:
+
+   If the object pointed to by s has a declared type, then reading with an
+   unsigned char pointer is compatible and does not change the effective
+   type of the object. If the object pointed to by s was allocated and
+   acquired a non-character effective type, then reading with an unsigned
+   char pointer is compatible and does not change the effective type of the
+   object, which can only be changed with a write. If the object was
+   allocated and did not acquire a non-character effective type, then each
+   read with an unsigned char pointer has the unsigned char effective type.
+   The object can later acquire a non-character effective type with a write,
+   to the object which is necessary before a read with a non-character type
+   can occur (due to aliasing rules). unsigned char is guaranteed to not
+   have a trap representation with all bits participating in a value.
 */
 size_t mem_mod(const void *s, size_t size, size_t n){
   unsigned char *ptr = (unsigned char *)s; /* defined and not trap rep */

@@ -65,11 +65,13 @@ const size_t C_ARGS_DEF[6] = {15u, 10u, 15u, 1u, 1u, 1u};
 /* tests */
 const unsigned char C_UCHAR_MAX = (unsigned char)-1;
 const size_t C_SIZE_MAX = (size_t)-1; /* >= 3 */
+const size_t C_SIZE_HALF = (((size_t)1 <<
+			     (UINT_WIDTH_FROM_MAX((size_t)-1) / 2u)) - 1u);
 const size_t C_BYTE_BIT = CHAR_BIT;
 const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1); /* >= 2 */
 const size_t C_HALF_BIT = UINT_WIDTH_FROM_MAX((size_t)-1) / 2u; /* >= 1 */
-const size_t C_BASE_MAX = (((size_t)1 << (CHAR_BIT / 2))
-			   + 1); /* >= 2, <= C_SIZE_MAX */
+const size_t C_BASE_MAX = (((size_t)1 << (CHAR_BIT / 2u))
+			   + 1u); /* >= 2, <= C_SIZE_MAX */
 
 void print_test_result(int res);
 
@@ -86,7 +88,7 @@ void run_pow_mod_test(int log_trials){
   size_t r, r_wo;
   trials = pow_two_perror(log_trials);
   k_max = 1;
-  n_max = pow_two_perror(C_HALF_BIT) - 2; /* >= 0 */
+  n_max = C_SIZE_HALF - 1; /* >= 0 */
   while (base_sq_max / C_BASE_MAX >= C_BASE_MAX){
     base_sq_max /= C_BASE_MAX;
     k_max++;
@@ -146,8 +148,8 @@ void run_mul_mod_test(int log_trials){
   size_t a, b, n;
   size_t r, r_wo;
   trials = pow_two_perror(log_trials);
-  a_max = pow_two_perror(C_HALF_BIT) - 1;
-  b_max = pow_two_perror(C_HALF_BIT) - 1;
+  a_max = C_SIZE_HALF;
+  b_max = C_SIZE_HALF;
   n_max = C_SIZE_MAX - 1;
   printf("Run mul_mod random test\n");
   for (i = 0; i < trials; i++){
@@ -278,8 +280,8 @@ void run_mul_ext_test(int log_trials){
   hl = malloc_perror(2, sizeof(size_t));
   printf("Run mul_ext random test\n");
   for (i = 0; i < trials; i++){
-    a = DRAND() * (pow_two_perror(C_HALF_BIT) - 1);
-    b = DRAND() * (pow_two_perror(C_HALF_BIT) - 1);
+    a = DRAND() * C_SIZE_HALF;
+    b = DRAND() * C_SIZE_HALF;
     mul_ext(a, b, &h, &l);
     res *= (h == 0);
     res *= (l == a * b);
