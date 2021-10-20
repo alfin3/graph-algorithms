@@ -6,17 +6,12 @@
    The following command line arguments can be used to customize tests:
    utilities-mod-test
       [0, size_t width) : n for 2**n # trials in tests
-      [0, size_t width) : a
-      [0, size_t width) : b s.t. 2**a <= size - 1 <= 2**b in mem mod tests
       [0, 1] : pow_mod, mul_mod, and sum_mod tests on/off
-      [0, 1] : mem_mod test on/off
       [0, 1] : mul_ext, represent_uint, and pow_two_perror tests on/off
 
    usage examples: 
    ./utilities-mod-test 20
-   ./utilities-mod-test 20 0 15
-   ./utilities-mod-test 20 25 25 0 1 1
-   ./utilities-mod-test 20 30 30 0 0 1 
+   ./utilities-mod-test 20 0 1
 
    utilities-mod-test can be run with any subset of command line arguments in
    the above-defined order. If the (i + 1)th argument is specified then the
@@ -54,13 +49,10 @@
 const char *C_USAGE =
   "utilities-mod-test \n"
   "[0, size_t width) : n for 2**n # trials in tests \n"
-  "[0, size_t width) : a \n"
-  "[0, size_t width) : b s.t. 2**a <= size - 1 <= 2**b in mem mod tests \n"
   "[0, 1] : pow_mod, mul_mod, and sum_mod tests on/off \n"
-  "[0, 1] : mem_mod test on/off \n"
   "[0, 1] : mul_ext, represent_uint, and pow_two_perror tests on/off \n";
-const int C_ARGC_MAX = 7;
-const size_t C_ARGS_DEF[6] = {15u, 10u, 15u, 1u, 1u, 1u};
+const int C_ARGC_MAX = 4;
+const size_t C_ARGS_DEF[3] = {15u, 1u, 1u};
 
 /* tests */
 const unsigned char C_UCHAR_MAX = (unsigned char)-1;
@@ -234,40 +226,6 @@ void run_sum_mod_test(int log_trials){
 }
 
 /**
-   Tests mem_mod.
-*/
-void run_mem_mod_test(int log_size_start,
-		      int log_size_end){		      
-  unsigned char *block = NULL;
-  int res = 1;
-  int i;
-  size_t n, mod_n;
-  size_t size;
-  clock_t t;
-  block = calloc_perror(1, add_sz_perror(pow_two_perror(log_size_end), 1));
-  printf("Run mem_mod on large memory blocks\n");
-  n = 1 + DRAND() * (C_SIZE_MAX - 1);
-  for (i = log_size_start; i <= log_size_end; i++){
-    size = pow_two_perror(i) + 1;
-    block[size - 1] = 1;
-    t = clock();
-    mod_n = mem_mod(block, size, n);
-    t = clock() - t;
-    res = (mod_n == pow_mod(mul_mod(pow_two_perror(C_BYTE_BIT - 1), 2, n),
-			    size - 1,
-			    n));
-    printf("\tblock size:  %lu bytes \n", TOLU(size));
-    printf("\truntime:     %.8f seconds \n", (float)t / CLOCKS_PER_SEC);
-    printf("\tcorrectness: ");
-    print_test_result(res);
-    res = 1;
-    block[size - 1] = 0;
-  }
-  free(block);
-  block = NULL;
-}
-
-/**
    Tests mul_ext.
 */
 void run_mul_ext_test(int log_trials){
@@ -405,22 +363,17 @@ int main(int argc, char *argv[]){
     args[i - 1] = atoi(argv[i]);
   }
   if (args[0] > C_FULL_BIT - 1 ||
-      args[1] > C_FULL_BIT - 1 ||
-      args[2] > C_FULL_BIT - 1 ||
-      args[1] > args[2] ||
-      args[3] > 1 ||
-      args[4] > 1 ||
-      args[5] > 1){
+      args[1] > 1 ||
+      args[2] > 1){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  if (args[3]){
+  if (args[1]){
     run_pow_mod_test(args[0]);
     run_mul_mod_test(args[0]);
     run_sum_mod_test(args[0]);
   }
-  if (args[4]) run_mem_mod_test(args[1], args[2]);
-  if (args[5]){
+  if (args[2]){
     run_mul_ext_test(args[0]);
     run_represent_uint_test(args[0]);
     run_pow_two_test();

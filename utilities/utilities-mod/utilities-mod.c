@@ -15,7 +15,6 @@
 static const size_t C_SIZE_HALF = (((size_t)1 <<
 				    (UINT_WIDTH_FROM_MAX((size_t)-1) / 2u)) -
 				   1u);
-static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 static const size_t C_HALF_BIT = UINT_WIDTH_FROM_MAX((size_t)-1) / 2u;
 static const size_t C_LOW_MASK = ((size_t)-1 >>
@@ -96,48 +95,6 @@ size_t sum_mod(size_t a, size_t b, size_t n){
   }else{
     return a + b;
   }
-}
-
-/**
-   Computes mod n of a memory block, treating each byte of the block in
-   the little-endian order and inductively applying the following relations:
-   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
-   a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
-   Does not require a little-endian machine.
-
-   Strict aliasing and effective type:
-
-   If the object pointed to by s has a declared type, then reading with an
-   unsigned char pointer is compatible and does not change the effective
-   type of the object. If the object pointed to by s was allocated and
-   acquired a non-character effective type, then reading with an unsigned
-   char pointer is compatible and does not change the effective type of the
-   object, which can only be changed with a write. If the object was
-   allocated and did not acquire a non-character effective type, then each
-   read with an unsigned char pointer has the unsigned char effective type.
-   The object can later acquire a non-character effective type with a write,
-   to the object which is necessary before a read with a non-character type
-   can occur (due to aliasing rules). unsigned char is guaranteed to not
-   have a trap representation with all bits participating in a value.
-*/
-size_t mem_mod(const void *s, size_t size, size_t n){
-  unsigned char *ptr = (unsigned char *)s; /* defined and not trap rep */
-  size_t val, prod;
-  size_t ptwo = 1, ptwo_inc;
-  size_t ret = 0;
-  size_t i;
-  if (n == 1) return 0;
-  ptwo_inc = mul_mod(pow_two_perror(C_BYTE_BIT - 1), 2, n);
-  for (i = 0; i < size; i++){
-    val = *ptr;
-    /* comparison for speed up across a large memory block */
-    if (val >= n) val = val % n;
-    prod = mul_mod(ptwo, val, n);
-    ret = sum_mod(ret, prod, n);
-    ptwo = mul_mod(ptwo, ptwo_inc, n);
-    ptr++;
-  }
-  return ret;
 }
 
 /**

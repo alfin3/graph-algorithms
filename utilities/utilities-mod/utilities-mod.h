@@ -27,13 +27,6 @@ size_t mul_mod(size_t a, size_t b, size_t n);
 size_t sum_mod(size_t a, size_t b, size_t n);
 
 /**
-   Computes mod n of a memory block in an overflow-safe manner, treating 
-   each byte of the block in the little-endian order. Does not require a 
-   little-endian machine.
-*/
-size_t mem_mod(const void *s, size_t size, size_t n);
-
-/**
    Multiplies two numbers in an overflow-safe manner and copies the high and
    low bits of the product into the preallocated blocks pointed to by h
    and l.
