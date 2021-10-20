@@ -23,7 +23,9 @@ CFLAGS_BUILD_MODE = ${CFLAGS_BUILD_MODE_${BUILD_MODE}}
 CC = gcc
 
 UTILS_MEM_DIR = ../utilities-mem/
+UTILS_LIM_DIR = ../utilities-lim/
 CFLAGS = -I$(UTILS_MEM_DIR)                     \
+         -I$(UTILS_LIM_DIR)                     \
          ${CFLAGS_BUILD_MODE} -Wall -Wextra -O3
 
 OBJ = utilities-mod-test.o            \
@@ -34,8 +36,10 @@ utilities-mod-test : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 utilities-mod-test.o                : utilities-mod.h                 \
-                                      $(UTILS_MEM_DIR)utilities-mem.h
-utilities-mod.o                     : utilities-mod.h
+                                      $(UTILS_MEM_DIR)utilities-mem.h \
+                                      $(UTILS_LIM_DIR)utilities-lim.h
+utilities-mod.o                     : utilities-mod.h                 \
+                                      $(UTILS_LIM_DIR)utilities-lim.h
 $(UTILS_MEM_DIR)utilities-mem.o     : $(UTILS_MEM_DIR)utilities-mem.h
 
 .PHONY : clean clean-all

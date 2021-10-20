@@ -3,19 +3,20 @@
 
    Utility functions in modular arithmetic. The utility functions are
    integer overflow-safe. The provided implementations assume that 
-   CHAR_BIT * sizeof(size_t) is even.
+   the width of size_t is even.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include "utilities-mod.h"
+#include "utilities-lim.h"
 
 static const size_t C_BYTE_BIT = CHAR_BIT;
-static const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
-static const size_t C_HALF_BIT = CHAR_BIT * sizeof(size_t) / 2;
+static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
+static const size_t C_HALF_BIT = UINT_WIDTH_FROM_MAX((size_t)-1) / 2u;
 static const size_t C_LOW_MASK = ((size_t)-1 >>
-				  (CHAR_BIT * sizeof(size_t) / 2));
+				  (UINT_WIDTH_FROM_MAX((size_t)-1) / 2u));
 
 /**
    Computes overflow-safe mod n of the kth power in O(logk) time,
@@ -48,9 +49,8 @@ size_t mul_mod(size_t a, size_t b, size_t n){
   size_t ret;
   size_t i;
   /* comparisons for speed up */
-  if (n == 1) return 0;
-  if (a == 0 || b == 0) return 0;
-  if (a < pow_two(C_HALF_BIT) && b < pow_two(C_HALF_BIT)){
+  if (n == 1 || a == 0 || b == 0) return 0;
+  if (a < pow_two_perror(C_HALF_BIT) && b < pow_two_perror(C_HALF_BIT)){
     return (a * b) % n;
   }
   al = a & C_LOW_MASK;
@@ -68,22 +68,6 @@ size_t mul_mod(size_t a, size_t b, size_t n){
   }
   ret = sum_mod(ret, al * bl, n);
   return ret;
-}
-
-/**
-   Computes mod 2^{CHAR_BIT * sizeof(size_t)} of a product in an overflow-
-   safe manner, without using wrapping around.
-*/
-size_t mul_mod_pow_two(size_t a, size_t b){
-  size_t al, bl, al_bl;
-  size_t overlap;
-  al = a & C_LOW_MASK;
-  bl = b & C_LOW_MASK;
-  al_bl = al * bl;
-  overlap = ((bl * (a >> C_HALF_BIT) & C_LOW_MASK) +
-	     (al * (b >> C_HALF_BIT) & C_LOW_MASK) +
-	     (al_bl >> C_HALF_BIT));
-  return (overlap << C_HALF_BIT) + (al_bl & C_LOW_MASK);
 }
 
 /**
@@ -119,13 +103,13 @@ size_t sum_mod(size_t a, size_t b, size_t n){
    Does not require a little-endian machine.
 */
 size_t mem_mod(const void *s, size_t size, size_t n){
-  unsigned char *ptr = (unsigned char *)s;
+  unsigned char *ptr = (unsigned char *)s; /* defined and not trap rep */
   size_t val, prod;
   size_t ptwo = 1, ptwo_inc;
   size_t ret = 0;
   size_t i;
   if (n == 1) return 0;
-  ptwo_inc = mul_mod(pow_two(C_BYTE_BIT - 1), 2, n);
+  ptwo_inc = mul_mod(pow_two_perror(C_BYTE_BIT - 1), 2, n);
   for (i = 0; i < size; i++){
     val = *ptr;
     /* comparison for speed up across a large memory block */
@@ -135,44 +119,6 @@ size_t mem_mod(const void *s, size_t size, size_t n){
     ptwo = mul_mod(ptwo, ptwo_inc, n);
     ptr++;
   }
-  return ret;
-}
-
-/**
-   Computes mod n of a memory block, treating the block in sizeof(size_t)-
-   byte increments and inductively applying the following relations:
-   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
-   a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
-   Given a little-endian machine, the return value is equal to the return
-   value of mem_mod.
-*/
-size_t fast_mem_mod(const void *s, size_t size, size_t n){
-  size_t *ptr = (size_t *)s;
-  size_t step_size = sizeof(size_t);
-  size_t res_size = 0;
-  size_t val, prod;
-  size_t ptwo = 1, ptwo_inc = 1;
-  size_t ret = 0;
-  size_t i;
-  if (n == 1) return 0;
-  if (size != step_size){
-    res_size = size % step_size;
-  }
-  if (size > step_size){
-    ptwo_inc = mul_mod(pow_two(C_FULL_BIT - 1), 2, n);
-  } 
-  for (i = 0; i < size - res_size; i += step_size){
-    val = *ptr;
-    /* comparison for speed across a large memory block */
-    if (val >= n) val = val % n;
-    prod = mul_mod(ptwo, val, n);
-    ret = sum_mod(ret, prod, n);
-    ptwo = mul_mod(ptwo, ptwo_inc, n);
-    ptr++;
-  }
-  ptr = (size_t *)((char *)s + size - res_size);
-  prod = mul_mod(ptwo, mem_mod(ptr, res_size, n), n);
-  ret = sum_mod(ret, prod, n);
   return ret;
 }
 
@@ -201,7 +147,7 @@ void mul_ext(size_t a, size_t b, size_t *h, size_t *l){
 }
 
 /**
-   Represents n as u * 2^k, where u is odd.
+   Represents n as u * 2**k, where u is odd.
 */
 void represent_uint(size_t n, size_t *k, size_t *u){
   size_t c = 0;
@@ -215,17 +161,9 @@ void represent_uint(size_t n, size_t *k, size_t *u){
 }
 
 /**
-   Returns the kth power of 2, if 0 <= k < CHAR_BIT * sizeof(size_t).
+   Returns the kth power of 2, if 0 <= k < size_t width.
    Exits with an error otherwise.
 */
-size_t pow_two(size_t k){
-  if (k >= C_FULL_BIT){
-    perror("pow_two size_t overflow");
-    exit(EXIT_FAILURE);
-  }
-  return (size_t)1 << k;
-}
-
 size_t pow_two_perror(size_t k){
   if (k >= C_FULL_BIT){
     perror("pow_two size_t overflow");
