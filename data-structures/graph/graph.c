@@ -26,16 +26,6 @@
 
    The implementation does not use stdint.h and is portable under
    C89/C90 and C99.
-
-   Optimization notes:
-
-   -  The implementation resulted in upto 1.3 - 1.4x speedups for dijkstra
-   and prim and upto 1.1x for tsp over an implementation with separate vertex
-   and weight stacks in tests on a machine with the following caches (cache,
-   capacity, k-way associativity, line size): (L1inst, 32768, 8, 64),
-   (L1data, 32768, 8, 64), (L2, 262144, 4, 64), (L3, 3145728, 12, 64).
-   Compilation was performed with gcc and -flto -O3. No notable decrease of
-   performance was recorded in tests of bfs and dfs on unweighted graphs.
 */
 
 #include <stdio.h>
@@ -46,50 +36,6 @@
 #include "utilities-mem.h"
 
 const size_t STACK_INIT_COUNT = 1;
-
-/**
-   Read and write vertices of different integer types.
-*/
-
-size_t graph_read_uchar(const void *a){
-  return (size_t)(*(const unsigned char *)a);
-}
-
-size_t graph_read_ushort(const void *a){
-  return (size_t)(*(const unsigned short *)a);
-}
-
-size_t graph_read_uint(const void *a){
-  return (size_t)(*(const unsigned int *)a);
-}
-
-size_t graph_read_ulong(const void *a){
-  return (size_t)(*(const unsigned long *)a);
-}
-
-size_t graph_read_sz(const void *a){
-  return *(const size_t *)a;
-}
-
-void graph_write_uchar(void *a, size_t val){
-  *(unsigned char *)a = val;
-}
-
-void graph_write_ushort(void *a, size_t val){
-  *(unsigned short *)a = val;
-}
-
-void graph_write_uint(void *a, size_t val){
-  *(unsigned int *)a = val;
-}
-
-void graph_write_ulong(void *a, size_t val){
-  *(unsigned long *)a = val;
-}
-
-void graph_write_sz(void *a, size_t val){
-  *(size_t *)a = val;
-}
 
 /**
    Initializes a weighted or unweighted graph with num_vts vertices and
@@ -108,8 +54,7 @@ void graph_base_init(graph_t *g,
 		     size_t num_vts,
 		     size_t vt_size,
 		     size_t wt_size,
-		     size_t (*read_vt)(const void *),
-		     void (*write_vt)(void *, size_t)){
+		     const graph_vto_t *vto){
   g->num_vts = num_vts;
   g->num_es = 0;
   g->vt_size = vt_size;
@@ -117,8 +62,7 @@ void graph_base_init(graph_t *g,
   g->u = NULL;
   g->v = NULL;
   g->wts = NULL;
-  g->read_vt = read_vt;
-  g->write_vt = write_vt;
+  g->vto = vto;
 }
 
 /**
@@ -171,8 +115,7 @@ void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
     a->vt_wts[i] = malloc_perror(1, sizeof(stack_t));
     stack_init(a->vt_wts[i], STACK_INIT_COUNT, a->pair_size, NULL);
   }
-  a->read_vt = g->read_vt;
-  a->write_vt = g->write_vt;
+  a->vto = g->vto;
 }
 
 /**
@@ -210,7 +153,6 @@ void adj_lst_align(adj_lst_t *a,
 			       (vt_rem > 0) * (vt_alignment - vt_rem));
   a->buf = realloc_perror(a->buf, 1, a->pair_size);
   memset(a->buf, 0, a->pair_size);
-  a->vt_wts = NULL;
   /* initialize stacks */
   for (i = 0; i < a->num_vts; i++){
     stack_free(a->vt_wts[i]);
@@ -233,7 +175,7 @@ void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
       memcpy(buf_wt, wt, a->wt_size);
       wt += a->wt_size;
     }
-    stack_push(a->vt_wts[a->read_vt(u)], a->buf);
+    stack_push(a->vto->at(a->vt_wts, u), a->buf);
     a->num_es++;
     u += a->vt_size;
     v += a->vt_size;
@@ -255,9 +197,9 @@ void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
       memcpy(buf_wt, wt, a->wt_size);
       wt += a->wt_size;
     }
-    stack_push(a->vt_wts[a->read_vt(u)], a->buf);
+    stack_push(a->vto->at(a->vt_wts, u), a->buf);
     memcpy(a->buf, u, a->vt_size);
-    stack_push(a->vt_wts[a->read_vt(v)], a->buf);
+    stack_push(a->vto->at(a->vt_wts, v), a->buf);
     a->num_es += 2;
     u += a->vt_size;
     v += a->vt_size;
@@ -277,7 +219,7 @@ void adj_lst_add_dir_edge(adj_lst_t *a,
 			  int (*bern)(void *),
 			  void *arg){
   if (bern(arg)){
-    a->write_vt(a->buf, v);
+    a->vto->write(a->buf, v);
     if (a->wt_size > 0 && wt != NULL){
       memcpy((char *)a->buf + a->wt_offset, wt, a->wt_size);
     }
@@ -299,12 +241,12 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
 			    int (*bern)(void *),
 			    void *arg){
   if (bern(arg)){
-    a->write_vt(a->buf, v);
+    a->vto->write(a->buf, v);
     if (a->wt_size > 0 && wt != NULL){
       memcpy((char *)a->buf + a->wt_offset, wt, a->wt_size);
     }
     stack_push(a->vt_wts[u], a->buf);
-    a->write_vt(a->buf, u);
+    a->vto->write(a->buf, u);
     stack_push(a->vt_wts[v], a->buf);
     a->num_es += 2;
   }
@@ -322,13 +264,12 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
 void adj_lst_rand_dir(adj_lst_t *a,
 		      size_t num_vts,
 		      size_t vt_size,
-		      size_t (*read_vt)(const void *),
-		      void (*write_vt)(void *, size_t),
+		      const graph_vto_t *vto,
 		      int (*bern)(void *),
 		      void *arg){
   size_t i, j;
   graph_t g;
-  graph_base_init(&g, num_vts, vt_size, 0, read_vt, write_vt);
+  graph_base_init(&g, num_vts, vt_size, 0, vto);
   adj_lst_base_init(a, &g);
   if (num_vts > 0){
     for (i = 0; i < num_vts - 1; i++){
@@ -352,13 +293,12 @@ void adj_lst_rand_dir(adj_lst_t *a,
 void adj_lst_rand_undir(adj_lst_t *a,
 			size_t num_vts,
 			size_t vt_size,
-			size_t (*read_vt)(const void *),
-			void (*write_vt)(void *, size_t),
+		        const graph_vto_t *vto,
 			int (*bern)(void *),
 			void *arg){
   size_t i, j;
   graph_t g;
-  graph_base_init(&g, num_vts, vt_size, 0, read_vt, write_vt);
+  graph_base_init(&g, num_vts, vt_size, 0, vto);
   adj_lst_base_init(a, &g);
   if (num_vts > 0){
     for (i = 0; i < num_vts - 1; i++){
@@ -384,4 +324,113 @@ void adj_lst_free(adj_lst_t *a){
   free(a->vt_wts); /* free(NULL) performs no operation */
   a->buf = NULL;
   a->vt_wts = NULL;
+}
+
+/**
+   Read vertices of different integer types.
+*/
+
+size_t graph_read_uchar(const void *a){
+  return (size_t)(*(const unsigned char *)a);
+}
+size_t graph_read_ushort(const void *a){
+  return (size_t)(*(const unsigned short *)a);
+}
+size_t graph_read_uint(const void *a){
+  return (size_t)(*(const unsigned int *)a);
+}
+size_t graph_read_ulong(const void *a){
+  return (size_t)(*(const unsigned long *)a);
+}
+size_t graph_read_sz(const void *a){
+  return *(const size_t *)a;
+}
+
+/**
+   Write vertices of different integer types.
+*/
+
+void graph_write_uchar(void *a, size_t val){
+  *(unsigned char *)a = val;
+}
+void graph_write_ushort(void *a, size_t val){
+  *(unsigned short *)a = val;
+}
+void graph_write_uint(void *a, size_t val){
+  *(unsigned int *)a = val;
+}
+void graph_write_ulong(void *a, size_t val){
+  *(unsigned long *)a = val;
+}
+void graph_write_sz(void *a, size_t val){
+  *(size_t *)a = val;
+}
+
+/**
+   Increment values of integer type of vertices.
+*/
+
+void graph_incr_uchar(void *a){
+  (*(unsigned char *)a)++;
+}
+void graph_incr_ushort(void *a){
+  (*(unsigned short *)a)++;
+}
+void graph_incr_uint(void *a){
+  (*(unsigned int *)a)++;
+}
+void graph_incr_ulong(void *a){
+  (*(unsigned long *)a)++;
+}
+void graph_incr_sz(void *a){
+  (*(size_t *)a)++;
+}
+
+/**
+   Get pointer to an element in the array pointed by the first argument at
+   the index pointed to by the second argument; each argument points to a
+   value of the integer type used to represent vertices.
+*/
+
+stack_t *graph_at_uchar(stack_t * const *s, const void *i){
+  return (stack_t *)s[*(const unsigned char *)i];
+}
+stack_t *graph_at_ushort(stack_t * const *s, const void *i){
+  return (stack_t *)s[*(const unsigned short *)i];
+}
+stack_t *graph_at_uint(stack_t * const *s, const void *i){
+  return (stack_t *)s[*(const unsigned int *)i];
+}
+stack_t *graph_at_ulong(stack_t * const *s, const void *i){
+  return (stack_t *)s[*(const unsigned long *)i];
+}
+stack_t *graph_at_sz(stack_t * const *s, const void *i){
+  return (stack_t *)s[*(const size_t *)i];
+}
+
+/**
+   Comparing the element in the array pointed to by the first argument at
+   the index pointed to by the second argument, to the value pointed to
+   by the third argument; each argument points to a value of the integer
+   type used to represent vertices.
+*/
+
+int graph_cmpat_uchar(const void *a, const void *i, const void *v){
+  return ((const unsigned char *)a)[*(const unsigned char *)i] !=
+    *(const unsigned char *)v;
+}
+int graph_cmpat_ushort(const void *a, const void *i, const void *v){
+  return ((const unsigned short *)a)[*(const unsigned short *)i] !=
+    *(const unsigned short *)v;
+}
+int graph_cmpat_uint(const void *a, const void *i, const void *v){
+  return ((const unsigned int *)a)[*(const unsigned int *)i] !=
+    *(const unsigned int *)v;
+}
+int graph_cmpat_ulong(const void *a, const void *i, const void *v){
+  return ((const unsigned long *)a)[*(const unsigned long *)i] !=
+    *(const unsigned long *)v;
+}
+int graph_cmpat_sz(const void *a, const void *i, const void *v){
+  return ((const size_t *)a)[*(const size_t *)i] != *(const size_t *)v;
 }

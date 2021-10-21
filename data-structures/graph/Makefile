@@ -25,9 +25,11 @@ CC = gcc
 STACK_DIR     = ../stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
+UTILS_LIM_DIR = ../../utilities/utilities-lim/
 CFLAGS = -I$(STACK_DIR)                               \
          -I$(UTILS_MEM_DIR)                           \
          -I$(UTILS_MOD_DIR)                           \
+         -I$(UTILS_LIM_DIR)                           \
          ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 OBJ = graph-test.o                    \
       graph.o                         \
@@ -42,13 +44,15 @@ graph-test : $(OBJ)
 graph-test.o                     : graph.h                        \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 graph.o                         : graph.h                         \
-                                   $(STACK_DIR)stack.h
+                                  $(STACK_DIR)stack.h
 $(STACK_DIR)stack.o             : $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
-$(UTILS_RM_DIR)utilities-mod.o  : $(UTILS_MOD_DIR)utilities-mod.h
+$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 
 .PHONY : clean clean-all
 
