@@ -1,7 +1,8 @@
 /**
    graph-test.c
 
-   Tests of graphs with generic integer vertices and generic weights.
+   Tests of graphs with generic integer vertices and generic contiguous
+   weights.
 
    The following command line arguments can be used to customize tests:
    graph-test
@@ -23,8 +24,8 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the only requirement that the number of value 
-   bits (width) of size_t is even.
+   C89/C90 and C99 with the only requirement that width of size_t is even
+   and less than 2040.
 */
 
 #include <stdio.h>
@@ -53,8 +54,8 @@
 /* input handling */
 const char *C_USAGE =
   "graph-test \n"
-  "[0, width of size_t / 2] : n for 2**n vertices in smallest graph \n"
-  "[0, width of size_t / 2] : n for 2**n vertices in largest graph \n"
+  "[0, size_t width / 2] : n for 2**n vertices in smallest graph \n"
+  "[0, size_t width / 2] : n for 2**n vertices in largest graph \n"
   "[0, 1] : small graph test on/off \n"
   "[0, 1] : non-random graph test on/off \n"
   "[0, 1] : random graph test on/off \n";
