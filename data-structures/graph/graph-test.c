@@ -99,6 +99,11 @@ int (* const C_CMPAT[4])(const void *, const void *, const void *) ={
   graph_cmpat_uint,
   graph_cmpat_ulong,
   graph_cmpat_sz};
+void (* const C_ASSIGN[4])(void *, const void *, const void *) ={
+  graph_assign_ushort,
+  graph_assign_uint,
+  graph_assign_ulong,
+  graph_assign_sz};
 const size_t C_VT_SIZES[4] = {
   sizeof(unsigned short),
   sizeof(unsigned int),
@@ -218,11 +223,13 @@ void run_small_graph_test(){
   vto_uchar.incr = graph_incr_uchar;
   vto_uchar.at = graph_at_uchar;
   vto_uchar.cmpat = graph_cmpat_uchar;
+  vto_uchar.assign = graph_assign_uchar;
   vto_ulong.read = graph_read_ulong;
   vto_ulong.write = graph_write_ulong;
   vto_ulong.incr = graph_incr_ulong;
   vto_ulong.at = graph_at_ulong;
   vto_ulong.cmpat = graph_cmpat_ulong;
+  vto_ulong.assign = graph_assign_ulong;
   /* unsigned char vertices, unsigned char weights */
   uchar_uchar_graph_init(&g, &vto_uchar);
   printf("uchar vertices, uchar weights\n");
@@ -309,9 +316,9 @@ void run_small_graph_test(){
 */
 
 /**
-   Initialize unweighted graphs. Each graph is i) a DAG with source 0 and 
-   num_vts(num_vts - 1) / 2 edges in the directed form, and ii) complete in
-   the undirected form. num_vts is >= 1.
+   Initialize and free unweighted graphs. Each graph is i) a DAG with source
+   0 and num_vts(num_vts - 1) / 2 edges in the directed form, and ii)
+   complete in the undirected form. num_vts is >= 1.
 */
 
 void complete_graph_init(graph_t *g,
@@ -342,6 +349,13 @@ void complete_graph_init(graph_t *g,
   }
 }
 
+void complete_graph_free(graph_t *g){
+  free(g->u);
+  free(g->v);
+  g->u = NULL;
+  g->v = NULL;
+}
+
 /**
    Runs a adj_lst_undir_build test on complete unweighted graphs across
    integer types for vertices.
@@ -366,13 +380,14 @@ void run_adj_lst_undir_build_test(size_t log_start, size_t log_end){
       vto.incr = C_INCR[j];
       vto.at = C_AT[j];
       vto.cmpat = C_CMPAT[j];
+      vto.assign = C_ASSIGN[j];
       complete_graph_init(&g, pow_two_perror(i), C_VT_SIZES[j], &vto);
       adj_lst_base_init(&a, &g);
       t = clock();
       adj_lst_undir_build(&a, &g);
       t = clock() - t;
       adj_lst_free(&a);
-      graph_free(&g);
+      complete_graph_free(&g);
       printf("\t\t\t%s build time:      %.6f seconds\n",
 	     C_VT_TYPES[j], (float)t / CLOCKS_PER_SEC);
     }
@@ -479,8 +494,7 @@ void add_edge_helper(size_t log_start,
       }
       res *= (a_blt.num_vts == a_bld.num_vts);
       res *= (a_blt.num_es == a_bld.num_es);
-      graph_free(&g_blt);
-      graph_free(&g_bld);
+      complete_graph_free(&g_blt);
       adj_lst_free(&a_blt);
       adj_lst_free(&a_bld);
       printf("\t\t\t%s build time:      %.6f seconds\n",
@@ -499,9 +513,6 @@ void rand_build_helper(size_t log_start,
 		       size_t log_end,
 		       double prob,
 		       void (*rand_build)(adj_lst_t *,
-					  size_t,
-					  size_t,
-					  const graph_vto_t *,
 					  int (*)(void *),
 					  void *));
 
@@ -523,16 +534,14 @@ void rand_build_helper(size_t log_start,
 		       size_t log_end,
 		       double prob,
 		       void (*rand_build)(adj_lst_t *,
-					  size_t,
-					  size_t,
-					  const graph_vto_t *,
 					  int (*)(void *),
 					  void *)){
   size_t i, j;
   size_t num_vts;
-  bern_arg_t b;
+  graph_t g;
   graph_vto_t vto;
   adj_lst_t a;
+  bern_arg_t b;
   b.p = prob;
   for (i = log_start; i <= log_end; i++){
     num_vts = pow_two_perror(i);
@@ -544,12 +553,10 @@ void rand_build_helper(size_t log_start,
       vto.incr = C_INCR[j];
       vto.at = C_AT[j];
       vto.cmpat = C_CMPAT[j];
-      rand_build(&a,
-		 num_vts,
-		 C_VT_SIZES[j],
-		 &vto,
-		 bern,
-		 &b);
+      vto.assign = C_ASSIGN[j];
+      graph_base_init(&g, num_vts, C_VT_SIZES[j], 0, &vto);
+      adj_lst_base_init(&a, &g);
+      rand_build(&a, bern, &b);
       printf("\t\t\t%s directed edges:   %lu\n",
 	     C_VT_TYPES[j],
 	     TOLU(a.num_es));
