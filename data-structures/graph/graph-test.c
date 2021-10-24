@@ -85,26 +85,6 @@ void (* const C_WRITE[4])(void *, size_t) ={
   graph_write_uint,
   graph_write_ulong,
   graph_write_sz};
-void (* const C_INCR[4])(void *) ={
-  graph_incr_ushort,
-  graph_incr_uint,
-  graph_incr_ulong,
-  graph_incr_sz};
-stack_t *(* const C_AT[4])(stack_t * const *, const void *) ={
-  graph_at_ushort,
-  graph_at_uint,
-  graph_at_ulong,
-  graph_at_sz};
-int (* const C_CMPAT[4])(const void *, const void *, const void *) ={
-  graph_cmpat_ushort,
-  graph_cmpat_uint,
-  graph_cmpat_ulong,
-  graph_cmpat_sz};
-void (* const C_ASSIGN[4])(void *, const void *, const void *) ={
-  graph_assign_ushort,
-  graph_assign_uint,
-  graph_assign_ulong,
-  graph_assign_sz};
 const size_t C_VT_SIZES[4] = {
   sizeof(unsigned short),
   sizeof(unsigned int),
@@ -121,7 +101,9 @@ void print_double(const void *a);
 void print_adj_lst(const adj_lst_t *a,
 		   void (*print_vt)(const void *),
 		   void (*print_wt)(const void *));
-size_t sum_vts(const adj_lst_t *a, size_t i);
+size_t sum_vts(const adj_lst_t *a,
+	       size_t i,
+	       size_t (*read_vt)(const void *));
 void print_test_result(int res);
 
 /** 
@@ -133,36 +115,33 @@ void print_test_result(int res);
    unsigned char, unsigned long, and double weights.
 */
 
-void uchar_uchar_graph_init(graph_t *g, const graph_vto_t *vto){
+void uchar_uchar_graph_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned char),
-		  sizeof(unsigned char),
-		  vto);
+		  sizeof(unsigned char));
   g->num_es = C_NUM_ES;
   g->u = (unsigned char *)C_UCHAR_U;
   g->v = (unsigned char *)C_UCHAR_V;
   g->wts = (unsigned char *)C_UCHAR_WTS;
 }
 
-void uchar_ulong_graph_init(graph_t *g, const graph_vto_t *vto){
+void uchar_ulong_graph_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned char),
-		  sizeof(unsigned long),
-		  vto);
+		  sizeof(unsigned long));
   g->num_es = C_NUM_ES;
   g->u = (unsigned char *)C_UCHAR_U;
   g->v = (unsigned char *)C_UCHAR_V;
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
 
-void uchar_double_graph_init(graph_t *g, const graph_vto_t *vto){
+void uchar_double_graph_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned char),
-		  sizeof(double),
-		  vto);
+		  sizeof(double));
   g->num_es = C_NUM_ES;
   g->u = (unsigned char *)C_UCHAR_U;
   g->v = (unsigned char *)C_UCHAR_V;
@@ -174,36 +153,33 @@ void uchar_double_graph_init(graph_t *g, const graph_vto_t *vto){
    unsigned char, unsigned long, and double weights.
 */
 
-void ulong_uchar_graph_init(graph_t *g, const graph_vto_t *vto){
+void ulong_uchar_graph_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
-		  sizeof(unsigned char),
-		  vto);
+		  sizeof(unsigned char));
   g->num_es = C_NUM_ES;
   g->u = (unsigned long *)C_ULONG_U;
   g->v = (unsigned long *)C_ULONG_V;
   g->wts = (unsigned char *)C_UCHAR_WTS;
 }
 
-void ulong_ulong_graph_init(graph_t *g, const graph_vto_t *vto){
+void ulong_ulong_graph_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
-		  sizeof(unsigned long),
-		  vto);
+		  sizeof(unsigned long));
   g->num_es = C_NUM_ES;
   g->u = (unsigned long *)C_ULONG_U;
   g->v = (unsigned long *)C_ULONG_V;
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
 
-void ulong_double_graph_init(graph_t *g, const graph_vto_t *vto){
+void ulong_double_graph_init(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
-		  sizeof(double),
-		  vto);
+		  sizeof(double));
   g->num_es = C_NUM_ES;
   g->u = (unsigned long *)C_ULONG_U;
   g->v = (unsigned long *)C_ULONG_V;
@@ -216,98 +192,84 @@ void ulong_double_graph_init(graph_t *g, const graph_vto_t *vto){
 */
 void run_small_graph_test(){
   graph_t g;
-  graph_vto_t vto_uchar;
-  graph_vto_t vto_ulong;
   adj_lst_t a;
-  vto_uchar.read = graph_read_uchar;
-  vto_uchar.write = graph_write_uchar;
-  vto_uchar.incr = graph_incr_uchar;
-  vto_uchar.at = graph_at_uchar;
-  vto_uchar.cmpat = graph_cmpat_uchar;
-  vto_uchar.assign = graph_assign_uchar;
-  vto_ulong.read = graph_read_ulong;
-  vto_ulong.write = graph_write_ulong;
-  vto_ulong.incr = graph_incr_ulong;
-  vto_ulong.at = graph_at_ulong;
-  vto_ulong.cmpat = graph_cmpat_ulong;
-  vto_ulong.assign = graph_assign_ulong;
   /* unsigned char vertices, unsigned char weights */
-  uchar_uchar_graph_init(&g, &vto_uchar);
+  uchar_uchar_graph_init(&g);
   printf("uchar vertices, uchar weights\n");
   printf("\tdirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_dir_build(&a, &g);
+  adj_lst_dir_build(&a, &g, graph_read_uchar);
   print_adj_lst(&a, print_uchar, print_uchar);
   adj_lst_free(&a);
   printf("\tundirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_undir_build(&a, &g);
+  adj_lst_undir_build(&a, &g, graph_read_uchar);
   print_adj_lst(&a, print_uchar, print_uchar);
   adj_lst_free(&a);
   /* unsigned char vertices, unsigned long weights */
-  uchar_ulong_graph_init(&g, &vto_uchar);
+  uchar_ulong_graph_init(&g);
   printf("uchar vertices, ulong weights\n");
   printf("\tdirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_dir_build(&a, &g);
+  adj_lst_dir_build(&a, &g, graph_read_uchar);
   print_adj_lst(&a, print_uchar, print_ulong);
   adj_lst_free(&a);
   printf("\tundirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_undir_build(&a, &g);
+  adj_lst_undir_build(&a, &g, graph_read_uchar);
   print_adj_lst(&a, print_uchar, print_ulong);
   adj_lst_free(&a);
   /* unsigned char vertices, double weights */
-  uchar_double_graph_init(&g, &vto_uchar);
+  uchar_double_graph_init(&g);
   printf("uchar vertices, double weights\n");
   printf("\tdirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_dir_build(&a, &g);
+  adj_lst_dir_build(&a, &g, graph_read_uchar);
   print_adj_lst(&a, print_uchar, print_double);
   adj_lst_free(&a);
   printf("\tundirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_undir_build(&a, &g);
+  adj_lst_undir_build(&a, &g, graph_read_uchar);
   print_adj_lst(&a, print_uchar, print_double);
   adj_lst_free(&a);
 
   /* unsigned long vertices, unsigned char weights */
-  ulong_uchar_graph_init(&g, &vto_ulong);
+  ulong_uchar_graph_init(&g);
   printf("ulong vertices, uchar weights\n");
   printf("\tdirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_dir_build(&a, &g);
+  adj_lst_dir_build(&a, &g, graph_read_ulong);
   print_adj_lst(&a, print_ulong, print_uchar);
   adj_lst_free(&a);
   printf("\tundirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_undir_build(&a, &g);
+  adj_lst_undir_build(&a, &g, graph_read_ulong);
   print_adj_lst(&a, print_ulong, print_uchar);
   adj_lst_free(&a);
   /* unsigned long vertices, unsigned long weights */
-  ulong_ulong_graph_init(&g, &vto_ulong);
+  ulong_ulong_graph_init(&g);
   printf("ulong vertices, ulong weights\n");
   printf("\tdirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_dir_build(&a, &g);
+  adj_lst_dir_build(&a, &g, graph_read_ulong);
   print_adj_lst(&a, print_ulong, print_ulong);
   adj_lst_free(&a);
   printf("\tundirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_undir_build(&a, &g);
+  adj_lst_undir_build(&a, &g, graph_read_ulong);
   print_adj_lst(&a, print_ulong, print_ulong);
   adj_lst_free(&a);
   /* unsigned long vertices, double weights */
-  ulong_double_graph_init(&g, &vto_ulong);
+  ulong_double_graph_init(&g);
   printf("ulong vertices, double weights\n");
   printf("\tdirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_dir_build(&a, &g);
+  adj_lst_dir_build(&a, &g, graph_read_ulong);
   print_adj_lst(&a, print_ulong, print_double);
   adj_lst_free(&a);
   printf("\tundirected\n");
   adj_lst_base_init(&a, &g);
-  adj_lst_undir_build(&a, &g);
+  adj_lst_undir_build(&a, &g, graph_read_ulong);
   print_adj_lst(&a, print_ulong, print_double);
   adj_lst_free(&a);
 }
@@ -325,7 +287,7 @@ void run_small_graph_test(){
 void complete_graph_init(graph_t *g,
 			 size_t num_vts,
 			 size_t vt_size,
-			 const graph_vto_t *vto){
+			 void (*write_vt)(void *, size_t)){
   size_t i, j;
   size_t num_es = mul_sz_perror(num_vts, num_vts - 1) >> 1;
   char *up = NULL;
@@ -333,8 +295,7 @@ void complete_graph_init(graph_t *g,
   graph_base_init(g,
 		  num_vts,
 		  vt_size,
-		  0,
-		  vto);
+		  0);
   g->num_es = num_es;
   g->u = malloc_perror(g->num_es, vt_size);
   g->v = malloc_perror(g->num_es, vt_size);
@@ -342,8 +303,8 @@ void complete_graph_init(graph_t *g,
   vp = g->v;
   for (i = 0; i < num_vts - 1; i++){
     for (j = i + 1; j < num_vts; j++){
-      g->vto->write(up, i);
-      g->vto->write(vp, j);
+      write_vt(up, i);
+      write_vt(vp, j);
       up += vt_size;
       vp += vt_size;
     }
@@ -365,7 +326,6 @@ void run_adj_lst_undir_build_test(size_t log_start, size_t log_end){
   size_t i, j;
   size_t num_vts;
   graph_t g;
-  graph_vto_t vto;
   adj_lst_t a;
   clock_t t;
   printf("Test adj_lst_undir_build on complete unweighted graphs across"
@@ -376,16 +336,10 @@ void run_adj_lst_undir_build_test(size_t log_start, size_t log_end){
     num_vts = pow_two_perror(i);
     printf("\t\tvertices: %lu\n", TOLU(num_vts));
     for (j = 0; j < C_FN_COUNT; j++){
-      vto.read = C_READ[j];
-      vto.write = C_WRITE[j];
-      vto.incr = C_INCR[j];
-      vto.at = C_AT[j];
-      vto.cmpat = C_CMPAT[j];
-      vto.assign = C_ASSIGN[j];
-      complete_graph_init(&g, pow_two_perror(i), C_VT_SIZES[j], &vto);
+      complete_graph_init(&g, pow_two_perror(i), C_VT_SIZES[j], C_WRITE[j]);
       adj_lst_base_init(&a, &g);
       t = clock();
-      adj_lst_undir_build(&a, &g);
+      adj_lst_undir_build(&a, &g, C_READ[j]);
       t = clock() - t;
       adj_lst_free(&a);
       complete_graph_free(&g);
@@ -418,11 +372,13 @@ int bern(void *arg){
 void add_edge_helper(size_t log_start,
 		     size_t log_end,
 		     void (*build)(adj_lst_t *,
-				   const graph_t *),
+				   const graph_t *,
+				   size_t (*)(const void *)),
 		     void (*add_edge)(adj_lst_t *,
 				      size_t,
 				      size_t,
 				      const void *,
+				      void (*)(void *, size_t),
 				      int (*)(void *),
 				      void *));
 
@@ -448,11 +404,13 @@ void run_adj_lst_add_undir_edge_test(size_t log_start, size_t log_end){
 void add_edge_helper(size_t log_start,
 		     size_t log_end,
 		     void (*build)(adj_lst_t *,
-				   const graph_t *),
+				   const graph_t *,
+				   size_t (*)(const void *)),
 		     void (*add_edge)(adj_lst_t *,
 				      size_t,
 				      size_t,
 				      const void *,
+				      void (*)(void *, size_t),
 				      int (*)(void *),
 				      void *)){
   int res = 1;
@@ -460,7 +418,6 @@ void add_edge_helper(size_t log_start,
   size_t num_vts;
   bern_arg_t b;
   graph_t g_blt, g_bld;
-  graph_vto_t vto;
   adj_lst_t a_blt, a_bld;
   clock_t t;
   b.p = C_PROB_ONE;
@@ -468,30 +425,25 @@ void add_edge_helper(size_t log_start,
     num_vts = pow_two_perror(i);
     printf("\t\tvertices: %lu\n", TOLU(num_vts));
     for (j = 0; j < C_FN_COUNT; j++){
-      vto.read = C_READ[j];
-      vto.write = C_WRITE[j];
-      vto.incr = C_INCR[j];
-      vto.at = C_AT[j];
-      vto.cmpat = C_CMPAT[j];
-      complete_graph_init(&g_blt, num_vts, C_VT_SIZES[j], &vto);
+      complete_graph_init(&g_blt, num_vts, C_VT_SIZES[j], C_WRITE[j]);
       graph_base_init(&g_bld,
 		      num_vts,
 		      C_VT_SIZES[j],
-		      0,
-		      &vto);
+		      0);
       adj_lst_base_init(&a_blt, &g_blt);
       adj_lst_base_init(&a_bld, &g_bld);
-      build(&a_blt, &g_blt);
+      build(&a_blt, &g_blt, C_READ[j]);
       t = clock();
       for (k = 0; k < num_vts - 1; k++){
 	for (l = k + 1; l < num_vts; l++){
-	  add_edge(&a_bld, k, l, NULL, bern, &b);
+	  add_edge(&a_bld, k, l, NULL, C_WRITE[j], bern, &b);
 	}
       }
       t = clock() - t;
       for (k = 0; k < num_vts; k++){
 	res *= (a_blt.vt_wts[k]->num_elts == a_bld.vt_wts[k]->num_elts);
-	res *= (sum_vts(&a_blt, k) == sum_vts(&a_bld, k));
+	res *= (sum_vts(&a_blt, k, C_READ[j]) ==
+		sum_vts(&a_bld, k, C_READ[j]));
       }
       res *= (a_blt.num_vts == a_bld.num_vts);
       res *= (a_blt.num_es == a_bld.num_es);
@@ -514,6 +466,7 @@ void rand_build_helper(size_t log_start,
 		       size_t log_end,
 		       double prob,
 		       void (*rand_build)(adj_lst_t *,
+					  void (*)(void *, size_t),
 					  int (*)(void *),
 					  void *));
 
@@ -535,12 +488,12 @@ void rand_build_helper(size_t log_start,
 		       size_t log_end,
 		       double prob,
 		       void (*rand_build)(adj_lst_t *,
+					  void (*)(void *, size_t),
 					  int (*)(void *),
 					  void *)){
   size_t i, j;
   size_t num_vts;
   graph_t g;
-  graph_vto_t vto;
   adj_lst_t a;
   bern_arg_t b;
   b.p = prob;
@@ -549,15 +502,9 @@ void rand_build_helper(size_t log_start,
     printf("\t\tvertices: %lu, expected directed edges: %.1f\n",
 	   TOLU(num_vts), prob * num_vts * (num_vts - 1));
     for (j = 0; j < C_FN_COUNT; j++){
-      vto.read = C_READ[j];
-      vto.write = C_WRITE[j];
-      vto.incr = C_INCR[j];
-      vto.at = C_AT[j];
-      vto.cmpat = C_CMPAT[j];
-      vto.assign = C_ASSIGN[j];
-      graph_base_init(&g, num_vts, C_VT_SIZES[j], 0, &vto);
+      graph_base_init(&g, num_vts, C_VT_SIZES[j], 0);
       adj_lst_base_init(&a, &g);
-      rand_build(&a, bern, &b);
+      rand_build(&a, C_WRITE[j], bern, &b);
       printf("\t\t\t%s directed edges:   %lu\n",
 	     C_VT_TYPES[j],
 	     TOLU(a.num_es));
@@ -574,13 +521,15 @@ void rand_build_helper(size_t log_start,
    Sums the vertices in the ith stack in an adjacency list. Wraps around and
    does not check for overflow.
 */
-size_t sum_vts(const adj_lst_t *a, size_t i){
+size_t sum_vts(const adj_lst_t *a,
+	       size_t i,
+	       size_t (*read_vt)(const void *)){
   char *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t ret = 0;
   p_start = a->vt_wts[i]->elts;
   p_end = p_start + a->vt_wts[i]->num_elts * a->pair_size;
   for (p = p_start; p != p_end; p += a->pair_size){
-    ret += a->vto->read(p);
+    ret += read_vt(p);
   }
   return ret;
 }

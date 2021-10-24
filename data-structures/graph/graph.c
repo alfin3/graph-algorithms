@@ -18,6 +18,13 @@
    additional cache efficiency in addition to reducing the space
    requirements.
 
+   The user-defined and predefined operations for reading and writing
+   integer values into the vt_size blocks of vertices use size_t as the
+   user interface. This design is portable because vertex values start
+   from zero and are used as indices in the array of stacks in an
+   adjacency list. As a consequence, a valid vertex value of any integer
+   type cannot exceed the maximum value of size_t.
+
    The implementation only uses integer and pointer operations. Given
    parameter values within the specified ranges, the implementation provides
    an error message and an exit is executed if an integer overflow is
@@ -54,14 +61,11 @@ const size_t C_STACK_INIT_COUNT = 1;
                  - otherwise non-zero size of the wt_size block of a weight;
                  must account for internal and trailing padding according to
                  sizeof
-   vto         : a non-NULL pointer to a set of operations on the integer
-                 type that is used to represent vertices
 */
 void graph_base_init(graph_t *g,
 		     size_t num_vts,
 		     size_t vt_size,
-		     size_t wt_size,
-		     const graph_vto_t *vto){
+		     size_t wt_size){
   g->num_vts = num_vts;
   g->num_es = 0;
   g->vt_size = vt_size;
@@ -69,7 +73,6 @@ void graph_base_init(graph_t *g,
   g->u = NULL;
   g->v = NULL;
   g->wts = NULL;
-  g->vto = vto;
 }
 
 /**
@@ -112,7 +115,6 @@ void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
     a->vt_wts[i] = malloc_perror(1, sizeof(stack_t));
     stack_init(a->vt_wts[i], C_STACK_INIT_COUNT, a->pair_size, NULL);
   }
-  a->vto = g->vto;
 }
 
 /**
@@ -172,8 +174,12 @@ void adj_lst_align(adj_lst_t *a,
                   adj_lst_base_init and optionally with adj_lst_align
    g            : pointer to the graph_t struct of a graph initialized with
                   at least graph_base_init
+   read_vt      : reads the integer value in the vt_size block of a vertex
+                  pointed to by the argument and returns a size_t value
 */
-void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
+void adj_lst_dir_build(adj_lst_t *a,
+		       const graph_t *g,
+		       size_t (*read_vt)(const void *)){
   size_t i;
   const char *u = g->u;
   const char *v = g->v;
@@ -185,7 +191,7 @@ void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
       memcpy(buf_wt, wt, a->wt_size);
       wt += a->wt_size;
     }
-    stack_push(a->vto->at(a->vt_wts, u), a->buf);
+    stack_push(a->vt_wts[read_vt(u)], a->buf);
     a->num_es++;
     u += a->vt_size;
     v += a->vt_size;
@@ -202,8 +208,12 @@ void adj_lst_dir_build(adj_lst_t *a, const graph_t *g){
                   adj_lst_base_init and optionally with adj_lst_align
    g            : pointer to the graph_t struct of a graph initialized with
                   at least graph_base_init
+   read_vt      : reads the integer value in the vt_size block of a vertex
+                  pointed to by the argument and returns a size_t value
 */
-void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
+void adj_lst_undir_build(adj_lst_t *a,
+			 const graph_t *g,
+			 size_t (*read_vt)(const void *)){
   size_t i;
   const char *u = g->u;
   const char *v = g->v;
@@ -215,9 +225,9 @@ void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
       memcpy(buf_wt, wt, a->wt_size);
       wt += a->wt_size;
     }
-    stack_push(a->vto->at(a->vt_wts, u), a->buf);
+    stack_push(a->vt_wts[read_vt(u)], a->buf);
     memcpy(a->buf, u, a->vt_size);
-    stack_push(a->vto->at(a->vt_wts, v), a->buf);
+    stack_push(a->vt_wts[read_vt(v)], a->buf);
     a->num_es += 2;
     u += a->vt_size;
     v += a->vt_size;
@@ -229,10 +239,15 @@ void adj_lst_undir_build(adj_lst_t *a, const graph_t *g){
    graph according to a Bernoulli distribution.
    a            : pointer to an adj_lst_t struct initialized with
                   adj_lst_base_init and optionally with adj_lst_align
-   u            : u of an (u, v) edge to be added
-   v            : v of an (u, v) edge to be added
+   u            : u of an (u, v) edge to be added; is less than the
+                  number of vertices in an adjacency list
+   v            : v of an (u, v) edge to be added; is less than the
+                  number of vertices in an adjacency list
    wt           : - NULL if the graph is not weighted
                   - otherwise points to the wt_size block of a weight
+   write_vt     : writes the integer value of the second argument to
+                  the vt_size block pointed to by the first argument
+                  as a value of the integer type used to represent vertices
    bern         : takes arg as the value of its parameter and returns
                   nonzero if the edge is added according to a Bernoulli
                   distribution
@@ -243,10 +258,11 @@ void adj_lst_add_dir_edge(adj_lst_t *a,
 			  size_t u,
 			  size_t v,
 			  const void *wt,
+			  void (*write_vt)(void *, size_t),
 			  int (*bern)(void *),
 			  void *arg){
   if (bern(arg)){
-    a->vto->write(a->buf, v);
+    write_vt(a->buf, v);
     if (a->wt_size > 0 && wt != NULL){
       memcpy((char *)a->buf + a->wt_offset, wt, a->wt_size);
     }
@@ -264,15 +280,16 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
 			    size_t u,
 			    size_t v,
 			    const void *wt,
+			    void (*write_vt)(void *, size_t),
 			    int (*bern)(void *),
 			    void *arg){
   if (bern(arg)){
-    a->vto->write(a->buf, v);
+    write_vt(a->buf, v);
     if (a->wt_size > 0 && wt != NULL){
       memcpy((char *)a->buf + a->wt_offset, wt, a->wt_size);
     }
     stack_push(a->vt_wts[u], a->buf);
-    a->vto->write(a->buf, u);
+    write_vt(a->buf, u);
     stack_push(a->vt_wts[v], a->buf);
     a->num_es += 2;
   }
@@ -290,19 +307,25 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
    then there are no wt_size blocks.
    a            : pointer to an adj_lst_t struct initialized with
                   adj_lst_base_init and optionally with adj_lst_align
+   write_vt     : writes the integer value of the second argument to
+                  the vt_size block pointed to by the first argument
+                  as a value of the integer type used to represent vertices
    bern         : takes arg as the value of its parameter and returns
                   nonzero if the edge is added according to a Bernoulli
                   distribution
    arg          : pointer that is taken as the value of the parameter of
                   bern
 */
-void adj_lst_rand_dir(adj_lst_t *a, int (*bern)(void *), void *arg){
+void adj_lst_rand_dir(adj_lst_t *a,
+		      void (*write_vt)(void *, size_t),
+		      int (*bern)(void *),
+		      void *arg){
   size_t i, j;
   if (a->num_vts > 0){
     for (i = 0; i < a->num_vts - 1; i++){
       for (j = i + 1; j < a->num_vts; j++){
-	adj_lst_add_dir_edge(a, i, j, NULL, bern, arg);
-	adj_lst_add_dir_edge(a, j, i, NULL, bern, arg);
+	adj_lst_add_dir_edge(a, i, j, NULL, write_vt, bern, arg);
+	adj_lst_add_dir_edge(a, j, i, NULL, write_vt, bern, arg);
       }
     }
   }
@@ -321,12 +344,15 @@ void adj_lst_rand_dir(adj_lst_t *a, int (*bern)(void *), void *arg){
    there are no wt_size blocks. Please see the parameter specification
    in adj_lst_rand_dir.
 */
-void adj_lst_rand_undir(adj_lst_t *a, int (*bern)(void *), void *arg){
+void adj_lst_rand_undir(adj_lst_t *a,
+			void (*write_vt)(void *, size_t),
+			int (*bern)(void *),
+			void *arg){
   size_t i, j;
   if (a->num_vts > 0){
     for (i = 0; i < a->num_vts - 1; i++){
       for (j = i + 1; j < a->num_vts; j++){
-	adj_lst_add_undir_edge(a, i, j, NULL, bern, arg);
+	adj_lst_add_undir_edge(a, i, j, NULL, write_vt, bern, arg);
       }
     }
   }
@@ -391,9 +417,52 @@ void graph_write_sz(void *a, size_t val){
 }
 
 /**
-   Increment values of different unsigned integer types of vertices.
+   Get a pointer to the element in the array pointed to by the first
+   argument at the index pointed to by the second argument; each argument
+   points to a value of the integer type used to represent vertices.
 */
 
+void *graph_at_uchar(const void *a, const void *i){
+  return (void *)&((unsigned char *)a)[*(const unsigned char *)i];
+}
+void *graph_at_ushort(const void *a, const void *i){
+  return (void *)&((unsigned short *)a)[*(const unsigned short *)i];
+}
+void *graph_at_uint(const void *a, const void *i){
+  return (void *)&((unsigned int *)a)[*(const unsigned int *)i];
+}
+void *graph_at_ulong(const void *a, const void *i){
+  return (void *)&((unsigned long *)a)[*(const unsigned long *)i];
+}
+void *graph_at_sz(const void *a, const void *i){
+  return (void *)&((size_t *)a)[*(const size_t *)i];
+}
+
+/**
+   Compare the element pointed to by the first argument to the element
+   pointed to by the second argument; each argument points to a value of
+   the integer type used to represent vertices.
+*/
+
+int graph_cmp_uchar(const void *a, const void *b){
+  return *(const unsigned char *)a != *(const unsigned char *)b;
+}
+int graph_cmp_ushort(const void *a, const void *b){
+  return *(const unsigned short *)a != *(const unsigned short *)b;
+}
+int graph_cmp_uint(const void *a, const void *b){
+  return *(const unsigned int *)a != *(const unsigned int *)b;
+}
+int graph_cmp_ulong(const void *a, const void *b){
+  return *(const unsigned long *)a != *(const unsigned long *)b;
+}
+int graph_cmp_sz(const void *a, const void *b){
+  return *(const size_t *)a != *(const size_t *)b;
+}
+
+/**
+   Increment values of different unsigned integer types of vertices.
+*/
 
 void graph_incr_uchar(void *a){
   (*(unsigned char *)a)++;
@@ -409,81 +478,4 @@ void graph_incr_ulong(void *a){
 }
 void graph_incr_sz(void *a){
   (*(size_t *)a)++;
-}
-
-/**
-   Get a pointer to the stack in the array of stacks of an adjacency list,
-   pointed to by the first argument and corresponding to the vertex pointed
-   to by the second argument. The second argument points to a value of the
-   integer type used to represent vertices.
-*/
-
-stack_t *graph_at_uchar(stack_t * const *s, const void *i){
-  return (stack_t *)s[*(const unsigned char *)i];
-}
-stack_t *graph_at_ushort(stack_t * const *s, const void *i){
-  return (stack_t *)s[*(const unsigned short *)i];
-}
-stack_t *graph_at_uint(stack_t * const *s, const void *i){
-  return (stack_t *)s[*(const unsigned int *)i];
-}
-stack_t *graph_at_ulong(stack_t * const *s, const void *i){
-  return (stack_t *)s[*(const unsigned long *)i];
-}
-stack_t *graph_at_sz(stack_t * const *s, const void *i){
-  return (stack_t *)s[*(const size_t *)i];
-}
-
-/**
-   Compares the element in the array pointed to by the first argument at
-   the index pointed to by the second argument, to the value pointed to
-   by the third argument; each argument points to a value of the integer
-   type used to represent vertices.
-*/
-
-int graph_cmpat_uchar(const void *a, const void *i, const void *v){
-  return ((const unsigned char *)a)[*(const unsigned char *)i] !=
-    *(const unsigned char *)v;
-}
-int graph_cmpat_ushort(const void *a, const void *i, const void *v){
-  return ((const unsigned short *)a)[*(const unsigned short *)i] !=
-    *(const unsigned short *)v;
-}
-int graph_cmpat_uint(const void *a, const void *i, const void *v){
-  return ((const unsigned int *)a)[*(const unsigned int *)i] !=
-    *(const unsigned int *)v;
-}
-int graph_cmpat_ulong(const void *a, const void *i, const void *v){
-  return ((const unsigned long *)a)[*(const unsigned long *)i] !=
-    *(const unsigned long *)v;
-}
-int graph_cmpat_sz(const void *a, const void *i, const void *v){
-  return ((const size_t *)a)[*(const size_t *)i] != *(const size_t *)v;
-}
-
-/**
-   Assigns to the element in the array pointed to by the first argument at
-   the index pointed to by the second argument, the value pointed to
-   by the third argument; each argument points to a value of the integer
-   type used to represent vertices.
-*/
-
-void graph_assign_uchar(void *a, const void *i, const void *v){
-  ((unsigned char *)a)[*(const unsigned char *)i] =
-    *(const unsigned char *)v;
-}
-void graph_assign_ushort(void *a, const void *i, const void *v){
-  ((unsigned short *)a)[*(const unsigned short *)i] =
-    *(const unsigned short *)v;
-}
-void graph_assign_uint(void *a, const void *i, const void *v){
-  ((unsigned int *)a)[*(const unsigned int *)i] =
-    *(const unsigned int *)v;
-}
-void graph_assign_ulong(void *a, const void *i, const void *v){
-  ((unsigned long *)a)[*(const unsigned long *)i] =
-    *(const unsigned long *)v;
-}
-void graph_assign_sz(void *a, const void *i, const void *v){
-  ((size_t *)a)[*(const size_t *)i] = *(const size_t *)v;
 }
