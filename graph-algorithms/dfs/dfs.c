@@ -40,58 +40,21 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
-typedef struct{
-  size_t u;
-  const char *vp; /* vp is pointer to v in u's stack in an adj. list */
-} uvp_t;
-
-static const size_t STACK_INIT_COUNT = 1;
+static const size_t C_STACK_INIT_COUNT = 1;
 
 static void search(const adj_lst_t *a,
 		   stack_t *s,
-		   size_t u,
+		   size_t offset,
+		   const void *ix,
 		   void *c,
+		   const void *nr,
 		   void *pre,
 		   void *post,
-		   const void *nr,
-                   int (*cmpat_vt)(const void *, const void *, const void *),
+		   size_t (*read_vt)(const void *),
+		   void *(*at_vt)(const void *, const void *),
+		   int (*cmp_vt)(const void *, const void *),
 		   void (*incr_vt)(void *));
 static void *ptr(const void *block, size_t i, size_t size);
-
-int dfs_cmpat_ushort(const void *a, const void *i, const void *v){
-  return ((const unsigned short *)a)[*(const unsigned short *)i] !=
-    *(const unsigned short *)v;
-}
-
-int dfs_cmpat_uint(const void *a, const void *i, const void *v){
-  return ((const unsigned int *)a)[*(const unsigned int *)i] !=
-    *(const unsigned int *)v;
-}
-
-int dfs_cmpat_ulong(const void *a, const void *i, const void *v){
-  return ((const unsigned long *)a)[*(const unsigned long *)i] !=
-    *(const unsigned long *)v;
-}
-
-int dfs_cmpat_sz(const void *a, const void *i, const void *v){
-  return ((const size_t *)a)[*(const size_t *)i] != *(const size_t *)v;
-}
-
-void dfs_incr_ushort(void *a){
-  (*(unsigned short *)a)++;
-}
-
-void dfs_incr_uint(void *a){
-  (*(unsigned int *)a)++;
-}
-
-void dfs_incr_ulong(void *a){
-  (*(unsigned long *)a)++;
-}
-
-void dfs_incr_sz(void *a){
-  (*(size_t *)a)++;
-}
 
 /**
    Computes and copies to the arrays pointed to by pre and post the previsit
@@ -129,41 +92,89 @@ void dfs(const adj_lst_t *a,
 	 size_t start,
 	 void *pre,
 	 void *post,
-	 int (*cmpat_vt)(const void *, const void *, const void *),
-	 void (*incr_vt)(void *)){
-  size_t u;
-  char *p = NULL;
-  void *cnri = NULL; /* counter, not reached vertex value, index */
-  void *c = NULL, *nr = NULL, *i = NULL;
+         size_t (*read_vt)(const void *),
+         void (*write_vt)(void *, size_t),
+         void *(*at_vt)(const void *, const void *),
+         int (*cmp_vt)(const void *, const void *),
+         void (*incr_vt)(void *)){
+  size_t v_rem, uval_rem;
+  size_t offset, block_size;
+  void *vars = NULL; /* vertex, not reached vertex value */
+  void *su = NULL, *c = NULL, *nr = NULL;
+  void *zero = NULL, *ix = NULL, *end = NULL;
   stack_t s;
-  /* single block for cache-efficiency; same type */
-  cnri = malloc_perror(3, a->vt_size);
-  c = cnri;
-  nr = ptr(cnri, 1, a->vt_size);
-  i = ptr(cnri, 2, a->vt_size);
-  a->write_vt(c, 0);
-  a->write_vt(nr, mul_sz_perror(2, a->num_vts));
-  a->write_vt(i, start);
-  for (p = pre; p != ptr(pre, a->num_vts, a->vt_size); p += a->vt_size){
-    memcpy(p, nr, a->vt_size);
+  /* variables in single block for cache-efficiency */
+  vars = malloc_perror(6, a->vt_size);
+  su = vars;
+  c = ptr(vars, 1, a->vt_size);
+  nr = ptr(vars, 2, a->vt_size);
+  zero = ptr(vars, 3, a->vt_size);
+  ix = ptr(vars, 4, a->vt_size);
+  end = ptr(vars, 5, a->vt_size);
+  write_vt(su, start);
+  write_vt(c, 0);
+  write_vt(nr, mul_sz_perror(2, a->num_vts));
+  write_vt(zero, 0);
+  write_vt(ix, 0);
+  write_vt(end, a->num_vts);
+  /* initialize pre array to not-reached (nr) values */
+  while (cmp_vt(at_vt(ix, zero), end) != 0){
+    memcpy(at_vt(pre, ix), nr, a->vt_size);
+    incr_vt(ix);
   }
-  stack_init(&s, STACK_INIT_COUNT, sizeof(uvp_t), NULL);
-  for (u = start; u < a->num_vts; u++){
-    if (cmpat_vt(pre, i, nr) == 0){
-      search(a, &s, u, c, pre, post, nr, cmpat_vt, incr_vt);
-    }
-    incr_vt(i);
+  /* compute the size of v_uval block aligned in memory */
+  if (sizeof(void *) <= a->vt_size){
+    offset = a->vt_size;
+  }else{
+    uval_rem = sizeof(void *) % a->vt_size;
+    offset = add_sz_perror(sizeof(void *),
+			   (uval_rem > 0) * (a->vt_size - uval_rem));
   }
-  a->write_vt(i, 0);
-  for (u = 0; u < start; u++){
-    if (cmpat_vt(pre, i, nr) == 0){
-      search(a, &s, u, c, pre, post, nr, cmpat_vt, incr_vt);
+  v_rem = add_sz_perror(offset, a->vt_size) % sizeof(void *);
+  block_size = add_sz_perror(offset + a->vt_size,
+			     (v_rem > 0) * (sizeof(void *) - v_rem));
+  /* initialize stack for recursion emulation and run search */
+  stack_init(&s, C_STACK_INIT_COUNT, block_size, NULL);
+  memcpy(ix, su, a->vt_size);
+  while (cmp_vt(at_vt(ix, zero), end) != 0){
+    if (cmp_vt(at_vt(pre, ix), nr) == 0){
+      search(a,
+	     &s,
+	     offset,
+	     ix,
+	     c,
+	     nr,
+	     pre,
+	     post,
+	     read_vt,
+	     at_vt,
+	     cmp_vt,
+	     incr_vt);
     }
-    incr_vt(i);
+    incr_vt(ix);
+  }
+  memcpy(end, su, a->vt_size);
+  memcpy(ix, zero, a->vt_size);
+  while (cmp_vt(at_vt(ix, zero), end) != 0){
+    if (cmp_vt(at_vt(pre, ix), nr) == 0){
+      search(a,
+	     &s,
+	     offset,
+	     ix,
+	     c,
+	     nr,
+	     pre,
+	     post,
+	     read_vt,
+	     at_vt,
+	     cmp_vt,
+	     incr_vt);
+    }
+    incr_vt(ix);
   }
   stack_free(&s);
-  free(cnri);
-  cnri = NULL;
+  free(vars);
+  vars = NULL;
 }
 
 /**
@@ -173,42 +184,53 @@ void dfs(const adj_lst_t *a,
 */
 static void search(const adj_lst_t *a,
 		   stack_t *s,
-		   size_t u,
+		   size_t offset,
+		   const void *ix,
 		   void *c,
+		   const void *nr,
 		   void *pre,
 		   void *post,
-		   const void *nr,
-                   int (*cmpat_vt)(const void *, const void *, const void *),
+		   size_t (*read_vt)(const void *),
+		   void *(*at_vt)(const void *, const void *),
+		   int (*cmp_vt)(const void *, const void *),
 		   void (*incr_vt)(void *)){
-  const char *p = NULL, *p_end = NULL;
-  uvp_t uvp;
-  uvp.u = u;
-  uvp.vp = a->vt_wts[u]->elts;
-  memcpy(ptr(pre, u, a->vt_size), c, a->vt_size);
+  const char *v = NULL, *v_end = NULL;
+  const char **vp  = NULL; /* (char *) only for arithmetic */
+  void *v_uval = NULL;
+  void *u = NULL;
+  v_uval = malloc_perror(1, s->elt_size);
+  u = ptr(v_uval, 1, offset); /* u always points to value of u */
+  vp = v_uval; /* vp always points to v pointer */
+  memcpy(u, ix, a->vt_size);
+  *vp = a->vt_wts[read_vt(u)]->elts;
+  memcpy(at_vt(pre, u), c, a->vt_size);
   incr_vt(c);
-  stack_push(s, &uvp);
+  stack_push(s, v_uval);
   while (s->num_elts > 0){
-    stack_pop(s, &uvp);
-    p = uvp.vp;
-    p_end = ptr(a->vt_wts[uvp.u]->elts,
-		a->vt_wts[uvp.u]->num_elts,
+    stack_pop(s, v_uval);
+    v = *vp; /* for performance */
+    v_end = ptr(a->vt_wts[read_vt(u)]->elts,
+		a->vt_wts[read_vt(u)]->num_elts,
 		a->pair_size);
-    while (p != p_end && cmpat_vt(pre, p, nr) != 0){
-      p += a->pair_size;
+    /* iterate v across the u's stack */
+    while (v != v_end && cmp_vt(at_vt(pre, v), nr) != 0){
+      v += a->pair_size;
     }
-    if (p == p_end){
-      memcpy(ptr(post, uvp.u, a->vt_size), c, a->vt_size);
+    if (v == v_end){
+      memcpy(at_vt(post, u), c, a->vt_size);
       incr_vt(c);
     }else{
-      uvp.vp = p;
-      stack_push(s, &uvp); /* push the unfinished vertex */
-      uvp.u = a->read_vt(p);
-      uvp.vp = a->vt_wts[uvp.u]->elts;
-      memcpy(ptr(pre, uvp.u, a->vt_size), c, a->vt_size);
+      *vp = v;
+      stack_push(s, v_uval); /* push the unfinished vertex */
+      memcpy(u, *vp, a->vt_size);
+      *vp = a->vt_wts[read_vt(u)]->elts;
+      memcpy(at_vt(pre, u), c, a->vt_size);
       incr_vt(c);
-      stack_push(s, &uvp); /* then push an unexplored vertex */
+      stack_push(s, v_uval); /* then push an unexplored vertex */
     }
   }
+  free(v_uval);
+  v_uval = NULL;
 }
 
 /**
