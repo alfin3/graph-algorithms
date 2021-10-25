@@ -39,6 +39,12 @@
    will not affect the original set of images throughout the lifetime of the
    hash table. The same applies to elements and free_elt.
 
+   If free_key is non-NULL, no two keys should share an object in memory
+   that is freed by free_key. If free_elt is non-NULL, no two elements
+   should share an object in memory that is freed by free_elt, and no two
+   keys should be associated with the same element. Otherwise the NULL
+   settings can be used for free_key and/or free_elt. 
+
    A hash table can be modified by threads calling insert, remove, and/or
    delete operations concurrently. The hash table design provides the
    following guarantees with respect to the final state of a hash table,
