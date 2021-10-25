@@ -4,7 +4,7 @@
    A hash table with generic contiguous or non-contiguous keys and generic
    contiguous or non-contiguous elements that is concurrently accessible
    and modifiable.
-   
+
    The implementation is based on a division method for hashing into upto  
    the number of slots determined by the largest prime number in the
    C_PRIME_PARTS array, representable as size_t on a given system, and a
@@ -90,7 +90,7 @@
    of computing bounds, which is defined by the implementation
 
    TODO: add division with magic number multiplication.   
-*/   
+*/  
 
 #define _XOPEN_SOURCE 600
 
@@ -672,7 +672,7 @@ static size_t convert_std_key(const ht_divchn_pthread_t *ht,
   size_t std_key = 0;
   size_t buf_size = sizeof(size_t);
   unsigned char buf[sizeof(size_t)];
-  const char *k = NULL, *k_start = NULL, *k_end = NULL;
+  const void *k = NULL, *k_start = NULL, *k_end = NULL;
   if (ht->rdc_key != NULL) return ht->rdc_key(key);
   sz_count = ht->key_size / buf_size; /* division by sizeof(size_t) */
   rem_size = ht->key_size - sz_count * buf_size;
@@ -682,9 +682,9 @@ static size_t convert_std_key(const ht_divchn_pthread_t *ht,
   for (i = 0; i < rem_size; i++){
     std_key += (size_t)buf[i] << (i * C_BYTE_BIT);
   }
-  k_start = k + rem_size;
-  k_end = k_start + sz_count * buf_size;
-  for (k = k_start; k != k_end; k += buf_size){
+  k_start = (char *)k + rem_size;
+  k_end = (char *)k_start + sz_count * buf_size;
+  for (k = k_start; k != k_end; k = (char *)k + buf_size){
     memcpy(buf, k, buf_size);
     for (i = 0; i < buf_size; i++){
       std_key += (size_t)buf[i] << (i * C_BYTE_BIT);

@@ -91,7 +91,7 @@
    of computing bounds, which is defined by the implementation
 
    TODO: add division with magic number multiplication.   
-*/
+*/ 
 
 #ifndef HT_DIVCHN_PTHREAD_H  
 #define HT_DIVCHN_PTHREAD_H
