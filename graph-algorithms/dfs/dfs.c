@@ -117,12 +117,11 @@ void dfs(const adj_lst_t *a,
   write_vt(zero, 0);
   write_vt(ix, 0);
   write_vt(end, a->num_vts);
-  /* initialize pre array to not-reached (nr) values */
   while (cmp_vt(at_vt(ix, zero), end) != 0){
     memcpy(at_vt(pre, ix), nr, a->vt_size);
     incr_vt(ix);
   }
-  /* compute the size of v_uval block aligned in memory */
+  /* compute the size of v_uval block */
   if (sizeof(void *) <= a->vt_size){
     offset = a->vt_size;
   }else{
@@ -133,42 +132,23 @@ void dfs(const adj_lst_t *a,
   v_rem = add_sz_perror(offset, a->vt_size) % sizeof(void *);
   block_size = add_sz_perror(offset + a->vt_size,
 			     (v_rem > 0) * (sizeof(void *) - v_rem));
-  /* initialize stack for recursion emulation and run search */
+
+  /* run search with recursion emulation on a stack ds */
   stack_init(&s, C_STACK_INIT_COUNT, block_size, NULL);
   memcpy(ix, su, a->vt_size);
-  while (cmp_vt(at_vt(ix, zero), end) != 0){
+  while (cmp_vt(ix, end) != 0){
     if (cmp_vt(at_vt(pre, ix), nr) == 0){
-      search(a,
-	     &s,
-	     offset,
-	     ix,
-	     c,
-	     nr,
-	     pre,
-	     post,
-	     read_vt,
-	     at_vt,
-	     cmp_vt,
-	     incr_vt);
+      search(a, &s, offset, ix, c, nr, pre, post,
+	     read_vt, at_vt, cmp_vt, incr_vt);
     }
     incr_vt(ix);
   }
   memcpy(end, su, a->vt_size);
   memcpy(ix, zero, a->vt_size);
-  while (cmp_vt(at_vt(ix, zero), end) != 0){
+  while (cmp_vt(ix, end) != 0){
     if (cmp_vt(at_vt(pre, ix), nr) == 0){
-      search(a,
-	     &s,
-	     offset,
-	     ix,
-	     c,
-	     nr,
-	     pre,
-	     post,
-	     read_vt,
-	     at_vt,
-	     cmp_vt,
-	     incr_vt);
+      search(a, &s, offset, ix, c, nr, pre, post,
+	     read_vt, at_vt, cmp_vt, incr_vt);
     }
     incr_vt(ix);
   }
@@ -194,8 +174,8 @@ static void search(const adj_lst_t *a,
 		   void *(*at_vt)(const void *, const void *),
 		   int (*cmp_vt)(const void *, const void *),
 		   void (*incr_vt)(void *)){
-  const char *v = NULL, *v_end = NULL;
-  const char **vp  = NULL; /* (char *) only for arithmetic */
+  const void *v = NULL, *v_end = NULL;
+  const void **vp  = NULL;
   void *v_uval = NULL;
   void *u = NULL;
   v_uval = malloc_perror(1, s->elt_size);
@@ -214,7 +194,7 @@ static void search(const adj_lst_t *a,
 		a->pair_size);
     /* iterate v across the u's stack */
     while (v != v_end && cmp_vt(at_vt(pre, v), nr) != 0){
-      v += a->pair_size;
+      v = (char *)v + a->pair_size;
     }
     if (v == v_end){
       memcpy(at_vt(post, u), c, a->vt_size);
