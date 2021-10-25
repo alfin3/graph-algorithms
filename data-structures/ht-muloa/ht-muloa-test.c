@@ -357,7 +357,7 @@ void insert_keys_elts(ht_muloa_t *ht,
   size_t n = ht->num_elts;
   size_t init_count = ht->count;
   const unsigned char *k = NULL;
-  const char *e = NULL;
+  const void *e = NULL;
   clock_t t;
   k = keys;
   e = elts;
@@ -365,7 +365,7 @@ void insert_keys_elts(ht_muloa_t *ht,
   for (i = 0; i < count; i++){
     ht_muloa_insert(ht, k, e);
     k += ht->key_size;
-    e += ht->elt_size;
+    e = (char *)e + ht->elt_size;
   }
   t = clock() - t;
   if (init_count < ht->count){
@@ -387,7 +387,7 @@ void search_in_ht(const ht_muloa_t *ht,
   size_t i;
   size_t n = ht->num_elts;
   const unsigned char *k = NULL;
-  const char *e = NULL;
+  const void *e = NULL;
   const void *elt = NULL;
   clock_t t;
   k = keys;
@@ -403,7 +403,7 @@ void search_in_ht(const ht_muloa_t *ht,
     elt = ht_muloa_search(ht, k);
     *res *= (val_elt(e) == val_elt(elt));
     k += ht->key_size;
-    e += ht->elt_size;
+    e = (char *)e + ht->elt_size;
   }
   printf("\t\tin ht search time:              "
 	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
@@ -537,7 +537,7 @@ void remove_key_elts(ht_muloa_t *ht,
   size_t n = ht->num_elts;
   size_t key_step_size = mul_sz_perror(2, ht->key_size);
   const unsigned char *k = NULL;
-  const char *e = NULL;
+  const void *e = NULL;
   void *elt = NULL;
   clock_t t_first_half, t_second_half;
   elt = malloc_perror(1, ht->elt_size);
@@ -561,7 +561,7 @@ void remove_key_elts(ht_muloa_t *ht,
       *res *= (ht_muloa_search(ht, k) == NULL);
     }
     k += ht->key_size;
-    e += ht->elt_size;
+    e = (char *)e + ht->elt_size;
   }
   k = ptr(keys, 1, ht->key_size); /* 1 <= count */
   t_second_half = clock();
@@ -598,7 +598,7 @@ void delete_key_elts(ht_muloa_t *ht,
   size_t n = ht->num_elts;
   size_t key_step_size = mul_sz_perror(2, ht->key_size);
   const unsigned char *k = NULL;
-  const char *e = NULL;
+  const void *e = NULL;
   clock_t t_first_half, t_second_half;
   k = keys;
   t_first_half = clock();
@@ -619,7 +619,7 @@ void delete_key_elts(ht_muloa_t *ht,
       *res *= (ht_muloa_search(ht, k) == NULL);
     }
     k += ht->key_size;
-    e += ht->elt_size;
+    e = (char *)e + ht->elt_size;
   }
   k = ptr(keys, 1, ht->key_size); /* 1 <= count */
   t_second_half = clock();

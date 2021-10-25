@@ -290,8 +290,8 @@ void complete_graph_init(graph_t *g,
 			 void (*write_vt)(void *, size_t)){
   size_t i, j;
   size_t num_es = mul_sz_perror(num_vts, num_vts - 1) >> 1;
-  char *up = NULL;
-  char *vp = NULL;
+  void *up = NULL;
+  void *vp = NULL;
   graph_base_init(g,
 		  num_vts,
 		  vt_size,
@@ -305,8 +305,8 @@ void complete_graph_init(graph_t *g,
     for (j = i + 1; j < num_vts; j++){
       write_vt(up, i);
       write_vt(vp, j);
-      up += vt_size;
-      vp += vt_size;
+      up = (char *)up + vt_size;
+      vp = (char *)vp + vt_size;
     }
   }
 }
@@ -524,11 +524,11 @@ void rand_build_helper(size_t log_start,
 size_t sum_vts(const adj_lst_t *a,
 	       size_t i,
 	       size_t (*read_vt)(const void *)){
-  char *p = NULL, *p_start = NULL, *p_end = NULL;
+  void *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t ret = 0;
   p_start = a->vt_wts[i]->elts;
-  p_end = p_start + a->vt_wts[i]->num_elts * a->pair_size;
-  for (p = p_start; p != p_end; p += a->pair_size){
+  p_end = (char *)p_start + a->vt_wts[i]->num_elts * a->pair_size;
+  for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
     ret += read_vt(p);
   }
   return ret;
@@ -554,13 +554,13 @@ void print_adj_lst(const adj_lst_t *a,
 		   void (*print_vt)(const void *),
 		   void (*print_wt)(const void *)){
   size_t i;
-  char *p = NULL, *p_start = NULL, *p_end = NULL;
+  void *p = NULL, *p_start = NULL, *p_end = NULL;
   printf("\t\tvertices: \n");
   for (i = 0; i < a->num_vts; i++){
     printf("\t\t%lu : ", TOLU(i));
     p_start = a->vt_wts[i]->elts;
-    p_end = p_start + a->vt_wts[i]->num_elts * a->pair_size;
-    for (p = p_start; p != p_end; p += a->pair_size){
+    p_end = (char *)p_start + a->vt_wts[i]->num_elts * a->pair_size;
+    for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
       print_vt(p);
     }
     printf("\n");
@@ -570,9 +570,9 @@ void print_adj_lst(const adj_lst_t *a,
     for (i = 0; i < a->num_vts; i++){
       printf("\t\t%lu : ", TOLU(i));
       p_start = a->vt_wts[i]->elts;
-      p_end = p_start + a->vt_wts[i]->num_elts * a->pair_size;
-      for (p = p_start; p != p_end; p += a->pair_size){
-	print_wt(p + a->wt_offset);
+      p_end = (char *)p_start + a->vt_wts[i]->num_elts * a->pair_size;
+      for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
+	print_wt((char *)p + a->wt_offset);
       }
       printf("\n");
     }

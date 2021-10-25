@@ -71,9 +71,9 @@
 typedef struct{
   size_t fval; /* first hash value with first bit only set in placeholder */
   size_t sval; /* second hash value */
-} ke_t;        /* given char *p pointer to a ke_t,
-                  p - key_offset points to key_size block and 
-                  p + elt_offset points to elt_size block;
+} ke_t;        /* given p pointer to a ke_t,
+                  (char *)p - key_offset points to key_size block and 
+                  (char *)p + elt_offset points to elt_size block;
                   see ke_key_ptr and ke_elt_ptr functions */
 
 typedef struct{

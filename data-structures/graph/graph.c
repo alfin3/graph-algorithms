@@ -181,20 +181,20 @@ void adj_lst_dir_build(adj_lst_t *a,
 		       const graph_t *g,
 		       size_t (*read_vt)(const void *)){
   size_t i;
-  const char *u = g->u;
-  const char *v = g->v;
-  const char *wt = g->wts;
-  char *buf_wt = (char *)a->buf + a->wt_offset;
+  const void *u = g->u;
+  const void *v = g->v;
+  const void *wt = g->wts;
+  void *buf_wt = (char *)a->buf + a->wt_offset;
   for (i = 0; i < g->num_es; i++){
     memcpy(a->buf, v, a->vt_size);
     if (a->wt_size > 0 && wt != NULL){
       memcpy(buf_wt, wt, a->wt_size);
-      wt += a->wt_size;
+      wt = (char *)wt + a->wt_size;
     }
     stack_push(a->vt_wts[read_vt(u)], a->buf);
     a->num_es++;
-    u += a->vt_size;
-    v += a->vt_size;
+    u = (char *)u + a->vt_size;
+    v = (char *)v + a->vt_size;
   }
 }
 
@@ -215,22 +215,22 @@ void adj_lst_undir_build(adj_lst_t *a,
 			 const graph_t *g,
 			 size_t (*read_vt)(const void *)){
   size_t i;
-  const char *u = g->u;
-  const char *v = g->v;
-  const char *wt = g->wts;
-  char *buf_wt = (char *)a->buf + a->wt_offset;
+  const void *u = g->u;
+  const void *v = g->v;
+  const void *wt = g->wts;
+  void *buf_wt = (char *)a->buf + a->wt_offset;
   for (i = 0; i < g->num_es; i++){
     memcpy(a->buf, v, a->vt_size);
     if (a->wt_size > 0 && wt != NULL){
       memcpy(buf_wt, wt, a->wt_size);
-      wt += a->wt_size;
+      wt = (char *)wt + a->wt_size;
     }
     stack_push(a->vt_wts[read_vt(u)], a->buf);
     memcpy(a->buf, u, a->vt_size);
     stack_push(a->vt_wts[read_vt(v)], a->buf);
     a->num_es += 2;
-    u += a->vt_size;
-    v += a->vt_size;
+    u = (char *)u + a->vt_size;
+    v = (char *)v + a->vt_size;
   }
 }
 
