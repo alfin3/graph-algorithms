@@ -685,16 +685,6 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
 				  C_INCR[0],
 				  bern,
 				  &b);
-      run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[1],
-				  C_VT_TYPES[1],
-				  C_READ[1],
-				  C_WRITE[1],
-				  C_AT[1],
-				  C_CMP[1],
-				  C_INCR[1],
-				  bern,
-				  &b);
     }
   }
 }
