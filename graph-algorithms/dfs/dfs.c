@@ -45,9 +45,9 @@ static const size_t C_STACK_INIT_COUNT = 1;
 static void search(const adj_lst_t *a,
 		   stack_t *s,
 		   size_t offset,
-		   const void *ix,
 		   void *c,
 		   const void *nr,
+		   const void *ix,
 		   void *pre,
 		   void *post,
 		   size_t (*read_vt)(const void *),
@@ -99,25 +99,22 @@ void dfs(const adj_lst_t *a,
          void (*incr_vt)(void *)){
   size_t v_rem, uval_rem;
   size_t offset, block_size;
-  void *vars = NULL; /* vertex, not reached vertex value */
-  void *su = NULL, *c = NULL, *nr = NULL;
-  void *zero = NULL, *ix = NULL, *end = NULL;
   stack_t s;
   /* variables in single block for cache-efficiency */
-  vars = malloc_perror(6, a->vt_size);
-  su = vars;
-  c = ptr(vars, 1, a->vt_size);
-  nr = ptr(vars, 2, a->vt_size);
-  zero = ptr(vars, 3, a->vt_size);
-  ix = ptr(vars, 4, a->vt_size);
-  end = ptr(vars, 5, a->vt_size);
+  void *vars = malloc_perror(6, a->vt_size);
+  void * const su = vars;
+  void * const c = ptr(vars, 1, a->vt_size);
+  void * const nr = ptr(vars, 2, a->vt_size);
+  void * const zero = ptr(vars, 3, a->vt_size);
+  void * const ix = ptr(vars, 4, a->vt_size);
+  void * const end = ptr(vars, 5, a->vt_size);
   write_vt(su, start);
   write_vt(c, 0);
   write_vt(nr, mul_sz_perror(2, a->num_vts));
   write_vt(zero, 0);
   write_vt(ix, 0);
   write_vt(end, a->num_vts);
-  while (cmp_vt(at_vt(ix, zero), end) != 0){
+  while (cmp_vt(ix, end) != 0){
     memcpy(at_vt(pre, ix), nr, a->vt_size);
     incr_vt(ix);
   }
@@ -138,7 +135,7 @@ void dfs(const adj_lst_t *a,
   memcpy(ix, su, a->vt_size);
   while (cmp_vt(ix, end) != 0){
     if (cmp_vt(at_vt(pre, ix), nr) == 0){
-      search(a, &s, offset, ix, c, nr, pre, post,
+      search(a, &s, offset, c, nr, ix, pre, post,
 	     read_vt, at_vt, cmp_vt, incr_vt);
     }
     incr_vt(ix);
@@ -147,7 +144,7 @@ void dfs(const adj_lst_t *a,
   memcpy(ix, zero, a->vt_size);
   while (cmp_vt(ix, end) != 0){
     if (cmp_vt(at_vt(pre, ix), nr) == 0){
-      search(a, &s, offset, ix, c, nr, pre, post,
+      search(a, &s, offset, c, nr, ix, pre, post,
 	     read_vt, at_vt, cmp_vt, incr_vt);
     }
     incr_vt(ix);
@@ -165,9 +162,9 @@ void dfs(const adj_lst_t *a,
 static void search(const adj_lst_t *a,
 		   stack_t *s,
 		   size_t offset,
-		   const void *ix,
 		   void *c,
 		   const void *nr,
+		   const void *ix,
 		   void *pre,
 		   void *post,
 		   size_t (*read_vt)(const void *),
@@ -175,12 +172,9 @@ static void search(const adj_lst_t *a,
 		   int (*cmp_vt)(const void *, const void *),
 		   void (*incr_vt)(void *)){
   const void *v = NULL, *v_end = NULL;
-  const void **vp  = NULL;
-  void *v_uval = NULL;
-  void *u = NULL;
-  v_uval = malloc_perror(1, s->elt_size);
-  u = ptr(v_uval, 1, offset); /* u always points to value of u */
-  vp = v_uval; /* vp always points to v pointer */
+  void *v_uval = malloc_perror(1, s->elt_size);
+  const void ** const vp  = v_uval;
+  void * const u = ptr(v_uval, 1, offset);
   memcpy(u, ix, a->vt_size);
   *vp = a->vt_wts[read_vt(u)]->elts;
   memcpy(at_vt(pre, u), c, a->vt_size);
@@ -215,6 +209,22 @@ static void search(const adj_lst_t *a,
 
 /**
    Computes a pointer to the ith element in the block of elements.
+
+   According to C89 (draft):
+
+   "It is guaranteed, however, that a pointer to an object of a given
+   alignment may be converted to a pointer to an object of the same
+   alignment or a less strict alignment and back again; the result shall
+   compare equal to the original pointer. (An object that has character
+   type has the least strict alignment.)"
+   
+   "A pointer to void may be converted to or from a pointer to any
+   incomplete or object type. A pointer to any incomplete or object type
+   may be converted to a pointer to void and back again; the result shall
+   compare equal to the original pointer."
+
+   "A pointer to void shall have the same representation and alignment 
+   requirements as a pointer to a character type."
 */
 static void *ptr(const void *block, size_t i, size_t size){
   return (void *)((char *)block + i * size);
