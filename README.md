@@ -16,6 +16,8 @@ The approach may be particularly suitable for computing and optimizing the exact
 
 TODO: description of in-memory alignment approach to enable cache-efficient type generics.
 
+TODO: options for overalignment to cache line boundaries in time performance-intensive multithreaded settings.
+
 Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency are being profiled, which may result in implementation changes. Additional information relating to the style of the provided implementations is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
 In each directory with a Makefile, run:
