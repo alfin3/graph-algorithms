@@ -22,39 +22,41 @@ CFLAGS_BUILD_MODE_DEF = -std=c90 -Wpedantic
 CFLAGS_BUILD_MODE = ${CFLAGS_BUILD_MODE_${BUILD_MODE}}
 CC = gcc
 
-DS_DIR        = ../../data-structures/
+DS_DIR        = ../../../data-structures/
+BFS_DIR       = ../
 GRAPH_DIR     = $(DS_DIR)graph/
 QUEUE_DIR     = $(DS_DIR)queue/
 STACK_DIR     = $(DS_DIR)stack/
-UTILS_MEM_DIR = ../../utilities/utilities-mem/
-UTILS_MOD_DIR = ../../utilities/utilities-mod/
-UTILS_LIM_DIR = ../../utilities/utilities-lim/
-CFLAGS = -I$(GRAPH_DIR)                               \
+UTILS_MEM_DIR = ../../../utilities/utilities-mem/
+UTILS_MOD_DIR = ../../../utilities/utilities-mod/
+UTILS_LIM_DIR = ../../../utilities/utilities-lim/
+CFLAGS = -I$(BFS_DIR)                                 \
+         -I$(GRAPH_DIR)                               \
          -I$(QUEUE_DIR)                               \
          -I$(STACK_DIR)                               \
          -I$(UTILS_MEM_DIR)                           \
          -I$(UTILS_MOD_DIR)                           \
          -I$(UTILS_LIM_DIR)                           \
-         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
+         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O2
 
-OBJ = bfs-test.o                      \
-      bfs.o                           \
+OBJ = bfs-test-perf-ulong.o           \
+      $(BFS_DIR)bfs.o                 \
       $(GRAPH_DIR)graph.o             \
       $(QUEUE_DIR)queue.o             \
       $(STACK_DIR)stack.o             \
       $(UTILS_MEM_DIR)utilities-mem.o \
       $(UTILS_MOD_DIR)utilities-mod.o
 
-bfs-test : $(OBJ)
+bfs-test-perf-ulong : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ 
 
-bfs-test.o                      : bfs.h                           \
+bfs-test-perf-ulong.o           : $(BFS_DIR)bfs.h                 \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h \
                                   $(UTILS_LIM_DIR)utilities-lim.h 
-bfs.o                           : bfs.h                           \
+$(BFS_DIR)bfs.o                 : $(BFS_DIR)bfs.h                 \
                                   $(GRAPH_DIR)graph.h             \
                                   $(QUEUE_DIR)queue.h             \
                                   $(STACK_DIR)stack.h             \
@@ -76,4 +78,4 @@ $(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
 clean :
 	rm $(OBJ)
 clean-all : 
-	rm -f bfs-test $(OBJ)
+	rm -f bfs-test-perf-ulong $(OBJ)

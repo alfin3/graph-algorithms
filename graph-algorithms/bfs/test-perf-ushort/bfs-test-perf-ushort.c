@@ -1,22 +1,22 @@
 /**
-   bfs-test-perf-uint.c
+   bfs-test-perf-ushort.c
 
-   Performance test of the BFS algorithm across graphs with unsigned
-   long vertices.
+   Performance test of the BFS algorithm across graphs with only unsigned
+   short vertices.
 
    The following command line arguments can be used to customize tests:
-   bfs-test
+   bfs-test-perf-ushort
      [0, ushort width - 1] : a
      [0, ushort width - 1] : b s.t. 2**a <= V <= 2**b or rand graph test
 
    usage examples: 
-   ./bfs-test
-   ./bfs-test 10 14
+   ./bfs-test-perf-ushort
+   ./bfs-test-perf-ushort 10 14
 
-   bfs-test can be run with any subset of command line arguments in the
-   above-defined order. If the (i + 1)th argument is specified then the ith
-   argument must be specified for i >= 0. Default values are used for the
-   unspecified arguments according to the C_ARGS_DEF array.
+   bfs-test-perf-ushort can be run with any subset of command line arguments
+   in the above-defined order. If the (i + 1)th argument is specified then
+   the ith argument must be specified for i >= 0. Default values are used
+   for the unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 and C99 with the requirement that the width of unsigned short
@@ -50,11 +50,11 @@
 
 /* input handling */
 const char *C_USAGE =
-  "bfs-test \n"
+  "bfs-test-perf-ushort\n"
   "[0, ushort width - 1] : a\n"
   "[0, ushort width - 1] : b s.t. 2**a <= V <= 2**b for rand graph test\n";
 const int C_ARGC_MAX = 3;
-const size_t C_ARGS_DEF[2] = {0u, 14u};
+const size_t C_ARGS_DEF[2] = {14u, 14u};
 const size_t C_USHORT_BIT = UINT_WIDTH_FROM_MAX((unsigned short)-1);
 
 /* random graph tests */
@@ -96,10 +96,6 @@ const size_t C_PROBS_COUNT = 5u;
 const double C_PROBS[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
 const double C_PROB_ONE = 1.0;
 const double C_PROB_ZERO = 0.0;
-
-void *ptr(const void *block, size_t i, size_t size);
-void print_test_result(int res);
-
 /**
    Run a bfs test on random directed graphs.
 */
@@ -141,13 +137,13 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f\n",
 	     TOLU(num_vts), b.p * num_vts * (num_vts - 1));
       run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[1],
-				  C_VT_TYPES[1],
-				  C_READ[1],
-				  C_WRITE[1],
-				  C_AT[1],
-				  C_CMP[1],
-				  C_INCR[1],
+				  C_VT_SIZES[0],
+				  C_VT_TYPES[0],
+				  C_READ[0],
+				  C_WRITE[0],
+				  C_AT[0],
+				  C_CMP[0],
+				  C_INCR[0],
 				  bern,
 				  &b);
     }
@@ -194,25 +190,6 @@ void run_random_dir_graph_helper(size_t num_vts,
   start = NULL;
   dist = NULL;
   prev = NULL;
-}
-
-/**
-   Auxiliary functions.
-*/
-
-/**
-   Computes a pointer to the ith element in the block of elements.
-*/
-void *ptr(const void *block, size_t i, size_t size){
-  return (void *)((char *)block + i * size);
-}
-
-void print_test_result(int res){
-  if (res){
-    printf("SUCCESS\n");
-  }else{
-    printf("FAILURE\n");
-  }
 }
 
 int main(int argc, char *argv[]){

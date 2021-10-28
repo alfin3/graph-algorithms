@@ -1,23 +1,26 @@
 /**
-   bfs-test-corr.c
+   bfs-test.c
 
-   Correctness tests of the BFS algorithm across graphs with different
-   integer types of vertices.
+   Tests of the BFS algorithm across graphs with different integer types
+   of vertices within the same translation unit.
 
    The following command line arguments can be used to customize tests:
    bfs-test
-     [0, ushort width - 1] : a
-     [0, ushort width - 1] : b s.t. 2**a <= V <= 2**b for max edges test
-     [0, ushort width - 1] : c
-     [0, ushort width - 1] : d s.t. 2**c <= V <= 2**d for no edges test
+     [0, ushort width - 1) : a
+     [0, ushort width - 1) : b s.t. 2**a <= V <= 2**b for max edges test
+     [0, ushort width - 1) : c
+     [0, ushort width - 1) : d s.t. 2**c <= V <= 2**d for no edges test
+     [0, ushort width - 1) : e
+     [0, ushort width - 1) : f s.t. 2**e <= V <= 2**f for rand graph test
      [0, 1] : on/off for small graph tests
      [0, 1] : on/off for max edges test
      [0, 1] : on/off for no edges test
+     [0, 1] : on/off for rand graph test
 
    usage examples: 
    ./bfs-test
-   ./bfs-test 10 14 10 14
-   ./bfs-test 10 14 10 14 0 1 1
+   ./bfs-test 10 14 10 14 10 14
+   ./bfs-test 10 14 10 14 10 14 0 1 1 1
 
    bfs-test-corr can be run with any subset of command line arguments in the
    above-defined order. If the (i + 1)th argument is specified then the ith
@@ -58,16 +61,19 @@
 
 /* input handling */
 const char *C_USAGE =
-  "bfs-test \n"
-  "[0, ushort width - 1] : a\n"
-  "[0, ushort width - 1] : b s.t. 2**a <= V <= 2**b for max edges test\n"
-  "[0, ushort width - 1] : c\n"
-  "[0, ushort width - 1] : d s.t. 2**c <= V <= 2**d for no edges test\n"
+  "dfs-test\n"
+  "[0, ushort width - 1) : a\n"
+  "[0, ushort width - 1) : b s.t. 2**a <= V <= 2**b for max edges test\n"
+  "[0, ushort width - 1) : c\n"
+  "[0, ushort width - 1) : d s.t. 2**c <= V <= 2**d for no edges test\n"
+  "[0, ushort width - 1) : e\n"
+  "[0, ushort width - 1) : f s.t. 2**e <= V <= 2**f for rand graph test\n"
   "[0, 1] : on/off for small graph tests\n"
   "[0, 1] : on/off for max edges test\n"
-  "[0, 1] : on/off for no edges test\n";
-const int C_ARGC_MAX = 8;
-const size_t C_ARGS_DEF[7] = {0u, 6u, 0u, 6u, 1u, 1u, 1u};
+  "[0, 1] : on/off for no edges test\n"
+  "[0, 1] : on/off for rand graph test\n";
+const int C_ARGC_MAX = 11;
+const size_t C_ARGS_DEF[10] = {0u, 6u, 0u, 6u, 0u, 14u, 1u, 1u, 1u, 1u};
 const size_t C_USHORT_BIT = UINT_WIDTH_FROM_MAX((unsigned short)-1);
 
 /* first small graph test */
@@ -699,6 +705,92 @@ void run_no_edges_graph_test(size_t log_start, size_t log_end){
 }
 
 /**
+   Run a bfs test on random directed graphs.
+*/
+
+void run_random_dir_graph_helper(size_t num_vts,
+				 size_t vt_size,
+				 const char *type_string,
+				 size_t (*read_vt)(const void *),
+				 void (*write_vt)(void *, size_t),
+				 void *(*at_vt)(const void *, const void *),
+				 int (*cmp_vt)(const void *, const void *),
+				 void (*incr_vt)(void *),
+				 int bern(void *),
+				 bern_arg_t *b);
+
+void run_random_dir_graph_test(size_t log_start, size_t log_end){
+  size_t i, j, k;
+  size_t num_vts;
+  bern_arg_t b;
+  printf("Run a dfs test on random directed graphs from %lu random "
+	 "start vertices in each graph\n",  TOLU(C_ITER));
+  for (i = 0; i < C_PROBS_COUNT; i++){
+    b.p = C_PROBS[i];
+    printf("\tP[an edge is in a graph] = %.2f\n", b.p);
+    for (j = log_start; j <= log_end; j++){
+      num_vts = pow_two_perror(j);
+      printf("\t\tvertices: %lu, E[# of directed edges]: %.1f\n",
+	     TOLU(num_vts), b.p * num_vts * (num_vts - 1));
+      for (k = 0; k < C_FN_COUNT; k++){
+	run_random_dir_graph_helper(num_vts,
+				    C_VT_SIZES[k],
+				    C_VT_TYPES[k],
+				    C_READ[k],
+				    C_WRITE[k],
+				    C_AT[k],
+				    C_CMP[k],
+				    C_INCR[k],
+				    bern,
+				    &b);
+      }
+    }
+  }
+}
+
+void run_random_dir_graph_helper(size_t num_vts,
+				 size_t vt_size,
+				 const char *type_string,
+				 size_t (*read_vt)(const void *),
+				 void (*write_vt)(void *, size_t),
+				 void *(*at_vt)(const void *, const void *),
+				 int (*cmp_vt)(const void *, const void *),
+				 void (*incr_vt)(void *),
+				 int bern(void *),
+				 bern_arg_t *b){
+  size_t i;
+  size_t *start = NULL;
+  void *dist = NULL, *prev = NULL;
+  graph_t g;
+  adj_lst_t a;
+  clock_t t;
+  /* no declared type after realloc; effective type is set by dfs */
+  start = malloc_perror(C_ITER, sizeof(size_t));
+  dist = malloc_perror(num_vts, vt_size);
+  prev = malloc_perror(num_vts, vt_size);
+  graph_base_init(&g, num_vts, vt_size, 0);
+  adj_lst_base_init(&a, &g);
+  adj_lst_rand_dir(&a, write_vt, bern, b);
+  for (i = 0; i < C_ITER; i++){
+    start[i] =  RANDOM() % num_vts;
+  }
+  t = clock();
+  for (i = 0; i < C_ITER; i++){
+    bfs(&a, start[i], dist, prev, read_vt, write_vt, at_vt, cmp_vt, incr_vt);
+  }
+  t = clock() - t;
+  printf("\t\t\t%s ave runtime:     %.6f seconds\n",
+	 type_string, (float)t / C_ITER / CLOCKS_PER_SEC);
+  adj_lst_free(&a); /* deallocates blocks with effective vertex type */
+  free(start);
+  free(dist);
+  free(prev);
+  start = NULL;
+  dist = NULL;
+  prev = NULL;
+}
+
+/**
    Auxiliary functions.
 */
 
@@ -730,24 +822,29 @@ int main(int argc, char *argv[]){
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
-  if (args[0] > C_USHORT_BIT - 1 ||
-      args[1] > C_USHORT_BIT - 1 ||
-      args[2] > C_USHORT_BIT - 1 ||
-      args[3] > C_USHORT_BIT - 1 ||
+  if (args[0] > C_USHORT_BIT - 2 ||
+      args[1] > C_USHORT_BIT - 2 ||
+      args[2] > C_USHORT_BIT - 2 ||
+      args[3] > C_USHORT_BIT - 2 ||
+      args[4] > C_USHORT_BIT - 2 ||
+      args[5] > C_USHORT_BIT - 2 ||
       args[1] < args[0] ||
       args[3] < args[2] ||
-      args[4] > 1 ||
-      args[5] > 1 ||
-      args[6] > 1){
+      args[5] < args[4] ||
+      args[6] > 1 ||
+      args[7] > 1 ||
+      args[8] > 1 ||
+      args[9] > 1){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  if (args[4]){
+  if (args[6]){
     run_graph_a_test();
     run_graph_b_test();
   }
-  if (args[5]) run_max_edges_graph_test(args[0], args[1]);
-  if (args[6]) run_no_edges_graph_test(args[2], args[3]);
+  if (args[7]) run_max_edges_graph_test(args[0], args[1]);
+  if (args[8]) run_no_edges_graph_test(args[2], args[3]);
+  if (args[9]) run_random_dir_graph_test(args[4], args[5]);
   free(args);
   args = NULL;
   return 0;

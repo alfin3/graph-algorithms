@@ -1,25 +1,25 @@
 /**
-   bfs-test-perf-ushort.c
+   dfs-test-perf-uint.c
 
-   Performance test of the BFS algorithm across graphs with unsigned
-   short vertices.
+   Performance test of the DFS algorithm across graphs with only unsigned
+   int vertices.
 
    The following command line arguments can be used to customize tests:
-   bfs-test
-     [0, ushort width - 1] : a
-     [0, ushort width - 1] : b s.t. 2**a <= V <= 2**b or rand graph test
+   dfs-test-perf-uint
+     [0, uint width - 1] : a
+     [0, uint width - 1] : b s.t. 2**a <= V <= 2**b or rand graph test
 
    usage examples: 
-   ./bfs-test
-   ./bfs-test 10 14
+   ./dfs-test-perf-uint
+   ./dfs-test-perf-uint 10 14
 
-   bfs-test can be run with any subset of command line arguments in the
-   above-defined order. If the (i + 1)th argument is specified then the ith
-   argument must be specified for i >= 0. Default values are used for the
-   unspecified arguments according to the C_ARGS_DEF array.
+   dfs-test-perf-uint can be run with any subset of command line arguments
+   in the above-defined order. If the (i + 1)th argument is specified then
+   the ith argument must be specified for i >= 0. Default values are used
+   for the unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the requirement that the width of unsigned short
+   C89/C90 and C99 with the requirement that the width of unsigned int
    is greater or equal to 16 and less than 2040. The width of size_t must
    also be even.
 */
@@ -29,7 +29,7 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
-#include "bfs.h"
+#include "dfs.h"
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
@@ -50,12 +50,12 @@
 
 /* input handling */
 const char *C_USAGE =
-  "bfs-test \n"
-  "[0, ushort width - 1] : a\n"
-  "[0, ushort width - 1] : b s.t. 2**a <= V <= 2**b for rand graph test\n";
+  "dfs-test-perf-uint\n"
+  "[0, uint width - 1] : a\n"
+  "[0, uint width - 1] : b s.t. 2**a <= V <= 2**b for rand graph test\n";
 const int C_ARGC_MAX = 3;
-const size_t C_ARGS_DEF[2] = {0u, 14u};
-const size_t C_USHORT_BIT = UINT_WIDTH_FROM_MAX((unsigned short)-1);
+const size_t C_ARGS_DEF[2] = {14u, 14u};
+const size_t C_UINT_BIT = UINT_WIDTH_FROM_MAX((unsigned int)-1);
 
 /* random graph tests */
 
@@ -97,11 +97,8 @@ const double C_PROBS[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
 const double C_PROB_ONE = 1.0;
 const double C_PROB_ZERO = 0.0;
 
-void *ptr(const void *block, size_t i, size_t size);
-void print_test_result(int res);
-
 /**
-   Run a bfs test on random directed graphs.
+   Run a dfs test on random directed graphs.
 */
 
 typedef struct{
@@ -131,7 +128,7 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
   size_t i, j;
   size_t num_vts;
   bern_arg_t b;
-  printf("Run a bfs test on random directed graphs from %lu random "
+  printf("Run a dfs test on random directed graphs from %lu random "
 	 "start vertices in each graph\n", TOLU(C_ITER));
   for (i = 0; i < C_PROBS_COUNT; i++){
     b.p = C_PROBS[i];
@@ -141,13 +138,13 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f\n",
 	     TOLU(num_vts), b.p * num_vts * (num_vts - 1));
       run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[0],
-				  C_VT_TYPES[0],
-				  C_READ[0],
-				  C_WRITE[0],
-				  C_AT[0],
-				  C_CMP[0],
-				  C_INCR[0],
+				  C_VT_SIZES[1],
+				  C_VT_TYPES[1],
+				  C_READ[1],
+				  C_WRITE[1],
+				  C_AT[1],
+				  C_CMP[1],
+				  C_INCR[1],
 				  bern,
 				  &b);
     }
@@ -166,14 +163,14 @@ void run_random_dir_graph_helper(size_t num_vts,
 				 bern_arg_t *b){
   size_t i;
   size_t *start = NULL;
-  void *dist = NULL, *prev = NULL;
+  void *pre = NULL, *post = NULL;
   graph_t g;
   adj_lst_t a;
   clock_t t;
-  /* no declared type after malloc; effective type is set by bfs */
+  /* no declared type after malloc; effective type is set by dfs */
   start = malloc_perror(C_ITER, sizeof(size_t));
-  dist = malloc_perror(num_vts, vt_size);
-  prev = malloc_perror(num_vts, vt_size);
+  pre = malloc_perror(num_vts, vt_size);
+  post = malloc_perror(num_vts, vt_size);
   graph_base_init(&g, num_vts, vt_size, 0);
   adj_lst_base_init(&a, &g);
   adj_lst_rand_dir(&a, write_vt, bern, b);
@@ -182,37 +179,18 @@ void run_random_dir_graph_helper(size_t num_vts,
   }
   t = clock();
   for (i = 0; i < C_ITER; i++){
-    bfs(&a, start[i], dist, prev, read_vt, write_vt, at_vt, cmp_vt, incr_vt);
+    dfs(&a, start[i], pre, post, read_vt, write_vt, at_vt, cmp_vt, incr_vt);
   }
   t = clock() - t;
   printf("\t\t\t%s ave runtime:     %.6f seconds\n",
 	 type_string, (float)t / C_ITER / CLOCKS_PER_SEC);
   adj_lst_free(&a); /* deallocates blocks with effective vertex type */
   free(start);
-  free(dist);
-  free(prev);
+  free(pre);
+  free(post);
   start = NULL;
-  dist = NULL;
-  prev = NULL;
-}
-
-/**
-   Auxiliary functions.
-*/
-
-/**
-   Computes a pointer to the ith element in the block of elements.
-*/
-void *ptr(const void *block, size_t i, size_t size){
-  return (void *)((char *)block + i * size);
-}
-
-void print_test_result(int res){
-  if (res){
-    printf("SUCCESS\n");
-  }else{
-    printf("FAILURE\n");
-  }
+  pre = NULL;
+  post = NULL;
 }
 
 int main(int argc, char *argv[]){
@@ -228,8 +206,8 @@ int main(int argc, char *argv[]){
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
-  if (args[0] > C_USHORT_BIT - 1 ||
-      args[1] > C_USHORT_BIT - 1 ||
+  if (args[0] > C_UINT_BIT - 1 ||
+      args[1] > C_UINT_BIT - 1 ||
       args[1] < args[0]){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
