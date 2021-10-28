@@ -28,13 +28,11 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the only requirement that the number of value 
-   bits (precision == width) of unsigned short is not less than 16 and is
-   even *. 
+   C89/C90 and C99 with the requirement that the width of unsigned short
+   is greater or equal to 16 and less than 2040. The width of size_t must
+   also be even.
 
-   * currently CHAR_BIT * sizeof(unsigned short) is used to get the width
-     of an unsigned short integer under the assumption that all bits
-     participate in the value.
+   TODO: add portable size_t printing
 */
 
 #include <stdio.h>
@@ -745,12 +743,12 @@ int cmp_arr(const void *a,
 	    int (*cmp)(const void *, const void *)){
   int res = 1;
   size_t i;
-  const char *ap = a;
-  const char *bp = b;
+  const void *ap = a;
+  const void *bp = b;
   for (i = 0; i < n; i++){
     res *= (cmp(ap, bp) == 0);
-    ap += size;
-    bp += size;
+    ap = (char *)ap + size;
+    bp = (char *)bp + size;
   }
   return res;
 }
