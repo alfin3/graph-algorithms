@@ -720,7 +720,7 @@ void run_random_dir_graph_helper(size_t num_vts,
 				 bern_arg_t *b);
 
 void run_random_dir_graph_test(size_t log_start, size_t log_end){
-  size_t i, j, k;
+  size_t i, j;
   size_t num_vts;
   bern_arg_t b;
   printf("Run a dfs test on random directed graphs from %lu random "
@@ -732,18 +732,46 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
       num_vts = pow_two_perror(j);
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f\n",
 	     TOLU(num_vts), b.p * num_vts * (num_vts - 1));
-      for (k = 0; k < C_FN_COUNT; k++){
-	run_random_dir_graph_helper(num_vts,
-				    C_VT_SIZES[k],
-				    C_VT_TYPES[k],
-				    C_READ[k],
-				    C_WRITE[k],
-				    C_AT[k],
-				    C_CMP[k],
-				    C_INCR[k],
+      run_random_dir_graph_helper(num_vts,
+				    C_VT_SIZES[0],
+				    C_VT_TYPES[0],
+				    C_READ[0],
+				    C_WRITE[0],
+				    C_AT[0],
+				    C_CMP[0],
+				    C_INCR[0],
 				    bern,
 				    &b);
-      }
+      run_random_dir_graph_helper(num_vts,
+				    C_VT_SIZES[1],
+				    C_VT_TYPES[1],
+				    C_READ[1],
+				    C_WRITE[1],
+				    C_AT[1],
+				    C_CMP[1],
+				    C_INCR[1],
+				    bern,
+				    &b);
+      run_random_dir_graph_helper(num_vts,
+				    C_VT_SIZES[2],
+				    C_VT_TYPES[2],
+				    C_READ[2],
+				    C_WRITE[2],
+				    C_AT[2],
+				    C_CMP[2],
+				    C_INCR[2],
+				    bern,
+				    &b);
+      run_random_dir_graph_helper(num_vts,
+				    C_VT_SIZES[3],
+				    C_VT_TYPES[3],
+				    C_READ[3],
+				    C_WRITE[3],
+				    C_AT[3],
+				    C_CMP[3],
+				    C_INCR[3],
+				    bern,
+				    &b);
     }
   }
 }
