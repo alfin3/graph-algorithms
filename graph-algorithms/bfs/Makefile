@@ -28,29 +28,58 @@ QUEUE_DIR     = $(DS_DIR)queue/
 STACK_DIR     = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
+UTILS_LIM_DIR = ../../utilities/utilities-lim/
 CFLAGS = -I$(GRAPH_DIR)                               \
          -I$(QUEUE_DIR)                               \
          -I$(STACK_DIR)                               \
          -I$(UTILS_MEM_DIR)                           \
          -I$(UTILS_MOD_DIR)                           \
-         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
+         -I$(UTILS_LIM_DIR)                           \
+         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O2
 
-OBJ = bfs-test.o                      \
-      bfs.o                           \
-      $(GRAPH_DIR)graph.o             \
-      $(QUEUE_DIR)queue.o             \
-      $(STACK_DIR)stack.o             \
-      $(UTILS_MEM_DIR)utilities-mem.o \
-      $(UTILS_MOD_DIR)utilities-mod.o 
+EXE = bfs-test-corr        \
+      bfs-test-perf-ushort \
+      bfs-test-perf-uint
 
-bfs-test : $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ 
+NSHARED_OBJ = bfs-test-corr.o        \
+              bfs-test-perf-ushort.o \
+              bfs-test-perf-uint.o
 
-bfs-test.o                      : bfs.h                           \
+SHARED_OBJ =  bfs.o                           \
+              $(GRAPH_DIR)graph.o             \
+              $(QUEUE_DIR)queue.o             \
+              $(STACK_DIR)stack.o             \
+              $(UTILS_MEM_DIR)utilities-mem.o \
+              $(UTILS_MOD_DIR)utilities-mod.o 
+
+all : $(EXE)
+
+bfs-test-corr : bfs-test-corr.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+bfs-test-perf-ushort : bfs-test-perf-ushort.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+bfs-test-perf-uint : bfs-test-perf-uint.o $(SHARED_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+
+
+bfs-test-corr.o                 : bfs.h                           \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
+bfs-test-perf-ushort.o          : bfs.h                           \
+                                  $(GRAPH_DIR)graph.h             \
+                                  $(STACK_DIR)stack.h             \
+                                  $(UTILS_MEM_DIR)utilities-mem.h \
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
+bfs-test-perf-uint.o            : bfs.h                           \
+                                  $(GRAPH_DIR)graph.h             \
+                                  $(STACK_DIR)stack.h             \
+                                  $(UTILS_MEM_DIR)utilities-mem.h \
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 bfs.o                           : bfs.h                           \
                                   $(GRAPH_DIR)graph.h             \
                                   $(QUEUE_DIR)queue.h             \
@@ -64,11 +93,12 @@ $(QUEUE_DIR)queue.o             : $(QUEUE_DIR)queue.h             \
 $(STACK_DIR)stack.o             : $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
-$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h
+$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 
 .PHONY : clean clean-all
 
 clean :
-	rm $(OBJ)
+	rm $(SHARED_OBJ) $(NSHARED_OBJ)
 clean-all : 
-	rm -f bfs-test $(OBJ)
+	rm -f $(EXE) $(SHARED_OBJ) $(NSHARED_OBJ) 

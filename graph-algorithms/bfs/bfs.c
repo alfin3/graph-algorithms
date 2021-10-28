@@ -2,15 +2,8 @@
    bfs.c
 
    Functions for running the BFS algorithm on graphs with generic integer
-   vertices indexed from 0.
-
-   A graph may be unweighted or weighted. In the latter case the weights of
-   the graph are ignored.
-
-   The implementation introduces two parameters (cmpat_vt and incr_vt)
-   that are designed to inform a compiler to perform optimizations to
-   match or nearly match the performance of the generic BFS to the
-   corresponding non-generic version with a fixed integer type of vertices.
+   vertices indexed from 0. A graph may be unweighted or weighted. In the
+   latter case the weights of the graph are ignored.
 
    A distance value in the dist array is only set if the corresponding
    vertex was reached, in which case it is guaranteed that the distance
@@ -21,20 +14,17 @@
    was not set by the algorithm.
 
    The implementation only uses integer and pointer operations. Given
-   parameter values within the specified ranges, the implementation provides
-   an error message and an exit is executed if an integer overflow is
-   attempted or an allocation is not completed due to insufficient
-   resources. The behavior outside the specified parameter ranges is
-   undefined.
+   parameter values within the specified ranges, the implementation
+   provides an error message and an exit is executed if an integer
+   overflow is attempted or an allocation is not completed due to
+   insufficient resources. The behavior outside the specified parameter
+   ranges is undefined.
 
    The implementation does not use stdint.h and is portable under
    C89/C90 and C99.
 
-   Optimization notes:
-
-   -  The overhead of a bit array for cache-efficient set membership
-   testing of reached and unreached vertices decreased performance in tests
-   and is not included in the implementation.
+   * The overhead of a bit array for cache-efficient set membership testing
+   is excluded due to decreased performance in tests.
 */
 
 #include <stdio.h>
@@ -46,44 +36,9 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
-static const size_t QUEUE_INIT_COUNT = 1;
+static const size_t C_QUEUE_INIT_COUNT = 1;
 
 static void *ptr(const void *block, size_t i, size_t size);
-
-int bfs_cmpat_ushort(const void *a, const void *i, const void *v){
-  return ((const unsigned short *)a)[*(const unsigned short *)i] !=
-    *(const unsigned short *)v;
-}
-
-int bfs_cmpat_uint(const void *a, const void *i, const void *v){
-  return ((const unsigned int *)a)[*(const unsigned int *)i] !=
-    *(const unsigned int *)v;
-}
-
-int bfs_cmpat_ulong(const void *a, const void *i, const void *v){
-  return ((const unsigned long *)a)[*(const unsigned long *)i] !=
-    *(const unsigned long *)v;
-}
-
-int bfs_cmpat_sz(const void *a, const void *i, const void *v){
-  return ((const size_t *)a)[*(const size_t *)i] != *(const size_t *)v;
-}
-
-void bfs_incr_ushort(void *a){
-  (*(unsigned short *)a)++;
-}
-
-void bfs_incr_uint(void *a){
-  (*(unsigned int *)a)++;
-}
-
-void bfs_incr_ulong(void *a){
-  (*(unsigned long *)a)++;
-}
-
-void bfs_incr_sz(void *a){
-  (*(size_t *)a)++;
-}
 
 /**
    Computes and copies to an array pointed to by dist the lowest # of edges
@@ -110,60 +65,72 @@ void bfs_incr_sz(void *a){
                  pointed block has no declared type then bfs sets the
                  effective type of every element to the integer type of
                  vertices
-   cmpat_vt    : non-NULL pointer to a function for comparing the element in
-                 the array pointed to by the first argument at the index
-                 pointed to by the second argument, to the value pointed to
-                 by the third argument; each argument points to a value of
-                 the integer type used to represent vertices; the function
-                 pointer may point to one of the provided functions
-   incr_vt     : non-NULL pointer to a function incrementing an integer of
-                 the type used to represent vertices; the function pointer
-                 may point to one of the provided functions
+   read_vt     : reads the integer value of the type used to represent
+                 vertices from the vt_size block pointed to by the argument
+                 and returns a size_t value
+   write_vt    : writes the integer value of the second argument to
+                 the vt_size block pointed to by the first argument
+                 as a value of the integer type used to represent vertices
+   at_vt       : returns a pointer to the element in the array pointed to by
+                 the first argument at the index pointed to by the second
+                 argument; each argument points to a value of the integer
+                 type used to represent vertices
+   cmp_vt      : returns 0 iff the the element pointed to by the first
+                 argument is equal to the element pointed to by the second
+                 argument; each argument points to a value of the integer
+                 type used to represent vertices
+   incr_vt     : increments a value of the integer type used to represent
+                 vertices
 */
 void bfs(const adj_lst_t *a,
 	 size_t start,
 	 void *dist,
 	 void *prev,
-	 int (*cmpat_vt)(const void *, const void *, const void *),
-	 void (*incr_vt)(void *)){
-  char *dp = NULL, *pp = NULL;
-  const char *du = NULL;
-  const char *p = NULL, *p_start = NULL, *p_end = NULL;
-  void *unr = NULL; /* vertex, not reached vertex value */
-  void *u = NULL, *nr = NULL;
+         size_t (*read_vt)(const void *),
+         void (*write_vt)(void *, size_t),
+         void *(*at_vt)(const void *, const void *),
+         int (*cmp_vt)(const void *, const void *),
+         void (*incr_vt)(void *)){
+  const void *p = NULL, *p_start = NULL, *p_end = NULL;
   queue_t q;
-  /* single block for cache-efficiency; same type */
-  unr = malloc_perror(2, a->vt_size);
-  u = unr;
-  nr = ptr(unr, 1, a->vt_size);
-  a->write_vt(u, start);
-  a->write_vt(nr, a->num_vts);
-  a->write_vt(ptr(dist, start, a->vt_size), 0);
-  for (pp = prev; pp != ptr(prev, a->num_vts, a->vt_size); pp += a->vt_size){
-    memcpy(pp, nr, a->vt_size);
+  /* variables in single block for cache-efficiency */
+  void * const vars = malloc_perror(6, a->vt_size);
+  void * const u = vars;
+  void * const nr = ptr(vars, 1, a->vt_size);
+  void * const zero = ptr(vars, 2, a->vt_size);
+  void * const ix = ptr(vars, 3, a->vt_size);
+  void * const d = ptr(vars, 4, a->vt_size);
+  write_vt(u, start);
+  write_vt(nr, a->num_vts);
+  write_vt(zero, 0);
+  write_vt(ix, 0);
+  write_vt(d, 0);
+  write_vt(at_vt(dist, u), 0);
+  while (cmp_vt(ix, nr) != 0){
+    memcpy(at_vt(prev, ix), nr, a->vt_size);
+    incr_vt(ix);
   }
-  queue_init(&q, QUEUE_INIT_COUNT, a->vt_size, NULL);
-  memcpy(ptr(prev, a->read_vt(u), a->vt_size), u, a->vt_size);
+  queue_init(&q, C_QUEUE_INIT_COUNT, a->vt_size, NULL);
+  memcpy(at_vt(dist, u), zero, a->vt_size);
+  memcpy(at_vt(prev, u), u, a->vt_size);
   queue_push(&q, u);
   while (q.num_elts > 0){
     queue_pop(&q, u);
-    du = ptr(dist, a->read_vt(u), a->vt_size);
-    p_start = a->vt_wts[a->read_vt(u)]->elts;
-    p_end = p_start + a->vt_wts[a->read_vt(u)]->num_elts * a->pair_size;
-    for (p = p_start; p != p_end; p += a->pair_size){
-      if (cmpat_vt(prev, p, nr) == 0){
-        dp = ptr(dist, a->read_vt(p), a->vt_size);
-        pp = ptr(prev, a->read_vt(p), a->vt_size);
-	memcpy(dp, du, a->vt_size);
-        incr_vt(dp);
-	memcpy(pp, u, a->vt_size);
+    memcpy(d, at_vt(dist, u), a->vt_size);
+    incr_vt(d);
+    p_start = a->vt_wts[read_vt(u)]->elts;
+    p_end = (char *)p_start + a->vt_wts[read_vt(u)]->num_elts * a->pair_size;
+    for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
+      if (cmp_vt(at_vt(prev, p), nr) == 0){
+	memcpy(at_vt(dist, p), d, a->vt_size);
+	memcpy(at_vt(prev, p), u, a->vt_size);
 	queue_push(&q, p);
       }
     }
   }
   queue_free(&q);
-  free(unr);
-  unr = NULL;
+  free(vars);
+  /* after this line vars cannot be dereferenced */
 }
 
 /**
