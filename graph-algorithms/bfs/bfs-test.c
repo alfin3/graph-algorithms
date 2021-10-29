@@ -720,7 +720,7 @@ void run_random_dir_graph_helper(size_t num_vts,
 				 bern_arg_t *b);
 
 void run_random_dir_graph_test(size_t log_start, size_t log_end){
-  size_t i, j;
+  size_t i, j, k;
   size_t num_vts;
   bern_arg_t b;
   printf("Run a dfs test on random directed graphs from %lu random "

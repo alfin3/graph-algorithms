@@ -37,7 +37,7 @@ CFLAGS = -I$(BFS_DIR)                                 \
          -I$(UTILS_MEM_DIR)                           \
          -I$(UTILS_MOD_DIR)                           \
          -I$(UTILS_LIM_DIR)                           \
-         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O2
+         ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = bfs-test-perf-ulong.o           \
       $(BFS_DIR)bfs.o                 \

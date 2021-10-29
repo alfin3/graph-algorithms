@@ -94,7 +94,7 @@ void bfs(const adj_lst_t *a,
   const void *p = NULL, *p_start = NULL, *p_end = NULL;
   queue_t q;
   /* variables in single block for cache-efficiency */
-  void * const vars = malloc_perror(6, a->vt_size);
+  void * const vars = malloc_perror(5, a->vt_size);
   void * const u = vars;
   void * const nr = ptr(vars, 1, a->vt_size);
   void * const zero = ptr(vars, 2, a->vt_size);
@@ -110,9 +110,8 @@ void bfs(const adj_lst_t *a,
     memcpy(at_vt(prev, ix), nr, a->vt_size);
     incr_vt(ix);
   }
-  queue_init(&q, C_QUEUE_INIT_COUNT, a->vt_size, NULL);
-  memcpy(at_vt(dist, u), zero, a->vt_size);
   memcpy(at_vt(prev, u), u, a->vt_size);
+  queue_init(&q, C_QUEUE_INIT_COUNT, a->vt_size, NULL);
   queue_push(&q, u);
   while (q.num_elts > 0){
     queue_pop(&q, u);
