@@ -6,12 +6,12 @@
 
    The following command line arguments can be used to customize tests:
    bfs-test
-     [0, ushort width - 1) : a
-     [0, ushort width - 1) : b s.t. 2**a <= V <= 2**b for max edges test
-     [0, ushort width - 1) : c
-     [0, ushort width - 1) : d s.t. 2**c <= V <= 2**d for no edges test
-     [0, ushort width - 1) : e
-     [0, ushort width - 1) : f s.t. 2**e <= V <= 2**f for rand graph test
+     [0, ushort width - 1] : a
+     [0, ushort width - 1] : b s.t. 2**a <= V <= 2**b for max edges test
+     [0, ushort width - 1] : c
+     [0, ushort width - 1] : d s.t. 2**c <= V <= 2**d for no edges test
+     [0, ushort width - 1] : e
+     [0, ushort width - 1] : f s.t. 2**e <= V <= 2**f for rand graph test
      [0, 1] : on/off for small graph tests
      [0, 1] : on/off for max edges test
      [0, 1] : on/off for no edges test
@@ -22,7 +22,7 @@
    ./bfs-test 10 14 10 14 10 14
    ./bfs-test 10 14 10 14 10 14 0 1 1 1
 
-   bfs-test-corr can be run with any subset of command line arguments in the
+   bfs-test can be run with any subset of command line arguments in the
    above-defined order. If the (i + 1)th argument is specified then the ith
    argument must be specified for i >= 0. Default values are used for the
    unspecified arguments according to the C_ARGS_DEF array.
@@ -61,13 +61,13 @@
 
 /* input handling */
 const char *C_USAGE =
-  "dfs-test\n"
-  "[0, ushort width - 1) : a\n"
-  "[0, ushort width - 1) : b s.t. 2**a <= V <= 2**b for max edges test\n"
-  "[0, ushort width - 1) : c\n"
-  "[0, ushort width - 1) : d s.t. 2**c <= V <= 2**d for no edges test\n"
-  "[0, ushort width - 1) : e\n"
-  "[0, ushort width - 1) : f s.t. 2**e <= V <= 2**f for rand graph test\n"
+  "bfs-test\n"
+  "[0, ushort width - 1] : a\n"
+  "[0, ushort width - 1] : b s.t. 2**a <= V <= 2**b for max edges test\n"
+  "[0, ushort width - 1] : c\n"
+  "[0, ushort width - 1] : d s.t. 2**c <= V <= 2**d for no edges test\n"
+  "[0, ushort width - 1] : e\n"
+  "[0, ushort width - 1] : f s.t. 2**e <= V <= 2**f for rand graph test\n"
   "[0, 1] : on/off for small graph tests\n"
   "[0, 1] : on/off for max edges test\n"
   "[0, 1] : on/off for no edges test\n"
@@ -723,7 +723,7 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
   size_t i, j, k;
   size_t num_vts;
   bern_arg_t b;
-  printf("Run a dfs test on random directed graphs from %lu random "
+  printf("Run a bfs test on random directed graphs from %lu random "
 	 "start vertices in each graph\n",  TOLU(C_ITER));
   for (i = 0; i < C_PROBS_COUNT; i++){
     b.p = C_PROBS[i];
@@ -792,7 +792,7 @@ void run_random_dir_graph_helper(size_t num_vts,
   graph_t g;
   adj_lst_t a;
   clock_t t;
-  /* no declared type after realloc; effective type is set by dfs */
+  /* no declared type after malloc; effective type is set by bfs */
   start = malloc_perror(C_ITER, sizeof(size_t));
   dist = malloc_perror(num_vts, vt_size);
   prev = malloc_perror(num_vts, vt_size);
@@ -850,12 +850,12 @@ int main(int argc, char *argv[]){
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
-  if (args[0] > C_USHORT_BIT - 2 ||
-      args[1] > C_USHORT_BIT - 2 ||
-      args[2] > C_USHORT_BIT - 2 ||
-      args[3] > C_USHORT_BIT - 2 ||
-      args[4] > C_USHORT_BIT - 2 ||
-      args[5] > C_USHORT_BIT - 2 ||
+  if (args[0] > C_USHORT_BIT - 1 ||
+      args[1] > C_USHORT_BIT - 1 ||
+      args[2] > C_USHORT_BIT - 1 ||
+      args[3] > C_USHORT_BIT - 1 ||
+      args[4] > C_USHORT_BIT - 1 ||
+      args[5] > C_USHORT_BIT - 1 ||
       args[1] < args[0] ||
       args[3] < args[2] ||
       args[5] < args[4] ||

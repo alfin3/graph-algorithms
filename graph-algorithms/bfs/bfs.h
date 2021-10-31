@@ -6,13 +6,22 @@
    unweighted or weighted. In the latter case the weights of the graph are
    ignored.
 
+   The effective type of every element in the prev array is of the integer
+   type used to represent vertices. The value of every element is set
+   by the algorithm to the value of the previous vertex. If the block
+   pointed to by prev has no declared type then the algorithm sets the
+   effective type of every element to the integer type used to represent
+   vertices by writing a value of the type.
+
    A distance value in the dist array is only set if the corresponding
-   vertex was reached, in which case it is guaranteed that the distance
-   object representation is not a trap representation. If the dist array is
-   allocated with calloc, then for any integer type the representation
-   with all zero bits is 0 integer value under C99 and C11 (6.2.6.2),
-   and it is safe to read such a representation even if the value
-   was not set by the algorithm.
+   vertex was reached, as indicated by the prev array, in which case it
+   is guaranteed that the distance object representation is not a trap
+   representation. An element corresponding to a not reached vertex, as
+   indicated by the prev array, may be a trap representation. However,
+   if the dist array is allocated with calloc, then for any integer type
+   the representation with all zero bits is 0 integer value under C99 and
+   C11 (6.2.6.2), and it is safe to read such a representation even if the
+   value was not set by the algorithm.
 
    The implementation only uses integer and pointer operations. Given
    parameter values within the specified ranges, the implementation
@@ -24,8 +33,8 @@
    The implementation does not use stdint.h and is portable under
    C89/C90 and C99.
 
-   * The overhead of a bit array for cache-efficient set membership testing
-   is excluded due to decreased performance in tests.
+   Note: A bit array for cache-efficient set membership testing is
+   not included due to an overhead that decreased the performance in tests.
 */
 
 #ifndef BFS_H  
@@ -44,21 +53,24 @@
    start       : a start vertex for running bfs
    dist        : pointer to a preallocated array with the count of elements
                  equal to the number of vertices in the adjacency list; each
-                 element is of the integer type used to represent vertices
-                 in the adjacency list; if the pointed block has no declared
-                 type then bfs sets the effective type of each element
-                 corresponding to a reached vertex to the integer type of
-                 vertices; if the block was allocated with calloc then
-                 under C99 and C11 each element corresponding to an
-                 unreached vertex, can be safely read as an integer of the
-                 type used to represent vertices and will represent 0 value
+                 element is of size vt_size (vt_size block) that equals to
+                 the size of the integer type used to represent vertices in
+                 the adjacency list; if the block pointed to by dist has no
+                 declared type then bfs sets the effective type of each
+                 element corresponding to a reached vertex to the integer
+                 type of vertices by writing a value of the type; if the
+                 block was allocated with calloc then under C99 and C11 each
+                 element corresponding to an unreached vertex, can be safely
+                 read as an integer of the type used to represent vertices
+                 and will represent 0 value
    prev        : pointer to a preallocated array with the count equal to the
-                 number of vertices in the adjacency list; each element is
-                 of the integer type used to represent vertices and the
-                 value of every element is set by the algorithm; if the
-                 pointed block has no declared type then bfs sets the
-                 effective type of every element to the integer type of
-                 vertices
+                 number of vertices in the adjacency list; each element
+                 is of size vt_size (vt_size block) that equals to the
+                 size of the integer type used to represent vertices in the
+                 adjacency list; if the block pointed to by prev has no
+                 declared type then it is guaranteed that bfs sets the
+                 effective type of every element to the integer type used to
+                 represent vertices by writing a value of the type
    read_vt     : reads the integer value of the type used to represent
                  vertices from the vt_size block pointed to by the argument
                  and returns a size_t value
@@ -69,7 +81,7 @@
                  the first argument at the index pointed to by the second
                  argument; each argument points to a value of the integer
                  type used to represent vertices
-   cmp_vt      : returns 0 iff the the element pointed to by the first
+   cmp_vt      : returns 0 iff the element pointed to by the first
                  argument is equal to the element pointed to by the second
                  argument; each argument points to a value of the integer
                  type used to represent vertices

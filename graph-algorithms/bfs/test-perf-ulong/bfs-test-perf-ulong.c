@@ -7,7 +7,7 @@
    The following command line arguments can be used to customize tests:
    bfs-test-perf-ulong
      [0, ulong width - 1] : a
-     [0, ulong width - 1] : b s.t. 2**a <= V <= 2**b or rand graph test
+     [0, ulong width - 1] : b s.t. 2**a <= V <= 2**b for rand graph test
 
    usage examples: 
    ./bfs-test-perf-ulong
@@ -22,6 +22,8 @@
    C89/C90 and C99 with the requirement that the width of unsigned long
    is greater or equal to 16 and less than 2040. The width of size_t must
    also be even.
+
+   TODO: add portable size_t printing
 */
 
 #include <stdio.h>
@@ -96,6 +98,7 @@ const size_t C_PROBS_COUNT = 5u;
 const double C_PROBS[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
 const double C_PROB_ONE = 1.0;
 const double C_PROB_ZERO = 0.0;
+
 /**
    Run a bfs test on random directed graphs.
 */
