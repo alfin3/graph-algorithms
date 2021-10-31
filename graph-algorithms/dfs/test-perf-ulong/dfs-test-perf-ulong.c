@@ -6,8 +6,8 @@
 
    The following command line arguments can be used to customize tests:
    dfs-test-perf-ulong
-     [0, ulong width - 1] : a
-     [0, ulong width - 1] : b s.t. 2**a <= V <= 2**b or rand graph test
+     [0, ulong width - 1) : a
+     [0, ulong width - 1) : b s.t. 2**a <= V <= 2**b or rand graph test
 
    usage examples: 
    ./dfs-test-perf-ulong
@@ -51,8 +51,8 @@
 /* input handling */
 const char *C_USAGE =
   "dfs-test-perf-ulong\n"
-  "[0, ulong width - 1] : a\n"
-  "[0, ulong width - 1] : b s.t. 2**a <= V <= 2**b for rand graph test\n";
+  "[0, ulong width - 1) : a\n"
+  "[0, ulong width - 1) : b s.t. 2**a <= V <= 2**b for rand graph test\n";
 const int C_ARGC_MAX = 3;
 const size_t C_ARGS_DEF[2] = {14u, 14u};
 const size_t C_ULONG_BIT = UINT_WIDTH_FROM_MAX((unsigned long)-1);

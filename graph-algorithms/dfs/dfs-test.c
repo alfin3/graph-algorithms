@@ -169,7 +169,7 @@ int cmp_arr(const void *a,
 	    size_t size,
 	    size_t n,
 	    int (*cmp)(const void *, const void *));
-static void *ptr(const void *block, size_t i, size_t size);
+void *ptr(const void *block, size_t i, size_t size);
 void print_test_result(int res);
 
 /**
@@ -786,7 +786,7 @@ int cmp_arr(const void *a,
 /**
    Computes a pointer to the ith element in the block of elements.
 */
-static void *ptr(const void *block, size_t i, size_t size){
+void *ptr(const void *block, size_t i, size_t size){
   return (void *)((char *)block + i * size);
 }
 
