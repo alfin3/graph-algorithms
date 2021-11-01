@@ -419,23 +419,23 @@ void graph_write_sz(void *a, size_t val){
 /**
    Get a pointer to the element in the array pointed to by the first
    argument at the index pointed to by the second argument; each argument
-   points to a value of the integer type used to represent vertices.
+   points to the integer type used to represent vertices.
 */
 
 void *graph_at_uchar(const void *a, const void *i){
-  return (void *)&((unsigned char *)a)[*(const unsigned char *)i];
+  return (void *)((const unsigned char *)a + *(const unsigned char *)i);
 }
 void *graph_at_ushort(const void *a, const void *i){
-  return (void *)&((unsigned short *)a)[*(const unsigned short *)i];
+  return (void *)((const unsigned short *)a + *(const unsigned short *)i);
 }
 void *graph_at_uint(const void *a, const void *i){
-  return (void *)&((unsigned int *)a)[*(const unsigned int *)i];
+  return (void *)((const unsigned int *)a + *(const unsigned int *)i);
 }
 void *graph_at_ulong(const void *a, const void *i){
-  return (void *)&((unsigned long *)a)[*(const unsigned long *)i];
+  return (void *)((const unsigned long *)a + *(const unsigned long *)i);
 }
 void *graph_at_sz(const void *a, const void *i){
-  return (void *)&((size_t *)a)[*(const size_t *)i];
+  return (void *)((const size_t *)a + *(const size_t *)i);
 }
 
 /**

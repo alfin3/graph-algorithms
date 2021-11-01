@@ -272,7 +272,7 @@ void graph_write_sz(void *a, size_t val);
 /**
    Get a pointer to the element in the array pointed to by the first
    argument at the index pointed to by the second argument; each argument
-   points to a value of the integer type used to represent vertices.
+   points to the integer type used to represent vertices.
 */
 
 void *graph_at_uchar(const void *a, const void *i);
