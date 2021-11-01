@@ -79,8 +79,10 @@
                  as a value of the integer type used to represent vertices
    at_vt       : returns a pointer to the element in the array pointed to by
                  the first argument at the index pointed to by the second
-                 argument; each argument points to the integer type used
-                 to represent vertices
+                 argument; the first argument points to the integer type
+                 used to represent vertices and is not dereferenced; the
+                 second argument points to a value of the integer type used
+                 to represent vertices and is dereferenced
    cmp_vt      : returns 0 iff the element pointed to by the first
                  argument is equal to the element pointed to by the second
                  argument; each argument points to a value of the integer
