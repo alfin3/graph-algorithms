@@ -94,8 +94,6 @@ const size_t C_H_MIN_NUM = 1u;
 void push_pop_free(size_t num_ins,
 		   size_t pty_size,
 		   size_t elt_size,
-		   size_t alpha_n,
-		   size_t log_alpha_d,
 		   const heap_ht_t *hht,
 		   void (*new_pty)(void *, size_t),
 		   void (*new_elt)(void *, size_t),
@@ -106,8 +104,6 @@ void push_pop_free(size_t num_ins,
 void update_search(size_t num_ins,
 		   size_t pty_size,
 		   size_t elt_size,
-		   size_t alpha_n,
-		   size_t log_alpha_d,
 		   const heap_ht_t *hht,
 		   void (*new_pty)(void *, size_t),
 		   void (*new_elt)(void *, size_t),
@@ -188,6 +184,8 @@ void run_push_pop_free_divchn_uint_test(size_t log_ins,
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   hht.ht = &ht_divchn;
+  hht.alpha_n = alpha_n;
+  hht.log_alpha_d = log_alpha_d;
   hht.init = ht_divchn_init_helper;
   hht.align = ht_divchn_align_helper;
   hht.insert = ht_divchn_insert_helper;
@@ -205,8 +203,6 @@ void run_push_pop_free_divchn_uint_test(size_t log_ins,
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
-		  alpha_n,
-		  log_alpha_d,
 		  &hht,
 		  C_NEW_PTY_ARR[i],
 		  new_uint,
@@ -230,6 +226,8 @@ void run_update_search_divchn_uint_test(size_t log_ins,
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   hht.ht = &ht_divchn;
+  hht.alpha_n = alpha_n;
+  hht.log_alpha_d = log_alpha_d;
   hht.init = ht_divchn_init_helper;
   hht.align = ht_divchn_align_helper;
   hht.insert = ht_divchn_insert_helper;
@@ -247,8 +245,6 @@ void run_update_search_divchn_uint_test(size_t log_ins,
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
-		  alpha_n,
-		  log_alpha_d,
 		  &hht,
 		  C_NEW_PTY_ARR[i],
 		  new_uint,
@@ -272,6 +268,8 @@ void run_push_pop_free_muloa_uint_test(size_t log_ins,
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   hht.ht = &ht_muloa;
+  hht.alpha_n = alpha_n;
+  hht.log_alpha_d = log_alpha_d;
   hht.init = ht_muloa_init_helper;
   hht.align = ht_muloa_align_helper;
   hht.insert = ht_muloa_insert_helper;
@@ -290,8 +288,6 @@ void run_push_pop_free_muloa_uint_test(size_t log_ins,
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
-		  alpha_n,
-		  log_alpha_d,
 		  &hht,
 		  C_NEW_PTY_ARR[i],
 		  new_uint,
@@ -315,6 +311,8 @@ void run_update_search_muloa_uint_test(size_t log_ins,
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   hht.ht = &ht_muloa;
+  hht.alpha_n = alpha_n;
+  hht.log_alpha_d = log_alpha_d;
   hht.init = ht_muloa_init_helper;
   hht.align = ht_muloa_align_helper;
   hht.insert = ht_muloa_insert_helper;
@@ -333,8 +331,6 @@ void run_update_search_muloa_uint_test(size_t log_ins,
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(size_t),
-		  alpha_n,
-		  log_alpha_d,
 		  &hht,
 		  C_NEW_PTY_ARR[i],
 		  new_uint,
@@ -399,6 +395,8 @@ void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins,
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   hht.ht = &ht_divchn;
+  hht.alpha_n = alpha_n;
+  hht.log_alpha_d = log_alpha_d;
   hht.init = ht_divchn_init_helper;
   hht.align = ht_divchn_align_helper;
   hht.insert = ht_divchn_insert_helper;
@@ -416,8 +414,6 @@ void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins,
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
-		  alpha_n,
-		  log_alpha_d,
 		  &hht,
 		  C_NEW_PTY_ARR[i],
 		  new_uint_ptr,
@@ -441,6 +437,8 @@ void run_update_search_divchn_uint_ptr_test(size_t log_ins,
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   hht.ht = &ht_divchn;
+  hht.alpha_n = alpha_n;
+  hht.log_alpha_d = log_alpha_d;
   hht.init = ht_divchn_init_helper;
   hht.align = ht_divchn_align_helper;
   hht.insert = ht_divchn_insert_helper;
@@ -458,8 +456,6 @@ void run_update_search_divchn_uint_ptr_test(size_t log_ins,
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
-		  alpha_n,
-		  log_alpha_d,
 		  &hht,
 		  C_NEW_PTY_ARR[i],
 		  new_uint_ptr,
@@ -483,6 +479,8 @@ void run_push_pop_free_muloa_uint_ptr_test(size_t log_ins,
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   hht.ht = &ht_muloa;
+  hht.alpha_n = alpha_n;
+  hht.log_alpha_d = log_alpha_d;
   hht.init = ht_muloa_init_helper;
   hht.align = ht_muloa_align_helper;
   hht.insert = ht_muloa_insert_helper;
@@ -501,8 +499,6 @@ void run_push_pop_free_muloa_uint_ptr_test(size_t log_ins,
     push_pop_free(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
-		  alpha_n,
-		  log_alpha_d,
 		  &hht,
 		  C_NEW_PTY_ARR[i],
 		  new_uint_ptr,
@@ -526,6 +522,8 @@ void run_update_search_muloa_uint_ptr_test(size_t log_ins,
   heap_ht_t hht;
   n = pow_two_perror(log_ins);
   hht.ht = &ht_muloa;
+  hht.alpha_n = alpha_n;
+  hht.log_alpha_d = log_alpha_d;
   hht.init = ht_muloa_init_helper;
   hht.align = ht_muloa_align_helper;
   hht.insert = ht_muloa_insert_helper;
@@ -544,8 +542,6 @@ void run_update_search_muloa_uint_ptr_test(size_t log_ins,
     update_search(n,
 		  C_PTY_SIZES[i],
 		  sizeof(uint_ptr_t *),
-		  alpha_n,
-		  log_alpha_d,
 		  &hht,
 		  C_NEW_PTY_ARR[i],
 		  new_uint_ptr,
@@ -760,8 +756,6 @@ void search_ptys_elts(const heap_t *h,
 void push_pop_free(size_t num_ins,
 		   size_t pty_size,
 		   size_t elt_size,
-		   size_t alpha_n,
-		   size_t log_alpha_d,
 		   const heap_ht_t *hht,
 		   void (*new_pty)(void *, size_t),
 		   void (*new_elt)(void *, size_t),
@@ -777,8 +771,6 @@ void push_pop_free(size_t num_ins,
 	    pty_size,
 	    elt_size,
 	    C_H_MIN_NUM,
-	    alpha_n,
-	    log_alpha_d,
 	    hht,
 	    cmp_pty,
 	    cmp_elt,
@@ -805,8 +797,6 @@ void push_pop_free(size_t num_ins,
 void update_search(size_t num_ins,
 		   size_t pty_size,
 		   size_t elt_size,
-		   size_t alpha_n,
-		   size_t log_alpha_d,
 		   const heap_ht_t *hht,
 		   void (*new_pty)(void *, size_t),
 		   void (*new_elt)(void *, size_t),
@@ -822,8 +812,6 @@ void update_search(size_t num_ins,
 	    pty_size,
 	    elt_size,
 	    C_H_MIN_NUM,
-	    alpha_n,
-	    log_alpha_d,
 	    hht, cmp_pty,
 	    cmp_elt,
 	    rdc_elt,

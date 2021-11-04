@@ -74,11 +74,6 @@ static void *elt_ptr(const heap_t *h, size_t i);
                  expected to be present simultaneously in a heap; may result
                  in a speedup by avoiding the unnecessary growth steps of the
                  hash table
-   alpha_n     : > 0 numerator of a load factor upper bound
-   log_alpha_d : < size_t width; log base 2 of the denominator of the load
-                 factor upper bound; the denominator is a power of two;
-                 additional requirements may apply due to the type of a hash
-                 table
    hht         : a non-NULL pointer to a set of parameters specifying a
                  hash table for in-heap search and modifications
    cmp_pty     : comparison function which returns a negative integer value
@@ -115,8 +110,6 @@ void heap_init(heap_t *h,
 	       size_t pty_size,
 	       size_t elt_size,
 	       size_t min_num,
-	       size_t alpha_n,
-	       size_t log_alpha_d,
 	       const heap_ht_t *hht,
 	       int (*cmp_pty)(const void *, const void *),
 	       int (*cmp_elt)(const void *, const void *),
@@ -137,8 +130,6 @@ void heap_init(heap_t *h,
   h->pair_size = add_sz_perror(h->elt_offset + h->elt_size,
 			       (pty_rem > 0) * (h->pty_size - pty_rem));
   h->count = min_num;
-  h->alpha_n = alpha_n;
-  h->log_alpha_d = log_alpha_d;
   h->num_elts = 0;
   h->buf = malloc_perror(1, h->pair_size); /* heapify */
   h->pty_elts = malloc_perror(h->count, h->pair_size);
@@ -147,19 +138,21 @@ void heap_init(heap_t *h,
   h->cmp_elt = cmp_elt;
   h->rdc_elt = rdc_elt;
   h->free_elt = free_elt;
-  /* hash table maps an element to a size_t index */ 
-  h->hht->init(hht->ht,
-	       h->elt_size,
-	       sizeof(size_t),
-	       h->count,
-	       h->alpha_n,
-	       h->log_alpha_d,
-	       h->cmp_elt,
-	       h->rdc_elt,
-	       NULL, /* only elt_size block is deleted in hash table */
-	       NULL);
-  /* align size_t indices in ht by size; size_t * can be dereferenced */
-  h->hht->align(h->hht->ht, sizeof(size_t)); 
+  /* hash table maps an element to a size_t index  */
+  if (h->hht->init != NULL && h->hht->align != NULL){
+    h->hht->init(hht->ht,
+		 h->elt_size,
+		 sizeof(size_t),
+		 h->count,
+		 hht->alpha_n,
+		 hht->log_alpha_d,
+		 h->cmp_elt,
+		 h->rdc_elt,
+		 NULL, /* only elt_size block is deleted in hash table */
+		 NULL);
+    /* elements dereferenced with size_t *; may be slighly overaligned */
+    h->hht->align(h->hht->ht, sizeof(size_t));
+  }
 }
 
 /**
@@ -181,7 +174,10 @@ void heap_init(heap_t *h,
    elt_alignment : alignment requirement or size of the type of the elt_size
                    block of an element; if size, must account for internal
                    and trailing padding according to sizeof
-   sz_alignment  : alignment requirement or size of size_t
+   sz_alignment  : - zero if a hash table was initialized prior to calling
+                   heap_init
+                   - otherwise, non-zero alignment requirement or size of
+                   size_t
 */
 void heap_align(heap_t *h,
 		size_t pty_alignment,
@@ -201,7 +197,7 @@ void heap_align(heap_t *h,
   h->buf = realloc_perror(h->buf, 2, h->pair_size);
   memset(h->buf, 0, 2 * h->pair_size);
   h->pty_elts = realloc_perror(h->pty_elts, h->count, h->pair_size);
-  h->hht->align(h->hht->ht, sz_alignment);
+  if (sz_alignment > 0) h->hht->align(h->hht->ht, sz_alignment);
 }
 
 /**

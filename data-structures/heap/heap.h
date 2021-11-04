@@ -54,10 +54,18 @@
 
 #include <stddef.h>
 
+/**
+   Heap hash table parameter struct. The function pointers point to the
+   hash table op helpers, pre-defined in each hash table. ht points
+   to a preallocated hash table struct. If a special hash table is used,
+   then ht points to an initialized hash table struct that already satisfies
+   the alignment requirements for the heap and the four following parameters
+   have zero zero NULL NULL values (alpha_n, log_alpha_d, init, align).
+*/
 typedef struct{
-  void *ht; /* points to a preallocated hash table struct */
-  
-  /* pointers to hash table op helpers, pre-defined in each hash table */
+  void *ht;
+  size_t alpha_n;
+  size_t log_alpha_d;
   void (*init)(void *,
 	       size_t,
 	       size_t,
@@ -75,14 +83,16 @@ typedef struct{
   void (*free)(void *);
 } heap_ht_t;
 
+
+/**
+   Heap struct.
+*/
 typedef struct{
   size_t pty_size;
   size_t elt_size;
   size_t elt_offset; /* number of bytes from beginning of pair to elt */
   size_t pair_size; /* size of a pty elt pair aligned in memory */
   size_t count;
-  size_t alpha_n;
-  size_t log_alpha_d;
   size_t num_elts;
   void *buf; /* only used by heap operations internally */
   void *pty_elts;
@@ -107,11 +117,6 @@ typedef struct{
                  expected to be present simultaneously in a heap; may result
                  in a speedup by avoiding the unnecessary growth steps of the
                  hash table
-   alpha_n     : > 0 numerator of a load factor upper bound
-   log_alpha_d : < size_t width; log base 2 of the denominator of the load
-                 factor upper bound; the denominator is a power of two;
-                 additional requirements may apply due to the type of a hash
-                 table
    hht         : a non-NULL pointer to a set of parameters specifying a
                  hash table for in-heap search and modifications
    cmp_pty     : comparison function which returns a negative integer value
@@ -148,8 +153,6 @@ void heap_init(heap_t *h,
 	       size_t pty_size,
 	       size_t elt_size,
 	       size_t min_num,
-	       size_t alpha_n,
-	       size_t log_alpha_d,
 	       const heap_ht_t *hht,
 	       int (*cmp_pty)(const void *, const void *),
 	       int (*cmp_elt)(const void *, const void *),
@@ -175,7 +178,10 @@ void heap_init(heap_t *h,
    elt_alignment : alignment requirement or size of the type of the elt_size
                    block of an element; if size, must account for internal
                    and trailing padding according to sizeof
-   sz_alignment  : alignment requirement or size of size_t
+   sz_alignment  : - zero if a hash table was initialized prior to calling
+                   heap_init
+                   - otherwise, non-zero alignment requirement or size of
+                   size_t
 */
 void heap_align(heap_t *h,
 		size_t pty_alignment,
