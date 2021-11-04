@@ -583,7 +583,7 @@ void small_graph_helper(void (*build)(adj_lst_t *,
   adj_lst_t a;
   ht_divchn_t ht_divchn;
   ht_muloa_t ht_muloa;
-  dijkstra_ht_t daht_divchn, daht_muloa;
+  daht_t daht_divchn, daht_muloa;
   void *wt_zero = NULL;
   void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
   void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;

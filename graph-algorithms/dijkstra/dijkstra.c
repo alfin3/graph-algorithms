@@ -138,34 +138,30 @@ void dijkstra(const adj_lst_t *a,
 	      void *dist,
 	      void *prev,
 	      const void *wt_zero,
-	      const dijkstra_ht_t *daht,
+	      const daht_t *daht,
 	      size_t (*read_vt)(const void *),
 	      void (*write_vt)(void *, size_t),
 	      void *(*at_vt)(const void *, const void *),
 	      int (*cmp_vt)(const void *, const void *),
 	      int (*cmp_wt)(const void *, const void *),
 	      void (*add_wt)(void *, const void *, const void *)){
-  size_t wt_offset =
-    add_sz_perror(mul_sz_perror(2, a->vt_size),
-		  (mul_sz_perror(2, a->vt_size) % a->wt_size != 0) *
-		  (a->wt_size - mul_sz_perror(2, a->vt_size) % a->wt_size));
   ht_def_t ht_def;
   heap_ht_t hht;
   heap_t h;
   void *p = NULL, *p_start = NULL, *p_end = NULL;
   void *dp = NULL;
-  /* initialize variables in single block for cache-efficiency */
+  /* variables in single block for cache-efficiency */
   void * const vars =
-    malloc_perror(1, add_sz_perror(wt_offset, mul_sz_perror(2, a->wt_size)));
+    malloc_perror(1, add_sz_perror(add_sz_perror(a->vt_size, a->wt_offset),
+				   mul_sz_perror(2, a->wt_size)));
   void * const u = vars;
-  void * const nr = (char *)vars + a->vt_size;
-  void * const du = (char *)vars + wt_offset;
-  void * const s = (char *)vars + wt_offset + a->wt_size;
+  void * const nr = (char *)u + a->vt_size;
+  void * const du = (char *)nr + a->wt_offset;
+  void * const s = (char *)du + a->wt_size;
   write_vt(u, start);
   write_vt(nr, a->num_vts);
   memcpy(du, wt_zero, a->wt_size);
   memcpy(s, wt_zero, a->wt_size);
-  /* initialize values in dist and prev arrays */
   memcpy(ptr(dist, read_vt(u), a->wt_size), wt_zero, a->wt_size);
   p_start = prev;
   p_end = ptr(prev, a->num_vts, a->vt_size);
@@ -173,7 +169,6 @@ void dijkstra(const adj_lst_t *a,
     memcpy(p, nr, a->vt_size);
   }
   memcpy(at_vt(prev, u), u, a->vt_size);
-  /* initialize the heap hash table parameter */
   if (daht == NULL){
     ht_def_init(&ht_def, a->num_vts, read_vt);
     hht.ht = &ht_def;
@@ -196,7 +191,6 @@ void dijkstra(const adj_lst_t *a,
     hht.remove = daht->remove;
     hht.free = daht->free;
   }
-  /* run algorithm */
   heap_init(&h, a->wt_size, a->vt_size, C_HEAP_INIT_COUNT, &hht,
 	    cmp_wt, cmp_vt, read_vt, NULL);
   heap_push(&h, du, u);
@@ -225,7 +219,7 @@ void dijkstra(const adj_lst_t *a,
 }
 
 /**
-   Default hash table operations, mapping value of the integer type
+   Default hash table operations, mapping values of the integer type
    used to represent vertices to size_t indices for in-heap operations.
 */
 
@@ -250,8 +244,9 @@ static void ht_def_insert(void *ht, const void *vt, const void *ix){
 
 static void *ht_def_search(const void *ht, const void *vt){
   const ht_def_t *ht_def = ht;
-  if (ht_def->elts[ht_def->read_vt(vt)] != ht_def->absent){
-    return (void *)&ht_def->elts[ht_def->read_vt(vt)];
+  const size_t *p = ht_def->elts + ht_def->read_vt(vt);
+  if (*p != ht_def->absent){
+    return (void *)p;
   }else{
     return NULL;
   }
@@ -259,8 +254,10 @@ static void *ht_def_search(const void *ht, const void *vt){
 
 static void ht_def_remove(void *ht, const void *vt, void *ix){
   ht_def_t *ht_def = ht;
-  if (ht_def->elts[ht_def->read_vt(vt)] != ht_def->absent){
-    *(size_t *)ix = ht_def->elts[ht_def->read_vt(vt)];
+  size_t *p = ht_def->elts + ht_def->read_vt(vt);
+  if (*p != ht_def->absent){
+    *(size_t *)ix = *p;
+    *p = ht_def->absent;
   }
 }
 

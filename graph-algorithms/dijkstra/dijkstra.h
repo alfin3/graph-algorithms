@@ -75,7 +75,7 @@ typedef struct{
   void *(*search)(const void *, const void *);
   void (*remove)(void *, const void *, void *);
   void (*free)(void *);
-} dijkstra_ht_t;
+} daht_t;
 
 /**
    Computes and copies the shortest distances from start to the array
@@ -143,7 +143,7 @@ void dijkstra(const adj_lst_t *a,
 	      void *dist,
 	      void *prev,
 	      const void *wt_zero,
-	      const dijkstra_ht_t *daht,
+	      const daht_t *daht,
 	      size_t (*read_vt)(const void *),
 	      void (*write_vt)(void *, size_t),
 	      void *(*at_vt)(const void *, const void *),
