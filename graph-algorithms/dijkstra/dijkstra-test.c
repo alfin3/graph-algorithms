@@ -7,8 +7,8 @@
 
    The following command line arguments can be used to customize tests:
    dijkstra-test:
-   -  [0, # bits in size_t / 2] : n for 2^n vertices in the smallest graph
-   -  [0, # bits in size_t / 2] : n for 2^n vertices in the largest graph
+   -  [0, # bits in size_t / 2] : n for 2**n vertices in the smallest graph
+   -  [0, # bits in size_t / 2] : n for 2**n vertices in the largest graph
    -  [0, 1] : small graph test on/off
    -  [0, 1] : bfs comparison test on/off
    -  [0, 1] : test on random graphs with random size_t weights on/off
@@ -26,7 +26,8 @@
 
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 and C99 with the requirement that the width of size_t
-   is greater or equal to 16, less than 2040, and is even.
+   is greater or equal to 16. Additionally, the width of unsigned short, 
+   unsigned int, unsigned long and size_t must be less than 2040, and is even.
 
    TODO: add portable size_t printing
 */
@@ -62,8 +63,8 @@
 /* input handling */
 const char *C_USAGE =
   "dijkstra-test \n"
-  "[0, # bits in size_t / 2] : n for 2^n vertices in smallest graph\n"
-  "[0, # bits in size_t / 2] : n for 2^n vertices in largest graph\n"
+  "[0, # bits in size_t / 2] : n for 2**n vertices in smallest graph\n"
+  "[0, # bits in size_t / 2] : n for 2**n vertices in largest graph\n"
   "[0, 1] : small graph test on/off\n"
   "[0, 1] : bfs comparison test on/off\n"
   "[0, 1] : random graphs with random size_t weights test on/off\n";
@@ -239,6 +240,29 @@ const char *C_WT_TYPES[5] = {"ushort",
 			     "double"};
 
 /* random graph tests */
+const size_t C_RANDOM_BIT = 15; /*RAND_MAX is at least 32767 */
+const unsigned int C_RANDOM_MASK = 32767;
+
+const size_t C_USHORT_BIT = UINT_WIDTH_FROM_MAX((unsigned short)-1);
+const size_t C_USHORT_BIT_MOD = UINT_WIDTH_FROM_MAX((unsigned short)-1) / 15;
+const size_t C_USHORT_HALF_BIT = UINT_WIDTH_FROM_MAX((unsigned short)-1) / 2;
+const size_t C_USHORT_LOW_MASK = ((unsigned short)-1) >> UINT_WIDTH_FROM_MAX((unsigned short)-1) / 2;
+
+const size_t C_UINT_BIT = UINT_WIDTH_FROM_MAX((unsigned int)-1);
+const size_t C_UINT_BIT_MOD = UINT_WIDTH_FROM_MAX((unsigned int)-1) / 15;
+const size_t C_UINT_HALF_BIT = UINT_WIDTH_FROM_MAX((unsigned int)-1) / 2;
+const size_t C_UINT_LOW_MASK = ((unsigned int)-1) >> UINT_WIDTH_FROM_MAX((unsigned int)-1) / 2;
+
+const size_t C_ULONG_BIT = UINT_WIDTH_FROM_MAX((unsigned long)-1);
+const size_t C_ULONG_BIT_MOD = UINT_WIDTH_FROM_MAX((unsigned long)-1) / 15;
+const size_t C_ULONG_HALF_BIT = UINT_WIDTH_FROM_MAX((unsigned long)-1) / 2;
+const size_t C_ULONG_LOW_MASK = ((unsigned long)-1) >> UINT_WIDTH_FROM_MAX((unsigned long)-1) / 2;
+
+const size_t C_SZ_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
+const size_t C_SZ_BIT_MOD = UINT_WIDTH_FROM_MAX((size_t)-1) / 15;
+const size_t C_SZ_HALF_BIT = UINT_WIDTH_FROM_MAX((size_t)-1) / 2;
+const size_t C_SZ_LOW_MASK = ((size_t)-1) >> UINT_WIDTH_FROM_MAX((size_t)-1) / 2;
+
 const size_t C_ITER = 10u;
 const size_t C_PROBS_COUNT = 7u;
 const double C_PROBS[7] = {1.000000, 0.250000, 0.062500,
@@ -246,6 +270,17 @@ const double C_PROBS[7] = {1.000000, 0.250000, 0.062500,
 			   0.000000};
 const size_t C_WEIGHT_HIGH = ((size_t)-1 >>
 			      ((UINT_WIDTH_FROM_MAX((size_t)-1) + 1) / 2));
+
+/* random number generation */
+unsigned short random_ushort();
+unsigned int random_uint();
+unsigned long random_ulong();
+size_t random_sz();
+
+unsigned short mul_high_ushort(unsigned short a, unsigned short b);
+unsigned int mul_high_uint(unsigned int a, unsigned int b);
+unsigned long mul_high_ulong(unsigned long a, unsigned long b);
+size_t mul_high_sz(size_t a, size_t b);
 
 /* additional operations */
 void *ptr(const void *block, size_t i, size_t size);
@@ -675,16 +710,113 @@ void small_graph_helper(void (*build)(adj_lst_t *,
 }
   
 void run_small_graph_test(){
-  printf("Run a dijkstra test on a directed graph across vertex and weight types, with a\n"
+  printf("Run a dijkstra test on a directed graph across vertex and weight"
+	 " types, with a\n"
 	 "i) default hash table (index array)\n"
 	 "ii) ht_divchn_t hash table\n"
 	 "iii) ht_muloa_t hash table\n\n");
   small_graph_helper(adj_lst_dir_build);
-  printf("Run a dijkstra test on an undirected graph across vertex and weight types, with a\n"
+  printf("Run a dijkstra test on an undirected graph across vertex and"
+	 " weight types, with a\n"
 	 "i) default hash table (index array)\n"
 	 "ii) ht_divchn_t hash table\n"
 	 "iii) ht_muloa_t hash table\n\n");
   small_graph_helper(adj_lst_undir_build);
+}
+
+/** 
+    Construct adjacency lists of random directed graphs with random 
+    weights across vertex and weight types.
+*/
+
+typedef struct{
+  double p;
+} bern_arg_t;
+
+int bern(void *arg){
+  bern_arg_t *b = arg;
+  if (b->p >= 1.0) return 1;
+  if (b->p <= 0.0) return 0;
+  if (b->p > DRAND()) return 1;
+  return 0;
+}
+
+/**
+   The overflow bits after multiplication are used for computing
+   an in-range random number (i.e. multiply with a random number of
+   a type and divide by the maximum value of the type plus one). 
+
+ */
+
+void add_dir_ushort_edge(adj_lst_t *a,
+			 size_t u,
+			 size_t v,
+			 const void *wt_l,
+			 const void *wt_h,
+			 void (*write_vt)(void *, size_t),
+			 int (*bern)(void *),
+			 void *arg){
+  unsigned short rand_val =
+    (*(unsigned short *)wt_l +
+     mul_high_ushort(random_ushort(),
+		     (*(unsigned short *)wt_h - *(unsigned short *)wt_l)));
+  adj_lst_add_dir_edge(a, u, v, &rand_val, write_vt, bern, arg);
+}
+
+void add_dir_uint_edge(adj_lst_t *a,
+		       size_t u,
+		       size_t v,
+		       const void *wt_l,
+		       const void *wt_h,
+		       void (*write_vt)(void *, size_t),
+		       int (*bern)(void *),
+		       void *arg){
+  unsigned int rand_val =
+    mul_high_uint(random_uint(),
+		  (*(unsigned int *)wt_h - *(unsigned int *)wt_l));
+  adj_lst_add_dir_edge(a, u, v, &rand_val, write_vt, bern, arg);
+}
+
+void add_dir_ulong_edge(adj_lst_t *a,
+			size_t u,
+			size_t v,
+			const void *wt_l,
+			const void *wt_h,
+			void (*write_vt)(void *, size_t),
+			int (*bern)(void *),
+			void *arg){
+  unsigned long rand_val =
+    mul_high_ulong(random_ulong(),
+		   (*(unsigned long *)wt_h - *(unsigned long *)wt_l));
+  adj_lst_add_dir_edge(a, u, v, &rand_val, write_vt, bern, arg);
+}
+
+void add_dir_sz_edge(adj_lst_t *a,
+		     size_t u,
+		     size_t v,
+		     const void *wt_l,
+		     const void *wt_h,
+		     void (*write_vt)(void *, size_t),
+		     int (*bern)(void *),
+		     void *arg){
+  size_t rand_val =
+    mul_high_sz(random_sz(),
+		(*(size_t *)wt_h - *(size_t *)wt_l));
+  adj_lst_add_dir_edge(a, u, v, &rand_val, write_vt, bern, arg);
+}
+
+void add_dir_double_edge(adj_lst_t *a,
+			 size_t u,
+			 size_t v,
+			 const void *wt_l,
+			 const void *wt_h,
+			 void (*write_vt)(void *, size_t),
+			 int (*bern)(void *),
+			 void *arg){
+  double rand_val = (*(double *)wt_l + DRAND() *
+		     (*(double *)wt_h -
+		      *(double *)wt_l));
+  adj_lst_add_dir_edge(a, u, v, &rand_val, write_vt, bern, arg);
 }
 
 /**
@@ -695,21 +827,160 @@ void *ptr(const void *block, size_t i, size_t size){
 }
 
 /**
+   Portable random number generation. For better uniformity (according
+   to rand) RAND_MAX should be 32767 or many times larger than 32768 on
+   a given system.
+
+   According to C89 (draft):
+
+   "When a signed integer is converted to an unsigned integer with equal or
+   greater size, if the value of the signed integer is nonnegative, its
+   value is unchanged."
+
+   "For each of the signed integer types, there is a corresponding (but
+   different) unsigned integer type (designated with the keyword unsigned)
+   that uses the same amount of storage (including sign information) and has
+   the same alignment requirements" 
+
+   "When an integer is demoted to an unsigned integer with smaller size,
+   the result is the nonnegative remainder on division by the number one
+   greater than the largest unsigned number that can be represented in the
+   type with smaller size. "
+
+   It is guaranteed that: sizeof(short) <= sizeof(int) <= sizeof(long)
+*/
+
+unsigned short random_ushort(){
+  size_t i;
+  unsigned short ret = 0;
+  for (i = 0; i <= C_USHORT_BIT_MOD; i++){
+    ret |= ((unsigned short)((unsigned int)RANDOM() & C_RANDOM_MASK) <<
+	    (i * C_RANDOM_BIT));
+  }
+  return ret;
+}
+
+unsigned int random_uint(){
+  size_t i;
+  unsigned int ret = 0;
+  for (i = 0; i <= C_UINT_BIT_MOD; i++){
+    ret |= ((unsigned int)RANDOM() & C_RANDOM_MASK) << (i * C_RANDOM_BIT);
+  }
+  return ret;
+}
+
+unsigned long random_ulong(){
+  size_t i;
+  unsigned long ret = 0;
+  for (i = 0; i <= C_ULONG_BIT_MOD; i++){
+    ret |= ((unsigned long)((unsigned int)RANDOM() & C_RANDOM_MASK) <<
+	    (i * C_RANDOM_BIT));
+  }
+  return ret;
+}
+
+size_t random_sz(){
+  size_t i;
+  size_t ret = 0;
+  for (i = 0; i <= C_SZ_BIT_MOD; i++){
+    ret |= ((size_t)((unsigned int)RANDOM() & C_RANDOM_MASK) <<
+	    (i * C_RANDOM_BIT));
+  }
+  return ret;
+}
+
+unsigned short mul_high_ushort(unsigned short a, unsigned short b){
+  unsigned short al, bl, ah, bh, al_bl, al_bh;
+  unsigned short overlap;
+  al = a & C_USHORT_LOW_MASK;
+  bl = b & C_USHORT_LOW_MASK;
+  ah = a >> C_USHORT_HALF_BIT;
+  bh = b >> C_USHORT_HALF_BIT;
+  al_bl = al * bl;
+  al_bh = al * bh;
+  overlap = ((bl * ah & C_USHORT_LOW_MASK) +
+	     (al_bh & C_USHORT_LOW_MASK) +
+	     (al_bl >> C_USHORT_HALF_BIT));
+  return ((overlap >> C_USHORT_HALF_BIT) +
+	  ah * bh +
+	  (ah * bl >> C_USHORT_HALF_BIT) +
+	  (al_bh >> C_USHORT_HALF_BIT));
+}
+
+unsigned int mul_high_uint(unsigned int a, unsigned int b){
+  unsigned int al, bl, ah, bh, al_bl, al_bh;
+  unsigned int overlap;
+  al = a & C_UINT_LOW_MASK;
+  bl = b & C_UINT_LOW_MASK;
+  ah = a >> C_UINT_HALF_BIT;
+  bh = b >> C_UINT_HALF_BIT;
+  al_bl = al * bl;
+  al_bh = al * bh;
+  overlap = ((bl * ah & C_UINT_LOW_MASK) +
+	     (al_bh & C_UINT_LOW_MASK) +
+	     (al_bl >> C_UINT_HALF_BIT));
+  return ((overlap >> C_UINT_HALF_BIT) +
+	  ah * bh +
+	  (ah * bl >> C_UINT_HALF_BIT) +
+	  (al_bh >> C_UINT_HALF_BIT));
+}
+
+unsigned long mul_high_ulong(unsigned long a, unsigned long b){
+  unsigned long al, bl, ah, bh, al_bl, al_bh;
+  unsigned long overlap;
+  al = a & C_ULONG_LOW_MASK;
+  bl = b & C_ULONG_LOW_MASK;
+  ah = a >> C_ULONG_HALF_BIT;
+  bh = b >> C_ULONG_HALF_BIT;
+  al_bl = al * bl;
+  al_bh = al * bh;
+  overlap = ((bl * ah & C_ULONG_LOW_MASK) +
+	     (al_bh & C_ULONG_LOW_MASK) +
+	     (al_bl >> C_ULONG_HALF_BIT));
+  return ((overlap >> C_ULONG_HALF_BIT) +
+	  ah * bh +
+	  (ah * bl >> C_ULONG_HALF_BIT) +
+	  (al_bh >> C_ULONG_HALF_BIT));
+}
+
+size_t mul_high_sz(size_t a, size_t b){
+  size_t al, bl, ah, bh, al_bl, al_bh;
+  size_t overlap;
+  al = a & C_SZ_LOW_MASK;
+  bl = b & C_SZ_LOW_MASK;
+  ah = a >> C_SZ_HALF_BIT;
+  bh = b >> C_SZ_HALF_BIT;
+  al_bl = al * bl;
+  al_bh = al * bh;
+  overlap = ((bl * ah & C_SZ_LOW_MASK) +
+	     (al_bh & C_SZ_LOW_MASK) +
+	     (al_bl >> C_SZ_HALF_BIT));
+  return ((overlap >> C_SZ_HALF_BIT) +
+	  ah * bh +
+	  (ah * bl >> C_SZ_HALF_BIT) +
+	  (al_bh >> C_SZ_HALF_BIT));
+}
+
+/**
    Printing functions.
 */
 
 void print_ushort(const void *a){
   printf("%hu", *(const unsigned short *)a);
 }
+
 void print_uint(const void *a){
   printf("%u", *(const unsigned int *)a);
-} 
+}
+
 void print_ulong(const void *a){
   printf("%lu", *(const unsigned long *)a);
-} 
+}
+
 void print_sz(const void *a){
   printf("%lu", TOLU(*(const size_t *)a));
 }
+
 void print_double(const void *a){
   printf("%.1f", *(const double *)a);
 } 
