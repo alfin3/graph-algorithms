@@ -70,6 +70,7 @@ static void *ht_def_search(const void *ht, const void *vt);
 static void ht_def_remove(void *ht, const void *vt, void *ix);
 static void ht_def_free(void *ht);
 
+static size_t compute_wt_offset(const adj_lst_t *a);
 static void *ptr(const void *block, size_t i, size_t size);
 
 /**
@@ -138,7 +139,7 @@ void dijkstra(const adj_lst_t *a,
 	      void *dist,
 	      void *prev,
 	      const void *wt_zero,
-	      const daht_t *daht,
+	      const dijkstra_ht_t *daht,
 	      size_t (*read_vt)(const void *),
 	      void (*write_vt)(void *, size_t),
 	      void *(*at_vt)(const void *, const void *),
@@ -265,6 +266,18 @@ static void ht_def_free(void *ht){
   ht_def_t *ht_def = ht;
   free(ht_def->elts);
   ht_def->elts = NULL;
+}
+
+/**
+   Computes the wt_offset from malloc's pointer in the vars block
+   consisting of two vt_size blocks followed by two wt_size blocks.
+*/
+static size_t compute_wt_offset(const adj_lst_t *a){
+  size_t wt_rem;
+  size_t vt_pair_size = mul_sz_perror(2, a->vt_size);
+  if (vt_pair_size <= a->wt_size) return a->wt_size;
+  wt_rem = vt_pair_size % a->wt_size;
+  return add_sz_perror(vt_pair_size, (wt_rem > 0) * (a->wt_size - wt_rem));
 }
 
 /**
