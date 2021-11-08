@@ -153,11 +153,11 @@ void dijkstra(const adj_lst_t *a,
   void *dp = NULL;
   /* variables in single block for cache-efficiency */
   void * const vars =
-    malloc_perror(1, add_sz_perror(add_sz_perror(a->vt_size, a->wt_offset),
+    malloc_perror(1, add_sz_perror(compute_wt_offset(a),
 				   mul_sz_perror(2, a->wt_size)));
   void * const u = vars;
   void * const nr = (char *)u + a->vt_size;
-  void * const du = (char *)nr + a->wt_offset;
+  void * const du = (char *)u + compute_wt_offset(a);
   void * const s = (char *)du + a->wt_size;
   write_vt(u, start);
   write_vt(nr, a->num_vts);
