@@ -184,12 +184,6 @@ const char *C_VT_TYPES[4] = {"ushort", "uint  ", "ulong ", "sz    "};
 
 /* weight and print ops */
 
-void zero_ushort(void *a);
-void zero_uint(void *a);
-void zero_ulong(void *a);
-void zero_sz(void *a);
-void zero_double(void *a);
-
 int cmp_ushort(const void *a, const void *b);
 int cmp_uint(const void *a, const void *b);
 int cmp_ulong(const void *a, const void *b);
@@ -202,18 +196,6 @@ void add_ulong(void *s, const void *a, const void *b);
 void add_sz(void *s, const void *a, const void *b);
 void add_double(void *s, const void *a, const void *b);
 
-void print_ushort(const void *a);
-void print_uint(const void *a);
-void print_ulong(const void *a);
-void print_sz(const void *a);
-void print_double(const void *a);
-
-void (* const C_ZERO_WT[5])(void *) ={
-  zero_ushort,
-  zero_uint,
-  zero_ulong,
-  zero_sz,
-  zero_double};
 int (* const C_CMP_WT[5])(const void *, const void *) ={
   cmp_ushort,
   cmp_uint,
@@ -226,12 +208,6 @@ void (* const C_ADD_WT[5])(void *, const void *, const void *) ={
   add_ulong,
   add_sz,
   add_double};
-void (* const C_PRINT[5])(const void *) ={
-  print_ushort,
-  print_uint,
-  print_ulong,
-  print_sz,
-  print_double};
 const size_t C_WT_SIZES[5] = {
   sizeof(unsigned short),
   sizeof(unsigned int),
@@ -331,6 +307,7 @@ void add_dir_double_edge(adj_lst_t *a,
 			 void (*write_vt)(void *, size_t),
 			 int (*bern)(void *),
 			 void *arg);
+
 void (* const C_ADD_DIR_EDGE[5])(adj_lst_t *,
 				 size_t,
 				 size_t,
@@ -344,6 +321,45 @@ void (* const C_ADD_DIR_EDGE[5])(adj_lst_t *,
   add_dir_ulong_edge,
   add_dir_sz_edge,
   add_dir_double_edge};
+
+/* value initiliazation and printing */
+
+void zero_ushort(void *a);
+void zero_uint(void *a);
+void zero_ulong(void *a);
+void zero_sz(void *a);
+void zero_double(void *a);
+
+void one_ushort(void *a);
+void one_uint(void *a);
+void one_ulong(void *a);
+void one_sz(void *a);
+void one_double(void *a);
+
+void print_ushort(const void *a);
+void print_uint(const void *a);
+void print_ulong(const void *a);
+void print_sz(const void *a);
+void print_double(const void *a);
+
+void (* const C_ZERO[5])(void *) ={
+  zero_ushort,
+  zero_uint,
+  zero_ulong,
+  zero_sz,
+  zero_double};
+void (* const C_ONE[5])(void *) ={
+  one_ushort,
+  one_uint,
+  one_ulong,
+  one_sz,
+  one_double};
+void (* const C_PRINT[5])(const void *) ={
+  print_ushort,
+  print_uint,
+  print_ulong,
+  print_sz,
+  print_double};
 
 /* additional operations */
 void *ptr(const void *block, size_t i, size_t size);
@@ -591,22 +607,6 @@ void init_ulong_ushort_no_edges(graph_t *g){
    Run a test on small graphs across vertex and weight types.
 */
 
-void zero_ushort(void *a){
-  *(unsigned short *)a = 0;
-}
-void zero_uint(void *a){
-  *(unsigned int *)a = 0;
-}
-void zero_ulong(void *a){
-  *(unsigned long *)a = 0;
-}
-void zero_sz(void *a){
-  *(size_t *)a = 0;
-}
-void zero_double(void *a){
-  *(double *)a = 0.0;
-}
-
 int cmp_ushort(const void *a, const void *b){
   if (*(const unsigned short *)a > *(const unsigned short *)b){
     return 1;
@@ -716,7 +716,7 @@ void small_graph_helper(void (*build)(adj_lst_t *,
 	dist_def = realloc_perror(dist_def, a.num_vts, a.wt_size);
 	dist_divchn = realloc_perror(dist_divchn, a.num_vts, a.wt_size);
 	dist_muloa = realloc_perror(dist_muloa, a.num_vts, a.wt_size);
-	C_ZERO_WT[k](wt_zero);
+	C_ZERO[k](wt_zero);
 	dijkstra(&a, i, dist_def, prev_def, wt_zero, NULL,
 		 C_READ_VT[j], C_WRITE_VT[j], C_AT_VT[j], C_CMP_VT[j],
 		 C_CMP_WT[k], C_ADD_WT[k]);
@@ -949,8 +949,9 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
   daht_muloa.search = ht_muloa_search_helper;
   daht_muloa.remove = ht_muloa_remove_helper;
   daht_muloa.free = ht_muloa_free_helper;
-  printf("Run a bfs and dijkstra test on random directed "
-	 "graphs across vertex types and integer weight types\n");
+  printf("Run a bfs and dijkstra test on random directed graphs across "
+	 "vertex types and integer weight types;\nthe runtime is averaged"
+	 " over %lu runs from random start vertices\n", TOLU(C_ITER));
   fflush(stdout);
   for (p = 0; p < C_PROBS_COUNT; p++){
     b.p = C_PROBS[p];
@@ -973,8 +974,8 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
 	  dist_def = realloc_perror(dist_def, num_vts, wt_size);
 	  dist_divchn = realloc_perror(dist_divchn, num_vts, wt_size);
 	  dist_muloa = realloc_perror(dist_muloa, num_vts, wt_size);
-	  C_WRITE_VT[k](wt_l, 1); /* k < C_FN_VT_COUNT here */
-	  C_ZERO_WT[k](wt_zero);
+	  C_ONE[k](wt_l);
+	  C_ZERO[k](wt_zero);
 	  graph_base_init(&g, num_vts, vt_size, wt_size);
 	  adj_lst_rand_dir_wts(&g, &a, wt_l, wt_l,
 			       C_WRITE_VT[j], bern, &b, C_ADD_DIR_EDGE[k]);
@@ -1009,18 +1010,41 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
 		     C_CMP_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
 	  }
 	  t_muloa = clock() - t_muloa;
-	  printf("\t\tvertex type: %s, edge type: %s, # dir. edges: %lu\n",
-		 C_VT_TYPES[j], C_WT_TYPES[k], TOLU(a.num_es));
-	  printf("\t\t\tbfs ave runtime:                     %.8f seconds\n"
-		 "\t\t\tdijkstra default ht ave runtime:     %.8f seconds\n"
-		 "\t\t\tdijkstra ht_divchn ave runtime:      %.8f seconds\n"
-		 "\t\t\tdijkstra ht_muloa ave runtime:       %.8f seconds\n",
+	  for (l = 0; l < num_vts; l++){
+	    if (C_READ_VT[j](ptr(prev_bfs, l, vt_size)) == num_vts){
+	      res *=
+		(C_READ_VT[j](ptr(prev_def, l, vt_size)) == num_vts &&
+		 C_READ_VT[j](ptr(prev_divchn, l, vt_size)) == num_vts &&
+		 C_READ_VT[j](ptr(prev_muloa, l, vt_size)) == num_vts);
+	    }else{
+	      /* distances must be equal */
+	      res *=
+		(C_CMP_WT[k](ptr(dist_def, l, wt_size),
+			     ptr(dist_divchn, l, wt_size)) == 0 &&
+		 C_CMP_WT[k](ptr(dist_divchn, l, wt_size),
+			     ptr(dist_muloa, l, wt_size)) == 0 &&
+		 /* relies on k < C_FN_WT_COUNT - 1 (integer distances) */
+		 C_READ_VT[j](ptr(dist_bfs, l, vt_size)) ==
+		 C_READ_VT[k](ptr(dist_divchn, l, wt_size)));
+	    }
+	  }
+	  printf("\t\t\t# edges: %lu\n", TOLU(a.num_es));
+	  printf("\t\t\t\t%s %s bfs:                     %.8f seconds\n"
+		 "\t\t\t\t%s %s dijkstra default ht:     %.8f seconds\n"
+		 "\t\t\t\t%s %s dijkstra ht_divchn:      %.8f seconds\n"
+		 "\t\t\t\t%s %s dijkstra ht_muloa:       %.8f seconds\n",
+		 C_VT_TYPES[j], C_WT_TYPES[k],
 		 (float)t_bfs / C_ITER / CLOCKS_PER_SEC,
+		 C_VT_TYPES[j], C_WT_TYPES[k],
 		 (float)t_def / C_ITER / CLOCKS_PER_SEC,
+		 C_VT_TYPES[j], C_WT_TYPES[k],
 		 (float)t_divchn / C_ITER / CLOCKS_PER_SEC,
+		 C_VT_TYPES[j], C_WT_TYPES[k],
 		 (float)t_muloa / C_ITER / CLOCKS_PER_SEC);
-	  printf("\t\t\tcorrectness:                         ");
+	  printf("\t\t\t\t%s %s correctness:             ",
+		 C_VT_TYPES[j], C_WT_TYPES[k]);
 	  print_test_result(res);
+	  printf("\n");
 	  res = 1;
 	  adj_lst_free(&a);
 	}
@@ -1052,16 +1076,12 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
 }
 
 /**
-   Computes a pointer to the ith element in the block of elements.
-*/
-void *ptr(const void *block, size_t i, size_t size){
-  return (void *)((char *)block + i * size);
-}
-
-/**
    Portable random number generation. For better uniformity (according
    to rand) RAND_MAX should be 32767 or many times larger than 32768 on
-   a given system.
+   a given system. Given a value n of one of the below unsigned integral
+   types, the overflow bits after multipying n with a random number of
+   the same type represent a random number of the type within the range
+   [0, n).
 
    According to C89 (draft):
 
@@ -1194,8 +1214,40 @@ size_t mul_high_sz(size_t a, size_t b){
 }
 
 /**
-   Printing functions.
+   Value initiliazation and printing.
 */
+
+void zero_ushort(void *a){
+  *(unsigned short *)a = 0;
+}
+void zero_uint(void *a){
+  *(unsigned int *)a = 0;
+}
+void zero_ulong(void *a){
+  *(unsigned long *)a = 0;
+}
+void zero_sz(void *a){
+  *(size_t *)a = 0;
+}
+void zero_double(void *a){
+  *(double *)a = 0.0;
+}
+
+void one_ushort(void *a){
+  *(unsigned short *)a = 1;
+}
+void one_uint(void *a){
+  *(unsigned int *)a = 1;
+}
+void one_ulong(void *a){
+  *(unsigned long *)a = 1;
+}
+void one_sz(void *a){
+  *(size_t *)a = 1;
+}
+void one_double(void *a){
+  *(double *)a = 1.0;
+}
 
 void print_ushort(const void *a){
   printf("%hu", *(const unsigned short *)a);
@@ -1215,7 +1267,14 @@ void print_sz(const void *a){
 
 void print_double(const void *a){
   printf("%.1f", *(const double *)a);
-} 
+}
+
+/**
+   Computes a pointer to the ith element in the block of elements.
+*/
+void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
+}
 
 /**
    Prints an array.
