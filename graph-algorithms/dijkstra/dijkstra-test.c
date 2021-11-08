@@ -654,13 +654,16 @@ int cmp_double(const void *a, const void *b){
 }
 
 void add_ushort(void *s, const void *a, const void *b){
-  *(unsigned short *)s = *(const unsigned short *)a + *(const unsigned short *)b;
+  *(unsigned short *)s =
+    *(const unsigned short *)a + *(const unsigned short *)b;
 }
 void add_uint(void *s, const void *a, const void *b){
-  *(unsigned int *)s = *(const unsigned int *)a + *(const unsigned int *)b;
+  *(unsigned int *)s =
+    *(const unsigned int *)a + *(const unsigned int *)b;
 }
 void add_ulong(void *s, const void *a, const void *b){
-  *(unsigned long *)s = *(const unsigned long *)a + *(const unsigned long *)b;
+  *(unsigned long *)s =
+    *(const unsigned long *)a + *(const unsigned long *)b;
 }
 void add_sz(void *s, const void *a, const void *b){
   *(size_t *)s = *(const size_t *)a + *(const size_t *)b;
@@ -976,6 +979,13 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
 	  dist_muloa = realloc_perror(dist_muloa, num_vts, wt_size);
 	  C_ONE[k](wt_l);
 	  C_ZERO[k](wt_zero);
+	  for (l = 0; l < num_vts; l++){
+	    /* avoid trap representations in tests */
+	    C_ZERO[j](ptr(dist_bfs, l, vt_size));
+	    C_ZERO[k](ptr(dist_def, l, wt_size));
+	    C_ZERO[k](ptr(dist_divchn, l, wt_size));
+	    C_ZERO[k](ptr(dist_muloa, l, wt_size));
+	  } 
 	  graph_base_init(&g, num_vts, vt_size, wt_size);
 	  adj_lst_rand_dir_wts(&g, &a, wt_l, wt_l,
 			       C_WRITE_VT[j], bern, &b, C_ADD_DIR_EDGE[k]);
@@ -1017,7 +1027,12 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
 		 C_READ_VT[j](ptr(prev_divchn, l, vt_size)) == num_vts &&
 		 C_READ_VT[j](ptr(prev_muloa, l, vt_size)) == num_vts);
 	    }else{
-	      /* distances must be equal */
+	      /* prev may differ from bfs, but distances are equal */
+	      res *= (C_READ_VT[j](ptr(prev_def, l, vt_size)) < num_vts &&
+		      C_READ_VT[j](ptr(prev_def, l, vt_size)) ==
+		      C_READ_VT[j](ptr(prev_divchn, l, vt_size)) &&
+		      C_READ_VT[j](ptr(prev_divchn, l, vt_size)) ==
+		      C_READ_VT[j](ptr(prev_muloa, l, vt_size)));
 	      res *=
 		(C_CMP_WT[k](ptr(dist_def, l, wt_size),
 			     ptr(dist_divchn, l, wt_size)) == 0 &&
