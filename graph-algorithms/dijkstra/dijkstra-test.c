@@ -7,11 +7,11 @@
 
    The following command line arguments can be used to customize tests:
    dijkstra-test:
-   -  [0, # bits in size_t / 2] : n for 2**n vertices in the smallest graph
-   -  [0, # bits in size_t / 2] : n for 2**n vertices in the largest graph
+   -  [0, ushort width) : n for 2**n vertices in the smallest graph
+   -  [0, ushort width) : n for 2**n vertices in the largest graph
    -  [0, 1] : small graph test on/off
    -  [0, 1] : bfs comparison test on/off
-   -  [0, 1] : test on random graphs with random size_t weights on/off
+   -  [0, 1] : test on random graphs with random weights on/off
 
    usage examples: 
    ./dijkstra-test
@@ -25,9 +25,10 @@
    second argument, and 1 for the following arguments.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the requirement that width of size_t is greater
-   greater or equal to 16. Additionally, the widths of unsigned intergral
-   types are less than 2040 and even.
+   C89/C90 and C99. The tests require that the maximum value of unsigned
+   short (USHRT_MAX, >= 65535) can be represented as size_t and can be
+   converted to double. The tests also require that the widths of the
+   unsigned intergral types are less than 2040 and even.
 
    TODO: add portable size_t printing
 */
@@ -63,11 +64,11 @@
 /* input handling */
 const char *C_USAGE =
   "dijkstra-test \n"
-  "[0, # bits in size_t / 2] : n for 2**n vertices in smallest graph\n"
-  "[0, # bits in size_t / 2] : n for 2**n vertices in largest graph\n"
+  "[0, ushort width) : n for 2**n vertices in smallest graph\n"
+  "[0, ushort width) : n for 2**n vertices in largest graph\n"
   "[0, 1] : small graph test on/off\n"
   "[0, 1] : bfs comparison test on/off\n"
-  "[0, 1] : random graphs with random size_t weights test on/off\n";
+  "[0, 1] : random graphs with random weights test on/off\n";
 const int C_ARGC_MAX = 6;
 const size_t C_ARGS_DEF[5] = {0u, 10u, 1u, 1u, 1u};
 const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
@@ -125,8 +126,9 @@ void init_sz_ulong(graph_t *g);
 void init_sz_sz(graph_t *g);
 void init_sz_double(graph_t *g);
 
-const size_t C_FN_VT_COUNT = 4;
-const size_t C_FN_WT_COUNT = 5;
+const size_t C_FN_VT_COUNT = 4u;
+const size_t C_FN_WT_COUNT = 5u;
+const size_t C_FN_INTEGRAL_WT_COUNT = 4u;
 void (* const C_INIT_GRAPH[4][5])(graph_t *) ={
   {init_ushort_ushort,
    init_ushort_uint,
@@ -229,24 +231,28 @@ const unsigned int C_RANDOM_MASK = 32767u;
 const size_t C_USHORT_BIT = UINT_WIDTH_FROM_MAX(USHRT_MAX);
 const size_t C_USHORT_BIT_MOD = UINT_WIDTH_FROM_MAX(USHRT_MAX) / 15u;
 const size_t C_USHORT_HALF_BIT = UINT_WIDTH_FROM_MAX(USHRT_MAX) / 2u;
+const unsigned short C_USHORT_MAX = USHRT_MAX;
 const unsigned short C_USHORT_LOW_MASK =
   ((unsigned short)-1 >> (UINT_WIDTH_FROM_MAX(USHRT_MAX) / 2u));
 
 const size_t C_UINT_BIT = UINT_WIDTH_FROM_MAX(UINT_MAX);
 const size_t C_UINT_BIT_MOD = UINT_WIDTH_FROM_MAX(UINT_MAX) / 15u;
 const size_t C_UINT_HALF_BIT = UINT_WIDTH_FROM_MAX(UINT_MAX) / 2u;
+const unsigned int C_UINT_MAX = UINT_MAX;
 const unsigned int C_UINT_LOW_MASK =
   ((unsigned int)-1 >> (UINT_WIDTH_FROM_MAX(UINT_MAX) / 2u));
 
 const size_t C_ULONG_BIT = UINT_WIDTH_FROM_MAX(ULONG_MAX);
 const size_t C_ULONG_BIT_MOD = UINT_WIDTH_FROM_MAX(ULONG_MAX) / 15u;
 const size_t C_ULONG_HALF_BIT = UINT_WIDTH_FROM_MAX(ULONG_MAX) / 2u;
+const unsigned long C_ULONG_MAX = ULONG_MAX;
 const unsigned long C_ULONG_LOW_MASK =
   ((unsigned long)-1 >> (UINT_WIDTH_FROM_MAX(ULONG_MAX) / 2u));
 
 const size_t C_SZ_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 const size_t C_SZ_BIT_MOD = UINT_WIDTH_FROM_MAX((size_t)-1) / 15u;
 const size_t C_SZ_HALF_BIT = UINT_WIDTH_FROM_MAX((size_t)-1) / 2u;
+const size_t C_SZ_MAX = (size_t)-1;
 const size_t C_SZ_LOW_MASK =
   ((size_t)-1 >> (UINT_WIDTH_FROM_MAX((size_t)-1) / 2u));
 
@@ -324,17 +330,23 @@ void (* const C_ADD_DIR_EDGE[5])(adj_lst_t *,
 
 /* value initiliazation and printing */
 
-void zero_ushort(void *a);
-void zero_uint(void *a);
-void zero_ulong(void *a);
-void zero_sz(void *a);
-void zero_double(void *a);
+void set_zero_ushort(void *a);
+void set_zero_uint(void *a);
+void set_zero_ulong(void *a);
+void set_zero_sz(void *a);
+void set_zero_double(void *a);
 
-void one_ushort(void *a);
-void one_uint(void *a);
-void one_ulong(void *a);
-void one_sz(void *a);
-void one_double(void *a);
+void set_one_ushort(void *a);
+void set_one_uint(void *a);
+void set_one_ulong(void *a);
+void set_one_sz(void *a);
+void set_one_double(void *a);
+
+void set_test_max_ushort(void *a, size_t num_vts);
+void set_test_max_uint(void *a, size_t num_vts);
+void set_test_max_ulong(void *a, size_t num_vts);
+void set_test_max_sz(void *a, size_t num_vts);
+void set_test_max_double(void *a, size_t num_vts);
 
 void print_ushort(const void *a);
 void print_uint(const void *a);
@@ -342,18 +354,24 @@ void print_ulong(const void *a);
 void print_sz(const void *a);
 void print_double(const void *a);
 
-void (* const C_ZERO[5])(void *) ={
-  zero_ushort,
-  zero_uint,
-  zero_ulong,
-  zero_sz,
-  zero_double};
-void (* const C_ONE[5])(void *) ={
-  one_ushort,
-  one_uint,
-  one_ulong,
-  one_sz,
-  one_double};
+void (* const C_SET_ZERO[5])(void *) ={
+  set_zero_ushort,
+  set_zero_uint,
+  set_zero_ulong,
+  set_zero_sz,
+  set_zero_double};
+void (* const C_SET_ONE[5])(void *) ={
+  set_one_ushort,
+  set_one_uint,
+  set_one_ulong,
+  set_one_sz,
+  set_one_double};
+void (* const C_SET_TEST_MAX[5])(void *, size_t) ={
+  set_test_max_ushort,
+  set_test_max_uint,
+  set_test_max_ulong,
+  set_test_max_sz,
+  set_test_max_double};
 void (* const C_PRINT[5])(const void *) ={
   print_ushort,
   print_uint,
@@ -395,6 +413,7 @@ void init_ushort_ushort(graph_t *g){
   g->v = (unsigned short *)C_USHORT_V;
   g->wts = (unsigned short *)C_USHORT_WTS;
 }
+
 void init_ushort_uint(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -405,6 +424,7 @@ void init_ushort_uint(graph_t *g){
   g->v = (unsigned short *)C_USHORT_V;
   g->wts = (unsigned int *)C_UINT_WTS;
 }
+
 void init_ushort_ulong(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -415,6 +435,7 @@ void init_ushort_ulong(graph_t *g){
   g->v = (unsigned short *)C_USHORT_V;
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
+
 void init_ushort_sz(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -425,6 +446,7 @@ void init_ushort_sz(graph_t *g){
   g->v = (unsigned short *)C_USHORT_V;
   g->wts = (size_t *)C_SZ_WTS;
 }
+
 void init_ushort_double(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -446,6 +468,7 @@ void init_uint_ushort(graph_t *g){
   g->v = (unsigned int *)C_UINT_V;
   g->wts = (unsigned short *)C_USHORT_WTS;
 }
+
 void init_uint_uint(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -456,6 +479,7 @@ void init_uint_uint(graph_t *g){
   g->v = (unsigned int *)C_UINT_V;
   g->wts = (unsigned int *)C_UINT_WTS;
 }
+
 void init_uint_ulong(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -466,6 +490,7 @@ void init_uint_ulong(graph_t *g){
   g->v = (unsigned int *)C_UINT_V;
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
+
 void init_uint_sz(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -476,6 +501,7 @@ void init_uint_sz(graph_t *g){
   g->v = (unsigned int *)C_UINT_V;
   g->wts = (size_t *)C_SZ_WTS;
 }
+
 void init_uint_double(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -497,6 +523,7 @@ void init_ulong_ushort(graph_t *g){
   g->v = (unsigned long *)C_ULONG_V;
   g->wts = (unsigned short *)C_USHORT_WTS;
 }
+
 void init_ulong_uint(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -507,6 +534,7 @@ void init_ulong_uint(graph_t *g){
   g->v = (unsigned long *)C_ULONG_V;
   g->wts = (unsigned int *)C_UINT_WTS;
 }
+
 void init_ulong_ulong(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -517,6 +545,7 @@ void init_ulong_ulong(graph_t *g){
   g->v = (unsigned long *)C_ULONG_V;
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
+
 void init_ulong_sz(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -527,6 +556,7 @@ void init_ulong_sz(graph_t *g){
   g->v = (unsigned long *)C_ULONG_V;
   g->wts = (size_t *)C_SZ_WTS;
 }
+
 void init_ulong_double(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -548,6 +578,7 @@ void init_sz_ushort(graph_t *g){
   g->v = (size_t *)C_SZ_V;
   g->wts = (unsigned short *)C_USHORT_WTS;
 }
+
 void init_sz_uint(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -558,6 +589,7 @@ void init_sz_uint(graph_t *g){
   g->v = (size_t *)C_SZ_V;
   g->wts = (unsigned int *)C_UINT_WTS;
 }
+
 void init_sz_ulong(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -568,6 +600,7 @@ void init_sz_ulong(graph_t *g){
   g->v = (size_t *)C_SZ_V;
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
+
 void init_sz_sz(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -578,6 +611,7 @@ void init_sz_sz(graph_t *g){
   g->v = (size_t *)C_SZ_V;
   g->wts = (size_t *)C_SZ_WTS;
 }
+
 void init_sz_double(graph_t *g){
   graph_base_init(g,
 		  C_NUM_VTS,
@@ -616,6 +650,7 @@ int cmp_ushort(const void *a, const void *b){
     return 0;
   }
 }
+
 int cmp_uint(const void *a, const void *b){
   if (*(const unsigned int *)a > *(const unsigned int *)b){
     return 1;
@@ -625,6 +660,7 @@ int cmp_uint(const void *a, const void *b){
     return 0;
   }
 }
+
 int cmp_ulong(const void *a, const void *b){
   if (*(const unsigned long *)a > *(const unsigned long *)b){
     return 1;
@@ -634,6 +670,7 @@ int cmp_ulong(const void *a, const void *b){
     return 0;
   }
 }
+
 int cmp_sz(const void *a, const void *b){
   if (*(const size_t *)a > *(const size_t *)b){
     return 1;
@@ -643,6 +680,7 @@ int cmp_sz(const void *a, const void *b){
     return 0;
   }
 }
+
 int cmp_double(const void *a, const void *b){
   if (*(const double *)a > *(const double *)b){
     return 1;
@@ -657,17 +695,21 @@ void add_ushort(void *s, const void *a, const void *b){
   *(unsigned short *)s =
     *(const unsigned short *)a + *(const unsigned short *)b;
 }
+
 void add_uint(void *s, const void *a, const void *b){
   *(unsigned int *)s =
     *(const unsigned int *)a + *(const unsigned int *)b;
 }
+
 void add_ulong(void *s, const void *a, const void *b){
   *(unsigned long *)s =
     *(const unsigned long *)a + *(const unsigned long *)b;
 }
+
 void add_sz(void *s, const void *a, const void *b){
   *(size_t *)s = *(const size_t *)a + *(const size_t *)b;
 }
+
 void add_double(void *s, const void *a, const void *b){
   *(double *)s = *(const double *)a + *(const double *)b;
 }
@@ -719,7 +761,7 @@ void small_graph_helper(void (*build)(adj_lst_t *,
 	dist_def = realloc_perror(dist_def, a.num_vts, a.wt_size);
 	dist_divchn = realloc_perror(dist_divchn, a.num_vts, a.wt_size);
 	dist_muloa = realloc_perror(dist_muloa, a.num_vts, a.wt_size);
-	C_ZERO[k](wt_zero);
+	C_SET_ZERO[k](wt_zero);
 	dijkstra(&a, i, dist_def, prev_def, wt_zero, NULL,
 		 C_READ_VT[j], C_WRITE_VT[j], C_AT_VT[j], C_CMP_VT[j],
 		 C_CMP_WT[k], C_ADD_WT[k]);
@@ -811,7 +853,6 @@ void add_dir_ushort_edge(adj_lst_t *a,
 			 void (*write_vt)(void *, size_t),
 			 int (*bern)(void *),
 			 void *arg){
-  /* overflow bits after multiplication are an in-range random number */
   unsigned short rand_val =
     *(unsigned short *)wt_l +
      mul_high_ushort(random_ushort(),
@@ -827,7 +868,6 @@ void add_dir_uint_edge(adj_lst_t *a,
 		       void (*write_vt)(void *, size_t),
 		       int (*bern)(void *),
 		       void *arg){
-  /* overflow bits after multiplication are an in-range random number */
   unsigned int rand_val =
     *(unsigned int *)wt_l +
     mul_high_uint(random_uint(),
@@ -843,7 +883,6 @@ void add_dir_ulong_edge(adj_lst_t *a,
 			void (*write_vt)(void *, size_t),
 			int (*bern)(void *),
 			void *arg){
-  /* overflow bits after multiplication are an in-range random number */
   unsigned long rand_val =
     *(unsigned long *)wt_l +
     mul_high_ulong(random_ulong(),
@@ -859,7 +898,6 @@ void add_dir_sz_edge(adj_lst_t *a,
 		     void (*write_vt)(void *, size_t),
 		     int (*bern)(void *),
 		     void *arg){
-  /* overflow bits after multiplication are an in-range random number */
   size_t rand_val =
     *(size_t *)wt_l +
     mul_high_sz(random_sz(),
@@ -963,7 +1001,7 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
       num_vts = pow_two_perror(i); /* 0 < n */
       printf("\t\t# vertices: %lu\n", TOLU(num_vts));
       for (j = 0; j < C_FN_VT_COUNT; j++){
-	for (k = 0; k < C_FN_WT_COUNT - 1; k++){
+	for (k = 0; k < C_FN_INTEGRAL_WT_COUNT; k++){
 	  vt_size =  C_VT_SIZES[j];
 	  wt_size =  C_WT_SIZES[k];
 	  /* no declared type after realloc; new eff. type to be acquired */
@@ -977,14 +1015,14 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
 	  dist_def = realloc_perror(dist_def, num_vts, wt_size);
 	  dist_divchn = realloc_perror(dist_divchn, num_vts, wt_size);
 	  dist_muloa = realloc_perror(dist_muloa, num_vts, wt_size);
-	  C_ONE[k](wt_l);
-	  C_ZERO[k](wt_zero);
+	  C_SET_ONE[k](wt_l);
+	  C_SET_ZERO[k](wt_zero);
 	  for (l = 0; l < num_vts; l++){
 	    /* avoid trap representations in tests */
-	    C_ZERO[j](ptr(dist_bfs, l, vt_size));
-	    C_ZERO[k](ptr(dist_def, l, wt_size));
-	    C_ZERO[k](ptr(dist_divchn, l, wt_size));
-	    C_ZERO[k](ptr(dist_muloa, l, wt_size));
+	    C_SET_ZERO[j](ptr(dist_bfs, l, vt_size));
+	    C_SET_ZERO[k](ptr(dist_def, l, wt_size));
+	    C_SET_ZERO[k](ptr(dist_divchn, l, wt_size));
+	    C_SET_ZERO[k](ptr(dist_muloa, l, wt_size));
 	  } 
 	  graph_base_init(&g, num_vts, vt_size, wt_size);
 	  adj_lst_rand_dir_wts(&g, &a, wt_l, wt_l,
@@ -1038,7 +1076,6 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
 			     ptr(dist_divchn, l, wt_size)) == 0 &&
 		 C_CMP_WT[k](ptr(dist_divchn, l, wt_size),
 			     ptr(dist_muloa, l, wt_size)) == 0 &&
-		 /* relies on k < C_FN_WT_COUNT - 1 (integer distances) */
 		 C_READ_VT[j](ptr(dist_bfs, l, vt_size)) ==
 		 C_READ_VT[k](ptr(dist_divchn, l, wt_size)));
 	    }
@@ -1082,6 +1119,150 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
   wt_zero = NULL;
   dist_bfs = NULL;
   prev_bfs = NULL;
+  dist_def = NULL;
+  dist_divchn = NULL;
+  dist_muloa = NULL;
+  prev_def = NULL;
+  prev_divchn = NULL;
+  prev_muloa = NULL;
+}
+
+/**
+   Run a test on random directed graphs with random weights, across edge
+   weight types, vertex types, as well as default, division-based
+   and multiplication-based hash tables.
+*/
+
+void run_rand_test(size_t log_start, size_t log_end){
+  int res = 1;
+  size_t p, i, j, k, l;
+  size_t num_vts;
+  size_t vt_size;
+  size_t wt_size;
+  graph_t g;
+  adj_lst_t a;
+  bern_arg_t b;
+  ht_divchn_t ht_divchn;
+  ht_muloa_t ht_muloa;
+  dijkstra_ht_t daht_divchn, daht_muloa;
+  clock_t t_def, t_divchn, t_muloa;
+  size_t *rand_start = NULL;
+  void *wt_l = NULL;
+  void *wt_h = NULL;
+  void *wt_zero = NULL;
+  void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
+  void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
+  rand_start = malloc_perror(C_ITER, sizeof(size_t));
+  daht_divchn.ht = &ht_divchn;
+  daht_divchn.alpha_n = C_ALPHA_N_DIVCHN;
+  daht_divchn.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
+  daht_divchn.init = ht_divchn_init_helper;
+  daht_divchn.align = ht_divchn_align_helper;
+  daht_divchn.insert = ht_divchn_insert_helper;
+  daht_divchn.search = ht_divchn_search_helper;
+  daht_divchn.remove = ht_divchn_remove_helper;
+  daht_divchn.free = ht_divchn_free_helper;
+  daht_muloa.ht = &ht_muloa;
+  daht_muloa.alpha_n = C_ALPHA_N_MULOA;
+  daht_muloa.log_alpha_d = C_LOG_ALPHA_D_MULOA;
+  daht_muloa.init = ht_muloa_init_helper;
+  daht_muloa.align = ht_muloa_align_helper;
+  daht_muloa.insert = ht_muloa_insert_helper;
+  daht_muloa.search = ht_muloa_search_helper;
+  daht_muloa.remove = ht_muloa_remove_helper;
+  daht_muloa.free = ht_muloa_free_helper;
+  printf("Run a dijkstra test on random directed graphs with random weights"
+	 " across vertex and weight types;\nthe runtime is averaged"
+	 " over %lu runs from random start vertices\n", TOLU(C_ITER));
+  fflush(stdout);
+  for (p = 0; p < C_PROBS_COUNT; p++){
+    b.p = C_PROBS[p];
+    printf("\tP[an edge is in a graph] = %.4f\n", C_PROBS[p]);
+    for (i = log_start; i <= log_end; i++){
+      num_vts = pow_two_perror(i); /* 0 < n */
+      printf("\t\t# vertices: %lu\n", TOLU(num_vts));
+      for (j = 0; j < C_FN_VT_COUNT; j++){
+	for (k = 0; k < C_FN_WT_COUNT; k++){
+	  vt_size =  C_VT_SIZES[j];
+	  wt_size =  C_WT_SIZES[k];
+	  /* no declared type after realloc; new eff. type to be acquired */
+	  wt_l = realloc_perror(wt_l, 2, wt_size);
+	  wt_h = (char *)wt_l + wt_size;
+	  wt_zero = realloc_perror(wt_zero, 1, wt_size);
+	  prev_def = realloc_perror(prev_def, num_vts, vt_size);
+	  prev_divchn = realloc_perror(prev_divchn, num_vts, vt_size);
+	  prev_muloa = realloc_perror(prev_muloa, num_vts, vt_size);
+	  dist_def = realloc_perror(dist_def, num_vts, wt_size);
+	  dist_divchn = realloc_perror(dist_divchn, num_vts, wt_size);
+	  dist_muloa = realloc_perror(dist_muloa, num_vts, wt_size);
+	  C_SET_ZERO[k](wt_l);
+	  C_SET_TEST_MAX[k](wt_h, num_vts);
+	  C_SET_ZERO[k](wt_zero);
+	  for (l = 0; l < num_vts; l++){
+	    /* avoid trap representations in tests */
+	    C_SET_ZERO[k](ptr(dist_def, l, wt_size));
+	    C_SET_ZERO[k](ptr(dist_divchn, l, wt_size));
+	    C_SET_ZERO[k](ptr(dist_muloa, l, wt_size));
+	  } 
+	  graph_base_init(&g, num_vts, vt_size, wt_size);
+	  adj_lst_rand_dir_wts(&g, &a, wt_l, wt_h,
+			       C_WRITE_VT[j], bern, &b, C_ADD_DIR_EDGE[k]);
+	  for (l = 0; l < C_ITER; l++){
+	    rand_start[l] = mul_high_sz(random_sz(), num_vts);
+	  }
+	  t_def = clock();
+	  for (l = 0; l < C_ITER; l++){
+	    dijkstra(&a, rand_start[l], dist_def, prev_def, wt_zero, NULL,
+		     C_READ_VT[j], C_WRITE_VT[j], C_AT_VT[j], C_CMP_VT[j],
+		     C_CMP_WT[k], C_ADD_WT[k]);
+	  }
+	  t_def = clock() - t_def;
+	  t_divchn = clock();
+	  for (l = 0; l < C_ITER; l++){
+	    dijkstra(&a, rand_start[l], dist_divchn, prev_divchn, wt_zero,
+		     &daht_divchn, C_READ_VT[j], C_WRITE_VT[j], C_AT_VT[j],
+		     C_CMP_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
+	  }
+	  t_divchn = clock() - t_divchn;
+	  t_muloa = clock();
+	  for (l = 0; l < C_ITER; l++){
+	    dijkstra(&a, rand_start[l], dist_muloa, prev_muloa, wt_zero,
+		     &daht_muloa, C_READ_VT[j], C_WRITE_VT[j], C_AT_VT[j],
+		     C_CMP_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
+	  }
+	  t_muloa = clock() - t_muloa;
+	  printf("\t\t\t# edges: %lu\n", TOLU(a.num_es));
+	  printf("\t\t\t\t%s %s dijkstra default ht:     %.8f seconds\n"
+		 "\t\t\t\t%s %s dijkstra ht_divchn:      %.8f seconds\n"
+		 "\t\t\t\t%s %s dijkstra ht_muloa:       %.8f seconds\n",
+		 C_VT_TYPES[j], C_WT_TYPES[k],
+		 (float)t_def / C_ITER / CLOCKS_PER_SEC,
+		 C_VT_TYPES[j], C_WT_TYPES[k],
+		 (float)t_divchn / C_ITER / CLOCKS_PER_SEC,
+		 C_VT_TYPES[j], C_WT_TYPES[k],
+		 (float)t_muloa / C_ITER / CLOCKS_PER_SEC);
+	  printf("\t\t\t\t%s %s correctness:             ",
+		 C_VT_TYPES[j], C_WT_TYPES[k]);
+	  print_test_result(res);
+	  printf("\n");
+	  res = 1;
+	  adj_lst_free(&a);
+	}
+      }
+    }
+  }
+  free(rand_start);
+  free(wt_l);
+  free(wt_zero);
+  free(dist_def);
+  free(dist_divchn);
+  free(dist_muloa);
+  free(prev_def);
+  free(prev_divchn);
+  free(prev_muloa);
+  rand_start = NULL;
+  wt_l = NULL;
+  wt_zero = NULL;
   dist_def = NULL;
   dist_divchn = NULL;
   dist_muloa = NULL;
@@ -1229,39 +1410,89 @@ size_t mul_high_sz(size_t a, size_t b){
 }
 
 /**
-   Value initiliazation and printing.
+   Value initiliazation and printing. The functions for setting the maximum
+   value of random weights (i.e. unreached upper bound) reflect that at most
+   n - 1 edges participate in a path because otherwise there is a cycle.
+   In each of the set_test_max functions num_vts is less or equal to 
+   C_USHORT_MAX.
 */
 
-void zero_ushort(void *a){
+void set_zero_ushort(void *a){
   *(unsigned short *)a = 0;
 }
-void zero_uint(void *a){
+
+void set_zero_uint(void *a){
   *(unsigned int *)a = 0;
 }
-void zero_ulong(void *a){
+
+void set_zero_ulong(void *a){
   *(unsigned long *)a = 0;
 }
-void zero_sz(void *a){
+
+void set_zero_sz(void *a){
   *(size_t *)a = 0;
 }
-void zero_double(void *a){
+
+void set_zero_double(void *a){
   *(double *)a = 0.0;
 }
 
-void one_ushort(void *a){
+void set_one_ushort(void *a){
   *(unsigned short *)a = 1;
 }
-void one_uint(void *a){
+
+void set_one_uint(void *a){
   *(unsigned int *)a = 1;
 }
-void one_ulong(void *a){
+
+void set_one_ulong(void *a){
   *(unsigned long *)a = 1;
 }
-void one_sz(void *a){
+
+void set_one_sz(void *a){
   *(size_t *)a = 1;
 }
-void one_double(void *a){
+
+void set_one_double(void *a){
   *(double *)a = 1.0;
+}
+
+void set_test_max_ushort(void *a, size_t num_vts){
+  if (num_vts == 0){
+    *(unsigned short *)a = C_USHORT_MAX;
+  }else{
+    *(unsigned short *)a = C_USHORT_MAX / num_vts;
+  }
+}
+
+void set_test_max_uint(void *a, size_t num_vts){
+  if (num_vts == 0){
+    *(unsigned int *)a = C_UINT_MAX;
+  }else{
+    *(unsigned int *)a = C_UINT_MAX / num_vts;
+  }
+}
+
+void set_test_max_ulong(void *a, size_t num_vts){
+  if (num_vts == 0){
+    *(unsigned long *)a = C_ULONG_MAX;
+  }else{
+    *(unsigned long *)a = C_ULONG_MAX / num_vts;
+  }
+}
+
+void set_test_max_sz(void *a, size_t num_vts){
+  if (num_vts == 0){
+    *(size_t *)a = C_SZ_MAX;
+  }else{
+    /* C_SZ_MAX >= C_USHORT_MAX >= num_vts in tests */
+    *(size_t *)a = C_SZ_MAX / num_vts;
+  }
+}
+
+void set_test_max_double(void *a, size_t num_vts){
+  /* C_USHORT_MAX >= num_vts, which can be converted to double in tests */
+  *(double *)a = 1.0 / num_vts;
 }
 
 void print_ushort(const void *a){
@@ -1394,8 +1625,8 @@ int main(int argc, char *argv[]){
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
-  if (args[0] > C_FULL_BIT / 2 ||
-      args[1] > C_FULL_BIT / 2 ||
+  if (args[0] > C_USHORT_BIT - 1 ||
+      args[1] > C_USHORT_BIT - 1 ||
       args[1] < args[0] ||
       args[2] > 1 ||
       args[3] > 1 ||
@@ -1405,6 +1636,7 @@ int main(int argc, char *argv[]){
   }
   run_small_graph_test();
   run_bfs_dijkstra_test(args[0], args[1]);
+  run_rand_test(args[0], args[1]);
   free(args);
   args = NULL;
   return 0;
