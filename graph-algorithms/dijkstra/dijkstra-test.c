@@ -25,10 +25,10 @@
    second argument, and 1 for the following arguments.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99. The tests require that the maximum value of unsigned
-   short (USHRT_MAX, >= 65535) can be converted to double. The tests also
-   require that the widths of the unsigned intergral types are less than
-   2040 and even.
+   C89/C90 and C99. The tests require that:
+   - size_t and clock_t are convertible to double,
+   - size_t can represent values upto USHRT_MAX (>= 65535),
+   - the widths of the unsigned intergral types are less than 2040 and even.
 
    TODO: add portable size_t printing
 */
@@ -683,20 +683,6 @@ void init_sz_double(graph_t *g){
   g->wts = (double *)C_DOUBLE_WTS;
 }
 
-void init_ushort_ushort_no_edges(graph_t *g){
-  graph_base_init(g,
-		  C_NUM_VTS,
-		  sizeof(unsigned short),
-		  sizeof(unsigned short));
-}
-
-void init_ulong_ushort_no_edges(graph_t *g){
-  graph_base_init(g,
-		  C_NUM_VTS,
-		  sizeof(unsigned long),
-		  sizeof(unsigned short));
-}
-
 /**
    Run a test on small graphs across vertex and weight types.
 */
@@ -778,14 +764,14 @@ void small_graph_helper(void (*build)(adj_lst_t *,
 				      const graph_t *,
 				      size_t (*)(const void *))){
   size_t i, j, k;
+  void *wt_zero = NULL;
+  void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
+  void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
   graph_t g;
   adj_lst_t a;
   ht_divchn_t ht_divchn;
   ht_muloa_t ht_muloa;
   dijkstra_ht_t daht_divchn, daht_muloa;
-  void *wt_zero = NULL;
-  void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
-  void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
   daht_divchn.ht = &ht_divchn;
   daht_divchn.alpha_n = C_ALPHA_N_DIVCHN;
   daht_divchn.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
@@ -909,7 +895,7 @@ void add_dir_ushort_edge(adj_lst_t *a,
 			 size_t u,
 			 size_t v,
 			 const void *wt_l,
-			 const void *wt_h,
+			 const void *wt_h, /* >= wt_l pointed value */
 			 void (*write_vt)(void *, size_t),
 			 int (*bern)(void *),
 			 void *arg){
@@ -939,7 +925,7 @@ void add_dir_ulong_edge(adj_lst_t *a,
 			size_t u,
 			size_t v,
 			const void *wt_l,
-			const void *wt_h,
+			const void *wt_h, /* >= wt_l pointed value */
 			void (*write_vt)(void *, size_t),
 			int (*bern)(void *),
 			void *arg){
@@ -954,7 +940,7 @@ void add_dir_sz_edge(adj_lst_t *a,
 		     size_t u,
 		     size_t v,
 		     const void *wt_l,
-		     const void *wt_h,
+		     const void *wt_h, /* >= wt_l pointed value */
 		     void (*write_vt)(void *, size_t),
 		     int (*bern)(void *),
 		     void *arg){
@@ -969,7 +955,7 @@ void add_dir_double_edge(adj_lst_t *a,
 			 size_t u,
 			 size_t v,
 			 const void *wt_l,
-			 const void *wt_h,
+			 const void *wt_h, /* >= wt_l pointed value */
 			 void (*write_vt)(void *, size_t),
 			 int (*bern)(void *),
 			 void *arg){
@@ -982,7 +968,7 @@ void add_dir_double_edge(adj_lst_t *a,
 void adj_lst_rand_dir_wts(const graph_t *g, /* num_vts >= 1 */
 			  adj_lst_t *a,
 			  const void *wt_l,
-			  const void *wt_h,
+			  const void *wt_h, /* >= wt_l pointed value */
 			  void (*write_vt)(void *, size_t),
 			  int (*bern)(void *),
 			  void *arg,
@@ -1017,13 +1003,6 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
   size_t num_vts;
   size_t vt_size;
   size_t wt_size;
-  graph_t g;
-  adj_lst_t a;
-  bern_arg_t b;
-  ht_divchn_t ht_divchn;
-  ht_muloa_t ht_muloa;
-  dijkstra_ht_t daht_divchn, daht_muloa;
-  clock_t t_bfs, t_def, t_divchn, t_muloa;
   size_t *rand_start = NULL;
   void *wt_l = NULL;
   void *wt_zero = NULL;
@@ -1031,6 +1010,13 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
   void *prev_bfs = NULL;
   void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
   void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
+  graph_t g;
+  adj_lst_t a;
+  bern_arg_t b;
+  ht_divchn_t ht_divchn;
+  ht_muloa_t ht_muloa;
+  dijkstra_ht_t daht_divchn, daht_muloa;
+  clock_t t_bfs, t_def, t_divchn, t_muloa;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
   daht_divchn.ht = &ht_divchn;
   daht_divchn.alpha_n = C_ALPHA_N_DIVCHN;
@@ -1147,13 +1133,13 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
 		 "\t\t\t\t%s %s dijkstra ht_divchn:      %.8f seconds\n"
 		 "\t\t\t\t%s %s dijkstra ht_muloa:       %.8f seconds\n",
 		 C_VT_TYPES[j], C_WT_TYPES[k],
-		 (float)t_bfs / C_ITER / CLOCKS_PER_SEC,
+		 (double)t_bfs / C_ITER / CLOCKS_PER_SEC,
 		 C_VT_TYPES[j], C_WT_TYPES[k],
-		 (float)t_def / C_ITER / CLOCKS_PER_SEC,
+		 (double)t_def / C_ITER / CLOCKS_PER_SEC,
 		 C_VT_TYPES[j], C_WT_TYPES[k],
-		 (float)t_divchn / C_ITER / CLOCKS_PER_SEC,
+		 (double)t_divchn / C_ITER / CLOCKS_PER_SEC,
 		 C_VT_TYPES[j], C_WT_TYPES[k],
-		 (float)t_muloa / C_ITER / CLOCKS_PER_SEC);
+		 (double)t_muloa / C_ITER / CLOCKS_PER_SEC);
 	  printf("\t\t\t\t%s %s correctness:             ",
 		 C_VT_TYPES[j], C_WT_TYPES[k]);
 	  print_test_result(res);
@@ -1200,6 +1186,14 @@ void run_rand_test(size_t log_start, size_t log_end){
   size_t num_vts;
   size_t vt_size;
   size_t wt_size;
+  size_t num_wraps_def, num_wraps_divchn, num_wraps_muloa;
+  size_t num_paths_def, num_paths_divchn, num_paths_muloa;
+  size_t *rand_start = NULL;
+  void *wt_l = NULL, *wt_h = NULL;
+  void *wt_zero = NULL;
+  void *dsum_def = NULL, *dsum_divchn = NULL, *dsum_muloa = NULL;
+  void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
+  void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
   graph_t g;
   adj_lst_t a;
   bern_arg_t b;
@@ -1207,12 +1201,6 @@ void run_rand_test(size_t log_start, size_t log_end){
   ht_muloa_t ht_muloa;
   dijkstra_ht_t daht_divchn, daht_muloa;
   clock_t t_def, t_divchn, t_muloa;
-  size_t *rand_start = NULL;
-  void *wt_l = NULL;
-  void *wt_h = NULL;
-  void *wt_zero = NULL;
-  void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
-  void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
   daht_divchn.ht = &ht_divchn;
   daht_divchn.alpha_n = C_ALPHA_N_DIVCHN;
@@ -1250,6 +1238,9 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  wt_l = realloc_perror(wt_l, 2, wt_size);
 	  wt_h = (char *)wt_l + wt_size;
 	  wt_zero = realloc_perror(wt_zero, 1, wt_size);
+	  dsum_def = realloc_perror(dsum_def, num_vts, wt_size);
+	  dsum_divchn = realloc_perror(dsum_divchn, num_vts, wt_size);
+	  dsum_muloa = realloc_perror(dsum_muloa, num_vts, wt_size);
 	  prev_def = realloc_perror(prev_def, num_vts, vt_size);
 	  prev_divchn = realloc_perror(prev_divchn, num_vts, vt_size);
 	  prev_muloa = realloc_perror(prev_muloa, num_vts, vt_size);
@@ -1278,6 +1269,15 @@ void run_rand_test(size_t log_start, size_t log_end){
 		     C_CMP_WT[k], C_ADD_WT[k]);
 	  }
 	  t_def = clock() - t_def;
+	  C_SUM_DIST[k](dsum_def,
+			&num_wraps_def,
+			&num_paths_def,
+			num_vts,
+			vt_size,
+			wt_size,
+			dist_def,
+			prev_def,
+			C_READ_VT[j]);
 	  t_divchn = clock();
 	  for (l = 0; l < C_ITER; l++){
 	    dijkstra(&a, rand_start[l], dist_divchn, prev_divchn, wt_zero,
@@ -1285,6 +1285,15 @@ void run_rand_test(size_t log_start, size_t log_end){
 		     C_CMP_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
 	  }
 	  t_divchn = clock() - t_divchn;
+	  C_SUM_DIST[k](dsum_divchn,
+			&num_wraps_divchn,
+			&num_paths_divchn,
+			num_vts,
+			vt_size,
+			wt_size,
+			dist_def,
+			prev_def,
+			C_READ_VT[j]);
 	  t_muloa = clock();
 	  for (l = 0; l < C_ITER; l++){
 	    dijkstra(&a, rand_start[l], dist_muloa, prev_muloa, wt_zero,
@@ -1292,19 +1301,38 @@ void run_rand_test(size_t log_start, size_t log_end){
 		     C_CMP_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
 	  }
 	  t_muloa = clock() - t_muloa;
+	  C_SUM_DIST[k](dsum_muloa,
+			&num_wraps_muloa,
+			&num_paths_muloa,
+			num_vts,
+			vt_size,
+			wt_size,
+			dist_def,
+			prev_def,
+			C_READ_VT[j]);
+	  if (k < C_FN_INTEGRAL_WT_COUNT){
+	    res *= (C_CMP_WT[k](dsum_def, dsum_divchn) == 0 &&
+		    C_CMP_WT[k](dsum_divchn, dsum_muloa) == 0);
+	  }
+	  res *= (num_wraps_def == num_wraps_divchn &&
+		  num_wraps_divchn == num_wraps_muloa &&
+		  num_paths_def == num_paths_divchn &&
+		  num_paths_divchn == num_paths_muloa);
 	  printf("\t\t\t# edges: %lu\n", TOLU(a.num_es));
 	  printf("\t\t\t\t%s %s dijkstra default ht:     %.8f seconds\n"
 		 "\t\t\t\t%s %s dijkstra ht_divchn:      %.8f seconds\n"
 		 "\t\t\t\t%s %s dijkstra ht_muloa:       %.8f seconds\n",
 		 C_VT_TYPES[j], C_WT_TYPES[k],
-		 (float)t_def / C_ITER / CLOCKS_PER_SEC,
+		 (double)t_def / C_ITER / CLOCKS_PER_SEC,
 		 C_VT_TYPES[j], C_WT_TYPES[k],
-		 (float)t_divchn / C_ITER / CLOCKS_PER_SEC,
+		 (double)t_divchn / C_ITER / CLOCKS_PER_SEC,
 		 C_VT_TYPES[j], C_WT_TYPES[k],
-		 (float)t_muloa / C_ITER / CLOCKS_PER_SEC);
+		 (double)t_muloa / C_ITER / CLOCKS_PER_SEC);
 	  printf("\t\t\t\t%s %s correctness:             ",
 		 C_VT_TYPES[j], C_WT_TYPES[k]);
 	  print_test_result(res);
+	  printf("\t\t\t\t%s %s last run # paths:        %lu\n",
+		 C_VT_TYPES[j], C_WT_TYPES[k], TOLU(num_paths_def - 1));
 	  printf("\n");
 	  res = 1;
 	  adj_lst_free(&a);
@@ -1315,6 +1343,9 @@ void run_rand_test(size_t log_start, size_t log_end){
   free(rand_start);
   free(wt_l);
   free(wt_zero);
+  free(dsum_def);
+  free(dsum_divchn);
+  free(dsum_muloa);
   free(dist_def);
   free(dist_divchn);
   free(dist_muloa);
@@ -1324,6 +1355,9 @@ void run_rand_test(size_t log_start, size_t log_end){
   rand_start = NULL;
   wt_l = NULL;
   wt_zero = NULL;
+  dsum_def = NULL;
+  dsum_divchn = NULL;
+  dsum_muloa = NULL;
   dist_def = NULL;
   dist_divchn = NULL;
   dist_muloa = NULL;
@@ -1484,8 +1518,8 @@ size_t mul_high_sz(size_t a, size_t b){
    with a non-zero distance and the wrap-around counter cannot overflow. The
    total sum is: # wrap-arounds * max value of type + # wraps-arounds + sum. 
 
-   For double weights, the maximum value in 1.0 / n, where n <= C_USHORT_MAX
-   and can be converted to double in tests, and the number of wrap-arounds
+   For double weights, the maximum value in 1.0 / n, where n can be
+   converted to double as required in tests, and the number of wrap-arounds
    is 0.
 */
 
@@ -1571,8 +1605,8 @@ void sum_dist_ushort(void *dist_sum,
 		     size_t num_vts,
 		     size_t vt_size,
 		     size_t wt_size,
-		     const void *prev,
 		     const void *dist,
+		     const void *prev,
 		     size_t (*read_vt)(const void *)){
   size_t i;
   unsigned short val;
@@ -1596,8 +1630,8 @@ void sum_dist_uint(void *dist_sum,
 		   size_t num_vts,
 		   size_t vt_size,
 		   size_t wt_size,
-		   const void *prev,
 		   const void *dist,
+		   const void *prev,
 		   size_t (*read_vt)(const void *)){
   size_t i;
   unsigned int val;
@@ -1621,8 +1655,8 @@ void sum_dist_ulong(void *dist_sum,
 		    size_t num_vts,
 		    size_t vt_size,
 		    size_t wt_size,
-		    const void *prev,
 		    const void *dist,
+		    const void *prev,
 		    size_t (*read_vt)(const void *)){
   size_t i;
   unsigned long val;
@@ -1646,8 +1680,8 @@ void sum_dist_sz(void *dist_sum,
 		 size_t num_vts,
 		 size_t vt_size,
 		 size_t wt_size,
-		 const void *prev,
 		 const void *dist,
+		 const void *prev,
 		 size_t (*read_vt)(const void *)){
   size_t i;
   size_t val;
@@ -1671,8 +1705,8 @@ void sum_dist_double(void *dist_sum,
 		     size_t num_vts,
 		     size_t vt_size,
 		     size_t wt_size,
-		     const void *prev,
 		     const void *dist,
+		     const void *prev,
 		     size_t (*read_vt)(const void *)){
   size_t i;
   double val;
