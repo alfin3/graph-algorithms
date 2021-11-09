@@ -26,9 +26,9 @@
 
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 and C99. The tests require that the maximum value of unsigned
-   short (USHRT_MAX, >= 65535) can be represented as size_t and can be
-   converted to double. The tests also require that the widths of the
-   unsigned intergral types are less than 2040 and even.
+   short (USHRT_MAX, >= 65535) can be converted to double. The tests also
+   require that the widths of the unsigned intergral types are less than
+   2040 and even.
 
    TODO: add portable size_t printing
 */
@@ -70,7 +70,7 @@ const char *C_USAGE =
   "[0, 1] : bfs comparison test on/off\n"
   "[0, 1] : random graphs with random weights test on/off\n";
 const int C_ARGC_MAX = 6;
-const size_t C_ARGS_DEF[5] = {0u, 10u, 1u, 1u, 1u};
+const size_t C_ARGS_DEF[5] = {6u, 9u, 1u, 1u, 1u};
 const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 
 /* hash table load factor upper bounds */
@@ -354,6 +354,52 @@ void print_ulong(const void *a);
 void print_sz(const void *a);
 void print_double(const void *a);
 
+void sum_dist_ushort(void *dist_sum,
+		     size_t *num_wraps,
+		     size_t *num_paths,
+		     size_t num_vts,
+		     size_t vt_size,
+		     size_t wt_size,
+		     const void *prev,
+		     const void *dist,
+		     size_t (*read_vt)(const void *));
+void sum_dist_uint(void *dist_sum,
+		   size_t *num_wraps,
+		   size_t *num_paths,
+		   size_t num_vts,
+		   size_t vt_size,
+		   size_t wt_size,
+		   const void *prev,
+		   const void *dist,
+		   size_t (*read_vt)(const void *));
+void sum_dist_ulong(void *dist_sum,
+		    size_t *num_wraps,
+		    size_t *num_paths,
+		    size_t num_vts,
+		    size_t vt_size,
+		    size_t wt_size,
+		    const void *prev,
+		    const void *dist,
+		    size_t (*read_vt)(const void *));
+void sum_dist_sz(void *dist_sum,
+		 size_t *num_wraps,
+		 size_t *num_paths,
+		 size_t num_vts,
+		 size_t vt_size,
+		 size_t wt_size,
+		 const void *prev,
+		 const void *dist,
+		 size_t (*read_vt)(const void *));
+void sum_dist_double(void *dist_sum,
+		     size_t *num_wraps,
+		     size_t *num_paths,
+		     size_t num_vts,
+		     size_t vt_size,
+		     size_t wt_size,
+		     const void *prev,
+		     const void *dist,
+		     size_t (*read_vt)(const void *));
+
 void (* const C_SET_ZERO[5])(void *) ={
   set_zero_ushort,
   set_zero_uint,
@@ -372,6 +418,20 @@ void (* const C_SET_TEST_MAX[5])(void *, size_t) ={
   set_test_max_ulong,
   set_test_max_sz,
   set_test_max_double};
+void (* const C_SUM_DIST[5])(void *,
+			     size_t *,
+			     size_t *,
+			     size_t,
+			     size_t,
+			     size_t,
+			     const void *,
+			     const void *,
+			     size_t (*)(const void *)) ={
+  sum_dist_ushort,
+  sum_dist_uint,
+  sum_dist_ulong,
+  sum_dist_sz,
+  sum_dist_double};
 void (* const C_PRINT[5])(const void *) ={
   print_ushort,
   print_uint,
@@ -1076,6 +1136,7 @@ void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
 			     ptr(dist_divchn, l, wt_size)) == 0 &&
 		 C_CMP_WT[k](ptr(dist_divchn, l, wt_size),
 			     ptr(dist_muloa, l, wt_size)) == 0 &&
+		 /* convert to size_t since each distance <= num_vts */
 		 C_READ_VT[j](ptr(dist_bfs, l, vt_size)) ==
 		 C_READ_VT[k](ptr(dist_divchn, l, wt_size)));
 	    }
@@ -1410,11 +1471,22 @@ size_t mul_high_sz(size_t a, size_t b){
 }
 
 /**
-   Value initiliazation and printing. The functions for setting the maximum
-   value of random weights (i.e. unreached upper bound) reflect that at most
+   Value initiliazation, arithmetic, and printing. 
+
+   The functions with the set_test_max prefix, set the maximum value of
+   random weights (i.e. unreached upper bound) and reflect that at most
    n - 1 edges participate in a path because otherwise there is a cycle.
-   In each of the set_test_max functions num_vts is less or equal to 
-   C_USHORT_MAX.
+
+   The functions with the sum_dist prefix compute the sum across unsigned
+   integer path distances by counting wrap-arounds. The computation is
+   overflow safe, because each path distance is at most the maximum value of
+   the integer type used to represent weights. There are at most n - 1 paths
+   with a non-zero distance and the wrap-around counter cannot overflow. The
+   total sum is: # wrap-arounds * max value of type + # wraps-arounds + sum. 
+
+   For double weights, the maximum value in 1.0 / n, where n <= C_USHORT_MAX
+   and can be converted to double in tests, and the number of wrap-arounds
+   is 0.
 */
 
 void set_zero_ushort(void *a){
@@ -1485,14 +1557,136 @@ void set_test_max_sz(void *a, size_t num_vts){
   if (num_vts == 0){
     *(size_t *)a = C_SZ_MAX;
   }else{
-    /* C_SZ_MAX >= C_USHORT_MAX >= num_vts in tests */
     *(size_t *)a = C_SZ_MAX / num_vts;
   }
 }
 
 void set_test_max_double(void *a, size_t num_vts){
-  /* C_USHORT_MAX >= num_vts, which can be converted to double in tests */
   *(double *)a = 1.0 / num_vts;
+}
+
+void sum_dist_ushort(void *dist_sum,
+		     size_t *num_wraps, /* <= num_vts */
+		     size_t *num_paths, /* <= num_vts */
+		     size_t num_vts,
+		     size_t vt_size,
+		     size_t wt_size,
+		     const void *prev,
+		     const void *dist,
+		     size_t (*read_vt)(const void *)){
+  size_t i;
+  unsigned short val;
+  unsigned short *sum = dist_sum;
+  *sum = 0;
+  *num_wraps = 0;
+  *num_paths = 0;
+  for (i = 0; i < num_vts; i++){
+    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
+      val = *(unsigned short *)ptr(dist, i, wt_size);
+      if (C_USHORT_MAX - *sum < val) (*num_wraps)++;
+      *sum += val;
+      (*num_paths)++;
+    }
+  }
+}
+
+void sum_dist_uint(void *dist_sum,
+		   size_t *num_wraps, /* <= num_vts */
+		   size_t *num_paths, /* <= num_vts */
+		   size_t num_vts,
+		   size_t vt_size,
+		   size_t wt_size,
+		   const void *prev,
+		   const void *dist,
+		   size_t (*read_vt)(const void *)){
+  size_t i;
+  unsigned int val;
+  unsigned int *sum = dist_sum;
+  *sum = 0;
+  *num_wraps = 0;
+  *num_paths = 0;
+  for (i = 0; i < num_vts; i++){
+    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
+      val = *(unsigned int *)ptr(dist, i, wt_size);
+      if (C_UINT_MAX - *sum < val) (*num_wraps)++;
+      *sum += val;
+      (*num_paths)++;
+    }
+  }
+}
+
+void sum_dist_ulong(void *dist_sum,
+		    size_t *num_wraps, /* <= num_vts */
+		    size_t *num_paths, /* <= num_vts */
+		    size_t num_vts,
+		    size_t vt_size,
+		    size_t wt_size,
+		    const void *prev,
+		    const void *dist,
+		    size_t (*read_vt)(const void *)){
+  size_t i;
+  unsigned long val;
+  unsigned long *sum = dist_sum;
+  *sum = 0;
+  *num_wraps = 0;
+  *num_paths = 0;
+  for (i = 0; i < num_vts; i++){
+    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
+      val = *(long int *)ptr(dist, i, wt_size);
+      if (C_ULONG_MAX - *sum < val) (*num_wraps)++;
+      *sum += val;
+      (*num_paths)++;
+    }
+  }
+}
+
+void sum_dist_sz(void *dist_sum,
+		 size_t *num_wraps, /* <= num_vts */
+		 size_t *num_paths, /* <= num_vts */
+		 size_t num_vts,
+		 size_t vt_size,
+		 size_t wt_size,
+		 const void *prev,
+		 const void *dist,
+		 size_t (*read_vt)(const void *)){
+  size_t i;
+  size_t val;
+  size_t *sum = dist_sum;
+  *sum = 0;
+  *num_wraps = 0;
+  *num_paths = 0;
+  for (i = 0; i < num_vts; i++){
+    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
+      val = *(size_t *)ptr(dist, i, wt_size);
+      if (C_ULONG_MAX - *sum < val) (*num_wraps)++;
+      *sum += val;
+      (*num_paths)++;
+    }
+  }
+}
+
+void sum_dist_double(void *dist_sum,
+		     size_t *num_wraps, /* 0 for double */
+		     size_t *num_paths, /* <= num_vts */
+		     size_t num_vts,
+		     size_t vt_size,
+		     size_t wt_size,
+		     const void *prev,
+		     const void *dist,
+		     size_t (*read_vt)(const void *)){
+  size_t i;
+  double val;
+  double *sum = dist_sum;
+  *sum = 0;
+  *num_wraps = 0;
+  *num_paths = 0;
+  for (i = 0; i < num_vts; i++){
+    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
+      val = *(double *)ptr(dist, i, wt_size);
+      *sum += val;
+      (*num_paths)++;
+    }
+  }
 }
 
 void print_ushort(const void *a){
@@ -1634,6 +1828,7 @@ int main(int argc, char *argv[]){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
+  /*pow_two_perror later tests that # vertices is representable as size_t */
   run_small_graph_test();
   run_bfs_dijkstra_test(args[0], args[1]);
   run_rand_test(args[0], args[1]);
