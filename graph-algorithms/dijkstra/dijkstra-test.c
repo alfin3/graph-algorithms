@@ -15,8 +15,8 @@
 
    usage examples: 
    ./dijkstra-test
-   ./dijkstra-test 10 14
-   ./dijkstra-test 14 14 0 0 1
+   ./dijkstra-test 10 12
+   ./dijkstra-test 13 13 0 0 1
 
    dijkstra-test can be run with any subset of command line arguments in the
    above-defined order. If the (i + 1)th argument is specified then the ith
@@ -997,7 +997,7 @@ void adj_lst_rand_dir_wts(const graph_t *g, /* num_vts >= 1 */
    and multiplication-based hash tables.
 */
 
-void run_bfs_dijkstra_test(size_t log_start, size_t log_end){
+void run_bfs_comparison_test(size_t log_start, size_t log_end){
   int res = 1;
   size_t p, i, j, k, l;
   size_t num_vts;
@@ -1248,7 +1248,7 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  dist_divchn = realloc_perror(dist_divchn, num_vts, wt_size);
 	  dist_muloa = realloc_perror(dist_muloa, num_vts, wt_size);
 	  C_SET_ZERO[k](wt_l);
-	  C_SET_TEST_MAX[k](wt_h, num_vts);
+	  C_SET_TEST_MAX[k](wt_h, pow_two_perror(log_end));
 	  C_SET_ZERO[k](wt_zero);
 	  for (l = 0; l < num_vts; l++){
 	    /* avoid trap representations in tests */
@@ -1333,7 +1333,10 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  print_test_result(res);
 	  printf("\t\t\t\t%s %s last run # paths:        %lu\n",
 		 C_VT_TYPES[j], C_WT_TYPES[k], TOLU(num_paths_def - 1));
-	  printf("\n");
+	  printf("\t\t\t\t%s %s last run [# wraps, sum]: [%lu, ",
+		 C_VT_TYPES[j], C_WT_TYPES[k], TOLU(num_wraps_def));
+	  C_PRINT[k](dsum_def);
+	  printf("]\n\n");
 	  res = 1;
 	  adj_lst_free(&a);
 	}
@@ -1567,6 +1570,7 @@ void set_test_max_ushort(void *a, size_t num_vts){
   if (num_vts == 0){
     *(unsigned short *)a = C_USHORT_MAX;
   }else{
+    /* usual arithmetic conversions */
     *(unsigned short *)a = C_USHORT_MAX / num_vts;
   }
 }
@@ -1575,6 +1579,7 @@ void set_test_max_uint(void *a, size_t num_vts){
   if (num_vts == 0){
     *(unsigned int *)a = C_UINT_MAX;
   }else{
+    /* usual arithmetic conversions */
     *(unsigned int *)a = C_UINT_MAX / num_vts;
   }
 }
@@ -1583,6 +1588,7 @@ void set_test_max_ulong(void *a, size_t num_vts){
   if (num_vts == 0){
     *(unsigned long *)a = C_ULONG_MAX;
   }else{
+    /* usual arithmetic conversions */
     *(unsigned long *)a = C_ULONG_MAX / num_vts;
   }
 }
@@ -1711,7 +1717,7 @@ void sum_dist_double(void *dist_sum,
   size_t i;
   double val;
   double *sum = dist_sum;
-  *sum = 0;
+  *sum = 0.0;
   *num_wraps = 0;
   *num_paths = 0;
   for (i = 0; i < num_vts; i++){
@@ -1740,7 +1746,7 @@ void print_sz(const void *a){
 }
 
 void print_double(const void *a){
-  printf("%.1f", *(const double *)a);
+  printf("%.8f", *(const double *)a);
 }
 
 /**
@@ -1863,9 +1869,9 @@ int main(int argc, char *argv[]){
     exit(EXIT_FAILURE);
   }
   /*pow_two_perror later tests that # vertices is representable as size_t */
-  run_small_graph_test();
-  run_bfs_dijkstra_test(args[0], args[1]);
-  run_rand_test(args[0], args[1]);
+  if (args[2]) run_small_graph_test();
+  if (args[3]) run_bfs_comparison_test(args[0], args[1]);
+  if (args[4]) run_rand_test(args[0], args[1]);
   free(args);
   args = NULL;
   return 0;
