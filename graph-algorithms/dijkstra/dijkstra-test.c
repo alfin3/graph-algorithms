@@ -877,6 +877,21 @@ void run_small_graph_test(){
 /** 
     Construct adjacency lists of random directed graphs with random 
     weights across vertex and weight types.
+
+    A function with the add_dir_ prefix adds a (u, v) edge to an adjacency
+    list of a weighted graph, preinitialized with at least adj_lst_base_init
+    and with the number of vertices n greater or equal to 1. An edge (u, v),
+    where u < n nad v < n, is added with the Bernoulli distribution according
+    to the bern and arg parameter values. wt_l and wt_h point to wt_size
+    blocks with values l and h of the weight type used to represent weights
+    in the adjacency list. l must be less or equal to h and non-negative due
+    to Dijkstra. If (u, v) is added, a random weight in [l, h) is chosen for
+    the edge. 
+
+    adj_lst_rand_dir_wts builds a random adjacency list with one of the 
+    above functions as a parameter value. g points to a graph preinitialized
+    with graph_base_init with at least one vertex. a points to a
+    preallocated block of size sizeof(adj_lst_t).
 */
 
 typedef struct{
@@ -895,7 +910,7 @@ void add_dir_ushort_edge(adj_lst_t *a,
 			 size_t u,
 			 size_t v,
 			 const void *wt_l,
-			 const void *wt_h, /* >= wt_l pointed value */
+			 const void *wt_h,
 			 void (*write_vt)(void *, size_t),
 			 int (*bern)(void *),
 			 void *arg){
@@ -925,7 +940,7 @@ void add_dir_ulong_edge(adj_lst_t *a,
 			size_t u,
 			size_t v,
 			const void *wt_l,
-			const void *wt_h, /* >= wt_l pointed value */
+			const void *wt_h,
 			void (*write_vt)(void *, size_t),
 			int (*bern)(void *),
 			void *arg){
@@ -940,7 +955,7 @@ void add_dir_sz_edge(adj_lst_t *a,
 		     size_t u,
 		     size_t v,
 		     const void *wt_l,
-		     const void *wt_h, /* >= wt_l pointed value */
+		     const void *wt_h,
 		     void (*write_vt)(void *, size_t),
 		     int (*bern)(void *),
 		     void *arg){
@@ -955,7 +970,7 @@ void add_dir_double_edge(adj_lst_t *a,
 			 size_t u,
 			 size_t v,
 			 const void *wt_l,
-			 const void *wt_h, /* >= wt_l pointed value */
+			 const void *wt_h,
 			 void (*write_vt)(void *, size_t),
 			 int (*bern)(void *),
 			 void *arg){
@@ -965,10 +980,10 @@ void add_dir_double_edge(adj_lst_t *a,
   adj_lst_add_dir_edge(a, u, v, &rand_val, write_vt, bern, arg);
 }
 
-void adj_lst_rand_dir_wts(const graph_t *g, /* num_vts >= 1 */
+void adj_lst_rand_dir_wts(const graph_t *g,
 			  adj_lst_t *a,
 			  const void *wt_l,
-			  const void *wt_h, /* >= wt_l pointed value */
+			  const void *wt_h,
 			  void (*write_vt)(void *, size_t),
 			  int (*bern)(void *),
 			  void *arg,
@@ -1006,6 +1021,7 @@ void run_bfs_comparison_test(size_t log_start, size_t log_end){
   size_t *rand_start = NULL;
   void *wt_l = NULL;
   void *wt_zero = NULL;
+  void *dist_elt_bfs = NULL;
   void *dist_bfs = NULL;
   void *prev_bfs = NULL;
   void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
@@ -1051,8 +1067,9 @@ void run_bfs_comparison_test(size_t log_start, size_t log_end){
 	  vt_size =  C_VT_SIZES[j];
 	  wt_size =  C_WT_SIZES[k];
 	  /* no declared type after realloc; new eff. type to be acquired */
-	  wt_l = realloc_perror(wt_l, 1, wt_size);
-	  wt_zero = realloc_perror(wt_zero, 1, wt_size);
+	  wt_l = realloc_perror(wt_l, 3, wt_size);
+	  wt_zero = ptr(wt_l, 1, wt_size);
+	  dist_elt_bfs = ptr(wt_l, 2, wt_size);
 	  prev_bfs = realloc_perror(prev_bfs, num_vts, vt_size);
 	  prev_def = realloc_perror(prev_def, num_vts, vt_size);
 	  prev_divchn = realloc_perror(prev_divchn, num_vts, vt_size);
@@ -1117,14 +1134,15 @@ void run_bfs_comparison_test(size_t log_start, size_t log_end){
 		      C_READ_VT[j](ptr(prev_divchn, l, vt_size)) &&
 		      C_READ_VT[j](ptr(prev_divchn, l, vt_size)) ==
 		      C_READ_VT[j](ptr(prev_muloa, l, vt_size)));
+	      C_WRITE_VT[k](dist_elt_bfs,
+			    C_READ_VT[j](ptr(dist_bfs, l, vt_size)));
 	      res *=
 		(C_CMP_WT[k](ptr(dist_def, l, wt_size),
 			     ptr(dist_divchn, l, wt_size)) == 0 &&
 		 C_CMP_WT[k](ptr(dist_divchn, l, wt_size),
 			     ptr(dist_muloa, l, wt_size)) == 0 &&
-		 /* convert to size_t since each distance <= num_vts */
-		 C_READ_VT[j](ptr(dist_bfs, l, vt_size)) ==
-		 C_READ_VT[k](ptr(dist_divchn, l, wt_size)));
+		 C_CMP_WT[k](ptr(dist_muloa, l, wt_size),
+			     dist_elt_bfs) == 0);
 	    }
 	  }
 	  printf("\t\t\t# edges: %lu\n", TOLU(a.num_es));
@@ -1152,7 +1170,6 @@ void run_bfs_comparison_test(size_t log_start, size_t log_end){
   }
   free(rand_start);
   free(wt_l);
-  free(wt_zero);
   free(dist_bfs);
   free(prev_bfs);
   free(dist_def);
@@ -1164,6 +1181,7 @@ void run_bfs_comparison_test(size_t log_start, size_t log_end){
   rand_start = NULL;
   wt_l = NULL;
   wt_zero = NULL;
+  dist_elt_bfs = NULL;
   dist_bfs = NULL;
   prev_bfs = NULL;
   dist_def = NULL;
@@ -1698,7 +1716,7 @@ void sum_dist_sz(void *dist_sum,
   for (i = 0; i < num_vts; i++){
     if (read_vt(ptr(prev, i, vt_size)) != num_vts){
       val = *(size_t *)ptr(dist, i, wt_size);
-      if (C_ULONG_MAX - *sum < val) (*num_wraps)++;
+      if (C_SZ_MAX - *sum < val) (*num_wraps)++;
       *sum += val;
       (*num_paths)++;
     }
