@@ -10,7 +10,7 @@
    associated with heap operations in Dijkstra's algorithm by choice of a
    hash table and its load factor upper bound. If NULL is passed as a hash
    table parameter value, a default hash table is used, which contains an
-   integer array with a count that is equal to the number of vertices in the
+   index array with a count that is equal to the number of vertices in the
    graph.   
 
    If E >> V, a default hash table may provide speed advantages by avoiding
@@ -22,7 +22,8 @@
    by the algorithm to the value of the previous vertex. If the block
    pointed to by prev has no declared type then the algorithm sets the
    effective type of every element to the integer type used to represent
-   vertices by writing a value of the type.
+   vertices by writing a value of the type, including a special value
+   for unreached vertices.
 
    A distance value in the dist array is only set if the corresponding
    vertex was reached, as indicated by the prev array, in which case it
@@ -137,6 +138,8 @@ typedef struct{
    add_wt      : addition function which copies the sum of the weight values
                  pointed to by the second and third arguments to the
                  preallocated weight block pointed to by the first argument
+                 if the distribution of weights can result in an overflow,
+                 the user may include an overflow test in the function
 */
 void dijkstra(const adj_lst_t *a,
 	      size_t start,

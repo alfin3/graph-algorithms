@@ -21,8 +21,7 @@
    dijkstra-test can be run with any subset of command line arguments in the
    above-defined order. If the (i + 1)th argument is specified then the ith
    argument must be specified for i >= 0. Default values are used for the
-   unspecified arguments, which are 0 for the first argument, 10 for the
-   second argument, and 1 for the following arguments.
+   unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 and C99. The tests require that:
@@ -355,47 +354,52 @@ void print_sz(const void *a);
 void print_double(const void *a);
 
 void sum_dist_ushort(void *dist_sum,
-		     size_t *num_wraps,
+		     void *wt_sum,
+		     size_t *num_dist_wraps,
+		     size_t *num_wt_wraps,
 		     size_t *num_paths,
 		     size_t num_vts,
 		     size_t vt_size,
-		     size_t wt_size,
 		     const void *prev,
 		     const void *dist,
 		     size_t (*read_vt)(const void *));
 void sum_dist_uint(void *dist_sum,
-		   size_t *num_wraps,
+		   void *wt_sum,
+		   size_t *num_dist_wraps,
+		   size_t *num_wt_wraps,
 		   size_t *num_paths,
 		   size_t num_vts,
 		   size_t vt_size,
-		   size_t wt_size,
 		   const void *prev,
 		   const void *dist,
 		   size_t (*read_vt)(const void *));
 void sum_dist_ulong(void *dist_sum,
-		    size_t *num_wraps,
+		    void *wt_sum,
+		    size_t *num_dist_wraps,
+		    size_t *num_wt_wraps,
 		    size_t *num_paths,
 		    size_t num_vts,
 		    size_t vt_size,
-		    size_t wt_size,
 		    const void *prev,
 		    const void *dist,
 		    size_t (*read_vt)(const void *));
 void sum_dist_sz(void *dist_sum,
-		 size_t *num_wraps,
+		 void *wt_sum,
+		 size_t *num_dist_wraps,
+		 size_t *num_wt_wraps,
 		 size_t *num_paths,
 		 size_t num_vts,
 		 size_t vt_size,
-		 size_t wt_size,
 		 const void *prev,
 		 const void *dist,
 		 size_t (*read_vt)(const void *));
 void sum_dist_double(void *dist_sum,
-		     size_t *num_wraps,
+		     void *wt_sum,
+		     size_t *num_dist_wraps,
+		     size_t *num_wt_wraps,
 		     size_t *num_paths,
 		     size_t num_vts,
 		     size_t vt_size,
-		     size_t wt_size,
 		     const void *prev,
 		     const void *dist,
 		     size_t (*read_vt)(const void *));
@@ -419,9 +423,10 @@ void (* const C_SET_TEST_MAX[5])(void *, size_t) ={
   set_test_max_sz,
   set_test_max_double};
 void (* const C_SUM_DIST[5])(void *,
+			     void *,
 			     size_t *,
 			     size_t *,
-			     size_t,
+			     size_t *,
 			     size_t,
 			     size_t,
 			     const void *,
@@ -1204,11 +1209,13 @@ void run_rand_test(size_t log_start, size_t log_end){
   size_t num_vts;
   size_t vt_size;
   size_t wt_size;
-  size_t num_wraps_def, num_wraps_divchn, num_wraps_muloa;
+  size_t num_dwraps_def, num_dwraps_divchn, num_dwraps_muloa;
+  size_t num_wwraps_def, num_wwraps_divchn, num_wwraps_muloa;
   size_t num_paths_def, num_paths_divchn, num_paths_muloa;
   size_t *rand_start = NULL;
   void *wt_l = NULL, *wt_h = NULL;
   void *wt_zero = NULL;
+  void *wsum_def = NULL, *wsum_divchn = NULL, *wsum_muloa = NULL;
   void *dsum_def = NULL, *dsum_divchn = NULL, *dsum_muloa = NULL;
   void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
   void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
@@ -1256,6 +1263,9 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  wt_l = realloc_perror(wt_l, 2, wt_size);
 	  wt_h = (char *)wt_l + wt_size;
 	  wt_zero = realloc_perror(wt_zero, 1, wt_size);
+	  wsum_def =realloc_perror(wsum_def, num_vts, wt_size);
+	  wsum_divchn = realloc_perror(wsum_divchn, num_vts, wt_size);
+	  wsum_muloa = realloc_perror(wsum_muloa, num_vts, wt_size);
 	  dsum_def = realloc_perror(dsum_def, num_vts, wt_size);
 	  dsum_divchn = realloc_perror(dsum_divchn, num_vts, wt_size);
 	  dsum_muloa = realloc_perror(dsum_muloa, num_vts, wt_size);
@@ -1288,11 +1298,12 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  }
 	  t_def = clock() - t_def;
 	  C_SUM_DIST[k](dsum_def,
-			&num_wraps_def,
+			wsum_def,
+			&num_dwraps_def,
+			&num_wwraps_def,
 			&num_paths_def,
 			num_vts,
 			vt_size,
-			wt_size,
 			dist_def,
 			prev_def,
 			C_READ_VT[j]);
@@ -1304,11 +1315,12 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  }
 	  t_divchn = clock() - t_divchn;
 	  C_SUM_DIST[k](dsum_divchn,
-			&num_wraps_divchn,
+			wsum_divchn,
+			&num_dwraps_divchn,
+			&num_wwraps_divchn,
 			&num_paths_divchn,
 			num_vts,
 			vt_size,
-			wt_size,
 			dist_def,
 			prev_def,
 			C_READ_VT[j]);
@@ -1320,20 +1332,25 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  }
 	  t_muloa = clock() - t_muloa;
 	  C_SUM_DIST[k](dsum_muloa,
-			&num_wraps_muloa,
+			wsum_muloa,
+			&num_dwraps_muloa,
+			&num_wwraps_muloa,
 			&num_paths_muloa,
 			num_vts,
 			vt_size,
-			wt_size,
 			dist_def,
 			prev_def,
 			C_READ_VT[j]);
 	  if (k < C_FN_INTEGRAL_WT_COUNT){
 	    res *= (C_CMP_WT[k](dsum_def, dsum_divchn) == 0 &&
-		    C_CMP_WT[k](dsum_divchn, dsum_muloa) == 0);
+		    C_CMP_WT[k](dsum_divchn, dsum_muloa) == 0 &&
+		    C_CMP_WT[k](wsum_def, wsum_divchn) == 0 &&
+		    C_CMP_WT[k](wsum_divchn, wsum_muloa) == 0);
 	  }
-	  res *= (num_wraps_def == num_wraps_divchn &&
-		  num_wraps_divchn == num_wraps_muloa &&
+	  res *= (num_dwraps_def == num_dwraps_divchn &&
+		  num_dwraps_divchn == num_dwraps_muloa &&
+		  num_wwraps_def == num_wwraps_divchn && 
+		  num_wwraps_divchn == num_wwraps_muloa &&
 		  num_paths_def == num_paths_divchn &&
 		  num_paths_divchn == num_paths_muloa);
 	  printf("\t\t\t# edges: %lu\n", TOLU(a.num_es));
@@ -1349,11 +1366,15 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  printf("\t\t\t\t%s %s correctness:             ",
 		 C_VT_TYPES[j], C_WT_TYPES[k]);
 	  print_test_result(res);
-	  printf("\t\t\t\t%s %s last run # paths:        %lu\n",
+	  printf("\t\t\t\t%s %s last # paths:            %lu\n",
 		 C_VT_TYPES[j], C_WT_TYPES[k], TOLU(num_paths_def - 1));
-	  printf("\t\t\t\t%s %s last run [# wraps, sum]: [%lu, ",
-		 C_VT_TYPES[j], C_WT_TYPES[k], TOLU(num_wraps_def));
+	  printf("\t\t\t\t%s %s last [# wraps, d sum]:   [%lu, ",
+		 C_VT_TYPES[j], C_WT_TYPES[k], TOLU(num_dwraps_def));
 	  C_PRINT[k](dsum_def);
+	  printf("]\n");
+	  printf("\t\t\t\t%s %s last [# wraps, wt sum]:  [%lu, ",
+		 C_VT_TYPES[j], C_WT_TYPES[k], TOLU(num_wwraps_def));
+	  C_PRINT[k](wsum_def);
 	  printf("]\n\n");
 	  res = 1;
 	  adj_lst_free(&a);
@@ -1532,16 +1553,22 @@ size_t mul_high_sz(size_t a, size_t b){
    random weights (i.e. unreached upper bound) and reflect that at most
    n - 1 edges participate in a path because otherwise there is a cycle.
 
-   The functions with the sum_dist prefix compute the sum across unsigned
-   integer path distances by counting wrap-arounds. The computation is
-   overflow safe, because each path distance is at most the maximum value of
-   the integer type used to represent weights. There are at most n - 1 paths
-   with a non-zero distance and the wrap-around counter cannot overflow. The
-   total sum is: # wrap-arounds * max value of type + # wraps-arounds + sum. 
+   The functions with the sum_dist prefix compute the sum of unsigned
+   integer path distances, and the sum of unsigned integer weights across
+   the edges in all paths by counting the wrap-arounds in each case.
+   The computation is overflow safe, because each path distance is at most
+   the maximum value of the unsigned integer type used to represent weights,
+   and there are at most n - 1 paths with a non-zero distance. There are
+   also at most n - 1 edges in the set of edges across all paths, because
+   when v is popped (u, v) is added to the set with u being a popped vertex.
+   The wrap-around count for the edge weights should be zero because
+   any subset of n - 1 edges in tests can be added without overflow. The
+   total sum in each case is: # wrap-arounds * max value of weight type +
+   # wraps-arounds + wrapped sum of weight type. 
 
    For double weights, the maximum value in 1.0 / n, where n can be
    converted to double as required in tests, and the number of wrap-arounds
-   is 0.
+   is 0 for the sum of distances and the sum of weights.
 */
 
 void set_zero_ushort(void *a){
@@ -1624,124 +1651,157 @@ void set_test_max_double(void *a, size_t num_vts){
 }
 
 void sum_dist_ushort(void *dist_sum,
-		     size_t *num_wraps, /* <= num_vts */
+		     void *wt_sum,
+		     size_t *num_dist_wraps, /* <= num_vts */
+		     size_t *num_wt_wraps, /* <= num_vts */
 		     size_t *num_paths, /* <= num_vts */
 		     size_t num_vts,
 		     size_t vt_size,
-		     size_t wt_size,
 		     const void *dist,
 		     const void *prev,
 		     size_t (*read_vt)(const void *)){
-  size_t i;
-  unsigned short val;
-  unsigned short *sum = dist_sum;
-  *sum = 0;
-  *num_wraps = 0;
+  size_t i, p;
+  unsigned short *dsum = dist_sum;
+  unsigned short *wsum = wt_sum;
+  const unsigned short *d = dist;
+  *dsum = 0;
+  *wsum = 0;
+  *num_dist_wraps = 0;
+  *num_wt_wraps = 0;
   *num_paths = 0;
   for (i = 0; i < num_vts; i++){
-    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
-      val = *(unsigned short *)ptr(dist, i, wt_size);
-      if (C_USHORT_MAX - *sum < val) (*num_wraps)++;
-      *sum += val;
+    p = read_vt(ptr(prev, i, vt_size));
+    if (p != num_vts){
+      (*num_dist_wraps) += (C_USHORT_MAX - *dsum < d[i]);
+      /* includes d[i] < d[p] */
+      (*num_wt_wraps) += (C_USHORT_MAX - *wsum < d[i] - d[p]);
+      *dsum += d[i];
+      *wsum += d[i] - d[p];
       (*num_paths)++;
     }
   }
 }
 
 void sum_dist_uint(void *dist_sum,
-		   size_t *num_wraps, /* <= num_vts */
+		   void *wt_sum,
+		   size_t *num_dist_wraps, /* <= num_vts */
+		   size_t *num_wt_wraps, /* <= num_vts */
 		   size_t *num_paths, /* <= num_vts */
 		   size_t num_vts,
 		   size_t vt_size,
-		   size_t wt_size,
 		   const void *dist,
 		   const void *prev,
 		   size_t (*read_vt)(const void *)){
-  size_t i;
-  unsigned int val;
-  unsigned int *sum = dist_sum;
-  *sum = 0;
-  *num_wraps = 0;
+  size_t i, p;
+  unsigned int *dsum = dist_sum;
+  unsigned int *wsum = wt_sum;
+  const unsigned int *d = dist;
+  *dsum = 0;
+  *wsum = 0;
+  *num_dist_wraps = 0;
+  *num_wt_wraps = 0;
   *num_paths = 0;
   for (i = 0; i < num_vts; i++){
-    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
-      val = *(unsigned int *)ptr(dist, i, wt_size);
-      if (C_UINT_MAX - *sum < val) (*num_wraps)++;
-      *sum += val;
+    p = read_vt(ptr(prev, i, vt_size));
+    if (p != num_vts){
+      (*num_dist_wraps) += (C_UINT_MAX - *dsum < d[i]);
+      /* includes d[i] < d[p] */
+      (*num_wt_wraps) += (C_UINT_MAX - *wsum < d[i] - d[p]);
+      *dsum += d[i];
+      *wsum += d[i] - d[p];
       (*num_paths)++;
     }
   }
 }
 
 void sum_dist_ulong(void *dist_sum,
-		    size_t *num_wraps, /* <= num_vts */
+		    void *wt_sum,
+		    size_t *num_dist_wraps, /* <= num_vts */
+		    size_t *num_wt_wraps, /* <= num_vts */
 		    size_t *num_paths, /* <= num_vts */
 		    size_t num_vts,
 		    size_t vt_size,
-		    size_t wt_size,
 		    const void *dist,
 		    const void *prev,
 		    size_t (*read_vt)(const void *)){
-  size_t i;
-  unsigned long val;
-  unsigned long *sum = dist_sum;
-  *sum = 0;
-  *num_wraps = 0;
+  size_t i, p;
+  unsigned long *dsum = dist_sum;
+  unsigned long *wsum = wt_sum;
+  const unsigned long *d = dist;
+  *dsum = 0;
+  *wsum = 0;
+  *num_dist_wraps = 0;
+  *num_wt_wraps = 0;
   *num_paths = 0;
   for (i = 0; i < num_vts; i++){
-    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
-      val = *(long int *)ptr(dist, i, wt_size);
-      if (C_ULONG_MAX - *sum < val) (*num_wraps)++;
-      *sum += val;
+    p = read_vt(ptr(prev, i, vt_size));
+    if (p != num_vts){
+      (*num_dist_wraps) += (C_ULONG_MAX - *dsum < d[i]);
+      /* includes d[i] < d[p] */
+      (*num_wt_wraps) += (C_ULONG_MAX - *wsum < d[i] - d[p]);
+      *dsum += d[i];
+      *wsum += d[i] - d[p];
       (*num_paths)++;
     }
   }
 }
 
 void sum_dist_sz(void *dist_sum,
-		 size_t *num_wraps, /* <= num_vts */
+		 void *wt_sum,
+		 size_t *num_dist_wraps, /* <= num_vts */
+		 size_t *num_wt_wraps, /* <= num_vts */
 		 size_t *num_paths, /* <= num_vts */
 		 size_t num_vts,
 		 size_t vt_size,
-		 size_t wt_size,
 		 const void *dist,
 		 const void *prev,
 		 size_t (*read_vt)(const void *)){
-  size_t i;
-  size_t val;
-  size_t *sum = dist_sum;
-  *sum = 0;
-  *num_wraps = 0;
+  size_t i, p;
+  size_t *dsum = dist_sum;
+  size_t *wsum = wt_sum;
+  const size_t *d = dist;
+  *dsum = 0;
+  *wsum = 0;
+  *num_dist_wraps = 0;
+  *num_wt_wraps = 0;
   *num_paths = 0;
   for (i = 0; i < num_vts; i++){
-    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
-      val = *(size_t *)ptr(dist, i, wt_size);
-      if (C_SZ_MAX - *sum < val) (*num_wraps)++;
-      *sum += val;
+    p = read_vt(ptr(prev, i, vt_size));
+    if (p != num_vts){
+      (*num_dist_wraps) += (C_SZ_MAX - *dsum < d[i]);
+      /* includes d[i] < d[p] */
+      (*num_wt_wraps) += (C_SZ_MAX - *wsum < d[i] - d[p]);
+      *dsum += d[i];
+      *wsum += d[i] - d[p];
       (*num_paths)++;
     }
   }
 }
 
 void sum_dist_double(void *dist_sum,
-		     size_t *num_wraps, /* 0 for double */
+		     void *wt_sum,
+		     size_t *num_dist_wraps, /* <= num_vts */
+		     size_t *num_wt_wraps, /* <= num_vts */
 		     size_t *num_paths, /* <= num_vts */
 		     size_t num_vts,
 		     size_t vt_size,
-		     size_t wt_size,
 		     const void *dist,
 		     const void *prev,
 		     size_t (*read_vt)(const void *)){
-  size_t i;
-  double val;
-  double *sum = dist_sum;
-  *sum = 0.0;
-  *num_wraps = 0;
+  size_t i, p;
+  double *dsum = dist_sum;
+  double *wsum = wt_sum;
+  const double *d = dist;
+  *dsum = 0;
+  *wsum = 0;
+  *num_dist_wraps = 0;
+  *num_wt_wraps = 0;
   *num_paths = 0;
   for (i = 0; i < num_vts; i++){
-    if (read_vt(ptr(prev, i, vt_size)) != num_vts){
-      val = *(double *)ptr(dist, i, wt_size);
-      *sum += val;
+    p = read_vt(ptr(prev, i, vt_size));
+    if (p != num_vts){
+      *dsum += d[i];
+      *wsum += d[i] - d[p];
       (*num_paths)++;
     }
   }
