@@ -134,25 +134,24 @@ static void *ptr(const void *block, size_t i, size_t size);
                  weight values are equal
 */
 void prim(const adj_lst_t *a,
-	      size_t start,
-	      void *dist,
-	      void *prev,
-	      const void *wt_zero,
-	      const prim_ht_t *pmht,
-	      size_t (*read_vt)(const void *),
-	      void (*write_vt)(void *, size_t),
-	      void *(*at_vt)(const void *, const void *),
-	      int (*cmp_vt)(const void *, const void *),
-	      int (*cmp_wt)(const void *, const void *)){
+	  size_t start,
+	  void *dist,
+	  void *prev,
+	  const void *wt_zero,
+	  const prim_ht_t *pmht,
+	  size_t (*read_vt)(const void *),
+	  void (*write_vt)(void *, size_t),
+	  void *(*at_vt)(const void *, const void *),
+	  int (*cmp_vt)(const void *, const void *),
+	  int (*cmp_wt)(const void *, const void *)){
   ht_def_t ht_def;
   heap_ht_t hht;
   heap_t h;
   void *p = NULL, *p_start = NULL, *p_end = NULL;
-  void *dp = NULL;
+  void *dp = NULL, *dp_new = NULL;
   /* variables in single block for cache-efficiency */
   void * const vars =
-    malloc_perror(1, add_sz_perror(compute_wt_offset(a),
-				   mul_sz_perror(2, a->wt_size)));
+    malloc_perror(1, add_sz_perror(compute_wt_offset(a), a->wt_size));
   void * const u = vars;
   void * const nr = (char *)u + a->vt_size;
   void * const du = (char *)u + compute_wt_offset(a);

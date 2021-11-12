@@ -32,6 +32,8 @@ DLL_DIR       = $(DS_DIR)dll/
 STACK_DIR     = $(DS_DIR)stack/
 UTILS_MEM_DIR = ../../utilities/utilities-mem/
 UTILS_MOD_DIR = ../../utilities/utilities-mod/
+UTILS_LIM_DIR = ../../utilities/utilities-lim/
+
 CFLAGS = -I$(GRAPH_DIR)                               \
          -I$(HEAP_DIR)                                \
          -I$(HT_DIVCHN_DIR)                           \
@@ -40,6 +42,7 @@ CFLAGS = -I$(GRAPH_DIR)                               \
          -I$(STACK_DIR)                               \
          -I$(UTILS_MEM_DIR)                           \
          -I$(UTILS_MOD_DIR)                           \
+         -I$(UTILS_LIM_DIR)                           \
          ${CFLAGS_BUILD_MODE} -Wall -Wextra -flto -O3
 
 OBJ = prim-test.o                     \
@@ -63,7 +66,8 @@ prim-test.o                     : prim.h                          \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 prim.o                          : prim.h                          \
                                   $(GRAPH_DIR)graph.h             \
                                   $(HEAP_DIR)heap.h               \
@@ -77,17 +81,20 @@ $(HEAP_DIR)heap.o               : $(HEAP_DIR)heap.h               \
 $(HT_DIVCHN_DIR)ht-divchn.o     : $(HT_DIVCHN_DIR)ht-divchn.h     \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 $(HT_MULOA_DIR)ht-muloa.o       : $(HT_MULOA_DIR)ht-muloa.h       \
                                   $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 $(DLL_DIR)dll.o                 : $(DLL_DIR)dll.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(STACK_DIR)stack.o             : $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
-$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h
+$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 
 .PHONY : clean clean-all
 
