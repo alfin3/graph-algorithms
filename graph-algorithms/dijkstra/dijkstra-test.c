@@ -1252,6 +1252,18 @@ void run_rand_test(size_t log_start, size_t log_end){
   for (p = 0; p < C_PROBS_COUNT; p++){
     b.p = C_PROBS[p];
     printf("\tP[an edge is in a graph] = %.4f\n", C_PROBS[p]);
+    for (k = 0; k < C_FN_WT_COUNT; k++){
+      wt_size =  C_WT_SIZES[k];
+      wt_l = realloc_perror(wt_l, 2, wt_size);
+      wt_h = (char *)wt_l +  wt_size;
+      C_SET_ZERO[k](wt_l);
+      C_SET_TEST_MAX[k](wt_h, pow_two_perror(log_end));
+      printf("\t%s range: [", C_WT_TYPES[k]);
+      C_PRINT[k](wt_l);
+      printf(", ");
+      C_PRINT[k](wt_h);
+      printf(")\n");
+    }
     for (i = log_start; i <= log_end; i++){
       num_vts = pow_two_perror(i); /* 0 < n */
       printf("\t\t# vertices: %lu\n", TOLU(num_vts));
