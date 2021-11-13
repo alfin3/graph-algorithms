@@ -42,11 +42,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
 
-const size_t C_STACK_INIT_COUNT = 1;
+static const unsigned char C_UCHAR_MAX = UCHAR_MAX;
+static const unsigned short C_USHORT_MAX = USHRT_MAX;
+static const unsigned int C_UINT_MAX = UINT_MAX;
+static const unsigned long C_ULONG_MAX = ULONG_MAX;
+static const size_t C_SZ_MAX = (size_t)-1;
+
+static const signed char C_SCHAR_MAX = SCHAR_MAX;
+static const short C_SHORT_MAX = SHRT_MAX;
+static const int C_INT_MAX = INT_MAX;
+static const long C_LONG_MAX = LONG_MAX;
+
+static const size_t C_STACK_INIT_COUNT = 1;
 
 /**
    Initializes a weighted or unweighted graph with num_vts vertices
@@ -376,8 +388,11 @@ void adj_lst_free(adj_lst_t *a){
   a->vt_wts = NULL;
 }
 
+/* A. Vertex operations */
+
 /**
-   Read values of different unsigned integer types of vertices.
+   Read values of different unsigned integer types of vertices. size_t
+   can represent any vertex due to graph construction.
 */
 
 size_t graph_read_uchar(const void *a){
@@ -419,9 +434,9 @@ void graph_write_sz(void *a, size_t val){
 /**
    Get a pointer to the element in the array pointed to by the first
    argument at the index pointed to by the second argument; the first
-   argument points to the integer type used to represent vertices and
-   is not dereferenced; the second argument points to a value of the
-   integer type used to represent vertices and is dereferenced.
+   argument points to the unsigned integer type used to represent vertices
+   and is not dereferenced; the second argument points to a value of the
+   same unsigned integer type and is dereferenced.
 */
 
 void *graph_at_uchar(const void *a, const void *i){
@@ -442,28 +457,31 @@ void *graph_at_sz(const void *a, const void *i){
 
 /**
    Compare the element pointed to by the first argument to the element
-   pointed to by the second argument; each argument points to a value of
-   the integer type used to represent vertices.
+   pointed to by the second argument, and return 0 iff the two elements
+   are equal; each argument points to a value of the unsigned integer
+   type used to represent vertices.
 */
 
-int graph_cmp_uchar(const void *a, const void *b){
+int graph_cmpeq_uchar(const void *a, const void *b){
   return *(const unsigned char *)a != *(const unsigned char *)b;
 }
-int graph_cmp_ushort(const void *a, const void *b){
+int graph_cmpeq_ushort(const void *a, const void *b){
   return *(const unsigned short *)a != *(const unsigned short *)b;
 }
-int graph_cmp_uint(const void *a, const void *b){
+int graph_cmpeq_uint(const void *a, const void *b){
   return *(const unsigned int *)a != *(const unsigned int *)b;
 }
-int graph_cmp_ulong(const void *a, const void *b){
+int graph_cmpeq_ulong(const void *a, const void *b){
   return *(const unsigned long *)a != *(const unsigned long *)b;
 }
-int graph_cmp_sz(const void *a, const void *b){
+int graph_cmpeq_sz(const void *a, const void *b){
   return *(const size_t *)a != *(const size_t *)b;
 }
 
 /**
-   Increment values of different unsigned integer types of vertices.
+   Increment values of different unsigned integer types. The argument
+   points to a value of the unsigned integer type used to represent 
+   vertices.
 */
 
 void graph_incr_uchar(void *a){
@@ -480,4 +498,177 @@ void graph_incr_ulong(void *a){
 }
 void graph_incr_sz(void *a){
   (*(size_t *)a)++;
+}
+
+/* B. Weight operations */
+
+/**
+   Return a negative integer value if the value pointed to by the first
+   argument is less than the value pointed to by the second, a positive
+   integer value if the value pointed to by the first argument is greater
+   than the value pointed to by the second, and zero integer value
+   if the two values are equal; each argument points to a value of the
+   integer type used to represent weights. Non-integer weight operations
+   on suitable systems are defined by the user.
+*/
+
+int graph_cmp_uchar(const void *a, const void *b){
+  if (*(const unsigned char *)a < *(const unsigned char *)b) return -1;
+  return *(const unsigned char *)a > *(const unsigned char *)b;
+}
+int graph_cmp_ushort(const void *a, const void *b){
+  if (*(const unsigned short *)a < *(const unsigned short *)b) return -1;
+  return *(const unsigned short *)a > *(const unsigned short *)b;
+}
+int graph_cmp_uint(const void *a, const void *b){
+  if (*(const unsigned int *)a < *(const unsigned int *)b) return -1;
+  return *(const unsigned int *)a > *(const unsigned int *)b;
+}
+int graph_cmp_ulong(const void *a, const void *b){
+  if (*(const unsigned long *)a < *(const unsigned long *)b) return -1;
+  return *(const unsigned long *)a > *(const unsigned long *)b;
+}
+int graph_cmp_sz(const void *a, const void *b){
+  if (*(const size_t *)a < *(const size_t *)b) return -1;
+  return *(const size_t *)a > *(const size_t *)b;
+}
+
+int graph_cmp_schar(const void *a, const void *b){
+  if (*(const signed char *)a < *(const signed char *)b) return -1;
+  return *(const signed char *)a > *(const signed char *)b;
+}
+int graph_cmp_short(const void *a, const void *b){
+  if (*(const short *)a < *(const short *)b) return -1;
+  return *(const short *)a > *(const short *)b;
+}
+int graph_cmp_int(const void *a, const void *b){
+  if (*(const int *)a < *(const int *)b) return -1;
+  return *(const int *)a > *(const int *)b;
+}
+int graph_cmp_long(const void *a, const void *b){
+  if (*(const long *)a < *(const long *)b) return -1;
+  return *(const long *)a > *(const long *)b;
+}
+
+/**
+   Copies the sum of the values pointed to by the second and third
+   arguments to the preallocated block pointed to by the first argument;
+   the second and third arguments point to values of the integer type used
+   to represent weights; if the block pointed to by the first argument
+   has no declared type, then the operation sets the effective type to the
+   type used to represent weights; the operations with the _perror suffix
+   provide an error message and an exit is executed if an integer overflow
+   is attempted during addition. Non-integer weight operations on suitable
+   systems are defined by the user.
+*/
+
+void graph_add_uchar(void *s, const void *a, const void *b){
+  *(unsigned char *)s =
+    *(const unsigned char *)a + *(const unsigned char *)b;
+}
+void graph_add_ushort(void *s, const void *a, const void *b){
+  *(unsigned short *)s =
+    *(const unsigned short *)a + *(const unsigned short *)b;
+}
+void graph_add_uint(void *s, const void *a, const void *b){
+  *(unsigned int *)s =
+    *(const unsigned int *)a + *(const unsigned int *)b;
+}
+void graph_add_ulong(void *s, const void *a, const void *b){
+  *(unsigned long *)s =
+    *(const unsigned long *)a + *(const unsigned long *)b;
+}
+void graph_add_sz(void *s, const void *a, const void *b){
+  *(size_t *)s = *(const size_t *)a + *(const size_t *)b;
+}
+
+void graph_add_uchar_perror(void *s, const void *a, const void *b){
+  if (*(const unsigned char *)a >
+      C_UCHAR_MAX - *(const unsigned char *)b){
+    perror("addition uchar overflow");
+    exit(EXIT_FAILURE);
+  }
+  *(unsigned char *)s =
+    *(const unsigned char *)a + *(const unsigned char *)b;
+}
+void graph_add_ushort_perror(void *s, const void *a, const void *b){
+  if (*(const unsigned short *)a >
+      C_USHORT_MAX - *(const unsigned short *)b){
+    perror("addition ushort overflow");
+    exit(EXIT_FAILURE);
+  }
+  *(unsigned short *)s =
+    *(const unsigned short *)a + *(const unsigned short *)b;
+}
+void graph_add_uint_perror(void *s, const void *a, const void *b){
+  if (*(const unsigned int *)a >
+      C_UINT_MAX - *(const unsigned int *)b){
+    perror("addition uint overflow");
+    exit(EXIT_FAILURE);
+  }
+  *(unsigned int *)s =
+    *(const unsigned int *)a + *(const unsigned int *)b;
+}
+void graph_add_ulong_perror(void *s, const void *a, const void *b){
+  if (*(const unsigned long *)a >
+      C_ULONG_MAX - *(const unsigned long *)b){
+    perror("addition ulong overflow");
+    exit(EXIT_FAILURE);
+  }
+  *(unsigned long *)s =
+    *(const unsigned long *)a + *(const unsigned long *)b;
+}
+void graph_add_sz_perror(void *s, const void *a, const void *b){
+  if (*(const size_t *)a >
+      C_SZ_MAX - *(const size_t *)b){
+    perror("addition sz overflow");
+    exit(EXIT_FAILURE);
+  }
+  *(size_t *)s = *(const size_t *)a + *(const size_t *)b;
+}
+
+void graph_add_schar(void *s, const void *a, const void *b){
+  *(signed char *)s = *(const signed char *)a + *(const signed char *)b;
+}
+void graph_add_short(void *s, const void *a, const void *b){
+  *(short *)s = *(const short *)a + *(const short *)b;
+}
+void graph_add_int(void *s, const void *a, const void *b){
+  *(int *)s = *(const int *)a + *(const int *)b;
+}
+void graph_add_long(void *s, const void *a, const void *b){
+  *(long *)s = *(const long *)a + *(const long *)b;
+}
+
+void graph_add_schar_perror(void *s, const void *a, const void *b){
+  if (*(const signed char *)a >
+      C_SCHAR_MAX - *(const signed char *)b){
+    perror("addition schar overflow");
+    exit(EXIT_FAILURE);
+  }
+  *(signed char *)s = *(const signed char *)a + *(const signed char *)b;
+}
+void graph_add_short_perror(void *s, const void *a, const void *b){
+  if (*(const short *)a >
+      C_SHORT_MAX - *(const short *)b){
+    perror("addition short overflow");
+    exit(EXIT_FAILURE);
+  }
+  *(short *)s = *(const short *)a + *(const short *)b;
+}
+void graph_add_int_perror(void *s, const void *a, const void *b){
+  if (*(const int *)a >
+      C_INT_MAX - *(const int *)b){
+    perror("addition int overflow");
+    exit(EXIT_FAILURE);
+  }
+  *(int *)s = *(const int *)a + *(const int *)b;
+}
+void graph_add_long_perror(void *s, const void *a, const void *b){
+  if (*(const long *)a >
+      C_LONG_MAX - *(const long *)b){
+    perror("addition long overflow");
+    exit(EXIT_FAILURE);
+  }
+  *(long *)s = *(const long *)a + *(const long *)b;
 }

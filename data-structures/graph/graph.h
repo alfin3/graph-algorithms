@@ -249,8 +249,11 @@ void adj_lst_rand_undir(adj_lst_t *a,
 */
 void adj_lst_free(adj_lst_t *a);
 
+/* A. Vertex operations */
+
 /**
-   Read values of different unsigned integer types of vertices.
+   Read values of different unsigned integer types of vertices. size_t
+   can represent any vertex due to graph construction.
 */
 
 size_t graph_read_uchar(const void *a);
@@ -272,9 +275,9 @@ void graph_write_sz(void *a, size_t val);
 /**
    Get a pointer to the element in the array pointed to by the first
    argument at the index pointed to by the second argument; the first
-   argument points to the integer type used to represent vertices and
-   is not dereferenced; the second argument points to a value of the
-   integer type used to represent vertices and is dereferenced.
+   argument points to the unsigned integer type used to represent vertices
+   and is not dereferenced; the second argument points to a value of the
+   same unsigned integer type and is dereferenced.
 */
 
 void *graph_at_uchar(const void *a, const void *i);
@@ -285,8 +288,39 @@ void *graph_at_sz(const void *a, const void *i);
 
 /**
    Compare the element pointed to by the first argument to the element
-   pointed to by the second argument; each argument points to a value of
-   the integer type used to represent vertices.
+   pointed to by the second argument, and return 0 iff the two elements
+   are equal; each argument points to a value of the unsigned integer
+   type used to represent vertices.
+*/
+
+int graph_cmpeq_uchar(const void *a, const void *b);
+int graph_cmpeq_ushort(const void *a, const void *b);
+int graph_cmpeq_uint(const void *a, const void *b);
+int graph_cmpeq_ulong(const void *a, const void *b);
+int graph_cmpeq_sz(const void *a, const void *b);
+
+/**
+   Increment values of different unsigned integer types. The argument
+   points to a value of the unsigned integer type used to represent 
+   vertices.
+*/
+
+void graph_incr_uchar(void *a);
+void graph_incr_ushort(void *a);
+void graph_incr_uint(void *a);
+void graph_incr_ulong(void *a);
+void graph_incr_sz(void *a);
+
+/* B. Weight operations */
+
+/**
+   Return a negative integer value if the value pointed to by the first
+   argument is less than the value pointed to by the second, a positive
+   integer value if the value pointed to by the first argument is greater
+   than the value pointed to by the second, and zero integer value
+   if the two values are equal; each argument points to a value of the
+   integer type used to represent weights. Non-integer weight operations
+   on suitable systems are defined by the user.
 */
 
 int graph_cmp_uchar(const void *a, const void *b);
@@ -295,14 +329,43 @@ int graph_cmp_uint(const void *a, const void *b);
 int graph_cmp_ulong(const void *a, const void *b);
 int graph_cmp_sz(const void *a, const void *b);
 
+int graph_cmp_schar(const void *a, const void *b);
+int graph_cmp_short(const void *a, const void *b);
+int graph_cmp_int(const void *a, const void *b);
+int graph_cmp_long(const void *a, const void *b);
+
 /**
-   Increment values of different unsigned integer types of vertices.
+   Copies the sum of the values pointed to by the second and third
+   arguments to the preallocated block pointed to by the first argument;
+   the second and third arguments point to values of the integer type used
+   to represent weights; if the block pointed to by the first argument
+   has no declared type, then the operation sets the effective type to the
+   type used to represent weights; the operations with the _perror suffix
+   provide an error message and an exit is executed if an integer overflow
+   is attempted during addition. Non-integer weight operations on suitable
+   systems are defined by the user.
 */
 
-void graph_incr_uchar(void *a);
-void graph_incr_ushort(void *a);
-void graph_incr_uint(void *a);
-void graph_incr_ulong(void *a);
-void graph_incr_sz(void *a);
+void graph_add_uchar(void *s, const void *a, const void *b);
+void graph_add_ushort(void *s, const void *a, const void *b);
+void graph_add_uint(void *s, const void *a, const void *b);
+void graph_add_ulong(void *s, const void *a, const void *b);
+void graph_add_sz(void *s, const void *a, const void *b);
+
+void graph_add_uchar_perror(void *s, const void *a, const void *b);
+void graph_add_ushort_perror(void *s, const void *a, const void *b);
+void graph_add_uint_perror(void *s, const void *a, const void *b);
+void graph_add_ulong_perror(void *s, const void *a, const void *b);
+void graph_add_sz_perror(void *s, const void *a, const void *b);
+
+void graph_add_schar(void *s, const void *a, const void *b);
+void graph_add_short(void *s, const void *a, const void *b);
+void graph_add_int(void *s, const void *a, const void *b);
+void graph_add_long(void *s, const void *a, const void *b);
+
+void graph_add_schar_perror(void *s, const void *a, const void *b);
+void graph_add_short_perror(void *s, const void *a, const void *b);
+void graph_add_int_perror(void *s, const void *a, const void *b);
+void graph_add_long_perror(void *s, const void *a, const void *b);
 
 #endif
