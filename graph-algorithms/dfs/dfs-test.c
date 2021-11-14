@@ -28,9 +28,11 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the requirement that the width of unsigned short
-   is greater or equal to 16 and less than 2040. The width of size_t must
-   also be even.
+   C89/C90 and C99. The tests require that:
+   - size_t and clock_t are convertible to double,
+   - size_t can represent values upto 65535 for default values, and upto
+     USHRT_MAX (>= 65535) otherwise,
+   - the widths of the unsigned intergral types are less than 2040 and even.
 
    TODO: add portable size_t printing
 */
@@ -125,7 +127,6 @@ const unsigned long C_ULONG_UNDIR_PRE_B[6] = {0u, 1u, 2u, 3u, 4u, 5u};
 const unsigned long C_ULONG_UNDIR_POST_B[6] = {11u, 10u, 9u, 8u, 7u, 6u};
 
 /* random graph tests */
-
 const size_t C_FN_COUNT = 4;
 size_t (* const C_READ[4])(const void *) ={
   graph_read_ushort,
@@ -142,11 +143,11 @@ void *(* const C_AT[4])(const void *, const void *) ={
   graph_at_uint,
   graph_at_ulong,
   graph_at_sz};
-int (* const C_CMP[4])(const void *, const void *) ={
-  graph_cmp_ushort,
-  graph_cmp_uint,
-  graph_cmp_ulong,
-  graph_cmp_sz};
+int (* const C_CMPEQ[4])(const void *, const void *) ={
+  graph_cmpeq_ushort,
+  graph_cmpeq_uint,
+  graph_cmpeq_ulong,
+  graph_cmpeq_sz};
 void (* const C_INCR[4])(void *) ={
   graph_incr_ushort,
   graph_incr_uint,
@@ -292,7 +293,7 @@ void run_graph_a_test(){
 		     graph_read_ushort,
 		     graph_write_ushort,
 		     graph_at_ushort,
-		     graph_cmp_ushort,
+		     graph_cmpeq_ushort,
 		     graph_incr_ushort,
 		     &res);
   small_graph_helper(&g,
@@ -303,7 +304,7 @@ void run_graph_a_test(){
 		     graph_read_ushort,
 		     graph_write_ushort,
 		     graph_at_ushort,
-		     graph_cmp_ushort,
+		     graph_cmpeq_ushort,
 		     graph_incr_ushort,
 		     &res);
   ushort_ulong_graph_a_init(&g);
@@ -315,7 +316,7 @@ void run_graph_a_test(){
 		     graph_read_ushort,
 		     graph_write_ushort,
 		     graph_at_ushort,
-		     graph_cmp_ushort,
+		     graph_cmpeq_ushort,
 		     graph_incr_ushort,
 		     &res);
   small_graph_helper(&g,
@@ -326,7 +327,7 @@ void run_graph_a_test(){
 		     graph_read_ushort,
 		     graph_write_ushort,
 		     graph_at_ushort,
-		     graph_cmp_ushort,
+		     graph_cmpeq_ushort,
 		     graph_incr_ushort,
 		     &res);
   print_test_result(res);
@@ -342,7 +343,7 @@ void run_graph_a_test(){
 		     graph_read_ulong,
 		     graph_write_ulong,
 		     graph_at_ulong,
-		     graph_cmp_ulong,
+		     graph_cmpeq_ulong,
 		     graph_incr_ulong,
 		     &res);
   small_graph_helper(&g,
@@ -353,7 +354,7 @@ void run_graph_a_test(){
 		     graph_read_ulong,
 		     graph_write_ulong,
 		     graph_at_ulong,
-		     graph_cmp_ulong,
+		     graph_cmpeq_ulong,
 		     graph_incr_ulong,
 		     &res);
   ulong_ushort_graph_a_init(&g);
@@ -365,7 +366,7 @@ void run_graph_a_test(){
 		     graph_read_ulong,
 		     graph_write_ulong,
 		     graph_at_ulong,
-		     graph_cmp_ulong,
+		     graph_cmpeq_ulong,
 		     graph_incr_ulong,
 		     &res);
   small_graph_helper(&g,
@@ -376,7 +377,7 @@ void run_graph_a_test(){
 		     graph_read_ulong,
 		     graph_write_ulong,
 		     graph_at_ulong,
-		     graph_cmp_ulong,
+		     graph_cmpeq_ulong,
 		     graph_incr_ulong,
 		     &res);
   print_test_result(res);
@@ -396,7 +397,7 @@ void run_graph_b_test(){
 		     graph_read_ushort,
 		     graph_write_ushort,
 		     graph_at_ushort,
-		     graph_cmp_ushort,
+		     graph_cmpeq_ushort,
 		     graph_incr_ushort,
 		     &res);
   small_graph_helper(&g,
@@ -407,7 +408,7 @@ void run_graph_b_test(){
 		     graph_read_ushort,
 		     graph_write_ushort,
 		     graph_at_ushort,
-		     graph_cmp_ushort,
+		     graph_cmpeq_ushort,
 		     graph_incr_ushort,
 		     &res);
   ushort_ulong_graph_b_init(&g);
@@ -419,7 +420,7 @@ void run_graph_b_test(){
 		     graph_read_ushort,
 		     graph_write_ushort,
 		     graph_at_ushort,
-		     graph_cmp_ushort,
+		     graph_cmpeq_ushort,
 		     graph_incr_ushort,
 		     &res);
   small_graph_helper(&g,
@@ -430,7 +431,7 @@ void run_graph_b_test(){
 		     graph_read_ushort,
 		     graph_write_ushort,
 		     graph_at_ushort,
-		     graph_cmp_ushort,
+		     graph_cmpeq_ushort,
 		     graph_incr_ushort,
 		     &res);
   print_test_result(res);
@@ -446,7 +447,7 @@ void run_graph_b_test(){
 		     graph_read_ulong,
 		     graph_write_ulong,
 		     graph_at_ulong,
-		     graph_cmp_ulong,
+		     graph_cmpeq_ulong,
 		     graph_incr_ulong,
 		     &res);
   small_graph_helper(&g,
@@ -457,7 +458,7 @@ void run_graph_b_test(){
 		     graph_read_ulong,
 		     graph_write_ulong,
 		     graph_at_ulong,
-		     graph_cmp_ulong,
+		     graph_cmpeq_ulong,
 		     graph_incr_ulong,
 		     &res);
   ulong_ushort_graph_b_init(&g);
@@ -469,7 +470,7 @@ void run_graph_b_test(){
 		     graph_read_ulong,
 		     graph_write_ulong,
 		     graph_at_ulong,
-		     graph_cmp_ulong,
+		     graph_cmpeq_ulong,
 		     graph_incr_ulong,
 		     &res);
   small_graph_helper(&g,
@@ -480,7 +481,7 @@ void run_graph_b_test(){
 		     graph_read_ulong,
 		     graph_write_ulong,
 		     graph_at_ulong,
-		     graph_cmp_ulong,
+		     graph_cmpeq_ulong,
 		     graph_incr_ulong,
 		     &res);
    print_test_result(res);
@@ -566,7 +567,7 @@ void run_max_edges_graph_test(size_t log_start, size_t log_end){
 	  C_READ[j],
 	  C_WRITE[j],
 	  C_AT[j],
-	  C_CMP[j],
+	  C_CMPEQ[j],
 	  C_INCR[j]);
       for (k = 0; k < num_vts; k++){
 	if (k == start){
@@ -627,7 +628,7 @@ void run_no_edges_graph_test(size_t log_start, size_t log_end){
 	  C_READ[j],
 	  C_WRITE[j],
 	  C_AT[j],
-	  C_CMP[j],
+	  C_CMPEQ[j],
 	  C_INCR[j]);
       for (k = 0; k < num_vts; k++){
         res *= (C_READ[j](ptr(post, k, C_VT_SIZES[j])) -
@@ -679,7 +680,7 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
 				  C_READ[0],
 				  C_WRITE[0],
 				  C_AT[0],
-				  C_CMP[0],
+				  C_CMPEQ[0],
 				  C_INCR[0],
 				  bern,
 				  &b);
@@ -689,7 +690,7 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
 				  C_READ[1],
 				  C_WRITE[1],
 				  C_AT[1],
-				  C_CMP[1],
+				  C_CMPEQ[1],
 				  C_INCR[1],
 				  bern,
 				  &b);
@@ -699,7 +700,7 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
 				  C_READ[2],
 				  C_WRITE[2],
 				  C_AT[2],
-				  C_CMP[2],
+				  C_CMPEQ[2],
 				  C_INCR[2],
 				  bern,
 				  &b);
@@ -709,7 +710,7 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
 				  C_READ[3],
 				  C_WRITE[3],
 				  C_AT[3],
-				  C_CMP[3],
+				  C_CMPEQ[3],
 				  C_INCR[3],
 				  bern,
 				  &b);
@@ -749,7 +750,7 @@ void run_random_dir_graph_helper(size_t num_vts,
   }
   t = clock() - t;
   printf("\t\t\t%s ave runtime:     %.6f seconds\n",
-	 type_string, (float)t / C_ITER / CLOCKS_PER_SEC);
+	 type_string, (double)t / C_ITER / CLOCKS_PER_SEC);
   adj_lst_free(&a); /* deallocates blocks with effective vertex type */
   free(start);
   free(pre);
@@ -764,7 +765,7 @@ void run_random_dir_graph_helper(size_t num_vts,
 */
 
 /**
-   Compares the elements of two size_t arrays.
+   Compares the elements of two arrays.
 */
 int cmp_arr(const void *a,
 	    const void *b,
