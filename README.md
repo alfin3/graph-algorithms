@@ -2,7 +2,7 @@
 
 Graph algorithms and supporting data structures with a hash table parameter, generic vertices and edge weights, low memory footprint, and general C89/C90 and C99 portability.
 
-The presented approach reflects the perspective that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method. An original approach to in-memory alignment is also provided to enable cache-efficient type generics.
+The presented approach reflects the perspective that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method. An original approach to in-memory alignment is provided to enable cache-efficient type generics. A decomposition of common graph algorithms into small type-specific operations is demonstrated while utilizing the understanding of `memcpy` by modern compilers.
 
 A graph problem is often reduced to a hashing problem, where an ordered set of a graph topology, an algorithm, and a hash function maps to a distribution of hash values. Information about a graph topology can often be obtained from a problem statement and/or the prior knowledge of a domain. Additional information, such as the indegree of each vertex in a graph or a subset of vertices, can be stored at the time of graph construction. Based on the preliminary data, the provided implementation motivates the development and evaluation of graph-conscious hashing methods.
 
