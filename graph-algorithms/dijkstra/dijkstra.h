@@ -137,9 +137,10 @@ typedef struct{
                  weight values are equal
    add_wt      : addition function which copies the sum of the weight values
                  pointed to by the second and third arguments to the
-                 preallocated weight block pointed to by the first argument
+                 preallocated wt_size block pointed to by the first argument;
                  if the distribution of weights can result in an overflow,
-                 the user may include an overflow test in the function
+                 the user may include an overflow test in the function or
+                 use a provided _perror-suffixed function
 */
 void dijkstra(const adj_lst_t *a,
 	      size_t start,

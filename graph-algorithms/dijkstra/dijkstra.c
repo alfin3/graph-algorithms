@@ -71,7 +71,7 @@ static void *ht_def_search(const void *ht, const void *vt);
 static void ht_def_remove(void *ht, const void *vt, void *ix);
 static void ht_def_free(void *ht);
 
-static size_t compute_wt_offset(const adj_lst_t *a);
+static size_t compute_wt_offset_perror(const adj_lst_t *a);
 static void *ptr(const void *block, size_t i, size_t size);
 
 /**
@@ -133,9 +133,10 @@ static void *ptr(const void *block, size_t i, size_t size);
                  weight values are equal
    add_wt      : addition function which copies the sum of the weight values
                  pointed to by the second and third arguments to the
-                 preallocated weight block pointed to by the first argument;
+                 preallocated wt_size block pointed to by the first argument;
                  if the distribution of weights can result in an overflow,
-                 the user may include an overflow test in the function
+                 the user may include an overflow test in the function or
+                 use a provided _perror-suffixed function
 */
 void dijkstra(const adj_lst_t *a,
 	      size_t start,
@@ -156,11 +157,11 @@ void dijkstra(const adj_lst_t *a,
   void *dp = NULL;
   /* variables in single block for cache-efficiency */
   void * const vars =
-    malloc_perror(1, add_sz_perror(compute_wt_offset(a),
+    malloc_perror(1, add_sz_perror(compute_wt_offset_perror(a),
 				   mul_sz_perror(2, a->wt_size)));
   void * const u = vars;
   void * const nr = (char *)u + a->vt_size;
-  void * const du = (char *)u + compute_wt_offset(a);
+  void * const du = (char *)u + compute_wt_offset_perror(a);
   void * const s = (char *)du + a->wt_size;
   write_vt(u, start);
   write_vt(nr, a->num_vts);
@@ -243,7 +244,7 @@ static void ht_def_init(void *ht,
 
 static void ht_def_insert(void *ht, const void *vt, const void *ix){
   ht_def_t *ht_def = ht;
-  ht_def->elts[ht_def->read_vt(vt)] = *(size_t *)ix; 
+  ht_def->elts[ht_def->read_vt(vt)] = *(const size_t *)ix; 
 }
 
 static void *ht_def_search(const void *ht, const void *vt){
@@ -275,7 +276,7 @@ static void ht_def_free(void *ht){
    Computes the wt_offset from malloc's pointer in the vars block
    consisting of two vt_size blocks followed by two wt_size blocks.
 */
-static size_t compute_wt_offset(const adj_lst_t *a){
+static size_t compute_wt_offset_perror(const adj_lst_t *a){
   size_t wt_rem;
   size_t vt_pair_size = mul_sz_perror(2, a->vt_size);
   if (vt_pair_size <= a->wt_size) return a->wt_size;
