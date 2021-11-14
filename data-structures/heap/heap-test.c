@@ -126,45 +126,26 @@ void new_uint(void *a, size_t val){
   size_t *s = a;
   *s = val;
 }
-
 void new_double(void *a, size_t val){
   double *s = a;
   *s = val;
 }
-
 void new_long_double(void *a, size_t val){
   long double *s = a;
   *s = val;
 }
 
 int cmp_uint(const void *a, const void *b){
-  if (*(size_t *)a > *(size_t *)b){
-    return 1;
-  }else if(*(size_t *)a < *(size_t *)b){
-    return -1;
-  }else{
-    return 0;
-  }
+  return ((*(size_t *)a > *(size_t *)b) -
+	  (*(size_t *)a < *(size_t *)b));
 }
-
 int cmp_double(const void *a, const void *b){
-  if (*(double *)a > *(double *)b){
-    return 1;
-  }else if(*(double *)a < *(double *)b){
-    return -1;
-  }else{
-    return 0;
-  }
+  return ((*(double *)a > *(double *)b) -
+	  (*(double *)a < *(double *)b));
 }
-
 int cmp_long_double(const void *a, const void *b){
-  if (*(long double *)a > *(long double *)b){
-    return 1;
-  }else if(*(long double *)a < *(long double *)b){
-    return -1;
-  }else{
-    return 0;
-  }
+  return ((*(long double *)a > *(long double *)b) -
+	  (*(long double *)a < *(long double *)b));
 }
 
 size_t rdc_uint(const void *a){
@@ -361,13 +342,8 @@ void new_uint_ptr(void *a, size_t val){
 }
 
 int cmp_uint_ptr(const void *a, const void *b){
-  if (*((*(uint_ptr_t **)a)->val) > *((*(uint_ptr_t **)b)->val)){
-    return 1;
-  }else if (*((*(uint_ptr_t **)a)->val) < *((*(uint_ptr_t **)b)->val)){
-    return -1;
-  }else{
-    return 0;
-  }
+  return ((*((*(uint_ptr_t **)a)->val) > *((*(uint_ptr_t **)b)->val)) -
+	  (*((*(uint_ptr_t **)a)->val) < *((*(uint_ptr_t **)b)->val)));
 }
 
 size_t rdc_uint_ptr(const void *a){
