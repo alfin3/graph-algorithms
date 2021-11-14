@@ -24,9 +24,9 @@
 
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 and C99. The tests require that:
-   - size_t and clock_t are convertible to double,
+   - size_t and clock_t are convertible to double
    - size_t can represent values upto USHRT_MAX (>= 65535),
-   - the widths of the unsigned intergral types are less than 2040 and even.
+   - the widths of the unsigned integral types are less than 2040 and even.
 
    TODO: add portable size_t printing
 */
@@ -163,10 +163,10 @@ void *(* const C_AT_VT[4])(const void *, const void *) ={
   graph_at_ulong,
   graph_at_sz};
 int (* const C_CMP_VT[4])(const void *, const void *) ={
-  graph_cmp_ushort,
-  graph_cmp_uint,
-  graph_cmp_ulong,
-  graph_cmp_sz};
+  graph_cmpeq_ushort,
+  graph_cmpeq_uint,
+  graph_cmpeq_ulong,
+  graph_cmpeq_sz};
 const size_t C_VT_SIZES[4] = {
   sizeof(unsigned short),
   sizeof(unsigned int),
@@ -175,18 +175,13 @@ const size_t C_VT_SIZES[4] = {
 const char *C_VT_TYPES[4] = {"ushort", "uint  ", "ulong ", "sz    "};
 
 /* weight and print ops */
-
-int cmp_ushort(const void *a, const void *b);
-int cmp_uint(const void *a, const void *b);
-int cmp_ulong(const void *a, const void *b);
-int cmp_sz(const void *a, const void *b);
 int cmp_double(const void *a, const void *b);
 
 int (* const C_CMP_WT[5])(const void *, const void *) ={
-  cmp_ushort,
-  cmp_uint,
-  cmp_ulong,
-  cmp_sz,
+  graph_cmp_ushort,
+  graph_cmp_uint,
+  graph_cmp_ulong,
+  graph_cmp_sz,
   cmp_double};
 const size_t C_WT_SIZES[5] = {
   sizeof(unsigned short),
@@ -307,30 +302,17 @@ void (* const C_ADD_UNDIR_EDGE[5])(adj_lst_t *,
   add_undir_double_edge};
 
 /* value initiliazation and printing */
-
 void set_zero_ushort(void *a);
 void set_zero_uint(void *a);
 void set_zero_ulong(void *a);
 void set_zero_sz(void *a);
 void set_zero_double(void *a);
 
-void set_one_ushort(void *a);
-void set_one_uint(void *a);
-void set_one_ulong(void *a);
-void set_one_sz(void *a);
-void set_one_double(void *a);
-
 void set_test_max_ushort(void *a, size_t num_vts);
 void set_test_max_uint(void *a, size_t num_vts);
 void set_test_max_ulong(void *a, size_t num_vts);
 void set_test_max_sz(void *a, size_t num_vts);
 void set_test_max_double(void *a, size_t num_vts);
-
-void print_ushort(const void *a);
-void print_uint(const void *a);
-void print_ulong(const void *a);
-void print_sz(const void *a);
-void print_double(const void *a);
 
 void sum_dist_ushort(void *dist_sum,
 		     size_t *num_dist_wraps,
@@ -373,18 +355,18 @@ void sum_dist_double(void *dist_sum,
 		     const void *dist,
 		     size_t (*read_vt)(const void *));
 
+void print_ushort(const void *a);
+void print_uint(const void *a);
+void print_ulong(const void *a);
+void print_sz(const void *a);
+void print_double(const void *a);
+
 void (* const C_SET_ZERO[5])(void *) ={
   set_zero_ushort,
   set_zero_uint,
   set_zero_ulong,
   set_zero_sz,
   set_zero_double};
-void (* const C_SET_ONE[5])(void *) ={
-  set_one_ushort,
-  set_one_uint,
-  set_one_ulong,
-  set_one_sz,
-  set_one_double};
 void (* const C_SET_TEST_MAX[5])(void *, size_t) ={
   set_test_max_ushort,
   set_test_max_uint,
@@ -659,77 +641,9 @@ void init_sz_double(graph_t *g){
    Run a test on small graphs across vertex and weight types.
 */
 
-int cmp_ushort(const void *a, const void *b){
-  if (*(const unsigned short *)a > *(const unsigned short *)b){
-    return 1;
-  }else if (*(const unsigned short *)a < *(const unsigned short *)b){
-    return -1;
-  }else{
-    return 0;
-  }
-}
-
-int cmp_uint(const void *a, const void *b){
-  if (*(const unsigned int *)a > *(const unsigned int *)b){
-    return 1;
-  }else if (*(const unsigned int *)a < *(const unsigned int *)b){
-    return -1;
-  }else{
-    return 0;
-  }
-}
-
-int cmp_ulong(const void *a, const void *b){
-  if (*(const unsigned long *)a > *(const unsigned long *)b){
-    return 1;
-  }else if (*(const unsigned long *)a < *(const unsigned long *)b){
-    return -1;
-  }else{
-    return 0;
-  }
-}
-
-int cmp_sz(const void *a, const void *b){
-  if (*(const size_t *)a > *(const size_t *)b){
-    return 1;
-  }else if (*(const size_t *)a < *(const size_t *)b){
-    return -1;
-  }else{
-    return 0;
-  }
-}
-
 int cmp_double(const void *a, const void *b){
-  if (*(const double *)a > *(const double *)b){
-    return 1;
-  }else if (*(const double *)a < *(const double *)b){
-    return -1;
-  }else{
-    return 0;
-  }
-}
-
-void add_ushort(void *s, const void *a, const void *b){
-  *(unsigned short *)s =
-    *(const unsigned short *)a + *(const unsigned short *)b;
-}
-
-void add_uint(void *s, const void *a, const void *b){
-  *(unsigned int *)s =
-    *(const unsigned int *)a + *(const unsigned int *)b;
-}
-
-void add_ulong(void *s, const void *a, const void *b){
-  *(unsigned long *)s =
-    *(const unsigned long *)a + *(const unsigned long *)b;
-}
-
-void add_sz(void *s, const void *a, const void *b){
-  *(size_t *)s = *(const size_t *)a + *(const size_t *)b;
-}
-
-void add_double(void *s, const void *a, const void *b){
-  *(double *)s = *(const double *)a + *(const double *)b;
+  if (*(const double *)a < *(const double *)b) return -1;
+  return *(const double *)a > *(const double *)b;
 }
 
 void run_small_graph_test(){
@@ -838,14 +752,14 @@ void run_small_graph_test(){
     Construct adjacency lists of random undirected graphs with random 
     weights across vertex and weight types.
 
-    A function with the add_dir_ prefix adds a (u, v) edge to an adjacency
+    A function with the add_undir_ prefix adds a (u, v) edge to an adjacency
     list of a weighted graph, preinitialized with at least adj_lst_base_init
     and with the number of vertices n greater or equal to 1. An edge (u, v),
     where u < n nad v < n, is added with the Bernoulli distribution according
     to the bern and arg parameter values. wt_l and wt_h point to wt_size
-    blocks with values l and h of the weight type used to represent weights
-    in the adjacency list. l must be less or equal to h. If (u, v) is added,
-    a random weight in [l, h) is chosen for the edge. 
+    blocks with values l and h of the type used to represent weights in the
+    adjacency list, and l is less or equal to h. If (u, v) is added, a
+    random weight in [l, h) is chosen for the edge. 
 
     adj_lst_rand_undir_wts builds a random adjacency list with one of the 
     above functions as a parameter value. g points to a graph preinitialized
@@ -1167,11 +1081,11 @@ void run_rand_test(size_t log_start, size_t log_end){
 
 /**
    Portable random number generation. For better uniformity (according
-   to rand) RAND_MAX should be 32767 or many times larger than 32768 on
-   a given system. Given a value n of one of the below unsigned integral
-   types, the overflow bits after multipying n with a random number of
-   the same type represent a random number of the type within the range
-   [0, n).
+   to rand) RAND_MAX should be 32767, a power to two minus one, or many
+   times larger than 32768 on a given system if it is not a power of two
+   minus one. Given a value n of one of the below unsigned integral types,
+   the overflow bits after multipying n with a random number of the same
+   type represent a random number of the type within the range [0, n).
 
    According to C89 (draft):
 
@@ -1307,19 +1221,21 @@ size_t mul_high_sz(size_t a, size_t b){
    Value initiliazation, arithmetic, and printing. 
 
    The functions with the set_test_max prefix, set the maximum value of
-   random weights (i.e. unreached upper bound) and reflect that at most
-   n - 1 edges participate in a path because otherwise there is a cycle.
+   random weights (i.e. unreached upper bound). In contrast to Dijkstra,
+   edge weights are not added in Prim, and the maximum value of random
+   weights can be set to the maximum value of the type used to represent
+   weights.
 
    The functions with the sum_dist prefix compute the sum of unsigned
-   integer weights of an mst by counting the wrap-arounds.
-   The computation is overflow safe, because each weight is at most
-   the maximum value of the unsigned integer type used to represent weights,
-   and there are at most n - 1 edges in an mst. The total sum is: 
-   # wrap-arounds * max value of weight type + # wraps-arounds + 
-   wrapped sum of weight type. 
+   integer weights of an mst by counting the wrap-arounds.The computation
+   is overflow safe, because each weight is at most the maximum value of
+   the unsigned integer type used to represent weights, and there are at
+   most n - 1 edges in an mst, where n is the number of vertices.
+   The total sum is: # wrap-arounds * max value of weight type + 
+   # wraps-arounds + wrapped sum of weight type. 
 
    For double weights, the maximum value in 1.0, and the number of
-   wrap-arounds is 0 for the sum of mst weights.
+   wrap-arounds is 0.
 */
 
 void set_zero_ushort(void *a){
@@ -1340,26 +1256,6 @@ void set_zero_sz(void *a){
 
 void set_zero_double(void *a){
   *(double *)a = 0.0;
-}
-
-void set_one_ushort(void *a){
-  *(unsigned short *)a = 1;
-}
-
-void set_one_uint(void *a){
-  *(unsigned int *)a = 1;
-}
-
-void set_one_ulong(void *a){
-  *(unsigned long *)a = 1;
-}
-
-void set_one_sz(void *a){
-  *(size_t *)a = 1;
-}
-
-void set_one_double(void *a){
-  *(double *)a = 1.0;
 }
 
 void set_test_max_ushort(void *a, size_t num_vts){

@@ -24,13 +24,13 @@
    vertices by writing a value of the type, including a special value
    for unreached vertices.
 
-   A distance value in the dist array is only set if the corresponding
+   An edge weight value in the dist array is only set if the corresponding
    vertex was reached, as indicated by the prev array, in which case it
-   is guaranteed that the distance object representation is not a trap
+   is guaranteed that the edge weight object representation is not a trap
    representation. An element corresponding to a not reached vertex, as
    indicated by the prev array, may be a trap representation. However,
-   if distances are of an integer type and the dist array is allocated with
-   calloc, then for any integer type the representation with all zero
+   if edge weights are of an integer type and the dist array is allocated
+   with calloc, then for any integer type the representation with all zero
    bits is 0 integer value under C99 and C11 (6.2.6.2), and it is safe
    to read such a representation even if the value was not set by the
    algorithm.
@@ -71,7 +71,7 @@ static void *ht_def_search(const void *ht, const void *vt);
 static void ht_def_remove(void *ht, const void *vt, void *ix);
 static void ht_def_free(void *ht);
 
-static size_t compute_wt_offset(const adj_lst_t *a);
+static size_t compute_wt_offset_perror(const adj_lst_t *a);
 static void *ptr(const void *block, size_t i, size_t size);
 
 /**
@@ -88,7 +88,7 @@ static void *ptr(const void *block, size_t i, size_t size);
                  pointed to by dist has no declared type then prim sets
                  the effective type of each element corresponding to a
                  reached vertex to the type of a weight in the adjacency list
-                 by writing a value of the type; if distances are of an 
+                 by writing a value of the type; if edge weights are of an 
                  integer type and the block was allocated with calloc then
                  under C99 and C11 each element corresponding to an unreached
                  vertex can be safely read as the integer type and will
@@ -151,10 +151,11 @@ void prim(const adj_lst_t *a,
   void *dp = NULL, *dp_new = NULL;
   /* variables in single block for cache-efficiency */
   void * const vars =
-    malloc_perror(1, add_sz_perror(compute_wt_offset(a), a->wt_size));
+    malloc_perror(1, add_sz_perror(compute_wt_offset_perror(a),
+				   a->wt_size));
   void * const u = vars;
   void * const nr = (char *)u + a->vt_size;
-  void * const du = (char *)u + compute_wt_offset(a);
+  void * const du = (char *)u + compute_wt_offset_perror(a);
   write_vt(u, start);
   write_vt(nr, a->num_vts);
   memcpy(du, wt_zero, a->wt_size);
@@ -212,7 +213,7 @@ void prim(const adj_lst_t *a,
   }
   heap_free(&h);
   free(vars);
-  /* vars cannot be dereferenced after this line */;
+  /* vars cannot be dereferenced after this line */
 }
 
 
@@ -237,7 +238,7 @@ static void ht_def_init(void *ht,
 
 static void ht_def_insert(void *ht, const void *vt, const void *ix){
   ht_def_t *ht_def = ht;
-  ht_def->elts[ht_def->read_vt(vt)] = *(size_t *)ix; 
+  ht_def->elts[ht_def->read_vt(vt)] = *(const size_t *)ix; 
 }
 
 static void *ht_def_search(const void *ht, const void *vt){
@@ -269,7 +270,7 @@ static void ht_def_free(void *ht){
    Computes the wt_offset from malloc's pointer in the vars block
    consisting of two vt_size blocks followed by one wt_size block.
 */
-static size_t compute_wt_offset(const adj_lst_t *a){
+static size_t compute_wt_offset_perror(const adj_lst_t *a){
   size_t wt_rem;
   size_t vt_pair_size = mul_sz_perror(2, a->vt_size);
   if (vt_pair_size <= a->wt_size) return a->wt_size;

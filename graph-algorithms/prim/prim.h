@@ -25,13 +25,13 @@
    vertices by writing a value of the type, including a special value
    for unreached vertices.
 
-   A distance value in the dist array is only set if the corresponding
+   An edge weight value in the dist array is only set if the corresponding
    vertex was reached, as indicated by the prev array, in which case it
-   is guaranteed that the distance object representation is not a trap
+   is guaranteed that the edge weight object representation is not a trap
    representation. An element corresponding to a not reached vertex, as
    indicated by the prev array, may be a trap representation. However,
-   if distances are of an integer type and the dist array is allocated with
-   calloc, then for any integer type the representation with all zero
+   if edge weights are of an integer type and the dist array is allocated
+   with calloc, then for any integer type the representation with all zero
    bits is 0 integer value under C99 and C11 (6.2.6.2), and it is safe
    to read such a representation even if the value was not set by the
    algorithm.
@@ -92,7 +92,7 @@ typedef struct{
                  pointed to by dist has no declared type then prim sets
                  the effective type of each element corresponding to a
                  reached vertex to the type of a weight in the adjacency list
-                 by writing a value of the type; if distances are of an 
+                 by writing a value of the type; if edge weights are of an 
                  integer type and the block was allocated with calloc then
                  under C99 and C11 each element corresponding to an unreached
                  vertex can be safely read as the integer type and will
