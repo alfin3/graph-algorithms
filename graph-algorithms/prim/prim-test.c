@@ -953,9 +953,9 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  wt_l = realloc_perror(wt_l, 3, wt_size);
 	  wt_h = ptr(wt_l, 1, wt_size);
 	  wt_zero = ptr(wt_l, 2, wt_size);
-	  dsum_def = realloc_perror(dsum_def, num_vts, wt_size);
-	  dsum_divchn = realloc_perror(dsum_divchn, num_vts, wt_size);
-	  dsum_muloa = realloc_perror(dsum_muloa, num_vts, wt_size);
+	  dsum_def = realloc_perror(dsum_def, 1, wt_size);
+	  dsum_divchn = realloc_perror(dsum_divchn, 1, wt_size);
+	  dsum_muloa = realloc_perror(dsum_muloa, 1, wt_size);
 	  prev_def = realloc_perror(prev_def, num_vts, vt_size);
 	  prev_divchn = realloc_perror(prev_divchn, num_vts, vt_size);
 	  prev_muloa = realloc_perror(prev_muloa, num_vts, vt_size);
