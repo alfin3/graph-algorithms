@@ -591,6 +591,7 @@ void graph_add_uchar_perror(void *s, const void *a, const void *b){
   *(unsigned char *)s =
     *(const unsigned char *)a + *(const unsigned char *)b;
 }
+
 void graph_add_ushort_perror(void *s, const void *a, const void *b){
   if (*(const unsigned short *)a >
       C_USHORT_MAX - *(const unsigned short *)b){
@@ -600,6 +601,7 @@ void graph_add_ushort_perror(void *s, const void *a, const void *b){
   *(unsigned short *)s =
     *(const unsigned short *)a + *(const unsigned short *)b;
 }
+
 void graph_add_uint_perror(void *s, const void *a, const void *b){
   if (*(const unsigned int *)a >
       C_UINT_MAX - *(const unsigned int *)b){
@@ -609,6 +611,7 @@ void graph_add_uint_perror(void *s, const void *a, const void *b){
   *(unsigned int *)s =
     *(const unsigned int *)a + *(const unsigned int *)b;
 }
+
 void graph_add_ulong_perror(void *s, const void *a, const void *b){
   if (*(const unsigned long *)a >
       C_ULONG_MAX - *(const unsigned long *)b){
@@ -618,6 +621,7 @@ void graph_add_ulong_perror(void *s, const void *a, const void *b){
   *(unsigned long *)s =
     *(const unsigned long *)a + *(const unsigned long *)b;
 }
+
 void graph_add_sz_perror(void *s, const void *a, const void *b){
   if (*(const size_t *)a >
       C_SZ_MAX - *(const size_t *)b){
@@ -648,6 +652,7 @@ void graph_add_schar_perror(void *s, const void *a, const void *b){
   }
   *(signed char *)s = *(const signed char *)a + *(const signed char *)b;
 }
+
 void graph_add_short_perror(void *s, const void *a, const void *b){
   if (*(const short *)a >
       C_SHORT_MAX - *(const short *)b){
@@ -656,6 +661,7 @@ void graph_add_short_perror(void *s, const void *a, const void *b){
   }
   *(short *)s = *(const short *)a + *(const short *)b;
 }
+
 void graph_add_int_perror(void *s, const void *a, const void *b){
   if (*(const int *)a >
       C_INT_MAX - *(const int *)b){
@@ -664,6 +670,7 @@ void graph_add_int_perror(void *s, const void *a, const void *b){
   }
   *(int *)s = *(const int *)a + *(const int *)b;
 }
+
 void graph_add_long_perror(void *s, const void *a, const void *b){
   if (*(const long *)a >
       C_LONG_MAX - *(const long *)b){
