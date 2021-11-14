@@ -1179,7 +1179,7 @@ void run_rand_test(size_t log_start, size_t log_end){
     for (k = 0; k < C_FN_WT_COUNT; k++){
       wt_size =  C_WT_SIZES[k];
       wt_l = realloc_perror(wt_l, 2, wt_size);
-      wt_h = (char *)wt_l +  wt_size;
+      wt_h = ptr(wt_l, 1, wt_size);
       C_SET_ZERO[k](wt_l);
       C_SET_TEST_MAX[k](wt_h, pow_two_perror(log_end));
       printf("\t%s range: [", C_WT_TYPES[k]);
@@ -1196,15 +1196,15 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  vt_size =  C_VT_SIZES[j];
 	  wt_size =  C_WT_SIZES[k];
 	  /* no declared type after realloc; new eff. type to be acquired */
-	  wt_l = realloc_perror(wt_l, 2, wt_size);
-	  wt_h = (char *)wt_l + wt_size;
-	  wt_zero = realloc_perror(wt_zero, 1, wt_size);
-	  wsum_def =realloc_perror(wsum_def, num_vts, wt_size);
-	  wsum_divchn = realloc_perror(wsum_divchn, num_vts, wt_size);
-	  wsum_muloa = realloc_perror(wsum_muloa, num_vts, wt_size);
-	  dsum_def = realloc_perror(dsum_def, num_vts, wt_size);
-	  dsum_divchn = realloc_perror(dsum_divchn, num_vts, wt_size);
-	  dsum_muloa = realloc_perror(dsum_muloa, num_vts, wt_size);
+	  wt_l = realloc_perror(wt_l, 3, wt_size);
+	  wt_h = ptr(wt_l, 1, wt_size);
+	  wt_zero = ptr(wt_l, 2, wt_size);
+	  wsum_def =realloc_perror(wsum_def, 1, wt_size);
+	  wsum_divchn = realloc_perror(wsum_divchn, 1, wt_size);
+	  wsum_muloa = realloc_perror(wsum_muloa, 1, wt_size);
+	  dsum_def = realloc_perror(dsum_def, 1, wt_size);
+	  dsum_divchn = realloc_perror(dsum_divchn, 1, wt_size);
+	  dsum_muloa = realloc_perror(dsum_muloa, 1, wt_size);
 	  prev_def = realloc_perror(prev_def, num_vts, vt_size);
 	  prev_divchn = realloc_perror(prev_divchn, num_vts, vt_size);
 	  prev_muloa = realloc_perror(prev_muloa, num_vts, vt_size);
@@ -1320,7 +1320,9 @@ void run_rand_test(size_t log_start, size_t log_end){
   }
   free(rand_start);
   free(wt_l);
-  free(wt_zero);
+  free(wsum_def);
+  free(wsum_divchn);
+  free(wsum_muloa);
   free(dsum_def);
   free(dsum_divchn);
   free(dsum_muloa);
@@ -1332,7 +1334,11 @@ void run_rand_test(size_t log_start, size_t log_end){
   free(prev_muloa);
   rand_start = NULL;
   wt_l = NULL;
+  wt_h = NULL;
   wt_zero = NULL;
+  wsum_def = NULL;
+  wsum_divchn = NULL;
+  wsum_muloa = NULL;
   dsum_def = NULL;
   dsum_divchn = NULL;
   dsum_muloa = NULL;

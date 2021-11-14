@@ -220,7 +220,7 @@ void dijkstra(const adj_lst_t *a,
   }
   heap_free(&h);
   free(vars);
-  /* vars cannot be dereferenced after this line */;
+  /* vars cannot be dereferenced after this line */
 }
 
 /**
