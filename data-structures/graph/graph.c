@@ -513,41 +513,41 @@ void graph_incr_sz(void *a){
 */
 
 int graph_cmp_uchar(const void *a, const void *b){
-  if (*(const unsigned char *)a < *(const unsigned char *)b) return -1;
-  return *(const unsigned char *)a > *(const unsigned char *)b;
+  return ((*(const unsigned char *)a > *(const unsigned char *)b) -
+	  (*(const unsigned char *)a < *(const unsigned char *)b));
 }
 int graph_cmp_ushort(const void *a, const void *b){
-  if (*(const unsigned short *)a < *(const unsigned short *)b) return -1;
-  return *(const unsigned short *)a > *(const unsigned short *)b;
+  return ((*(const unsigned short *)a > *(const unsigned short *)b) -
+	  (*(const unsigned short *)a < *(const unsigned short *)b));
 }
 int graph_cmp_uint(const void *a, const void *b){
-  if (*(const unsigned int *)a < *(const unsigned int *)b) return -1;
-  return *(const unsigned int *)a > *(const unsigned int *)b;
+  return ((*(const unsigned int *)a > *(const unsigned int *)b) -
+	  (*(const unsigned int *)a < *(const unsigned int *)b));
 }
 int graph_cmp_ulong(const void *a, const void *b){
-  if (*(const unsigned long *)a < *(const unsigned long *)b) return -1;
-  return *(const unsigned long *)a > *(const unsigned long *)b;
+  return ((*(const unsigned long *)a > *(const unsigned long *)b) -
+	  (*(const unsigned long *)a < *(const unsigned long *)b));
 }
 int graph_cmp_sz(const void *a, const void *b){
-  if (*(const size_t *)a < *(const size_t *)b) return -1;
-  return *(const size_t *)a > *(const size_t *)b;
+  return ((*(const size_t *)a > *(const size_t *)b) -
+	  (*(const size_t *)a < *(const size_t *)b));
 }
 
 int graph_cmp_schar(const void *a, const void *b){
-  if (*(const signed char *)a < *(const signed char *)b) return -1;
-  return *(const signed char *)a > *(const signed char *)b;
+  return ((*(const signed char *)a > *(const signed char *)b) -
+	  (*(const signed char *)a < *(const signed char *)b));
 }
 int graph_cmp_short(const void *a, const void *b){
-  if (*(const short *)a < *(const short *)b) return -1;
-  return *(const short *)a > *(const short *)b;
+  return ((*(const short *)a > *(const short *)b) -
+	  (*(const short *)a < *(const short *)b));
 }
 int graph_cmp_int(const void *a, const void *b){
-  if (*(const int *)a < *(const int *)b) return -1;
-  return *(const int *)a > *(const int *)b;
+  return ((*(const int *)a > *(const int *)b) -
+	  (*(const int *)a < *(const int *)b));
 }
 int graph_cmp_long(const void *a, const void *b){
-  if (*(const long *)a < *(const long *)b) return -1;
-  return *(const long *)a > *(const long *)b;
+  return ((*(const long *)a > *(const long *)b) -
+	  (*(const long *)a < *(const long *)b));
 }
 
 /**

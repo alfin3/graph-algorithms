@@ -642,8 +642,8 @@ void init_sz_double(graph_t *g){
 */
 
 int cmp_double(const void *a, const void *b){
-  if (*(const double *)a < *(const double *)b) return -1;
-  return *(const double *)a > *(const double *)b;
+  return ((*(const double *)a > *(const double *)b) -
+	  (*(const double *)a < *(const double *)b));
 }
 
 void run_small_graph_test(){
