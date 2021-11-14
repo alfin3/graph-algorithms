@@ -1241,19 +1241,15 @@ size_t mul_high_sz(size_t a, size_t b){
 void set_zero_ushort(void *a){
   *(unsigned short *)a = 0;
 }
-
 void set_zero_uint(void *a){
   *(unsigned int *)a = 0;
 }
-
 void set_zero_ulong(void *a){
   *(unsigned long *)a = 0;
 }
-
 void set_zero_sz(void *a){
   *(size_t *)a = 0;
 }
-
 void set_zero_double(void *a){
   *(double *)a = 0.0;
 }
@@ -1423,19 +1419,15 @@ void sum_dist_double(void *dist_sum,
 void print_ushort(const void *a){
   printf("%hu", *(const unsigned short *)a);
 }
-
 void print_uint(const void *a){
   printf("%u", *(const unsigned int *)a);
 }
-
 void print_ulong(const void *a){
   printf("%lu", *(const unsigned long *)a);
 }
-
 void print_sz(const void *a){
   printf("%lu", TOLU(*(const size_t *)a));
 }
-
 void print_double(const void *a){
   printf("%.8f", *(const double *)a);
 }
