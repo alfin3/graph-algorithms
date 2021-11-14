@@ -25,7 +25,8 @@
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 and C99. The tests require that:
    - size_t and clock_t are convertible to double
-   - size_t can represent values upto USHRT_MAX (>= 65535),
+   - size_t can represent values upto 65535 for default values, and
+     upto USHRT_MAX (>= 65535) otherwise,
    - the widths of the unsigned integral types are less than 2040 and even.
 
    TODO: add portable size_t printing
@@ -647,7 +648,7 @@ int cmp_double(const void *a, const void *b){
 }
 
 void run_small_graph_test(){
-  size_t i, j, k;
+  size_t i, j, k, l;
   void *wt_zero = NULL;
   void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
   void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
@@ -697,6 +698,12 @@ void run_small_graph_test(){
 	dist_divchn = realloc_perror(dist_divchn, a.num_vts, a.wt_size);
 	dist_muloa = realloc_perror(dist_muloa, a.num_vts, a.wt_size);
 	C_SET_ZERO[k](wt_zero);
+	for (l = 0; l < a.num_vts; l++){
+	  /* avoid trap representations in tests */
+	  C_SET_ZERO[k](ptr(dist_def, l, a.wt_size));
+	  C_SET_ZERO[k](ptr(dist_divchn, l, a.wt_size));
+	  C_SET_ZERO[k](ptr(dist_muloa, l, a.wt_size));
+	} 
 	prim(&a, i, dist_def, prev_def, wt_zero, NULL,
 	     C_READ_VT[j], C_WRITE_VT[j], C_AT_VT[j],
 	     C_CMP_VT[j], C_CMP_WT[k]);
