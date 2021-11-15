@@ -19,9 +19,11 @@
    for the unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 and C99 with the requirement that the width of unsigned long
-   is greater or equal to 16 and less than 2040. The width of size_t must
-   also be even.
+   C89/C90 and C99. The tests require that:
+   - size_t and clock_t are convertible to double,
+   - size_t can represent values upto 65535 for default values, and upto
+     ULONG_MAX (>= 4294967295) otherwise,
+   - the widths of the unsigned integral types are less than 2040 and even.
 
    TODO: add portable size_t printing
 */
@@ -60,7 +62,6 @@ const size_t C_ARGS_DEF[2] = {14u, 14u};
 const size_t C_ULONG_BIT = UINT_WIDTH_FROM_MAX((unsigned long)-1);
 
 /* random graph tests */
-
 const size_t C_FN_COUNT = 4;
 size_t (* const C_READ[4])(const void *) ={
   graph_read_ushort,
@@ -77,11 +78,11 @@ void *(* const C_AT[4])(const void *, const void *) ={
   graph_at_uint,
   graph_at_ulong,
   graph_at_sz};
-int (* const C_CMP[4])(const void *, const void *) ={
-  graph_cmp_ushort,
-  graph_cmp_uint,
-  graph_cmp_ulong,
-  graph_cmp_sz};
+int (* const C_CMPEQ[4])(const void *, const void *) ={
+  graph_cmpeq_ushort,
+  graph_cmpeq_uint,
+  graph_cmpeq_ulong,
+  graph_cmpeq_sz};
 void (* const C_INCR[4])(void *) ={
   graph_incr_ushort,
   graph_incr_uint,
@@ -98,6 +99,9 @@ const size_t C_PROBS_COUNT = 5u;
 const double C_PROBS[5] = {1.00, 0.75, 0.50, 0.25, 0.00};
 const double C_PROB_ONE = 1.0;
 const double C_PROB_ZERO = 0.0;
+
+/* additional operations */
+void *ptr(const void *block, size_t i, size_t size);
 
 /**
    Run a bfs test on random directed graphs.
@@ -145,7 +149,7 @@ void run_random_dir_graph_test(size_t log_start, size_t log_end){
 				  C_READ[2],
 				  C_WRITE[2],
 				  C_AT[2],
-				  C_CMP[2],
+				  C_CMPEQ[2],
 				  C_INCR[2],
 				  bern,
 				  &b);
@@ -173,11 +177,15 @@ void run_random_dir_graph_helper(size_t num_vts,
   start = malloc_perror(C_ITER, sizeof(size_t));
   dist = malloc_perror(num_vts, vt_size);
   prev = malloc_perror(num_vts, vt_size);
+  for (i = 0; i < num_vts; i++){
+    /* avoid trap representations in tests */
+    write_vt(ptr(dist, i, vt_size), 0);
+  }
   graph_base_init(&g, num_vts, vt_size, 0);
   adj_lst_base_init(&a, &g);
   adj_lst_rand_dir(&a, write_vt, bern, b);
   for (i = 0; i < C_ITER; i++){
-    start[i] =  RANDOM() % num_vts;
+    start[i] = RANDOM() % num_vts;
   }
   t = clock();
   for (i = 0; i < C_ITER; i++){
@@ -185,7 +193,7 @@ void run_random_dir_graph_helper(size_t num_vts,
   }
   t = clock() - t;
   printf("\t\t\t%s ave runtime:     %.6f seconds\n",
-	 type_string, (float)t / C_ITER / CLOCKS_PER_SEC);
+	 type_string, (double)t / C_ITER / CLOCKS_PER_SEC);
   adj_lst_free(&a); /* deallocates blocks with effective vertex type */
   free(start);
   free(dist);
@@ -193,6 +201,13 @@ void run_random_dir_graph_helper(size_t num_vts,
   start = NULL;
   dist = NULL;
   prev = NULL;
+}
+
+/**
+   Computes a pointer to the ith element in the block of elements.
+*/
+void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
 }
 
 int main(int argc, char *argv[]){
