@@ -2,10 +2,8 @@
    stack.h
 
    Struct declarations, declarations of accessible functions for a generic
-   dynamically allocated stack.
-
-   Through a user-defined deallocation function, the implementation provides 
-   a dynamic set of any objects in the stack form.
+   dynamically allocated stack, providing a dynamic set of generic elements
+   in the stack form.
 
    A distinction is made between an element and an "elt_size block". During
    an insertion a contiguous block of size elt_size ("elt_size block") is 
