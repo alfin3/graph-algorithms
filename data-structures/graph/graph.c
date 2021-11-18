@@ -125,7 +125,8 @@ void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
   /* initialize stacks */
   for (i = 0; i < a->num_vts; i++){
     a->vt_wts[i] = malloc_perror(1, sizeof(stack_t));
-    stack_init(a->vt_wts[i], C_STACK_INIT_COUNT, a->pair_size, NULL);
+    stack_init(a->vt_wts[i], a->pair_size, NULL);
+    stack_bound(a->vt_wts[i], C_STACK_INIT_COUNT, a->num_vts);
   }
 }
 
@@ -172,7 +173,8 @@ void adj_lst_align(adj_lst_t *a,
   /* initialize stacks */
   for (i = 0; i < a->num_vts; i++){
     stack_free(a->vt_wts[i]);
-    stack_init(a->vt_wts[i], C_STACK_INIT_COUNT, a->pair_size, NULL);
+    stack_init(a->vt_wts[i], a->pair_size, NULL);
+    stack_bound(a->vt_wts[i], C_STACK_INIT_COUNT, a->num_vts);
   }
 }
    

@@ -217,7 +217,8 @@ static void dfs_helper(const adj_lst_t *a,
   pair_size = add_sz_perror(vt_offset + a->vt_size,
 			    (vdp_rem > 0) * (vdp_alignment - vdp_rem));
   /* run search with recursion emulation on a stack ds */
-  stack_init(&s, C_STACK_INIT_COUNT, pair_size, NULL);
+  stack_init(&s, pair_size, NULL);
+  stack_bound(&s, C_STACK_INIT_COUNT, a->num_vts);
   memcpy(ix, su, a->vt_size);
   while (cmp_vt(ix, end) != 0){
     if (cmp_vt(at_vt(pre, ix), nr) == 0){
