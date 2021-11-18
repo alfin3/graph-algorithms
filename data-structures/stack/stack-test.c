@@ -5,8 +5,8 @@
 
    The following command line arguments can be used to customize tests:
    stack-test
-      [0, ulong width] : i s.t. # inserts = 2**i
-      [0, ulong width] : i s.t. # inserts = 2**i in uchar stack test
+      [0, ulong width) : i s.t. # inserts = 2**i
+      [0, ulong width) : i s.t. # inserts = 2**i in uchar stack test
       [0, 1] : on/off push pop first free uint test
       [0, 1] : on/off push pop first free uint_ptr (noncontiguous) test
       [0, 1] : on/off uchar stack test
@@ -47,8 +47,8 @@
 /* input handling */
 const char *C_USAGE =
   "stack-test \n"
-  "[0, ulong width] : i s.t. # inserts = 2**i\n"
-  "[0, ulong width] : i s.t. # inserts = 2**i in uchar stack test\n"
+  "[0, ulong width) : i s.t. # inserts = 2**i\n"
+  "[0, ulong width) : i s.t. # inserts = 2**i in uchar stack test\n"
   "[0, 1] : on/off push pop first free uint test\n"
   "[0, 1] : on/off push pop first free uint_ptr (noncontiguous) test\n"
   "[0, 1] : on/off uchar stack test\n";

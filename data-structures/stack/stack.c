@@ -60,8 +60,8 @@ static void fprintf_stderr_exit(const char *s, int line);
    s           : pointer to a preallocated block of size sizeof(stack_t)
    elt_size    : non-zero size of an elt_size block; must account for
                  internal and trailing padding according to sizeof
-   free_elt    : - NULL if only elt_size blocks should be deleted throughout
-                 the lifetime of a stack (e.g. because elements were
+   free_elt    : - NULL if only elt_size blocks should be deleted in the
+                 stack_free operation (e.g. because elements were
                  entirely copied as elt_size blocks, or because pointers
                  were copied as elt_size blocks and only pointers should
                  be deleted)
