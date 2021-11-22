@@ -1,12 +1,14 @@
 # graph-algorithms
 
-Graph algorithms and supporting data structures with a hash table parameter, generic vertices and edge weights, low memory footprint, and general C89/C90 and C99 portability.
+A low memory footprint in graph algorithms and supporting data structures is achieved by parameterizing the hashing and using the generics in C.
 
-The presented approach reflects the perspective that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method. An original approach to in-memory alignment is provided to enable cache-efficient type generics. A decomposition of common graph algorithms into small type-specific operations is demonstrated while utilizing the "understanding" of `memcpy` by modern compilers.
+An original approach to in-memory alignment is provided to enable cache-efficient type generics. A decomposition of common graph algorithms into small type-specific operations is demonstrated, while utilizing the "understanding" of memcpy by modern compilers. The provided algorithms and data structures are extremely portable.
 
 The implementation only uses integer and pointer operations (no floating point except in tests). Given parameter values within the specified ranges, the implementation provides an error message and an exit is executed if an integer overflow is attempted or an allocation is not completed due to insufficient resources. This behavior invariant holds across all abstraction levels.
 
-The rigorous compliance with the C standards and adherence to program safety are combined with an exploration of the boundaries of the C language and its translation, which may potentially contribute to further C standardization (tsp, queue, and a few utilities are still in review). Additional information relating to the style of the provided implementation is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
+The rigorous compliance with the C standards and adherence to program safety are combined with an exploration of the boundaries of the C language and its translation, which may potentially contribute to further C standardization and enable new mission-critical applications across a broad hardware spectrum (tsp, queue, and a few utilities are still in review). Additional information relating to the style of the provided implementation is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
+
+Graph-conscious hashing is formulated. The approach reflects the perspective that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method.
 
 A graph problem is often reduced to a hashing problem, where an ordered set of a graph topology, an algorithm, and a hash function maps to a distribution of hash values. Information about a graph topology can often be obtained from a problem statement and/or the prior knowledge of a domain. Additional information, such as the indegree of each vertex in a graph or a subset of vertices, can be stored at the time of graph construction. Based on the preliminary data, the provided implementation motivates the development and evaluation of graph-conscious hashing methods.
 
