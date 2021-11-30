@@ -5,8 +5,8 @@
 
    The following command line arguments can be used to customize tests:
    queue-test
-      [0, # bits in size_t - 1] : i s.t. # inserts = 2^i
-      [0, # bits in size_t - 1] : i s.t. # inserts = 2^i in uchar queue test
+      [0, ulong width) : i s.t. # inserts = 2**i
+      [0, ulong width) : i s.t. # inserts = 2**i in uchar queue test
       [0, 1] : on/off push pop first free uint test
       [0, 1] : on/off push pop first free uint_ptr (noncontiguous) test
       [0, 1] : on/off uchar queue test
@@ -14,8 +14,8 @@
    usage examples:
    ./queue-test
    ./queue-test 23
-   ./queue-test 24 32
-   ./queue-test 24 32 0 0 1
+   ./queue-test 24 31
+   ./queue-test 24 31 0 0 1
 
    queue-test can be run with any subset of command line arguments in the
    above-defined order. If the (i + 1)th argument is specified then the ith
@@ -23,7 +23,13 @@
    unspecified arguments according to the C_ARGS_DEF array.
 
    The implementation of tests does not use stdint.h and is portable under
-   C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is even.
+   C89/C90 and C99. The tests require that:
+   - size_t and clock_t are convertible to double,
+   - size_t can represent values upto 65535 for default values, and upto
+     ULONG_MAX (>= 4294967295) otherwise,
+   - the widths of the unsigned integral types are less than 2040 and even.
+
+   TODO: add portable size_t printing
 */
 
 #include <stdio.h>
@@ -34,25 +40,25 @@
 #include "queue.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
+#include "utilities-lim.h"
 
 #define TOLU(i) ((unsigned long int)(i)) /* printing size_t under C89/C90 */
 
 /* input handling */
 const char *C_USAGE =
   "queue-test \n"
-  "[0, # bits in size_t - 1] : i s.t. # inserts = 2^i\n"
-  "[0, # bits in size_t - 1] : i s.t. # inserts = 2^i in uchar queue test\n"
+  "[0, ulong width) : i s.t. # inserts = 2**i\n"
+  "[0, ulong width) : i s.t. # inserts = 2**i in uchar queue test\n"
   "[0, 1] : on/off push pop first free uint test\n"
   "[0, 1] : on/off push pop first free uint_ptr (noncontiguous) test\n"
   "[0, 1] : on/off uchar queue test\n";
 const int C_ARGC_MAX = 6;
 const size_t C_ARGS_DEF[5] = {14, 15, 1, 1, 1};
-const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+const size_t C_ULONG_BIT = UINT_WIDTH_FROM_MAX((unsigned long)-1);
 
 /* tests */
 const unsigned char C_UCHAR_MAX = (unsigned char)-1;
-const size_t C_INIT_COUNT = 1;
-const size_t C_START_VAL = 0;
+const size_t C_START_VAL = 0; /* <= # inserts */
 
 void print_test_result(int res);
 
@@ -64,22 +70,28 @@ void print_test_result(int res);
 
 void uint_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins);
 
-void run_uint_push_pop_test(int pow_ins){
+void run_uint_push_pop_test(size_t log_ins){
   size_t num_ins;
   size_t start_val = C_START_VAL;
   queue_t q;
-  num_ins = pow_two(pow_ins);
-  queue_init(&q, C_INIT_COUNT, sizeof(size_t), NULL);
-  printf("Run a queue_{push, pop} test on size_t elements\n");
-  printf("\tinitial queue count: %lu, start value: %lu, # inserts: %lu\n",
-	 TOLU(C_INIT_COUNT), TOLU(start_val), TOLU(num_ins));
+  num_ins = pow_two_perror(log_ins);
+  queue_init(&q, sizeof(size_t), NULL);
+  printf("Run a queue_{push, pop} test on %lu size_t elements\n",
+	 TOLU(num_ins));
+  printf("\teff initial count: %lu, eff max count: %lu\n",
+	 TOLU(q.init_count) >> 1, TOLU(q.max_count) >> 1);
   uint_push_pop_helper(&q, start_val, num_ins);
-  printf("\tsame queue, start value: %lu, # inserts: %lu\n",
-	 TOLU(start_val), TOLU(num_ins));
+  queue_free(&q);
+  queue_init(&q, sizeof(size_t), NULL);
+  queue_bound(&q, 1, num_ins);
+  printf("\teff initial count: %lu, eff max count: %lu\n",
+	 TOLU(q.init_count) >> 1, TOLU(q.max_count) >> 1);
   uint_push_pop_helper(&q, start_val, num_ins);
-  start_val += num_ins;
-  printf("\tsame queue, start value: %lu, # inserts: %lu\n",
-	 TOLU(start_val), TOLU(num_ins));
+  queue_free(&q);
+  queue_init(&q, sizeof(size_t), NULL);
+  queue_bound(&q, num_ins, num_ins);
+  printf("\teff initial count: %lu, eff max count: %lu\n",
+	 TOLU(q.init_count) >> 1, TOLU(q.max_count) >> 1);
   uint_push_pop_helper(&q, start_val, num_ins);
   queue_free(&q);
 }
@@ -109,8 +121,8 @@ void uint_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins){
   for (i = 0; i < num_ins; i++){
     res *= (popped[i] == start_val + i);
   }
-  printf("\t\tpush time:   %.4f seconds\n", (float)t_push / CLOCKS_PER_SEC);
-  printf("\t\tpop time:    %.4f seconds\n", (float)t_pop / CLOCKS_PER_SEC);
+  printf("\t\tpush time:   %.4f seconds\n", (double)t_push / CLOCKS_PER_SEC);
+  printf("\t\tpop time:    %.4f seconds\n", (double)t_pop / CLOCKS_PER_SEC);
   printf("\t\tcorrectness: ");
   print_test_result(res);
   free(pushed);
@@ -119,18 +131,16 @@ void uint_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins){
   popped = NULL;
 }
 
-void run_uint_first_test(int pow_ins){
+void run_uint_first_test(size_t log_ins){
   int res = 1;
   size_t i;
   size_t num_ins;
   size_t start_val = C_START_VAL;
   size_t pushed, popped;
   queue_t q;
-  num_ins = pow_two(pow_ins);
-  queue_init(&q, C_INIT_COUNT, sizeof(size_t), NULL);
-  printf("Run a queue_first test on size_t elements\n");
-  printf("\tinitial queue count: %lu, # inserts: %lu\n",
-	 TOLU(C_INIT_COUNT), TOLU(num_ins));
+  num_ins = pow_two_perror(log_ins);
+  queue_init(&q, sizeof(size_t), NULL);
+  printf("Run a queue_first test on %lu size_t elements\n", TOLU(num_ins));
   for (i = 0; i < num_ins; i++){
     if (q.num_elts == 0){
       res *= (queue_first(&q) == NULL);
@@ -153,22 +163,21 @@ void run_uint_first_test(int pow_ins){
   queue_free(&q);
 }
 
-void run_uint_free_test(int pow_ins){
+void run_uint_free_test(size_t log_ins){
   size_t i;
   size_t num_ins;
   queue_t q;
   clock_t t;
-  num_ins = pow_two(pow_ins);
-  queue_init(&q, C_INIT_COUNT, sizeof(size_t), NULL);
-  printf("Run a queue_free test on size_t elements\n");
-  printf("\t# inserts: %lu\n", TOLU(num_ins));
+  num_ins = pow_two_perror(log_ins);
+  queue_init(&q, sizeof(size_t), NULL);
+  printf("Run a queue_free test on %lu size_t elements\n", TOLU(num_ins));
   for (i = 0; i < num_ins; i++){
     queue_push(&q, &i);
   }
   t = clock();
   queue_free(&q);
   t = clock() - t;
-  printf("\t\tfree time:   %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  printf("\t\tfree time:   %.4f seconds\n", (double)t / CLOCKS_PER_SEC);
 }
 
 /**
@@ -189,28 +198,32 @@ void free_uint_ptr(void *a){
   (*s)->val = NULL;
   free(*s);
   *s = NULL;
-  s = NULL;
 }
 
 void uint_ptr_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins);
 
-void run_uint_ptr_push_pop_test(int pow_ins){
+void run_uint_ptr_push_pop_test(size_t log_ins){
   size_t num_ins;
   size_t start_val = C_START_VAL;
   queue_t q;
-  num_ins = pow_two(pow_ins);
-  queue_init(&q, C_INIT_COUNT, sizeof(uint_ptr_t *), free_uint_ptr);
-  printf("Run a queue_{push, pop} test on noncontiguous uint_ptr_t "
-         "elements\n");
-  printf("\tinitial queue count: %lu, start value: %lu, # inserts: %lu\n",
-	 TOLU(C_INIT_COUNT), TOLU(start_val), TOLU(num_ins));
+  num_ins = pow_two_perror(log_ins);
+  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
+  printf("Run a queue_{push, pop} test on %lu noncontiguous uint_ptr_t "
+         "elements\n", TOLU(num_ins));
+  printf("\teff initial count: %lu, eff max count: %lu\n",
+	 TOLU(q.init_count) >> 1, TOLU(q.max_count) >> 1);
   uint_ptr_push_pop_helper(&q, start_val, num_ins);
-  printf("\tsame queue, start value: %lu, # inserts: %lu\n",
-	 TOLU(start_val), TOLU(num_ins));
-  uint_ptr_push_pop_helper(&q, TOLU(start_val), TOLU(num_ins));
-  start_val += num_ins;
-  printf("\tsame queue, start value: %lu, # inserts: %lu\n",
-	 TOLU(start_val), TOLU(num_ins));
+  queue_free(&q);
+  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
+  queue_bound(&q, 1, num_ins);
+  printf("\teff initial count: %lu, eff max count: %lu\n",
+	 TOLU(q.init_count) >> 1, TOLU(q.max_count) >> 1);
+  uint_ptr_push_pop_helper(&q, start_val, num_ins);
+  queue_free(&q);
+  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
+  queue_bound(&q, num_ins, num_ins);
+  printf("\teff initial count: %lu, eff max count: %lu\n",
+	 TOLU(q.init_count) >> 1, TOLU(q.max_count) >> 1);
   uint_ptr_push_pop_helper(&q, start_val, num_ins);
   queue_free(&q);
 }
@@ -232,7 +245,9 @@ void uint_ptr_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins){
     queue_push(q, &pushed[i]);
   }
   t_push = clock() - t_push;
-  memset(pushed, 0, num_ins * sizeof(uint_ptr_t *));
+  for (i = 0; i < num_ins; i++){
+    pushed[i] = NULL;
+  }
   t_pop = clock();
   for (i = 0; i < num_ins; i++){
     queue_pop(q, &popped[i]);
@@ -244,8 +259,8 @@ void uint_ptr_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins){
     res *= (*(popped[i]->val) == start_val + i);
     free_uint_ptr(&popped[i]);
   }
-  printf("\t\tpush time:   %.4f seconds\n", (float)t_push / CLOCKS_PER_SEC);
-  printf("\t\tpop time:    %.4f seconds\n", (float)t_pop / CLOCKS_PER_SEC);
+  printf("\t\tpush time:   %.4f seconds\n", (double)t_push / CLOCKS_PER_SEC);
+  printf("\t\tpop time:    %.4f seconds\n", (double)t_pop / CLOCKS_PER_SEC);
   printf("\t\tcorrectness: ");
   print_test_result(res);
   free(pushed);
@@ -254,18 +269,17 @@ void uint_ptr_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins){
   popped = NULL;
 }
 
-void run_uint_ptr_first_test(int pow_ins){
+void run_uint_ptr_first_test(size_t log_ins){
   int res = 1;
   size_t i;
   size_t num_ins;
   size_t start_val = C_START_VAL;
   uint_ptr_t *pushed = NULL, *popped = NULL;
   queue_t q;
-  num_ins = pow_two(pow_ins);
-  queue_init(&q, C_INIT_COUNT, sizeof(uint_ptr_t *), free_uint_ptr);
-  printf("Run a queue_first test on noncontiguous uint_ptr_t elements\n");
-  printf("\tinitial queue count: %lu, # inserts: %lu\n",
-	 TOLU(C_INIT_COUNT), TOLU(num_ins));
+  num_ins = pow_two_perror(log_ins);
+  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
+  printf("Run a queue_first test on %lu noncontiguous uint_ptr_t elements\n",
+	 TOLU(num_ins));
   for (i = 0; i < num_ins; i++){
     if (q.num_elts == 0){
       res *= (queue_first(&q) == NULL);
@@ -293,16 +307,16 @@ void run_uint_ptr_first_test(int pow_ins){
   queue_free(&q);
 }
 
-void run_uint_ptr_free_test(int pow_ins){
+void run_uint_ptr_free_test(size_t log_ins){
   size_t i;
   size_t num_ins;
   uint_ptr_t *pushed = NULL;
   queue_t q;
   clock_t t;
-  num_ins = pow_two(pow_ins);
-  queue_init(&q, C_INIT_COUNT, sizeof(uint_ptr_t *), free_uint_ptr);
-  printf("Run a queue_free test on noncontiguous uint_ptr_t elements\n");
-  printf("\t# inserts: %lu\n", TOLU(num_ins));
+  num_ins = pow_two_perror(log_ins);
+  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
+  printf("Run a queue_free test on %lu noncontiguous uint_ptr_t elements\n",
+	 TOLU(num_ins));
   for (i = 0; i < num_ins; i++){
     pushed = malloc_perror(1, sizeof(uint_ptr_t));
     pushed->val = malloc_perror(1, sizeof(size_t));
@@ -313,20 +327,20 @@ void run_uint_ptr_free_test(int pow_ins){
   t = clock();
   queue_free(&q);
   t = clock() - t;
-  printf("\t\tfree time:   %.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+  printf("\t\tfree time:   %.4f seconds\n", (double)t / CLOCKS_PER_SEC);
 }
 
 /**
    Runs a test of a queue of unsigned char elements.
 */
-void run_uchar_queue_test(int pow_ins){
+void run_uchar_queue_test(size_t log_ins){
   unsigned char c;
   size_t i;
   size_t num_ins;
   queue_t q;
   clock_t t_push, t_pop;
-  num_ins = pow_two(pow_ins);
-  queue_init(&q, C_INIT_COUNT, sizeof(unsigned char), NULL);
+  num_ins = pow_two_perror(log_ins);
+  queue_init(&q, sizeof(unsigned char), NULL);
   printf("Run a queue_{push, pop} test on %lu char elements\n",
 	 TOLU(num_ins));
   t_push = clock();
@@ -339,8 +353,8 @@ void run_uchar_queue_test(int pow_ins){
     queue_pop(&q, &c);
   }
   t_pop = clock() - t_pop;
-  printf("\t\tpush time:   %.4f seconds\n", (float)t_push / CLOCKS_PER_SEC);
-  printf("\t\tpop time:    %.4f seconds\n", (float)t_pop / CLOCKS_PER_SEC);
+  printf("\t\tpush time:   %.4f seconds\n", (double)t_push / CLOCKS_PER_SEC);
+  printf("\t\tpop time:    %.4f seconds\n", (double)t_pop / CLOCKS_PER_SEC);
   queue_free(&q);
 }
 
@@ -364,8 +378,8 @@ int main(int argc, char *argv[]){
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
-  if (args[0] > C_FULL_BIT - 1 ||
-      args[1] > C_FULL_BIT - 1 ||
+  if (args[0] > C_ULONG_BIT - 1 ||
+      args[1] > C_ULONG_BIT - 1 ||
       args[2] > 1 ||
       args[3] > 1 ||
       args[4] > 1){
