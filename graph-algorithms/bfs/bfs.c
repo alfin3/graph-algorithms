@@ -125,7 +125,8 @@ void bfs(const adj_lst_t *a,
     incr_vt(ix);
   }
   memcpy(at_vt(prev, u), u, a->vt_size);
-  queue_init(&q, C_QUEUE_INIT_COUNT, a->vt_size, NULL);
+  queue_init(&q, a->vt_size, NULL);
+  queue_bound(&q, C_QUEUE_INIT_COUNT, a->num_vts);
   queue_push(&q, u);
   while (q.num_elts > 0){
     queue_pop(&q, u);
