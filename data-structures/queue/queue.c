@@ -81,28 +81,28 @@ void queue_init(queue_t *q,
 
 /**
    Sets the count of the elt_size blocks that can be simultaneously present
-   in an initial queue without reallocation for any sequence of pop and
-   push operations. The growth of the queue is then achieved by repetitive
-   doubling upto the count that can accomodate max_count simultaneously
-   present elt_size blocks for any sequence of pop and push operations.
-   If max_count is greater than init_count and is not equal to
-   init_count * 2**n for n > 0, then the last growth step sets the count
-   of the queue to a count that accomodates max_count simultaneously present
-   elt_size blocks for any sequence of pop and push operations. The
-   operation is optionally called after queue_init is completed and before
-   any other operation is called.
+   in an initial queue without reallocation. The growth of the queue is then
+   achieved by repetitive doubling upto the count that can accomodate
+   max_count simultaneously present elt_size blocks. The bounds are valid
+   for any sequence of push and pop operations. If max_count is greater than
+   init_count and is not equal to init_count * 2**n for n > 0, then the last
+   growth step sets the count of the queue to a count that accomodates
+   max_count simultaneously present elt_size blocks. The operation is
+   optionally called after queue_init is completed and before any other
+   operation is called.
    q           : pointer to a queue_t struct initialized with queue_init
    init_count  : > 0 count of the elt_size blocks that can be
                  simultaneously present in an initial queue without
-                 reallocation for any sequence of pop and push
+                 reallocation for any sequence of push and pop
                  operations
    max_count   : - if >= init_count, sets the maximum count of
                  the elt_size blocks that can be simultaneously present in a
-                 queue for any sequence of pop and push operations; an error
+                 queue for any sequence of push and pop operations; an error
                  message is provided and an exit is executed if an attempt
-                 is made to exceed the bound of a queue, which may be upto
-                 twice the max_count depending on the sequence of pop and
-                 push operations
+                 is made to exceed the allocated memory of the queue in
+                 queue_push, which may accomodate upto 2 * max_count
+                 elt_size blocks depending on the sequence of push and pop
+                 operations
                  - otherwise, the count of the elt_size blocks that can be
                  simultaneously present in a queue is only limited by the
                  available system resources 
