@@ -47,7 +47,7 @@
 
 #include <stddef.h>
 
-typedef struct{
+struct stack{
   size_t count;
   size_t init_count;
   size_t max_count;
@@ -55,13 +55,13 @@ typedef struct{
   size_t elt_size;
   void *elts;
   void (*free_elt)(void *);
-} stack_t;
+};
 
 /**
    Initializes a stack. By default the initialized stack can accomodate
    as many elt_size blocks as the system resources allow, starting from one
    elt_size block and growing by repetitive doubling.
-   s           : pointer to a preallocated block of size sizeof(stack_t)
+   s           : pointer to a preallocated block of size sizeof(struct stack)
    elt_size    : non-zero size of an elt_size block; must account for
                  internal and trailing padding according to sizeof
    free_elt    : - NULL if only elt_size blocks should be deleted in the
@@ -73,7 +73,7 @@ typedef struct{
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void stack_init(stack_t *s,
+void stack_init(struct stack *s,
 		size_t elt_size,
 		void (*free_elt)(void *));
 
@@ -85,7 +85,7 @@ void stack_init(stack_t *s,
    equal to init_count * 2**n for n > 0, then the last growth step sets
    the count of the stack to max_count. The operation is optionally called
    after stack_init is completed and before any other operation is called.
-   s           : pointer to a stack_t struct initialized with stack_init
+   s           : pointer to a stack struct initialized with stack_init
    init_count  : > 0 count of the elt_size blocks that can be simultaneously
                  present in an initial stack without reallocation
    max_count   : - if >= init_count, sets the maximum count of the elt_size
@@ -96,25 +96,25 @@ void stack_init(stack_t *s,
                  simultaneously present in a stack is only limited by the
                  available system resources 
 */
-void stack_bound(stack_t *s,
+void stack_bound(struct stack *s,
 		 size_t init_count,
 		 size_t max_count);
 
 /**
    Pushes an element onto a stack.
-   s           : pointer to an initialized stack_t struct 
+   s           : pointer to an initialized stack struct 
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void stack_push(stack_t *s, const void *elt);
+void stack_push(struct stack *s, const void *elt);
 
 /**
    Pops an element of a stack.
-   s           : pointer to an initialized stack_t struct   
+   s           : pointer to an initialized stack struct   
    elt         : non-NULL pointer to a preallocated elt_size block; if the
                  stack is empty, the memory block pointed to by elt remains
                  unchanged
 */
-void stack_pop(stack_t *s, void *elt);
+void stack_pop(struct stack *s, void *elt);
 
 /**
    If a stack is not empty, returns a pointer to the first elt_size block,
@@ -122,15 +122,15 @@ void stack_pop(stack_t *s, void *elt);
    the first element until a stack modifying operation is performed. If
    non-NULL, the returned pointed can be dereferenced as a pointer to the 
    type of the elt_size block, or as a character pointer.
-   s           : pointer to an initialized stack_t struct 
+   s           : pointer to an initialized stack struct 
 */
-void *stack_first(const stack_t *s);
+void *stack_first(const struct stack *s);
 
 /**
    Frees the memory of all elements that are in a stack according to 
    free_elt, frees the memory of the stack, and leaves the block of size
-   sizeof(stack_t) pointed to by the s parameter.
+   sizeof(struct stack) pointed to by the s parameter.
 */
-void stack_free(stack_t *s);
+void stack_free(struct stack *s);
 
 #endif

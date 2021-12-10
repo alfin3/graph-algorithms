@@ -68,15 +68,15 @@
 
 #include <stddef.h>
 
-typedef struct{
+struct ke{
   size_t fval; /* first hash value with first bit only set in placeholder */
   size_t sval; /* second hash value */
-} ke_t;        /* given p pointer to a ke_t,
+};             /* given p pointer to a ke,
                   (char *)p - key_offset points to key_size block and 
                   (char *)p + elt_offset points to elt_size block;
                   see ke_key_ptr and ke_elt_ptr functions */
 
-typedef struct{
+struct ht_muloa{
   size_t key_size;
   size_t elt_size;
   size_t key_offset;
@@ -92,20 +92,20 @@ typedef struct{
   size_t num_phs;
   size_t fprime; /* >2**(n - 1), <2**n, where n is size_t width */
   size_t sprime; /* >2**(n - 1), <2**n, where n is size_t width */
-  ke_t *ph;
-  ke_t **key_elts;
+  struct ke *ph;
+  struct ke **key_elts;
   int (*cmp_key)(const void *, const void *);
   size_t (*rdc_key)(const void *);
   void (*free_key)(void *);
   void (*free_elt)(void *);
-} ht_muloa_t;
+};
 
 /**
    Initializes a hash table. An in-table elt_size block is guaranteed to
    be accessible only with a pointer to a character, unless additional
    alignment is performed by calling ht_muloa_align.
    ht          : a pointer to a preallocated block of size 
-                 sizeof(ht_muloa_t).
+                 sizeof(struct ht_muloa).
    key_size    : non-zero size of a key_size block; must account for internal
                  and trailing padding according to sizeof
    elt_size    : non-zero size of an elt_size block; must account for internal
@@ -150,7 +150,7 @@ typedef struct{
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void ht_muloa_init(ht_muloa_t *ht,
+void ht_muloa_init(struct ht_muloa *ht,
 		   size_t key_size,
 		   size_t elt_size,
 		   size_t min_num,
@@ -173,13 +173,13 @@ void ht_muloa_init(ht_muloa_t *ht,
    T can be the same or a cvr-qualified/signed/unsigned version of the
    type. The operation is optionally called after ht_muloa_init is
    completed and before any other operation is called.
-   ht            : pointer to an initialized ht_muloa_t struct
+   ht            : pointer to an initialized ht_muloa struct
    elt_alignment : alignment requirement or size of the type, a pointer to
                    which is used to access the elt_size block of an element
                    in a hash table; if size, must account for internal
                    and trailing padding according to sizeof
 */
-void ht_muloa_align(ht_muloa_t *ht, size_t elt_alignment);
+void ht_muloa_align(struct ht_muloa *ht, size_t elt_alignment);
 
 /**
    Inserts a key and an associated element into a hash table by copying
@@ -187,21 +187,21 @@ void ht_muloa_align(ht_muloa_t *ht, size_t elt_alignment);
    the key parameter is already in the hash table according to cmp_key,
    then deletes the previous element according to free_elt and copies
    the elt_size block pointed to by the elt parameter.
-   ht          : pointer to an initialized ht_muloa_t struct   
+   ht          : pointer to an initialized ht_muloa struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt);
+void ht_muloa_insert(struct ht_muloa *ht, const void *key, const void *elt);
 
 /**
    If a key is present in a hash table, according to cmp_key, then returns a
    pointer to the elt_size block of its associated element in the hash table.
    Otherwise returns NULL. The returned pointer can be dereferenced according
    to the preceding calls to ht_muloa_init and ht_muloa_align_elt.
-   ht          : pointer to an initialized ht_muloa_t struct   
+   ht          : pointer to an initialized ht_muloa struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void *ht_muloa_search(const ht_muloa_t *ht, const void *key);
+void *ht_muloa_search(const struct ht_muloa *ht, const void *key);
 
 /**
    Removes the element associated with a key in a hash table that equals to
@@ -211,36 +211,36 @@ void *ht_muloa_search(const ht_muloa_t *ht, const void *key);
    elt_size blocks in the hash table. If there is no matching key in the
    hash table according to cmp_key, leaves the hash table and the block
    pointed to by elt unchanged.
-   ht          : pointer to an initialized ht_muloa_t struct   
+   ht          : pointer to an initialized ht_muloa struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to a preallocated elt_size block
 */
-void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt);
+void ht_muloa_remove(struct ht_muloa *ht, const void *key, void *elt);
 
 /**
    If there is a key in a hash table that equals to the key pointed to
    by the key parameter according to cmp_key, then deletes the in-table key
    element pair according to free_key and free_elt.
-   ht          : pointer to an initialized ht_muloa_t struct   
+   ht          : pointer to an initialized ht_muloa struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void ht_muloa_delete(ht_muloa_t *ht, const void *key);
+void ht_muloa_delete(struct ht_muloa *ht, const void *key);
 
 /**
    Frees the memory of all keys and elements that are in a hash table
    according to free_key and free_elt, frees the memory of the hash table,
-   and leaves the block of size sizeof(ht_muloa_t) pointed to by the ht
+   and leaves the block of size sizeof(struct ht_muloa) pointed to by the ht
    parameter.
 */
-void ht_muloa_free(ht_muloa_t *ht);
+void ht_muloa_free(struct ht_muloa *ht);
 
 /**
    Help construct a hash table parameter value in algorithms and data
    structures with a hash table parameter, complying with the stict aliasing
    rules and compatibility rules for function types. In each case, a
-   (qualified) ht_muloa_t *p0 is converted to (qualified) void * and back
-   to a (qualified) ht_muloa_t *p1, thus guaranteeing that the value of p0
-   equals the value of p1.
+   (qualified) struct ht_muloa *p0 is converted to (qualified) void * and
+   back to a (qualified) struct ht_muloa *p1, thus guaranteeing that the
+   value of p0 equals the value of p1.
 */
 
 void ht_muloa_init_helper(void *ht,

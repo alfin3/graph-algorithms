@@ -54,18 +54,18 @@
 #include "heap.h"
 #include "utilities-mem.h"
 
-static void half_swap(heap_t *h, size_t t, size_t s);
-static void heapify_up(heap_t *h, size_t i);
-static void heapify_down(heap_t *h, size_t i);
-static void *pty_ptr(const heap_t *h, size_t i);
-static void *elt_ptr(const heap_t *h, size_t i);
+static void half_swap(struct heap *h, size_t t, size_t s);
+static void heapify_up(struct heap *h, size_t i);
+static void heapify_down(struct heap *h, size_t i);
+static void *pty_ptr(const struct heap *h, size_t i);
+static void *elt_ptr(const struct heap *h, size_t i);
 
 /**
    Initializes a heap. The in-heap pty_size and elt_size blocks, as well as
    the size_t indices in a hash table are aligned by default according to their
    sizes because size of a type T >= alignment requirement of T (due to the
    structure of arrays).
-   h           : pointer to a preallocated block of size sizeof(heap_t)
+   h           : pointer to a preallocated block of size sizeof(struct heap)
    pty_size    : non-zero size of a pty_size block; must account for internal
                  and trailing padding according or equivalent to sizeof
    elt_size    : non-zero size of an elt_size block; must account for internal
@@ -106,11 +106,11 @@ static void *elt_ptr(const heap_t *h, size_t i);
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void heap_init(heap_t *h,
+void heap_init(struct heap *h,
 	       size_t pty_size,
 	       size_t elt_size,
 	       size_t min_num,
-	       const heap_ht_t *hht,
+	       const struct heap_ht *hht,
 	       int (*cmp_pty)(const void *, const void *),
 	       int (*cmp_elt)(const void *, const void *),
 	       size_t (*rdc_elt)(const void *),
@@ -167,7 +167,7 @@ void heap_init(heap_t *h,
    effective types at the time of insertion (push). The operation is
    optionally called after heap_init is completed and before any other
    operation is called.
-   ht            : pointer to an initialized heap_t struct
+   ht            : pointer to an initialized heap struct
    pty_alignment : alignment requirement or size of the priority type copied
                    as pty_size block; if size, must account for internal and
                    trailing padding according to sizeof
@@ -179,7 +179,7 @@ void heap_init(heap_t *h,
                    - otherwise, non-zero alignment requirement or size of
                    size_t
 */
-void heap_align(heap_t *h,
+void heap_align(struct heap *h,
 		size_t pty_alignment,
 		size_t elt_alignment,
 		size_t sz_alignment){
@@ -212,7 +212,7 @@ void heap_align(heap_t *h,
                  priority value
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void heap_push(heap_t *h, const void *pty, const void *elt){
+void heap_push(struct heap *h, const void *pty, const void *elt){
   size_t ix = h->num_elts;
   if (h->count == ix){
     /* grow heap; amortized constant overhead per push, 
@@ -240,7 +240,7 @@ void heap_push(heap_t *h, const void *pty, const void *elt){
    h           : pointer to an initialized heap
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void *heap_search(const heap_t *h, const void *elt){
+void *heap_search(const struct heap *h, const void *elt){
   const size_t *ix_ptr = h->hht->search(h->hht->ht, elt);
   if (ix_ptr != NULL){
     return pty_ptr(h, *ix_ptr);
@@ -259,7 +259,7 @@ void *heap_search(const heap_t *h, const void *elt){
                  priority value
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void heap_update(heap_t *h, const void *pty, const void *elt){
+void heap_update(struct heap *h, const void *pty, const void *elt){
   size_t ix = *(const size_t *)h->hht->search(h->hht->ht, elt);
   memcpy(pty_ptr(h, ix), pty, h->pty_size);
   heapify_up(h, ix);
@@ -274,7 +274,7 @@ void heap_update(heap_t *h, const void *pty, const void *elt){
    pty         : non-NULL pointer to a block of size pty_size 
    elt         : non-NULL pointer to a block of size elt_size
 */
-void heap_pop(heap_t *h, void *pty, void *elt){
+void heap_pop(struct heap *h, void *pty, void *elt){
   size_t ix_buf, ix = 0;
   if (h->num_elts == 0) return;
   memcpy(pty, pty_ptr(h, ix), h->pty_size);
@@ -289,10 +289,10 @@ void heap_pop(heap_t *h, void *pty, void *elt){
    Frees the memory of all priorities and elements that are in a heap. The
    elements are freed according to free_elt. Frees the memory of the heap
    and hash table leaving only the blocks that were preallocated before
-   the call to heap_init, including the block of size sizeof(heap_t)
+   the call to heap_init, including the block of size sizeof(struct heap)
    pointed to by the h parameter.
 */
-void heap_free(heap_t *h){
+void heap_free(struct heap *h){
   size_t i;
   if (h->free_elt != NULL){
     for (i = 0; i < h->num_elts; i++){
@@ -312,7 +312,7 @@ void heap_free(heap_t *h){
    Copies the priority and element at index s to index t, and maps the
    copied element at index t to t in the hash table.
 */
-static void half_swap(heap_t *h, size_t t, size_t s){
+static void half_swap(struct heap *h, size_t t, size_t s){
   if (s == t) return;
   memcpy(pty_ptr(h, t), pty_ptr(h, s), h->pair_size);
   h->hht->insert(h->hht->ht, elt_ptr(h, t), &t); /* update */
@@ -321,7 +321,7 @@ static void half_swap(heap_t *h, size_t t, size_t s){
 /**
    Heapifies the heap structure from the ith element upwards.
 */
-static void heapify_up(heap_t *h, size_t i){
+static void heapify_up(struct heap *h, size_t i){
   size_t ju;
   size_t ix = i;
   memcpy(h->buf, pty_ptr(h, ix), h->pair_size);
@@ -342,7 +342,7 @@ static void heapify_up(heap_t *h, size_t i){
    Heapifies the heap structure with at least one element from the ith
    element downwards.
 */
-static void heapify_down(heap_t *h, size_t i){
+static void heapify_down(struct heap *h, size_t i){
   size_t jl, jr;
   size_t ix = i;
   memcpy(h->buf, pty_ptr(h, ix), h->pair_size);
@@ -377,13 +377,13 @@ static void heapify_down(heap_t *h, size_t i){
 /**
    Computes a pointer to an element in the pty_elts array of a heap.
 */
-static void *pty_ptr(const heap_t *h, size_t i){
+static void *pty_ptr(const struct heap *h, size_t i){
   return (void *)((char *)h->pty_elts + i * h->pair_size);
 }
 
 /**
    Computes a pointer to a priority in the pty_elts array of a heap.
 */
-static void *elt_ptr(const heap_t *h, size_t i){
+static void *elt_ptr(const struct heap *h, size_t i){
   return (void *)((char *)h->pty_elts + i * h->pair_size + h->elt_offset);
 }

@@ -142,10 +142,10 @@ static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 static const size_t C_SIZE_MAX = (size_t)-1;
 
-static size_t hash(const ht_divchn_t *ht, const void *key);
+static size_t hash(const struct ht_divchn *ht, const void *key);
 static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d);
-static void ht_grow(ht_divchn_t *ht);
-static int incr_count(ht_divchn_t *ht);
+static void ht_grow(struct ht_divchn *ht);
+static int incr_count(struct ht_divchn *ht);
 static int is_overflow(size_t start, size_t count);
 static size_t build_prime(size_t start, size_t count);
 
@@ -154,7 +154,7 @@ static size_t build_prime(size_t start, size_t count);
    be accessible only with a pointer to a character, unless additional
    alignment is performed by calling ht_divchn_align.
    ht          : a pointer to a preallocated block of size 
-                 sizeof(ht_divchn_t).
+                 sizeof(struct ht_divchn).
    key_size    : non-zero size of a key_size block; must account for internal
                  and trailing padding according to sizeof
    elt_size    : non-zero size of an elt_size block; must account for internal
@@ -198,7 +198,7 @@ static size_t build_prime(size_t start, size_t count);
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void ht_divchn_init(ht_divchn_t *ht,
+void ht_divchn_init(struct ht_divchn *ht,
 		    size_t key_size,
 		    size_t elt_size,
 		    size_t min_num,
@@ -221,8 +221,8 @@ void ht_divchn_init(ht_divchn_t *ht,
   ht->max_num_elts = mul_alpha_sz_max(ht->count, alpha_n, log_alpha_d);
   while (min_num > ht->max_num_elts && incr_count(ht));
   ht->num_elts = 0;
-  ht->ll = malloc_perror(1, sizeof(dll_t));
-  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
+  ht->ll = malloc_perror(1, sizeof(struct dll));
+  ht->key_elts = malloc_perror(ht->count, sizeof(struct dll_node *));
   for (i = 0; i < ht->count; i++){
     dll_init(ht->ll, &ht->key_elts[i], ht->key_size);
   }
@@ -244,13 +244,13 @@ void ht_divchn_init(ht_divchn_t *ht,
    T can be the same or a cvr-qualified/signed/unsigned version of the
    type. The operation is optionally called after ht_divchn_init is
    completed and before any other operation is called.
-   ht            : pointer to an initialized ht_divchn_t struct
+   ht            : pointer to an initialized ht_divchn struct
    elt_alignment : alignment requirement or size of the type, a pointer to
                    which is used to access the elt_size block of an element
                    in a hash table; if size, must account for internal
                    and trailing padding according to sizeof
 */
-void ht_divchn_align(ht_divchn_t *ht, size_t elt_alignment){
+void ht_divchn_align(struct ht_divchn *ht, size_t elt_alignment){
   ht->elt_alignment = elt_alignment;
   dll_align_elt(ht->ll, elt_alignment);
 }
@@ -261,13 +261,13 @@ void ht_divchn_align(ht_divchn_t *ht, size_t elt_alignment){
    the key parameter is already in the hash table according to cmp_key,
    then deletes the previous element according to free_elt and copies
    the elt_size block pointed to by the elt parameter.
-   ht          : pointer to an initialized ht_divchn_t struct   
+   ht          : pointer to an initialized ht_divchn struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
+void ht_divchn_insert(struct ht_divchn *ht, const void *key, const void *elt){
   size_t ix;
-  dll_node_t **head = NULL, *node = NULL;
+  struct dll_node **head = NULL, *node = NULL;
   ix = hash(ht, key);
   head = &ht->key_elts[ix];
   node = dll_search_key(ht->ll, head, key, ht->key_size, ht->cmp_key);
@@ -292,15 +292,15 @@ void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt){
    pointer to the elt_size block of its associated element in the hash table.
    Otherwise returns NULL. The returned pointer can be dereferenced according
    to the preceding calls to ht_divchn_init and ht_divchn_align_elt.
-   ht          : pointer to an initialized ht_divchn_t struct   
+   ht          : pointer to an initialized ht_divchn struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
-  const dll_node_t *node = dll_search_key(ht->ll,
-					  &ht->key_elts[hash(ht, key)],
-					  key,
-					  ht->key_size,
-					  ht->cmp_key);
+void *ht_divchn_search(const struct ht_divchn *ht, const void *key){
+  const struct dll_node *node = dll_search_key(ht->ll,
+					       &ht->key_elts[hash(ht, key)],
+					       key,
+					       ht->key_size,
+					       ht->cmp_key);
   if (node == NULL){
     return NULL;
   }else{
@@ -316,13 +316,13 @@ void *ht_divchn_search(const ht_divchn_t *ht, const void *key){
    elt_size blocks in the hash table. If there is no matching key in the
    hash table according to cmp_key, leaves the hash table and the block
    pointed to by elt unchanged.
-   ht          : pointer to an initialized ht_divchn_t struct   
+   ht          : pointer to an initialized ht_divchn struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to a preallocated elt_size block
 */
-void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
-  dll_node_t **head = &ht->key_elts[hash(ht, key)];
-  dll_node_t *node =
+void ht_divchn_remove(struct ht_divchn *ht, const void *key, void *elt){
+  struct dll_node **head = &ht->key_elts[hash(ht, key)];
+  struct dll_node *node =
     dll_search_key(ht->ll, head, key, ht->key_size, ht->cmp_key);
   if (node != NULL){
     memcpy(elt, dll_elt_ptr(ht->ll, node), ht->elt_size);
@@ -336,12 +336,12 @@ void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt){
    If there is a key in a hash table that equals to the key pointed to
    by the key parameter according to cmp_key, then deletes the in-table key
    element pair according to free_key and free_elt.
-   ht          : pointer to an initialized ht_divchn_t struct   
+   ht          : pointer to an initialized ht_divchn struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void ht_divchn_delete(ht_divchn_t *ht, const void *key){
-  dll_node_t **head = &ht->key_elts[hash(ht, key)];
-  dll_node_t *node =
+void ht_divchn_delete(struct ht_divchn *ht, const void *key){
+  struct dll_node **head = &ht->key_elts[hash(ht, key)];
+  struct dll_node *node =
     dll_search_key(ht->ll, head, key, ht->key_size, ht->cmp_key);
   if (node != NULL){
     dll_delete(ht->ll, head, node, ht->free_key, ht->free_elt);
@@ -352,10 +352,10 @@ void ht_divchn_delete(ht_divchn_t *ht, const void *key){
 /**
    Frees the memory of all keys and elements that are in a hash table
    according to free_key and free_elt, frees the memory of the hash table,
-   and leaves the block of size sizeof(ht_divchn_t) pointed to by the ht
+   and leaves the block of size sizeof(struct ht_divchn) pointed to by the ht
    parameter.
 */
-void ht_divchn_free(ht_divchn_t *ht){
+void ht_divchn_free(struct ht_divchn *ht){
   size_t i;
   for (i = 0; i < ht->count; i++){
     dll_free(ht->ll, &ht->key_elts[i], ht->free_key, ht->free_elt);
@@ -370,9 +370,9 @@ void ht_divchn_free(ht_divchn_t *ht){
    Help construct a hash table parameter value in algorithms and data
    structures with a hash table parameter, complying with the stict aliasing
    rules and compatibility rules for function types. In each case, a
-   (qualified) ht_divchn_t *p0 is converted to (qualified) void * and back
-   to a (qualified) ht_divchn_t *p1, thus guaranteeing that the value of p0
-   equals the value of p1.
+   (qualified) struct ht_divchn *p0 is converted to (qualified) void * and
+   back to a (qualified) struct ht_divchn *p1, thus guaranteeing that the
+   value of p0 equals the value of p1.
 */
 
 void ht_divchn_init_helper(void *ht,
@@ -429,7 +429,7 @@ void ht_divchn_free_helper(void *ht){
    key to reduce it to size_t. Otherwise, returns the value after applying
    rdc_key to the key.
 */
-static size_t convert_std_key(const ht_divchn_t *ht, const void *key){
+static size_t convert_std_key(const struct ht_divchn *ht, const void *key){
   size_t i;
   size_t sz_count, rem_size;
   size_t std_key = 0;
@@ -459,7 +459,7 @@ static size_t convert_std_key(const ht_divchn_t *ht, const void *key){
 /**
    Maps a hash key to a slot index in a hash table with a division method. 
 */
-static size_t hash(const ht_divchn_t *ht, const void *key){
+static size_t hash(const struct ht_divchn *ht, const void *key){
   return convert_std_key(ht, key) % ht->count; 
 }
 
@@ -492,13 +492,13 @@ static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
    to C_SIZE_MAX or C_PRIME_PARTS_COUNT, which requires one additional call.
    Otherwise, each call increases the count.
 */
-static void ht_grow(ht_divchn_t *ht){
+static void ht_grow(struct ht_divchn *ht){
   size_t i, prev_count = ht->count;
-  dll_node_t **prev_key_elts = ht->key_elts;
-  dll_node_t **head = NULL, *node = NULL;
+  struct dll_node **prev_key_elts = ht->key_elts;
+  struct dll_node **head = NULL, *node = NULL;
   while (ht->num_elts > ht->max_num_elts && incr_count(ht));
   if (prev_count == ht->count) return; /* load factor not lowered */
-  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
+  ht->key_elts = malloc_perror(ht->count, sizeof(struct dll_node *));
   for (i = 0; i < ht->count; i++){
     dll_init(ht->ll, &ht->key_elts[i], ht->key_size);
   }
@@ -523,7 +523,7 @@ static void ht_grow(ht_divchn_t *ht){
    C_PRIME_PARTS_COUNT, which requires one additional call. Otherwise, each
    call increases the count.
 */
-static int incr_count(ht_divchn_t *ht){
+static int incr_count(struct ht_divchn *ht){
   ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
   if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
   if (ht->count_ix == C_PRIME_PARTS_COUNT){

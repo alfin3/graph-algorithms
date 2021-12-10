@@ -67,7 +67,7 @@
 #include <stddef.h>
 #include "dll.h"
 
-typedef struct{
+struct ht_divchn{
   size_t key_size;
   size_t elt_size;
   size_t elt_alignment;
@@ -78,20 +78,20 @@ typedef struct{
   size_t log_alpha_d;
   size_t max_num_elts; /*  >= 0, <= C_SIZE_MAX, alpha wrt a count */
   size_t num_elts;
-  dll_t *ll;
-  dll_node_t **key_elts; /* array of pointers to nodes */
+  struct dll *ll;
+  struct dll_node **key_elts; /* array of pointers to nodes */
   int (*cmp_key)(const void *, const void *); /* cmp_key and rdc_key must */
   size_t (*rdc_key)(const void *);      /* work on the same bits of a key */
   void (*free_key)(void *);
   void (*free_elt)(void *);
-} ht_divchn_t;
+};
 
 /**
    Initializes a hash table. An in-table elt_size block is guaranteed to
    be accessible only with a pointer to a character, unless additional
    alignment is performed by calling ht_divchn_align.
    ht          : a pointer to a preallocated block of size 
-                 sizeof(ht_divchn_t).
+                 sizeof(struct ht_divchn).
    key_size    : non-zero size of a key_size block; must account for internal
                  and trailing padding according to sizeof
    elt_size    : non-zero size of an elt_size block; must account for internal
@@ -135,7 +135,7 @@ typedef struct{
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void ht_divchn_init(ht_divchn_t *ht,
+void ht_divchn_init(struct ht_divchn *ht,
 		    size_t key_size,
 		    size_t elt_size,
 		    size_t min_num,
@@ -158,13 +158,13 @@ void ht_divchn_init(ht_divchn_t *ht,
    T can be the same or a cvr-qualified/signed/unsigned version of the
    type. The operation is optionally called after ht_divchn_init is
    completed and before any other operation is called.
-   ht            : pointer to an initialized ht_divchn_t struct
+   ht            : pointer to an initialized ht_divchn struct
    elt_alignment : alignment requirement or size of the type, a pointer to
                    which is used to access the elt_size block of an element
                    in a hash table; if size, must account for internal
                    and trailing padding according to sizeof
 */
-void ht_divchn_align(ht_divchn_t *ht, size_t elt_alignment);
+void ht_divchn_align(struct ht_divchn *ht, size_t elt_alignment);
 
 /**
    Inserts a key and an associated element into a hash table by copying
@@ -172,21 +172,21 @@ void ht_divchn_align(ht_divchn_t *ht, size_t elt_alignment);
    the key parameter is already in the hash table according to cmp_key,
    then deletes the previous element according to free_elt and copies
    the elt_size block pointed to by the elt parameter.
-   ht          : pointer to an initialized ht_divchn_t struct   
+   ht          : pointer to an initialized ht_divchn struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void ht_divchn_insert(ht_divchn_t *ht, const void *key, const void *elt);
+void ht_divchn_insert(struct ht_divchn *ht, const void *key, const void *elt);
 
 /**
    If a key is present in a hash table, according to cmp_key, then returns a
    pointer to the elt_size block of its associated element in the hash table.
    Otherwise returns NULL. The returned pointer can be dereferenced according
    to the preceding calls to ht_divchn_init and ht_divchn_align_elt.
-   ht          : pointer to an initialized ht_divchn_t struct   
+   ht          : pointer to an initialized ht_divchn struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void *ht_divchn_search(const ht_divchn_t *ht, const void *key);
+void *ht_divchn_search(const struct ht_divchn *ht, const void *key);
 
 /**
    Removes the element associated with a key in a hash table that equals to
@@ -196,36 +196,36 @@ void *ht_divchn_search(const ht_divchn_t *ht, const void *key);
    elt_size blocks in the hash table. If there is no matching key in the
    hash table according to cmp_key, leaves the hash table and the block
    pointed to by elt unchanged.
-   ht          : pointer to an initialized ht_divchn_t struct   
+   ht          : pointer to an initialized ht_divchn struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to a preallocated elt_size block
 */
-void ht_divchn_remove(ht_divchn_t *ht, const void *key, void *elt);
+void ht_divchn_remove(struct ht_divchn *ht, const void *key, void *elt);
 
 /**
    If there is a key in a hash table that equals to the key pointed to
    by the key parameter according to cmp_key, then deletes the in-table key
    element pair according to free_key and free_elt.
-   ht          : pointer to an initialized ht_divchn_t struct   
+   ht          : pointer to an initialized ht_divchn struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void ht_divchn_delete(ht_divchn_t *ht, const void *key);
+void ht_divchn_delete(struct ht_divchn *ht, const void *key);
 
 /**
    Frees the memory of all keys and elements that are in a hash table
    according to free_key and free_elt, frees the memory of the hash table,
-   and leaves the block of size sizeof(ht_divchn_t) pointed to by the ht
+   and leaves the block of size sizeof(struct ht_divchn) pointed to by the ht
    parameter.
 */
-void ht_divchn_free(ht_divchn_t *ht);
+void ht_divchn_free(struct ht_divchn *ht);
 
 /**
    Help construct a hash table parameter value in algorithms and data
    structures with a hash table parameter, complying with the stict aliasing
    rules and compatibility rules for function types. In each case, a
-   (qualified) ht_divchn_t *p0 is converted to (qualified) void * and back
-   to a (qualified) ht_divchn_t *p1, thus guaranteeing that the value of p0
-   equals the value of p1.
+   (qualified) struct ht_divchn *p0 is converted to (qualified) void * and
+   back to a (qualified) struct ht_divchn *p1, thus guaranteeing that the
+   value of p0 equals the value of p1.
 */
 
 void ht_divchn_init_helper(void *ht,

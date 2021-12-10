@@ -107,12 +107,12 @@ void *ptr(const void *block, size_t i, size_t size);
    Run a bfs test on random directed graphs.
 */
 
-typedef struct{
+struct bern_arg{
   double p;
-} bern_arg_t;
+};
 
 int bern(void *arg){
-  bern_arg_t *b = arg;
+  struct bern_arg *b = arg;
   if (b->p >= C_PROB_ONE) return 1;
   if (b->p <= C_PROB_ZERO) return 0;
   if (b->p > DRAND()) return 1;
@@ -128,12 +128,12 @@ void run_random_dir_graph_helper(size_t num_vts,
 				 int (*cmp_vt)(const void *, const void *),
 				 void (*incr_vt)(void *),
 				 int bern(void *),
-				 bern_arg_t *b);
+				 struct bern_arg *b);
 
 void run_random_dir_graph_test(size_t log_start, size_t log_end){
   size_t i, j;
   size_t num_vts;
-  bern_arg_t b;
+  struct bern_arg b;
   printf("Run a bfs test on random directed graphs from %lu random "
 	 "start vertices in each graph\n", TOLU(C_ITER));
   for (i = 0; i < C_PROBS_COUNT; i++){
@@ -166,12 +166,12 @@ void run_random_dir_graph_helper(size_t num_vts,
 				 int (*cmp_vt)(const void *, const void *),
 				 void (*incr_vt)(void *),
 				 int bern(void *),
-				 bern_arg_t *b){
+				 struct bern_arg *b){
   size_t i;
   size_t *start = NULL;
   void *dist = NULL, *prev = NULL;
-  graph_t g;
-  adj_lst_t a;
+  struct graph g;
+  struct adj_lst a;
   clock_t t;
   /* no declared type after malloc; effective type is set by bfs */
   start = malloc_perror(C_ITER, sizeof(size_t));

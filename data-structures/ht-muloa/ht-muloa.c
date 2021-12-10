@@ -140,32 +140,34 @@ static const size_t C_LOG_COUNT_MIN = 8u; /* > 0 */
 static const size_t C_LOG_COUNT_MAX = UINT_WIDTH_FROM_MAX((size_t)-1) - 1u;
 
 /* placeholder handling */
-static ke_t *ph_new();
-static int is_ph(const ke_t *ke);
-static void ph_free(ke_t *ke);
+static struct ke *ph_new();
+static int is_ph(const struct ke *ke);
+static void ph_free(struct ke *ke);
 
 /* key element handling */
-static ke_t *ke_new(const ht_muloa_t *ht,
-		    size_t fval,
-		    size_t sval,
-		    const void *key,
-		    const void *elt);
-static void ke_elt_update(const ht_muloa_t *ht, ke_t *ke, const void *elt);
-static void *ke_key_ptr(const ht_muloa_t *ht, const ke_t *ke);
-static void *ke_elt_ptr(const ht_muloa_t *ht, const ke_t *ke);
-static void ke_free(const ht_muloa_t *ht, ke_t *ke);
+static struct ke *ke_new(const struct ht_muloa *ht,
+			 size_t fval,
+			 size_t sval,
+			 const void *key,
+			 const void *elt);
+static void ke_elt_update(const struct ht_muloa *ht,
+			  struct ke *ke,
+			  const void *elt);
+static void *ke_key_ptr(const struct ht_muloa *ht, const struct ke *ke);
+static void *ke_elt_ptr(const struct ht_muloa *ht, const struct ke *ke);
+static void ke_free(const struct ht_muloa *ht, struct ke *ke);
 
 /* hashing */
-static size_t convert_std_key(const ht_muloa_t *ht, const void *key);
+static size_t convert_std_key(const struct ht_muloa *ht, const void *key);
 static size_t adjust_dist(size_t dist);
 
 /* hash table operations and maintenance*/
-static ke_t **search(const ht_muloa_t *ht, const void *key);
+static struct ke **search(const struct ht_muloa *ht, const void *key);
 static size_t mul_alpha(size_t n, size_t alpha_n, size_t log_alpha_d);
-static int incr_count(ht_muloa_t *ht);
-static void ht_grow(ht_muloa_t *ht);
-static void ht_clean(ht_muloa_t *ht);
-static void reinsert(ht_muloa_t *ht, const ke_t *prev_ke);
+static int incr_count(struct ht_muloa *ht);
+static void ht_grow(struct ht_muloa *ht);
+static void ht_clean(struct ht_muloa *ht);
+static void reinsert(struct ht_muloa *ht, const struct ke *prev_ke);
 
 /* integer constant construction */
 static size_t find_build_prime(const size_t *parts);
@@ -175,7 +177,7 @@ static size_t find_build_prime(const size_t *parts);
    be accessible only with a pointer to a character, unless additional
    alignment is performed by calling ht_muloa_align.
    ht          : a pointer to a preallocated block of size 
-                 sizeof(ht_muloa_t).
+                 sizeof(struct ht_muloa).
    key_size    : non-zero size of a key_size block; must account for internal
                  and trailing padding according to sizeof
    elt_size    : non-zero size of an elt_size block; must account for internal
@@ -220,7 +222,7 @@ static size_t find_build_prime(const size_t *parts);
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void ht_muloa_init(ht_muloa_t *ht,
+void ht_muloa_init(struct ht_muloa *ht,
 		   size_t key_size,
 		   size_t elt_size,
 		   size_t min_num,
@@ -233,7 +235,7 @@ void ht_muloa_init(ht_muloa_t *ht,
   size_t i, rem;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
-  /* align ke_t relative to a malloc's pointer */
+  /* align ke relative to a malloc's pointer */
   if (key_size <= sizeof(size_t)){
     ht->key_offset = sizeof(size_t);
   }else{
@@ -243,7 +245,7 @@ void ht_muloa_init(ht_muloa_t *ht,
 				   (rem > 0) * (sizeof(size_t) - rem));
   }
   /* elt_size block accessible with a character pointer */
-  ht->elt_offset = sizeof(ke_t);
+  ht->elt_offset = sizeof(struct ke);
   ht->elt_alignment = 1;
   ht->log_count = C_LOG_COUNT_MIN;
   ht->count = pow_two_perror(C_LOG_COUNT_MIN);
@@ -259,7 +261,7 @@ void ht_muloa_init(ht_muloa_t *ht,
   ht->fprime = find_build_prime(C_FIRST_PRIME_PARTS);
   ht->sprime = find_build_prime(C_SECOND_PRIME_PARTS);
   ht->ph = ph_new();
-  ht->key_elts = malloc_perror(ht->count, sizeof(ke_t *));
+  ht->key_elts = malloc_perror(ht->count, sizeof(struct ke *));
   for (i = 0; i < ht->count; i++){
     ht->key_elts[i] = NULL;
   }
@@ -281,13 +283,13 @@ void ht_muloa_init(ht_muloa_t *ht,
    T can be the same or a cvr-qualified/signed/unsigned version of the
    type. The operation is optionally called after ht_muloa_init is
    completed and before any other operation is called.
-   ht            : pointer to an initialized ht_muloa_t struct
+   ht            : pointer to an initialized ht_muloa struct
    elt_alignment : alignment requirement or size of the type, a pointer to
                    which is used to access the elt_size block of an element
                    in a hash table; if size, must account for internal
                    and trailing padding according to sizeof
 */
-void ht_muloa_align(ht_muloa_t *ht, size_t elt_alignment){
+void ht_muloa_align(struct ht_muloa *ht, size_t elt_alignment){
   size_t alloc_ptr_offset = add_sz_perror(ht->key_offset, ht->elt_offset);
   size_t rem;
   /* elt_offset to align elt_size block relative to malloc's pointer */
@@ -307,16 +309,16 @@ void ht_muloa_align(ht_muloa_t *ht, size_t elt_alignment){
    the key parameter is already in the hash table according to cmp_key,
    then deletes the previous element according to free_elt and copies
    the elt_size block pointed to by the elt parameter.
-   ht          : pointer to an initialized ht_muloa_t struct   
+   ht          : pointer to an initialized ht_muloa struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
+void ht_muloa_insert(struct ht_muloa *ht, const void *key, const void *elt){
   size_t num_probes = 1;
   size_t std_key;
   size_t fval, sval;
   size_t ix, dist;
-  ke_t **ke = NULL;
+  struct ke **ke = NULL;
   std_key = convert_std_key(ht, key);
   fval = ht->fprime * std_key; /* mod 2**C_FULL_BIT */
   sval = ht->sprime * std_key; /* mod 2**C_FULL_BIT */
@@ -358,11 +360,11 @@ void ht_muloa_insert(ht_muloa_t *ht, const void *key, const void *elt){
    pointer to the elt_size block of its associated element in the hash table.
    Otherwise returns NULL. The returned pointer can be dereferenced according
    to the preceding calls to ht_muloa_init and ht_muloa_align_elt.
-   ht          : pointer to an initialized ht_muloa_t struct   
+   ht          : pointer to an initialized ht_muloa struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
-  ke_t * const *ke = search(ht, key);
+void *ht_muloa_search(const struct ht_muloa *ht, const void *key){
+  struct ke * const *ke = search(ht, key);
   if (ke != NULL){
     return ke_elt_ptr(ht, *ke);
   }else{
@@ -378,12 +380,12 @@ void *ht_muloa_search(const ht_muloa_t *ht, const void *key){
    elt_size blocks in the hash table. If there is no matching key in the
    hash table according to cmp_key, leaves the hash table and the block
    pointed to by elt unchanged.
-   ht          : pointer to an initialized ht_muloa_t struct   
+   ht          : pointer to an initialized ht_muloa struct   
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to a preallocated elt_size block
 */
-void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt){
-  ke_t **ke = search(ht, key);
+void ht_muloa_remove(struct ht_muloa *ht, const void *key, void *elt){
+  struct ke **ke = search(ht, key);
   if (ke != NULL){
     memcpy(elt, ke_elt_ptr(ht, *ke), ht->elt_size);
     /* only the key_size and elt_size blocks are deleted in ht */
@@ -398,11 +400,11 @@ void ht_muloa_remove(ht_muloa_t *ht, const void *key, void *elt){
    If there is a key in a hash table that equals to the key pointed to
    by the key parameter according to cmp_key, then deletes the in-table key
    element pair according to free_key and free_elt.
-   ht          : pointer to an initialized ht_muloa_t struct   
+   ht          : pointer to an initialized ht_muloa struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void ht_muloa_delete(ht_muloa_t *ht, const void *key){
-  ke_t **ke = search(ht, key);
+void ht_muloa_delete(struct ht_muloa *ht, const void *key){
+  struct ke **ke = search(ht, key);
   if (ke != NULL){
     ke_free(ht, *ke);
     *ke = ht->ph;
@@ -414,12 +416,12 @@ void ht_muloa_delete(ht_muloa_t *ht, const void *key){
 /**
    Frees the memory of all keys and elements that are in a hash table
    according to free_key and free_elt, frees the memory of the hash table,
-   and leaves the block of size sizeof(ht_muloa_t) pointed to by the ht
+   and leaves the block of size sizeof(struct ht_muloa) pointed to by the ht
    parameter.
 */
-void ht_muloa_free(ht_muloa_t *ht){
+void ht_muloa_free(struct ht_muloa *ht){
   size_t i;
-  ke_t * const *ke = NULL;
+  struct ke * const *ke = NULL;
   for (i = 0; i < ht->count; i++){
     ke = &ht->key_elts[i];
     if (*ke != NULL && !is_ph(*ke)){
@@ -436,9 +438,9 @@ void ht_muloa_free(ht_muloa_t *ht){
    Help construct a hash table parameter value in algorithms and data
    structures with a hash table parameter, complying with the stict aliasing
    rules and compatibility rules for function types. In each case, a
-   (qualified) ht_muloa_t *p0 is converted to (qualified) void * and back
-   to a (qualified) ht_muloa_t *p1, thus guaranteeing that the value of p0
-   equals the value of p1.
+   (qualified) struct ht_muloa *p0 is converted to (qualified) void * and
+   back to a (qualified) struct ht_muloa *p1, thus guaranteeing that the
+   value of p0 equals the value of p1.
 */
 
 void ht_muloa_init_helper(void *ht,
@@ -494,18 +496,18 @@ void ht_muloa_free_helper(void *ht){
    a non-placeholder.
 */
 
-static ke_t *ph_new(){
-  ke_t *ke = malloc_perror(1, sizeof(ke_t));
+static struct ke *ph_new(){
+  struct ke *ke = malloc_perror(1, sizeof(struct ke));
   ke->fval = 1;
   ke->sval = 0;
   return ke;
 }
 
-static int is_ph(const ke_t *ke){
+static int is_ph(const struct ke *ke){
   return (ke->fval == 1);
 }
 
-static void ph_free(ke_t *ke){
+static void ph_free(struct ke *ke){
   free(ke);
   ke = NULL;
 }
@@ -515,18 +517,18 @@ static void ph_free(ke_t *ke){
    a placeholder.
 */
 
-static ke_t *ke_new(const ht_muloa_t *ht,
-		    size_t fval,
-		    size_t sval,
-		    const void *key,
-		    const void *elt){
+static struct ke *ke_new(const struct ht_muloa *ht,
+			 size_t fval,
+			 size_t sval,
+			 const void *key,
+			 const void *elt){
   void *ke_block = NULL;
-  ke_t *ke = NULL;
+  struct ke *ke = NULL;
   ke_block =  
     malloc_perror(1, add_sz_perror(ht->key_offset,
 				   add_sz_perror(ht->elt_offset,
 						 ht->elt_size)));
-  ke = (ke_t *)((char *)ke_block + ht->key_offset);
+  ke = (struct ke *)((char *)ke_block + ht->key_offset);
   ke->fval = fval;
   ke->sval = sval;
   memcpy(ke_key_ptr(ht, ke), key, ht->key_size);
@@ -534,20 +536,22 @@ static ke_t *ke_new(const ht_muloa_t *ht,
   return ke;
 }
 
-static void ke_elt_update(const ht_muloa_t *ht, ke_t *ke, const void *elt){
+static void ke_elt_update(const struct ht_muloa *ht,
+			  struct ke *ke,
+			  const void *elt){
   if (ht->free_elt != NULL) ht->free_elt(ke_elt_ptr(ht, ke));
   memcpy(ke_elt_ptr(ht, ke), elt, ht->elt_size);
 }
 
-static void *ke_key_ptr(const ht_muloa_t *ht, const ke_t *ke){
+static void *ke_key_ptr(const struct ht_muloa *ht, const struct ke *ke){
   return (void *)((char *)ke - ht->key_offset);
 }
 
-static void *ke_elt_ptr(const ht_muloa_t *ht, const ke_t *ke){
+static void *ke_elt_ptr(const struct ht_muloa *ht, const struct ke *ke){
   return (void *)((char *)ke + ht->elt_offset);
 }
 
-static void ke_free(const ht_muloa_t *ht, ke_t *ke){
+static void ke_free(const struct ht_muloa *ht, struct ke *ke){
   if (ht->free_key != NULL) ht->free_key(ke_key_ptr(ht, ke));
   if (ht->free_elt != NULL) ht->free_elt(ke_elt_ptr(ht, ke));
   free(ke_key_ptr(ht, ke));
@@ -560,7 +564,7 @@ static void ke_free(const ht_muloa_t *ht, ke_t *ke){
    key to reduce it to size_t. Otherwise, returns the value after applying
    rdc_key to the key.
 */
-static size_t convert_std_key(const ht_muloa_t *ht, const void *key){
+static size_t convert_std_key(const struct ht_muloa *ht, const void *key){
   size_t i;
   size_t sz_count, rem_size;
   size_t std_key = 0;
@@ -604,13 +608,13 @@ static size_t adjust_dist(size_t dist){
 
 /**
    If a key is present in a hash table, returns a pointer to a slot
-   in the key_elts array that stores a pointer to ke_t with the
+   in the key_elts array that stores a pointer to ke with the
    key, otherwise returns NULL.
 */
-static ke_t **search(const ht_muloa_t *ht, const void *key){
+static struct ke **search(const struct ht_muloa *ht, const void *key){
   size_t num_probes = 1;
   size_t std_key, fval, sval, ix, dist;
-  ke_t * const *ke = NULL;
+  struct ke * const *ke = NULL;
   std_key = convert_std_key(ht, key);
   fval = ht->fprime * std_key; /* mod 2**FULL_BIT */
   sval = ht->sprime * std_key; /* mod 2**FULL_BIT */
@@ -621,11 +625,11 @@ static ke_t **search(const ht_muloa_t *ht, const void *key){
     if (ht->cmp_key != NULL && /* loop invariant */
 	!is_ph(*ke) &&
 	ht->cmp_key(ke_key_ptr(ht, *ke), key) == 0){
-      return (ke_t **)ke;
+      return (struct ke **)ke;
     }else if (ht->cmp_key == NULL && /* loop invariant */
 	      !is_ph(*ke) &&
 	      memcmp(ke_key_ptr(ht, *ke), key, ht->key_size) == 0){
-      return (ke_t **)ke;
+      return (struct ke **)ke;
     }else if (num_probes == ht->max_num_probes){
       break;
     }else{
@@ -661,14 +665,14 @@ static size_t mul_alpha(size_t n, size_t alpha_n, size_t log_alpha_d){
    The count is doubled at least once. If 2**C_LOG_COUNT_MAX is reached
    log_count is set to C_LOG_COUNT_MAX.
 */
-static void ht_grow(ht_muloa_t *ht){
+static void ht_grow(struct ht_muloa *ht){
   size_t i, prev_count = ht->count;
-  ke_t **prev_key_elts = ht->key_elts;
-  ke_t * const *ke = NULL;
+  struct ke **prev_key_elts = ht->key_elts;
+  struct ke * const *ke = NULL;
   while (ht->num_elts + ht->num_phs > ht->max_sum && incr_count(ht));
   ht->max_num_probes = 1;
   ht->num_phs = 0;
-  ht->key_elts = malloc_perror(ht->count, sizeof(ke_t *));
+  ht->key_elts = malloc_perror(ht->count, sizeof(struct ke *));
   for (i = 0; i < ht->count; i++){
     ht->key_elts[i] = NULL;
   }
@@ -688,7 +692,7 @@ static void ht_grow(ht_muloa_t *ht){
    of the hash table accordingly. If 2**C_LOG_COUNT_MAX is reached, log_count
    is set to C_LOG_COUNT_MAX.
 */
-static int incr_count(ht_muloa_t *ht){
+static int incr_count(struct ht_muloa *ht){
   if (ht->log_count == C_LOG_COUNT_MAX) return 0;
   ht->log_count++;
   ht->count <<= 1;
@@ -704,13 +708,13 @@ static int incr_count(ht_muloa_t *ht){
    operation at most one rehashing operation is performed, resulting in a 
    constant overhead of at most one rehashing per delete/remove operation.
 */
-static void ht_clean(ht_muloa_t *ht){
+static void ht_clean(struct ht_muloa *ht){
   size_t i;
-  ke_t **prev_key_elts = ht->key_elts;
-  ke_t * const *ke = NULL;
+  struct ke **prev_key_elts = ht->key_elts;
+  struct ke * const *ke = NULL;
   ht->max_num_probes = 1;
   ht->num_phs = 0;
-  ht->key_elts = malloc_perror(ht->count, sizeof(ke_t *));
+  ht->key_elts = malloc_perror(ht->count, sizeof(struct ke *));
   for (i = 0; i < ht->count; i++){
     ht->key_elts[i] = NULL;
   }
@@ -729,10 +733,10 @@ static void ht_clean(ht_muloa_t *ht){
    ht_grow and ht_clean operations by recomputing the hash values with 
    bit shifting and without multiplication.
 */
-static void reinsert(ht_muloa_t *ht, const ke_t *prev_ke){
+static void reinsert(struct ht_muloa *ht, const struct ke *prev_ke){
   size_t num_probes = 1;
   size_t ix, dist;
-  ke_t **ke = NULL;
+  struct ke **ke = NULL;
   ix = prev_ke->fval >> (C_FULL_BIT - ht->log_count);
   dist = adjust_dist(prev_ke->sval >> (C_FULL_BIT - ht->log_count));
   ke = &ht->key_elts[ix];
@@ -742,7 +746,7 @@ static void reinsert(ht_muloa_t *ht, const ke_t *prev_ke){
     num_probes++;
     if (num_probes > ht->max_num_probes) ht->max_num_probes++;
   }
-  *ke = (ke_t *)prev_ke;
+  *ke = (struct ke *)prev_ke;
 }
 
 /**

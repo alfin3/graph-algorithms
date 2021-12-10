@@ -4,7 +4,7 @@
    A hash table with generic contiguous or non-contiguous keys and generic
    contiguous or non-contiguous elements that is concurrently accessible
    and modifiable.
-
+   
    The implementation is based on a division method for hashing into upto  
    the number of slots determined by the largest prime number in the
    C_PRIME_PARTS array, representable as size_t on a given system, and a
@@ -43,7 +43,7 @@
    that is freed by free_key. If free_elt is non-NULL, no two elements
    should share an object in memory that is freed by free_elt, and no two
    keys should be associated with the same element. Otherwise the NULL
-   settings can be used for free_key and/or free_elt. 
+   settings can be used for free_key and/or free_elt.
 
    A hash table can be modified by threads calling insert, remove, and/or
    delete operations concurrently. The hash table design provides the
@@ -96,7 +96,7 @@
    of computing bounds, which is defined by the implementation
 
    TODO: add division with magic number multiplication.   
-*/  
+*/   
 
 #define _XOPEN_SOURCE 600
 
@@ -188,10 +188,10 @@ static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
 static const size_t C_SIZE_MAX = (size_t)-1;
 
-static size_t hash(const ht_divchn_pthread_t *ht, const void *key);
+static size_t hash(const struct ht_divchn_pthread *ht, const void *key);
 static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d);
-static void ht_grow(ht_divchn_pthread_t *ht);
-static int incr_count(ht_divchn_pthread_t *ht);
+static void ht_grow(struct ht_divchn_pthread *ht);
+static int incr_count(struct ht_divchn_pthread *ht);
 static int is_overflow(size_t start, size_t count);
 static size_t build_prime(size_t start, size_t count);
 static void *ptr(const void *block, size_t i, size_t size);
@@ -203,7 +203,7 @@ static void *ptr(const void *block, size_t i, size_t size);
    initialization operation is called and must return before any thread
    calls insert, remove, and/or delete, or search operation.
    ht               : a pointer to a preallocated block of size 
-                      sizeof(ht_divchn_pthread_t)
+                      sizeof(struct ht_divchn_pthread)
    key_size         : non-zero size of a key_size block; must account for
                       internal and trailing padding according to sizeof
    elt_size         : non-zero size of an elt_size block; must account for
@@ -270,7 +270,7 @@ static void *ptr(const void *block, size_t i, size_t size);
                       element except the elt_size block pointed to by the
                       argument
 */
-void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_init(struct ht_divchn_pthread *ht,
 			    size_t key_size,
 			    size_t elt_size,
 			    size_t min_num,
@@ -298,8 +298,8 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
   ht->max_num_elts = mul_alpha_sz_max(ht->count, alpha_n, log_alpha_d);
   while (min_num > ht->max_num_elts && incr_count(ht));
   ht->num_elts = 0;
-  ht->ll = malloc_perror(1, sizeof(dll_t));
-  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
+  ht->ll = malloc_perror(1, sizeof(struct dll));
+  ht->key_elts = malloc_perror(ht->count, sizeof(struct dll_node *));
   for (i = 0; i < ht->count; i++){
     dll_init(ht->ll, &ht->key_elts[i], ht->key_size);
   }
@@ -338,13 +338,14 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
    qualified/signed/unsigned version of the type. The operation is
    optionally called after ht_divchn_pthread_init is completed and before
    any other operation is called.
-   ht            : pointer to an initialized ht_divchn_pthread_t struct
+   ht            : pointer to an initialized ht_divchn_pthread struct
    elt_alignment : alignment requirement or size of the type, a pointer to
                    which is used to access the elt_size block of an element
                    in a hash table; if size, must account for internal
                    and trailing padding according to sizeof
 */
-void ht_divchn_pthread_align(ht_divchn_pthread_t *ht, size_t elt_alignment){
+void ht_divchn_pthread_align(struct ht_divchn_pthread *ht,
+			     size_t elt_alignment){
   ht->elt_alignment = elt_alignment;
   dll_align_elt(ht->ll, elt_alignment);
 }
@@ -354,7 +355,7 @@ void ht_divchn_pthread_align(ht_divchn_pthread_t *ht, size_t elt_alignment){
    by copying the corresponding key_size and elt_size blocks. If a key
    within a batch is already in the hash table according to cmp_key,
    then updates the element according to cmp_elt.
-   ht          : pointer to an initialized ht_divchn_pthread_t struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct   
    batch_keys  : non-NULL pointer to an array of key_size blocks of keys
    batch_elts  : non-NULL pointer to an array of elt_size blocks of
                  elements
@@ -362,7 +363,7 @@ void ht_divchn_pthread_align(ht_divchn_pthread_t *ht, size_t elt_alignment){
                  batch_keys; count of elt_size blocks in the array pointed
                  to by batch_elts
 */
-void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_insert(struct ht_divchn_pthread *ht,
 			      const void *batch_keys,
 			      const void *batch_elts,
 			      size_t batch_count){
@@ -370,7 +371,7 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
   size_t increased = 0;
   const void *key = NULL, *elt = NULL;
   void *buf = NULL;
-  dll_node_t **head = NULL, *node = NULL;
+  struct dll_node **head = NULL, *node = NULL;
   buf = malloc_perror(1, ht->elt_size);
   /* first critical section : go through gate or wait */
   mutex_lock_perror(&ht->gate_lock);
@@ -450,16 +451,17 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
    ht_divchn_pthread_align. The operation is called before/after all
    threads started/completed insert, remove, and delete operations and
    does not require thread synchronization overhead.
-   ht          : pointer to an initialized ht_divchn_pthread_t struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
+void *ht_divchn_pthread_search(const struct ht_divchn_pthread *ht,
 			       const void *key){
-  const dll_node_t *node = dll_search_uq_key(ht->ll,
-					     &ht->key_elts[hash(ht, key)],
-					     key,
-					     ht->key_size,
-					     ht->cmp_key);
+  const struct dll_node *node =
+    dll_search_uq_key(ht->ll,
+		      &ht->key_elts[hash(ht, key)],
+		      key,
+		      ht->key_size,
+		      ht->cmp_key);
   if (node == NULL){
     return NULL;
   }else{
@@ -475,14 +477,14 @@ void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
    the corresponding key_size and elt_size blocks in the hash table. If
    there is no matching key in the hash table according to cmp_key, leaves
    the corresponding elt_size block unchanged.
-   ht          : pointer to an initialized ht_divchn_pthread_t struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct   
    batch_keys  : non-NULL pointer to an array of key_size blocks of keys
    batch_elts  : non-NULL pointer to an array of elt_size blocks
    batch_count : count of key_size blocks in the array pointed to by
                  batch_keys; count of elt_size blocks in the array pointed
                  to by batch_elts
 */
-void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_remove(struct ht_divchn_pthread *ht,
 			      const void *batch_keys,
 			      void *batch_elts,
 			      size_t batch_count){
@@ -490,7 +492,7 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
   size_t removed = 0;
   const void *key = NULL;
   void *elt = NULL;
-  dll_node_t **head = NULL, *node = NULL;
+  struct dll_node **head = NULL, *node = NULL;
   /* first critical section : go through gate or wait */
   mutex_lock_perror(&ht->gate_lock);
   while (!ht->gate_open){
@@ -530,18 +532,18 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
    there is a key in a hash table that equals to a key in the batch
    according to cmp_key, then deletes the in-table key element pair
    according to free_key and free_elt.
-   ht          : pointer to an initialized ht_divchn_pthread_t struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct   
    batch_keys  : non-NULL pointer to an array of key_size blocks of keys
    batch_count : count of key_size blocks in the array pointed to by
                  batch_keys
 */
-void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_delete(struct ht_divchn_pthread *ht,
 			      const void *batch_keys,
 			      size_t batch_count){
   size_t i, ix, lock_ix;
   size_t deleted = 0;
   const void *key = NULL;
-  dll_node_t **head = NULL, *node = NULL;
+  struct dll_node **head = NULL, *node = NULL;
   /* first critical section : go through gate or wait */
   mutex_lock_perror(&ht->gate_lock);
   while (!ht->gate_open){
@@ -576,11 +578,11 @@ void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
 /**
    Frees the memory of all keys and elements that are in a hash table
    according to free_key and free_elt, frees the memory of the hash table,
-   and leaves the block of size sizeof(ht_divchn_pthread_t) pointed to by
-   the ht parameter. The operation is called after all threads completed
+   and leaves the block of size sizeof(struct ht_divchn_pthread) pointed to
+   by the ht parameter. The operation is called after all threads completed
    insert, remove, delete, and search operations.
 */
-void ht_divchn_pthread_free(ht_divchn_pthread_t *ht){
+void ht_divchn_pthread_free(struct ht_divchn_pthread *ht){
   size_t i;
   for (i = 0; i < ht->count; i++){
     dll_free(ht->ll, &ht->key_elts[i], ht->free_key, ht->free_elt);
@@ -597,12 +599,12 @@ void ht_divchn_pthread_free(ht_divchn_pthread_t *ht){
    Help construct a hash table parameter value in multithreaded algorithms
    and data structures with a hash table parameter, complying with the stict
    aliasing rules and compatibility rules for function types. In each case,
-   a (qualified) ht_divchn_pthread_t *p0 is converted to (qualified) void *
-   and back to a (qualified) ht_divchn_pthread_t *p1, thus guaranteeing that
-   the value of p0 equals the value of p1.
+   a (qualified) struct ht_divchn_pthread *p0 is converted to (qualified)
+   void * and back to a (qualified) struct ht_divchn_pthread *p1, thus
+   guaranteeing that the value of p0 equals the value of p1.
 */
 
-void ht_divchn_pthread_init_helper(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_init_helper(struct ht_divchn_pthread *ht,
 				   size_t key_size,
 				   size_t elt_size,
 				   size_t min_num,
@@ -671,14 +673,14 @@ void ht_divchn_pthread_free_helper(void *ht){
    key to reduce it to size_t. Otherwise, returns the value after applying
    rdc_key to the key.
 */
-static size_t convert_std_key(const ht_divchn_pthread_t *ht,
+static size_t convert_std_key(const struct ht_divchn_pthread *ht,
 			      const void *key){
   size_t i;
   size_t sz_count, rem_size;
   size_t std_key = 0;
   size_t buf_size = sizeof(size_t);
   unsigned char buf[sizeof(size_t)];
-  const void *k = NULL, *k_start = NULL, *k_end = NULL;
+  const char *k = NULL, *k_start = NULL, *k_end = NULL;
   if (ht->rdc_key != NULL) return ht->rdc_key(key);
   sz_count = ht->key_size / buf_size; /* division by sizeof(size_t) */
   rem_size = ht->key_size - sz_count * buf_size;
@@ -688,9 +690,9 @@ static size_t convert_std_key(const ht_divchn_pthread_t *ht,
   for (i = 0; i < rem_size; i++){
     std_key += (size_t)buf[i] << (i * C_BYTE_BIT);
   }
-  k_start = (char *)k + rem_size;
-  k_end = (char *)k_start + sz_count * buf_size;
-  for (k = k_start; k != k_end; k = (char *)k + buf_size){
+  k_start = k + rem_size;
+  k_end = k_start + sz_count * buf_size;
+  for (k = k_start; k != k_end; k += buf_size){
     memcpy(buf, k, buf_size);
     for (i = 0; i < buf_size; i++){
       std_key += (size_t)buf[i] << (i * C_BYTE_BIT);
@@ -702,7 +704,7 @@ static size_t convert_std_key(const ht_divchn_pthread_t *ht,
 /**
    Maps a hash key to a slot index in a hash table with a division method. 
 */
-static size_t hash(const ht_divchn_pthread_t *ht, const void *key){
+static size_t hash(const struct ht_divchn_pthread *ht, const void *key){
   return convert_std_key(ht, key) % ht->count;
 }
 
@@ -738,17 +740,17 @@ static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
    Otherwise, each call increases the count.
 */
 
-typedef struct{
+struct reinsert_arg{
   size_t start;
   size_t count;
-  dll_node_t **prev_key_elts;
-  const ht_divchn_pthread_t *ht;
-} reinsert_arg_t;
+  struct dll_node **prev_key_elts;
+  const struct ht_divchn_pthread *ht;
+};
 
 static void *reinsert_thread(void *arg){
   size_t i, ix, lock_ix;
-  dll_node_t **head = NULL, *node = NULL;
-  const reinsert_arg_t *ra = arg;
+  struct dll_node **head = NULL, *node = NULL;
+  const struct reinsert_arg *ra = arg;
   for (i = ra->start; i < ra->start + ra->count; i++){
     head = &ra->prev_key_elts[i];
     while (*head != NULL){
@@ -764,19 +766,19 @@ static void *reinsert_thread(void *arg){
   return NULL;
 }
 
-static void ht_grow(ht_divchn_pthread_t *ht){
+static void ht_grow(struct ht_divchn_pthread *ht){
   size_t i, prev_count = ht->count;
   size_t start = 0;
   size_t seg_count, rem_count;
-  dll_node_t **prev_key_elts = ht->key_elts;
+  struct dll_node **prev_key_elts = ht->key_elts;
   pthread_t *rids = NULL;
-  reinsert_arg_t *ras = NULL;
+  struct reinsert_arg *ras = NULL;
   /* initialize next ht; num_elts can be used without lock */
   while (ht->num_elts > ht->max_num_elts && incr_count(ht));
   if (prev_count == ht->count) return; /* load factor not lowered */
   rids = malloc_perror(ht->num_grow_threads, sizeof(pthread_t));
-  ras = malloc_perror(ht->num_grow_threads, sizeof(reinsert_arg_t));
-  ht->key_elts = malloc_perror(ht->count, sizeof(dll_node_t *));
+  ras = malloc_perror(ht->num_grow_threads, sizeof(struct reinsert_arg));
+  ht->key_elts = malloc_perror(ht->count, sizeof(struct dll_node *));
   for (i = 0; i < ht->count; i++){
     dll_init(ht->ll, &ht->key_elts[i], ht->key_size);
   }
@@ -811,7 +813,7 @@ static void ht_grow(ht_divchn_pthread_t *ht){
    C_PRIME_PARTS_COUNT, which requires one additional call. Otherwise, each
    call increases the count.
 */
-static int incr_count(ht_divchn_pthread_t *ht){
+static int incr_count(struct ht_divchn_pthread *ht){
   ht->count_ix += C_PARTS_PER_PRIME[ht->group_ix];
   if (ht->count_ix == C_PARTS_ACC_COUNTS[ht->group_ix]) ht->group_ix++;
   if (ht->count_ix == C_PRIME_PARTS_COUNT){

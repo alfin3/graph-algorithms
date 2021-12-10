@@ -62,7 +62,7 @@
    the alignment requirements for the heap and the four following parameters
    have zero zero NULL NULL values (alpha_n, log_alpha_d, init, align).
 */
-typedef struct{
+struct heap_ht{
   void *ht;
   size_t alpha_n;
   size_t log_alpha_d;
@@ -81,13 +81,13 @@ typedef struct{
   void *(*search)(const void *, const void *);
   void (*remove)(void *, const void *, void *);
   void (*free)(void *);
-} heap_ht_t;
+};
 
 
 /**
    Heap struct.
 */
-typedef struct{
+struct heap{
   size_t pty_size;
   size_t elt_size;
   size_t elt_offset; /* number of bytes from beginning of pair to elt */
@@ -96,19 +96,19 @@ typedef struct{
   size_t num_elts;
   void *buf; /* only used by heap operations internally */
   void *pty_elts;
-  const heap_ht_t *hht;
+  const struct heap_ht *hht;
   int (*cmp_pty)(const void *, const void *);
   int (*cmp_elt)(const void *, const void *);
   size_t (*rdc_elt)(const void *);
   void (*free_elt)(void *);
-} heap_t;
+};
 
 /**
    Initializes a heap. The in-heap pty_size and elt_size blocks, as well as
    the size_t indices in a hash table are aligned by default according to their
    sizes because size of a type T >= alignment requirement of T (due to the
    structure of arrays).
-   h           : pointer to a preallocated block of size sizeof(heap_t)
+   h           : pointer to a preallocated block of size sizeof(struct heap)
    pty_size    : non-zero size of a pty_size block; must account for internal
                  and trailing padding according to sizeof
    elt_size    : non-zero size of an elt_size block; must account for internal
@@ -149,11 +149,11 @@ typedef struct{
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void heap_init(heap_t *h,
+void heap_init(struct heap *h,
 	       size_t pty_size,
 	       size_t elt_size,
 	       size_t min_num,
-	       const heap_ht_t *hht,
+	       const struct heap_ht *hht,
 	       int (*cmp_pty)(const void *, const void *),
 	       int (*cmp_elt)(const void *, const void *),
 	       size_t (*rdc_elt)(const void *),
@@ -171,7 +171,7 @@ void heap_init(heap_t *h,
    effective types at the time of insertion (push). The operation is
    optionally called after heap_init is completed and before any other
    operation is called.
-   ht            : pointer to an initialized heap_t struct
+   ht            : pointer to an initialized heap struct
    pty_alignment : alignment requirement or size of the priority type copied
                    as pty_size block; if size, must account for internal and
                    trailing padding according to sizeof
@@ -183,7 +183,7 @@ void heap_init(heap_t *h,
                    - otherwise, non-zero alignment requirement or size of
                    size_t
 */
-void heap_align(heap_t *h,
+void heap_align(struct heap *h,
 		size_t pty_alignment,
 		size_t elt_alignment,
 		size_t sz_alignment);
@@ -200,7 +200,7 @@ void heap_align(heap_t *h,
                  priority value
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void heap_push(heap_t *h, const void *pty, const void *elt);
+void heap_push(struct heap *h, const void *pty, const void *elt);
 
 /** 
    Returns a pointer to the priority value associated with an element in a
@@ -215,7 +215,7 @@ void heap_push(heap_t *h, const void *pty, const void *elt);
    h           : pointer to an initialized heap
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void *heap_search(const heap_t *h, const void *elt);
+void *heap_search(const struct heap *h, const void *elt);
 
 /**
    Updates the priority value of an element that is in a heap. Prior
@@ -227,7 +227,7 @@ void *heap_search(const heap_t *h, const void *elt);
                  priority value
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void heap_update(heap_t *h, const void *pty, const void *elt);
+void heap_update(struct heap *h, const void *pty, const void *elt);
 
 /**
    Pops an element associated with a minimal priority value in a heap 
@@ -237,15 +237,15 @@ void heap_update(heap_t *h, const void *pty, const void *elt);
    pty         : non-NULL pointer to a block of size pty_size 
    elt         : non-NULL pointer to a block of size elt_size
 */
-void heap_pop(heap_t *h, void *pty, void *elt);
+void heap_pop(struct heap *h, void *pty, void *elt);
 
 /**
    Frees the memory of all priorities and elements that are in a heap. The
    elements are freed according to free_elt. Frees the memory of the heap
    and hash table leaving only the blocks that were preallocated before
-   the call to heap_init, including the block of size sizeof(heap_t)
+   the call to heap_init, including the block of size sizeof(struct heap)
    pointed to by the h parameter.
 */
-void heap_free(heap_t *h);
+void heap_free(struct heap *h);
 
 #endif

@@ -243,7 +243,7 @@ void run_remove_delete_uint_test(size_t log_ins,
 
 /**
    Test hash table operations on distinct contiguous keys and noncontiguous
-   uint_ptr_t elements across key sizes and load factor upper bounds. For
+   uint_ptr elements across key sizes and load factor upper bounds. For
    test purposes a key is a random key_size block with the exception of a
    distinct non-random sizeof(size_t)-sized sub-block inside the key_size
    block. A key is fully copied into a hash table as a key_size block.
@@ -252,24 +252,24 @@ void run_remove_delete_uint_test(size_t log_ins,
    necessary to delete an element.
 */
 
-typedef struct{
+struct uint_ptr{
   size_t *val;
-} uint_ptr_t;
+};
 
 void new_uint_ptr(void *elt, size_t val){
-  uint_ptr_t **s = elt;
-  *s = malloc_perror(1, sizeof(uint_ptr_t));
+  struct uint_ptr **s = elt;
+  *s = malloc_perror(1, sizeof(struct uint_ptr));
   (*s)->val = malloc_perror(1, sizeof(size_t));
   *((*s)->val) = val;
 }
 
 size_t val_uint_ptr(const void *elt){
-  uint_ptr_t **s  = (uint_ptr_t **)elt;
+  struct uint_ptr **s  = (struct uint_ptr **)elt;
   return *((*s)->val);
 }
 
 void free_uint_ptr(void *elt){
-  uint_ptr_t **s = elt;
+  struct uint_ptr **s = elt;
   free((*s)->val);
   (*s)->val = NULL;
   free(*s);
@@ -278,7 +278,7 @@ void free_uint_ptr(void *elt){
 
 /**
    Runs a ht_divchn_pthread_{insert, search, free} test on distinct keys and 
-   noncontiguous uint_ptr_t elements across key sizes >= sizeof(size_t)
+   noncontiguous uint_ptr elements across key sizes >= sizeof(size_t)
    and load factor upper bounds.
 */
 void run_insert_search_free_uint_ptr_test(size_t log_ins,
@@ -295,8 +295,8 @@ void run_insert_search_free_uint_ptr_test(size_t log_ins,
   size_t i, j;
   size_t num_ins;
   size_t key_size;
-  size_t elt_size =  sizeof(uint_ptr_t *);
-  size_t elt_alignment = sizeof(uint_ptr_t *);
+  size_t elt_size =  sizeof(struct uint_ptr *);
+  size_t elt_alignment = sizeof(struct uint_ptr *);
   size_t step, rem;
   size_t alpha_n;
   num_ins = pow_two_perror(log_ins);
@@ -306,7 +306,7 @@ void run_insert_search_free_uint_ptr_test(size_t log_ins,
     rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
     key_size = sizeof(size_t) * pow_two_perror(i);
     printf("Run a ht_divchn_pthread_{insert, search, free} test on distinct "
-	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
+	   "%lu-byte keys and noncontiguous uint_ptr elements\n",
 	   TOLU(key_size));
     printf("\t# threads (t):    %lu\n"
 	   "\t# locks:          %lu\n"
@@ -339,7 +339,7 @@ void run_insert_search_free_uint_ptr_test(size_t log_ins,
 
 /**
    Runs a ht_divchn_pthread_{remove, delete} test on distinct keys and 
-   noncontiguous uint_ptr_t elements across key sizes >= sizeof(size_t)
+   noncontiguous uint_ptr elements across key sizes >= sizeof(size_t)
    and load factor upper bounds.
 */
 void run_remove_delete_uint_ptr_test(size_t log_ins,
@@ -356,8 +356,8 @@ void run_remove_delete_uint_ptr_test(size_t log_ins,
   size_t i, j;
   size_t num_ins;
   size_t key_size;
-  size_t elt_size = sizeof(uint_ptr_t *);
-  size_t elt_alignment = sizeof(uint_ptr_t *);
+  size_t elt_size = sizeof(struct uint_ptr *);
+  size_t elt_alignment = sizeof(struct uint_ptr *);
   size_t step, rem;
   size_t alpha_n;
   num_ins = pow_two_perror(log_ins);
@@ -367,7 +367,7 @@ void run_remove_delete_uint_ptr_test(size_t log_ins,
     rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
     key_size = sizeof(size_t) * pow_two_perror(i);
     printf("Run a ht_divchn_pthread_{remove, delete} test on distinct "
-	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
+	   "%lu-byte keys and noncontiguous uint_ptr elements\n",
 	   TOLU(key_size));
     printf("\t# threads (t):    %lu\n"
 	   "\t# locks:          %lu\n"
@@ -400,26 +400,26 @@ void run_remove_delete_uint_ptr_test(size_t log_ins,
 
 /**
    Helper functions for the ht_divchn_pthread_{insert, search, free} tests
-   across key sizes and load factor upper bounds, on size_t and uint_ptr_t
+   across key sizes and load factor upper bounds, on size_t and uint_ptr
    elements.
 */
 
 /* Insert */
 
-typedef struct{
+struct insert_arg{
   size_t start;
   size_t count;
   size_t batch_count;
   const unsigned char *keys; /* key_size blocks of unsigned chars */
   const void *elts;
-  ht_divchn_pthread_t *ht;
-} insert_arg_t;
+  struct ht_divchn_pthread *ht;
+};
 
 void *insert_thread(void *arg){
   size_t i;
   const unsigned char *k = NULL;
   const void *e = NULL;
-  const insert_arg_t *ia = arg;
+  const struct insert_arg *ia = arg;
   for (i = 0; i < ia->count; i += ia->batch_count){
     k = ptr(ia->keys, ia->start + i, ia->ht->key_size);
     e = ptr(ia->elts, ia->start + i, ia->ht->elt_size);
@@ -432,7 +432,7 @@ void *insert_thread(void *arg){
   return NULL;
 }
 
-void insert_keys_elts(ht_divchn_pthread_t *ht,
+void insert_keys_elts(struct ht_divchn_pthread *ht,
 		      const unsigned char *keys,
 		      const void *elts,
 		      size_t count,
@@ -446,9 +446,9 @@ void insert_keys_elts(ht_divchn_pthread_t *ht,
   size_t start = 0;
   double t;
   pthread_t *iids = NULL;
-  insert_arg_t *ias = NULL;
+  struct insert_arg *ias = NULL;
   iids = malloc_perror(num_threads, sizeof(pthread_t));
-  ias = malloc_perror(num_threads, sizeof(insert_arg_t));
+  ias = malloc_perror(num_threads, sizeof(struct insert_arg));
   seg_count = count / num_threads;
   rem_count = count % num_threads; /* distribute among threads */
   for (i = 0; i < num_threads; i++){
@@ -485,19 +485,19 @@ void insert_keys_elts(ht_divchn_pthread_t *ht,
 
 /* Search */
 
-typedef struct{
+struct search_arg{
   size_t start;
   size_t count;
   size_t *elt_count; /* for each thread */
   const unsigned char *keys;
   const void *elts;
-  const ht_divchn_pthread_t *ht;
+  const struct ht_divchn_pthread *ht;
   size_t (*val_elt)(const void *);
-} search_arg_t;
+};
 
 void *search_thread(void *arg){
   size_t i;
-  const search_arg_t *sa = arg;
+  const struct search_arg *sa = arg;
   for (i = sa->start; i < sa->start + sa->count; i++){
     ht_divchn_pthread_search(sa->ht, ptr(sa->keys, i, sa->ht->key_size));
   }
@@ -507,7 +507,7 @@ void *search_thread(void *arg){
 void *search_res_thread(void *arg){
   size_t i;
   const void *elt = NULL;
-  const search_arg_t *sa = arg;
+  const struct search_arg *sa = arg;
   *(sa->elt_count) = 0;
   for (i = sa->start; i < sa->start + sa->count; i++){
     elt = ht_divchn_pthread_search(sa->ht, ptr(sa->keys,
@@ -522,7 +522,7 @@ void *search_res_thread(void *arg){
   return NULL;
 }
 
-size_t search_ht_helper(const ht_divchn_pthread_t *ht,
+size_t search_ht_helper(const struct ht_divchn_pthread *ht,
 			const unsigned char *keys,
 			const void *elts,
 			size_t count,
@@ -535,10 +535,10 @@ size_t search_ht_helper(const ht_divchn_pthread_t *ht,
   size_t start = 0;
   size_t *elt_counts = NULL;
   pthread_t *sids = NULL;
-  search_arg_t *sas = NULL;
+  struct search_arg *sas = NULL;
   elt_counts = calloc_perror(num_threads, sizeof(size_t));
   sids = malloc_perror(num_threads, sizeof(pthread_t));
-  sas = malloc_perror(num_threads, sizeof(search_arg_t));
+  sas = malloc_perror(num_threads, sizeof(struct search_arg));
   seg_count = count / num_threads;
   rem_count = count - seg_count * num_threads; /* distribute among threads */
   for (i = 0; i < num_threads; i++){
@@ -578,7 +578,7 @@ size_t search_ht_helper(const ht_divchn_pthread_t *ht,
   return ret;
 }
 
-void search_in_ht(const ht_divchn_pthread_t *ht,
+void search_in_ht(const struct ht_divchn_pthread *ht,
 		  const unsigned char *keys,
 		  const void *elts,
 		  size_t count,
@@ -600,7 +600,7 @@ void search_in_ht(const ht_divchn_pthread_t *ht,
   }
 }
 
-void search_nin_ht(const ht_divchn_pthread_t *ht,
+void search_nin_ht(const struct ht_divchn_pthread *ht,
 		   const unsigned char *keys,
 		   const void *elts,
 		   size_t count,
@@ -623,8 +623,8 @@ void search_nin_ht(const ht_divchn_pthread_t *ht,
 
 /* Free */
 
-void free_ht(ht_divchn_pthread_t *ht, int verb){
-  double t;;
+void free_ht(struct ht_divchn_pthread *ht, int verb){
+  double t;
   t = timer();
   ht_divchn_pthread_free(ht);
   t = timer() - t;
@@ -657,7 +657,7 @@ void insert_search_free(size_t num_ins,
   unsigned char *keys = NULL;
   unsigned char *nin_keys = NULL;
   void *elts = NULL;
-  ht_divchn_pthread_t ht;
+  struct ht_divchn_pthread ht;
   keys = malloc_perror(num_ins, key_size);
   elts = malloc_perror(num_ins, elt_size);
   nin_keys = malloc_perror(num_ins, key_size);
@@ -727,25 +727,25 @@ void insert_search_free(size_t num_ins,
 /**
    Helper functions for the ht_divchn_pthread_{remove, delete} tests
    across key sizes and load factor upper bounds, on size_t and 
-   uint_ptr_t elements.
+   uint_ptr elements.
 */
 
 /* Remove */
 
-typedef struct{
+struct remove_arg{
   size_t start;
   size_t count;
   size_t batch_count;
   const unsigned char *keys;
   void *elts;
-  ht_divchn_pthread_t *ht;
-} remove_arg_t;
+  struct ht_divchn_pthread *ht;
+};
 
 void *remove_thread(void *arg){
   size_t i;
   const unsigned char *k = NULL;
   void *e = NULL;
-  const remove_arg_t *ra = arg;
+  const struct remove_arg *ra = arg;
   for (i = 0; i < ra->count; i += ra->batch_count){
     k = ptr(ra->keys, ra->start + i, ra->ht->key_size);
     e = ptr(ra->elts, ra->start + i, ra->ht->elt_size);
@@ -758,7 +758,7 @@ void *remove_thread(void *arg){
   return NULL;
 }
 
-void remove_key_elts(ht_divchn_pthread_t *ht,
+void remove_key_elts(struct ht_divchn_pthread *ht,
 		     const unsigned char *keys,
 		     void *elts,
 		     size_t count,
@@ -770,9 +770,9 @@ void remove_key_elts(ht_divchn_pthread_t *ht,
   size_t start = 0;
   double t;
   pthread_t *rids = NULL;
-  remove_arg_t *ras = NULL;
+  struct remove_arg *ras = NULL;
   rids = malloc_perror(num_threads, sizeof(pthread_t));
-  ras = malloc_perror(num_threads, sizeof(remove_arg_t));
+  ras = malloc_perror(num_threads, sizeof(struct remove_arg));
   seg_count = count / num_threads;
   rem_count = count - seg_count * num_threads; /* distribute among threads */
   for (i = 0; i < num_threads; i++){
@@ -811,18 +811,18 @@ void remove_key_elts(ht_divchn_pthread_t *ht,
 
 /* Delete */
 
-typedef struct{
+struct delete_arg{
   size_t start;
   size_t count;
   size_t batch_count;
   const unsigned char *keys;
-  ht_divchn_pthread_t *ht;
-} delete_arg_t;
+  struct ht_divchn_pthread *ht;
+};
 
 void *delete_thread(void *arg){
   size_t i;
   const unsigned char *k = NULL;
-  const delete_arg_t *da = arg;
+  const struct delete_arg *da = arg;
   for (i = 0; i < da->count; i += da->batch_count){
     k = ptr(da->keys, da->start + i, da->ht->key_size);
     if (da->count - i < da->batch_count){
@@ -834,7 +834,7 @@ void *delete_thread(void *arg){
   return NULL;
 }
 
-void delete_key_elts(ht_divchn_pthread_t *ht,
+void delete_key_elts(struct ht_divchn_pthread *ht,
 		     const unsigned char *keys,
 		     size_t count,
 		     size_t num_threads,
@@ -845,9 +845,9 @@ void delete_key_elts(ht_divchn_pthread_t *ht,
   size_t start = 0;
   double t;
   pthread_t *dids = NULL;
-  delete_arg_t *das = NULL;
+  struct delete_arg *das = NULL;
   dids = malloc_perror(num_threads, sizeof(pthread_t));
-  das = malloc_perror(num_threads, sizeof(delete_arg_t));
+  das = malloc_perror(num_threads, sizeof(struct delete_arg));
   seg_count = count / num_threads;
   rem_count = count - seg_count * num_threads; /* distribute among threads */
   for (i = 0; i < num_threads; i++){
@@ -904,7 +904,7 @@ void remove_delete(size_t num_ins,
   unsigned char *key = NULL;
   unsigned char *keys = NULL;
   void *elts = NULL;
-  ht_divchn_pthread_t ht;
+  struct ht_divchn_pthread ht;
   keys = malloc_perror(num_ins, key_size);
   elts = malloc_perror(num_ins, elt_size);
   for (i = 0; i < num_ins; i++){
@@ -962,7 +962,7 @@ void run_corner_cases_test(size_t log_ins){
   size_t key_size;
   size_t num_ins;
   unsigned char *key = NULL;
-  ht_divchn_pthread_t ht;
+  struct ht_divchn_pthread ht;
   num_ins = pow_two_perror(log_ins);
   key = malloc_perror(1, pow_two_perror(C_CORNER_LOG_KEY_END));
   for (i = 0; i < pow_two_perror(C_CORNER_LOG_KEY_END); i++){

@@ -247,7 +247,7 @@ void print_test_result(int res);
    Initialize small graphs.
 */
 
-void ushort_none_graph_a_init(graph_t *g){
+void ushort_none_graph_a_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS_A,
 		  sizeof(unsigned short),
@@ -257,7 +257,7 @@ void ushort_none_graph_a_init(graph_t *g){
   g->v = (unsigned short *)C_USHORT_V_A;
 }
 
-void ulong_none_graph_a_init(graph_t *g){
+void ulong_none_graph_a_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS_A,
 		  sizeof(unsigned long),
@@ -267,7 +267,7 @@ void ulong_none_graph_a_init(graph_t *g){
   g->v = (unsigned long *)C_ULONG_V_A;
 }
 
-void ushort_ulong_graph_a_init(graph_t *g){
+void ushort_ulong_graph_a_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS_A,
 		  sizeof(unsigned short),
@@ -278,7 +278,7 @@ void ushort_ulong_graph_a_init(graph_t *g){
   g->wts = (unsigned long *)C_ULONG_WTS_A;
 }
 
-void ulong_ushort_graph_a_init(graph_t *g){
+void ulong_ushort_graph_a_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS_A,
 		  sizeof(unsigned long),
@@ -289,7 +289,7 @@ void ulong_ushort_graph_a_init(graph_t *g){
   g->wts = (unsigned short *)C_USHORT_WTS_A;
 }
 
-void ushort_none_graph_b_init(graph_t *g){
+void ushort_none_graph_b_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS_B,
 		  sizeof(unsigned short),
@@ -299,7 +299,7 @@ void ushort_none_graph_b_init(graph_t *g){
   g->v = (unsigned short *)C_USHORT_V_B;
 }
 
-void ulong_none_graph_b_init(graph_t *g){
+void ulong_none_graph_b_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS_B,
 		  sizeof(unsigned long),
@@ -309,7 +309,7 @@ void ulong_none_graph_b_init(graph_t *g){
   g->v = (unsigned long *)C_ULONG_V_B;
 }
 
-void ushort_ulong_graph_b_init(graph_t *g){
+void ushort_ulong_graph_b_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS_B,
 		  sizeof(unsigned short),
@@ -320,7 +320,7 @@ void ushort_ulong_graph_b_init(graph_t *g){
   g->wts = (unsigned long *)C_ULONG_WTS_B;
 }
 
-void ulong_ushort_graph_b_init(graph_t *g){
+void ulong_ushort_graph_b_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS_B,
 		  sizeof(unsigned long),
@@ -335,11 +335,11 @@ void ulong_ushort_graph_b_init(graph_t *g){
    Run bfs tests on small graphs.
 */
 
-void small_graph_helper(const graph_t *g,
+void small_graph_helper(const struct graph *g,
 			const void *ret_dist,
 			const void *ret_prev,
-			void (*build)(adj_lst_t *,
-				      const graph_t *,
+			void (*build)(struct adj_lst *,
+				      const struct graph *,
 				      size_t (*)(const void *)),
 			size_t (*read_vt)(const void *),
 			void (*write_vt)(void *, size_t),
@@ -350,7 +350,7 @@ void small_graph_helper(const graph_t *g,
 
 void run_graph_a_test(){
   int res = 1;
-  graph_t g;
+  struct graph g;
   printf("Run a bfs test on the first small graph with ushort "
 	 "vertices --> ");
   ushort_none_graph_a_init(&g);
@@ -446,7 +446,7 @@ void run_graph_a_test(){
 
 void run_graph_b_test(){
   int res = 1;
-  graph_t g;
+  struct graph g;
   printf("Run a bfs test on the second small graph with ushort "
 	 "vertices --> ");
   ushort_none_graph_b_init(&g);
@@ -540,11 +540,11 @@ void run_graph_b_test(){
    print_test_result(res);
 }
 
-void small_graph_helper(const graph_t *g,
+void small_graph_helper(const struct graph *g,
 			const void *ret_dist,
 			const void *ret_prev,
-			void (*build)(adj_lst_t *,
-				      const graph_t *,
+			void (*build)(struct adj_lst *,
+				      const struct graph *,
 				      size_t (*)(const void *)),
 			size_t (*read_vt)(const void *),
 			void (*write_vt)(void *, size_t),
@@ -555,7 +555,7 @@ void small_graph_helper(const graph_t *g,
   size_t i, j;
   size_t vt_offset = 0;
   void *dist = NULL, *prev = NULL;
-  adj_lst_t a;
+  struct adj_lst a;
   adj_lst_base_init(&a, g);
   build(&a, g, read_vt);
   dist = malloc_perror(a.num_vts, a.vt_size);
@@ -587,12 +587,12 @@ void small_graph_helper(const graph_t *g,
    Test bfs on large graphs.
 */
 
-typedef struct{
+struct bern_arg{
   double p;
-} bern_arg_t;
+};
 
 int bern(void *arg){
-  bern_arg_t *b = arg;
+  struct bern_arg *b = arg;
   if (b->p >= C_PROB_ONE) return 1;
   if (b->p <= C_PROB_ZERO) return 0;
   if (b->p > DRAND()) return 1;
@@ -608,9 +608,9 @@ void run_max_edges_graph_test(size_t log_start, size_t log_end){
   size_t num_vts;
   size_t start;
   void *dist = NULL, *prev = NULL;
-  graph_t g;
-  adj_lst_t a;
-  bern_arg_t b;
+  struct graph g;
+  struct adj_lst a;
+  struct bern_arg b;
   b.p = C_PROB_ONE;
   printf("Run a bfs test on graphs with n vertices, where "
 	 "2**%lu <= n <= 2**%lu, and n(n - 1) edges\n",
@@ -668,9 +668,9 @@ void run_no_edges_graph_test(size_t log_start, size_t log_end){
   size_t num_vts;
   size_t start;
   void *dist = NULL, *prev = NULL;
-  graph_t g;
-  adj_lst_t a;
-  bern_arg_t b;
+  struct graph g;
+  struct adj_lst a;
+  struct bern_arg b;
   b.p = C_PROB_ZERO;
   printf("Run a bfs test on graphs with no edges\n");;
   for (i = log_start; i <= log_end; i++){
@@ -730,12 +730,12 @@ void run_random_dir_graph_helper(size_t num_vts,
 				 int (*cmp_vt)(const void *, const void *),
 				 void (*incr_vt)(void *),
 				 int bern(void *),
-				 bern_arg_t *b);
+				 struct bern_arg *b);
 
 void run_random_dir_graph_test(size_t log_start, size_t log_end){
   size_t i, j;
   size_t num_vts;
-  bern_arg_t b;
+  struct bern_arg b;
   printf("Run a bfs test on random directed graphs from %lu random "
 	 "start vertices in each graph\n",  TOLU(C_ITER));
   for (i = 0; i < C_PROBS_COUNT; i++){
@@ -798,12 +798,12 @@ void run_random_dir_graph_helper(size_t num_vts,
 				 int (*cmp_vt)(const void *, const void *),
 				 void (*incr_vt)(void *),
 				 int bern(void *),
-				 bern_arg_t *b){
+				 struct bern_arg *b){
   size_t i;
   size_t *start = NULL;
   void *dist = NULL, *prev = NULL;
-  graph_t g;
-  adj_lst_t a;
+  struct graph g;
+  struct adj_lst a;
   clock_t t;
   /* no declared type after malloc; effective type is set by bfs */
   start = malloc_perror(C_ITER, sizeof(size_t));

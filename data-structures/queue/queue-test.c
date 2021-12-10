@@ -68,12 +68,12 @@ void print_test_result(int res);
    queue. NULL as free_elt is sufficient to free the queue.
 */
 
-void uint_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins);
+void uint_push_pop_helper(struct queue *q, size_t start_val, size_t num_ins);
 
 void run_uint_push_pop_test(size_t log_ins){
   size_t num_ins;
   size_t start_val = C_START_VAL;
-  queue_t q;
+  struct queue q;
   num_ins = pow_two_perror(log_ins);
   queue_init(&q, sizeof(size_t), NULL);
   printf("Run a queue_{push, pop} test on %lu size_t elements\n",
@@ -96,7 +96,7 @@ void run_uint_push_pop_test(size_t log_ins){
   queue_free(&q);
 }
 
-void uint_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins){
+void uint_push_pop_helper(struct queue *q, size_t start_val, size_t num_ins){
   int res = 1;
   size_t i;
   size_t *pushed = NULL, *popped = NULL;
@@ -137,7 +137,7 @@ void run_uint_first_test(size_t log_ins){
   size_t num_ins;
   size_t start_val = C_START_VAL;
   size_t pushed, popped;
-  queue_t q;
+  struct queue q;
   num_ins = pow_two_perror(log_ins);
   queue_init(&q, sizeof(size_t), NULL);
   printf("Run a queue_first test on %lu size_t elements\n", TOLU(num_ins));
@@ -166,7 +166,7 @@ void run_uint_first_test(size_t log_ins){
 void run_uint_free_test(size_t log_ins){
   size_t i;
   size_t num_ins;
-  queue_t q;
+  struct queue q;
   clock_t t;
   num_ins = pow_two_perror(log_ins);
   queue_init(&q, sizeof(size_t), NULL);
@@ -181,46 +181,48 @@ void run_uint_free_test(size_t log_ins){
 }
 
 /**
-   Run tests of a queue of uint_ptr_t elements. A pointer to a pointer to 
-   an uint_ptr_t element is passed as elt in queue_push and the pointer to
-   the uint_ptr_t element is copied onto the queue. A uint_ptr_t-
+   Run tests of a queue of uint_ptr elements. A pointer to a pointer to 
+   an uint_ptr element is passed as elt in queue_push and the pointer to
+   the uint_ptr element is copied onto the queue. A uint_ptr-
    specific free_elt, taking a pointer to a pointer to an element as its
    parameter, is necessary to free the queue.
 */
 
-typedef struct{
+struct uint_ptr{
   size_t *val;
-} uint_ptr_t;
+};
 
 void free_uint_ptr(void *a){
-  uint_ptr_t **s = a;
+  struct uint_ptr **s = a;
   free((*s)->val);
   (*s)->val = NULL;
   free(*s);
   *s = NULL;
 }
 
-void uint_ptr_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins);
+void uint_ptr_push_pop_helper(struct queue *q,
+			      size_t start_val,
+			      size_t num_ins);
 
 void run_uint_ptr_push_pop_test(size_t log_ins){
   size_t num_ins;
   size_t start_val = C_START_VAL;
-  queue_t q;
+  struct queue q;
   num_ins = pow_two_perror(log_ins);
-  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
-  printf("Run a queue_{push, pop} test on %lu noncontiguous uint_ptr_t "
+  queue_init(&q, sizeof(struct uint_ptr *), free_uint_ptr);
+  printf("Run a queue_{push, pop} test on %lu noncontiguous uint_ptr "
          "elements\n", TOLU(num_ins));
   printf("\teff initial count: %lu, eff max count: %lu\n",
 	 TOLU(q.init_count) >> 1, TOLU(q.max_count) >> 1);
   uint_ptr_push_pop_helper(&q, start_val, num_ins);
   queue_free(&q);
-  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
+  queue_init(&q, sizeof(struct uint_ptr *), free_uint_ptr);
   queue_bound(&q, 1, num_ins);
   printf("\teff initial count: %lu, eff max count: %lu\n",
 	 TOLU(q.init_count) >> 1, TOLU(q.max_count) >> 1);
   uint_ptr_push_pop_helper(&q, start_val, num_ins);
   queue_free(&q);
-  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
+  queue_init(&q, sizeof(struct uint_ptr *), free_uint_ptr);
   queue_bound(&q, num_ins, num_ins);
   printf("\teff initial count: %lu, eff max count: %lu\n",
 	 TOLU(q.init_count) >> 1, TOLU(q.max_count) >> 1);
@@ -228,15 +230,17 @@ void run_uint_ptr_push_pop_test(size_t log_ins){
   queue_free(&q);
 }
 
-void uint_ptr_push_pop_helper(queue_t *q, size_t start_val, size_t num_ins){
+void uint_ptr_push_pop_helper(struct queue *q,
+			      size_t start_val,
+			      size_t num_ins){
   int res = 1;
   size_t i;
-  uint_ptr_t **pushed = NULL, **popped = NULL;
+  struct uint_ptr **pushed = NULL, **popped = NULL;
   clock_t t_push, t_pop;
-  pushed = calloc_perror(num_ins, sizeof(uint_ptr_t *));
-  popped = calloc_perror(num_ins, sizeof(uint_ptr_t *));
+  pushed = calloc_perror(num_ins, sizeof(struct uint_ptr *));
+  popped = calloc_perror(num_ins, sizeof(struct uint_ptr *));
   for (i = 0; i < num_ins; i++){
-    pushed[i] = malloc_perror(1, sizeof(uint_ptr_t));
+    pushed[i] = malloc_perror(1, sizeof(struct uint_ptr));
     pushed[i]->val = malloc_perror(1, sizeof(size_t));
     *(pushed[i]->val) = start_val + i;
   }
@@ -274,25 +278,25 @@ void run_uint_ptr_first_test(size_t log_ins){
   size_t i;
   size_t num_ins;
   size_t start_val = C_START_VAL;
-  uint_ptr_t *pushed = NULL, *popped = NULL;
-  queue_t q;
+  struct uint_ptr *pushed = NULL, *popped = NULL;
+  struct queue q;
   num_ins = pow_two_perror(log_ins);
-  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
-  printf("Run a queue_first test on %lu noncontiguous uint_ptr_t elements\n",
+  queue_init(&q, sizeof(struct uint_ptr *), free_uint_ptr);
+  printf("Run a queue_first test on %lu noncontiguous uint_ptr elements\n",
 	 TOLU(num_ins));
   for (i = 0; i < num_ins; i++){
     if (q.num_elts == 0){
       res *= (queue_first(&q) == NULL);
     }
-    pushed = malloc_perror(1, sizeof(uint_ptr_t));
+    pushed = malloc_perror(1, sizeof(struct uint_ptr));
     pushed->val = malloc_perror(1, sizeof(size_t));
     *(pushed->val) = start_val + i;
     queue_push(&q, &pushed);
-    res *= (*(*(uint_ptr_t **)queue_first(&q))->val == start_val);
+    res *= (*(*(struct uint_ptr **)queue_first(&q))->val == start_val);
     pushed = NULL;
   }
   for (i = 0; i < num_ins; i++){
-    res *= (*(*(uint_ptr_t **)queue_first(&q))->val == start_val + i);
+    res *= (*(*(struct uint_ptr **)queue_first(&q))->val == start_val + i);
     queue_pop(&q, &popped);
     if (q.num_elts == 0){
       res *= (queue_first(&q) == NULL);
@@ -310,15 +314,15 @@ void run_uint_ptr_first_test(size_t log_ins){
 void run_uint_ptr_free_test(size_t log_ins){
   size_t i;
   size_t num_ins;
-  uint_ptr_t *pushed = NULL;
-  queue_t q;
+  struct uint_ptr *pushed = NULL;
+  struct queue q;
   clock_t t;
   num_ins = pow_two_perror(log_ins);
-  queue_init(&q, sizeof(uint_ptr_t *), free_uint_ptr);
-  printf("Run a queue_free test on %lu noncontiguous uint_ptr_t elements\n",
+  queue_init(&q, sizeof(struct uint_ptr *), free_uint_ptr);
+  printf("Run a queue_free test on %lu noncontiguous uint_ptr elements\n",
 	 TOLU(num_ins));
   for (i = 0; i < num_ins; i++){
-    pushed = malloc_perror(1, sizeof(uint_ptr_t));
+    pushed = malloc_perror(1, sizeof(struct uint_ptr));
     pushed->val = malloc_perror(1, sizeof(size_t));
     *(pushed->val) = i;
     queue_push(&q, &pushed);
@@ -337,7 +341,7 @@ void run_uchar_queue_test(size_t log_ins){
   unsigned char c;
   size_t i;
   size_t num_ins;
-  queue_t q;
+  struct queue q;
   clock_t t_push, t_pop;
   num_ins = pow_two_perror(log_ins);
   queue_init(&q, sizeof(unsigned char), NULL);

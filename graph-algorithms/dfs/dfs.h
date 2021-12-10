@@ -82,7 +82,7 @@
    incr_vt     : increments a value of the integer type used to represent
                  vertices
 */
-void dfs(const adj_lst_t *a,
+void dfs(const struct adj_lst *a,
 	 size_t start,
 	 void *pre,
 	 void *post,
@@ -109,7 +109,7 @@ void dfs(const adj_lst_t *a,
    vdp_alignment: alignment requirement of void * (i.e. alignof(void *)) or
                   size of void * according to sizeof
 */
-void dfs_align(const adj_lst_t *a,
+void dfs_align(const struct adj_lst *a,
 	       size_t start,
 	       size_t vt_alignment,
 	       size_t vdp_alignment,

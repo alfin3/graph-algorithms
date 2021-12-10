@@ -96,7 +96,7 @@ static void *ptr(const void *block, size_t i, size_t size);
    incr_vt     : increments a value of the integer type used to represent
                  vertices
 */
-void bfs(const adj_lst_t *a,
+void bfs(const struct adj_lst *a,
 	 size_t start,
 	 void *dist,
 	 void *prev,
@@ -106,7 +106,7 @@ void bfs(const adj_lst_t *a,
          int (*cmp_vt)(const void *, const void *),
          void (*incr_vt)(void *)){
   const void *p = NULL, *p_start = NULL, *p_end = NULL;
-  queue_t q;
+  struct queue q;
   /* variables in single block for cache-efficiency */
   void * const vars = malloc_perror(5, a->vt_size);
   void * const u = vars;

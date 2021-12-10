@@ -217,7 +217,7 @@ void run_remove_delete_uint_test(size_t log_ins,
 
 /**
    Test hash table operations on distinct contiguous keys and noncontiguous
-   uint_ptr_t elements across key sizes and load factor upper bounds. For
+   uint_ptr elements across key sizes and load factor upper bounds. For
    test purposes a key is a random key_size block with the exception of a
    distinct non-random sizeof(size_t)-sized sub-block inside the key_size
    block. A key is fully copied into a hash table as a key_size block.
@@ -226,24 +226,24 @@ void run_remove_delete_uint_test(size_t log_ins,
    necessary to delete an element.
 */
 
-typedef struct{
+struct uint_ptr{
   size_t *val;
-} uint_ptr_t;
+};
 
 void new_uint_ptr(void *elt, size_t val){
-  uint_ptr_t **s = elt;
-  *s = malloc_perror(1, sizeof(uint_ptr_t));
+  struct uint_ptr **s = elt;
+  *s = malloc_perror(1, sizeof(struct uint_ptr));
   (*s)->val = malloc_perror(1, sizeof(size_t));
   *((*s)->val) = val;
 }
 
 size_t val_uint_ptr(const void *elt){
-  uint_ptr_t **s  = (uint_ptr_t **)elt;
+  struct uint_ptr **s  = (struct uint_ptr **)elt;
   return *((*s)->val);
 }
 
 void free_uint_ptr(void *elt){
-  uint_ptr_t **s = elt;
+  struct uint_ptr **s = elt;
   free((*s)->val);
   (*s)->val = NULL;
   free(*s);
@@ -252,7 +252,7 @@ void free_uint_ptr(void *elt){
 
 /**
    Runs a ht_divchn_{insert, search, free} test on distinct keys and 
-   noncontiguous uint_ptr_t elements across key sizes >= sizeof(size_t)
+   noncontiguous uint_ptr elements across key sizes >= sizeof(size_t)
    and load factor upper bounds.
 */
 void run_insert_search_free_uint_ptr_test(size_t log_ins,
@@ -265,8 +265,8 @@ void run_insert_search_free_uint_ptr_test(size_t log_ins,
   size_t i, j;
   size_t num_ins;
   size_t key_size;
-  size_t elt_size =  sizeof(uint_ptr_t *);
-  size_t elt_alignment = sizeof(uint_ptr_t *);
+  size_t elt_size =  sizeof(struct uint_ptr *);
+  size_t elt_alignment = sizeof(struct uint_ptr *);
   size_t step, rem;
   size_t alpha_n;
   num_ins = pow_two_perror(log_ins);
@@ -276,7 +276,7 @@ void run_insert_search_free_uint_ptr_test(size_t log_ins,
     rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
     key_size = sizeof(size_t) * pow_two_perror(i);
     printf("Run a ht_divchn_{insert, search, free} test on distinct "
-	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
+	   "%lu-byte keys and noncontiguous uint_ptr elements\n",
 	   TOLU(key_size));
     for (j = 0; j <= num_alpha_steps; j++){
       printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
@@ -297,7 +297,7 @@ void run_insert_search_free_uint_ptr_test(size_t log_ins,
 
 /**
    Runs a ht_divchn_{remove, delete} test on distinct keys and 
-   noncontiguous uint_ptr_t elements across key sizes >= sizeof(size_t)
+   noncontiguous uint_ptr elements across key sizes >= sizeof(size_t)
    and load factor upper bounds.
 */
 void run_remove_delete_uint_ptr_test(size_t log_ins,
@@ -310,8 +310,8 @@ void run_remove_delete_uint_ptr_test(size_t log_ins,
   size_t i, j;
   size_t num_ins;
   size_t key_size;
-  size_t elt_size = sizeof(uint_ptr_t *);
-  size_t elt_alignment = sizeof(uint_ptr_t *);
+  size_t elt_size = sizeof(struct uint_ptr *);
+  size_t elt_alignment = sizeof(struct uint_ptr *);
   size_t step, rem;
   size_t alpha_n;
   num_ins = pow_two_perror(log_ins);
@@ -321,7 +321,7 @@ void run_remove_delete_uint_ptr_test(size_t log_ins,
     rem = alpha_n_end - alpha_n_start - step * num_alpha_steps;
     key_size = sizeof(size_t) * pow_two_perror(i);
     printf("Run a ht_divchn_{remove, delete} test on distinct "
-	   "%lu-byte keys and noncontiguous uint_ptr_t elements\n",
+	   "%lu-byte keys and noncontiguous uint_ptr elements\n",
 	   TOLU(key_size));
     for (j = 0; j <= num_alpha_steps; j++){
       printf("\tnumber of inserts: %lu, load factor upper bound: %.4f\n",
@@ -343,10 +343,10 @@ void run_remove_delete_uint_ptr_test(size_t log_ins,
 /** 
    Helper functions for the ht_divchn_{insert, search, free} tests
    across key sizes and load factor upper bounds, on size_t and 
-   uint_ptr_t elements.
+   uint_ptr elements.
 */
 
-void insert_keys_elts(ht_divchn_t *ht,
+void insert_keys_elts(struct ht_divchn *ht,
 		      const unsigned char *keys,
 		      const void *elts,
 		      size_t count,
@@ -376,7 +376,7 @@ void insert_keys_elts(ht_divchn_t *ht,
   *res *= (ht->num_elts == n + count);
 }
 
-void search_in_ht(const ht_divchn_t *ht,
+void search_in_ht(const struct ht_divchn *ht,
 		  const unsigned char *keys,
 		  const void *elts,
 		  size_t count,
@@ -408,7 +408,7 @@ void search_in_ht(const ht_divchn_t *ht,
   *res *= (ht->num_elts == n);
 }
 
-void search_nin_ht(const ht_divchn_t *ht,
+void search_nin_ht(const struct ht_divchn *ht,
 		   const unsigned char *nin_keys,
 		   size_t count,
 		   int *res){
@@ -435,7 +435,7 @@ void search_nin_ht(const ht_divchn_t *ht,
   *res *= (ht->num_elts == n);
 }
 
-void free_ht(ht_divchn_t *ht){
+void free_ht(struct ht_divchn *ht){
   clock_t t;
   t = clock();
   ht_divchn_free(ht);
@@ -461,7 +461,7 @@ void insert_search_free(size_t num_ins,
   unsigned char *keys = NULL;
   unsigned char *nin_keys = NULL;
   void *elts = NULL;
-  ht_divchn_t ht;
+  struct ht_divchn ht;
   keys = malloc_perror(num_ins, key_size);
   elts = malloc_perror(num_ins, elt_size);
   nin_keys = malloc_perror(num_ins, key_size);
@@ -523,10 +523,10 @@ void insert_search_free(size_t num_ins,
 /**
    Helper functions for the ht_divchn_{remove, delete} tests
    across key sizes and load factor upper bounds, on size_t and 
-   uint_ptr_t elements.
+   uint_ptr elements.
 */
 
-void remove_key_elts(ht_divchn_t *ht,
+void remove_key_elts(struct ht_divchn *ht,
 		     const unsigned char *keys,
 		     const void *elts,
 		     size_t count,
@@ -587,7 +587,7 @@ void remove_key_elts(ht_divchn_t *ht,
   elt = NULL;
 }
 
-void delete_key_elts(ht_divchn_t *ht,
+void delete_key_elts(struct ht_divchn *ht,
 		     const unsigned char *keys,
 		     const void *elts,
 		     size_t count,
@@ -657,7 +657,7 @@ void remove_delete(size_t num_ins,
   unsigned char *key = NULL;
   unsigned char *keys = NULL;
   void *elts = NULL;
-  ht_divchn_t ht;
+  struct ht_divchn ht;
   keys = malloc_perror(num_ins, key_size);
   elts = malloc_perror(num_ins, elt_size);
   for (i = 0; i < num_ins; i++){
@@ -706,7 +706,7 @@ void run_corner_cases_test(size_t log_ins){
   size_t key_size;
   size_t num_ins;
   void *key = NULL;
-  ht_divchn_t ht;
+  struct ht_divchn ht;
   num_ins = pow_two_perror(log_ins);
   key = malloc_perror(1, pow_two_perror(C_CORNER_LOG_KEY_END));
   for (i = 0; i < pow_two_perror(C_CORNER_LOG_KEY_END); i++){

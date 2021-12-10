@@ -57,7 +57,7 @@
    Dijkstra hash table parameter struct, pointing to the hash table op
    helpers, pre-defined in each hash table.
 */
-typedef struct{
+struct dijkstra_ht{
   void *ht;
   size_t alpha_n;
   size_t log_alpha_d;
@@ -76,7 +76,7 @@ typedef struct{
   void *(*search)(const void *, const void *);
   void (*remove)(void *, const void *, void *);
   void (*free)(void *);
-} dijkstra_ht_t;
+};
 
 /**
    Computes and copies the shortest distances from start to the array
@@ -142,12 +142,12 @@ typedef struct{
                  the user may include an overflow test in the function or
                  use a provided _perror-suffixed function
 */
-void dijkstra(const adj_lst_t *a,
+void dijkstra(const struct adj_lst *a,
 	      size_t start,
 	      void *dist,
 	      void *prev,
 	      const void *wt_zero,
-	      const dijkstra_ht_t *daht,
+	      const struct dijkstra_ht *daht,
 	      size_t (*read_vt)(const void *),
 	      void (*write_vt)(void *, size_t),
 	      void *(*at_vt)(const void *, const void *),

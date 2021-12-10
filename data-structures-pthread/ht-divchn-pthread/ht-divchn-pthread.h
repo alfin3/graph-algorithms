@@ -97,7 +97,7 @@
    of computing bounds, which is defined by the implementation
 
    TODO: add division with magic number multiplication.   
-*/ 
+*/
 
 #ifndef HT_DIVCHN_PTHREAD_H  
 #define HT_DIVCHN_PTHREAD_H
@@ -108,7 +108,7 @@
 #include <pthread.h>
 #include "dll.h"
 
-typedef struct{
+struct ht_divchn_pthread{
   /* hash table */
   size_t key_size;
   size_t elt_size;
@@ -120,8 +120,8 @@ typedef struct{
   size_t log_alpha_d;
   size_t max_num_elts; /*  >= 0, <= C_SIZE_MAX, represents lf bound */
   size_t num_elts;
-  dll_t *ll;
-  dll_node_t **key_elts; /* array of pointers to nodes */
+  struct dll *ll;
+  struct dll_node **key_elts; /* array of pointers to nodes */
 
   /* thread synchronization */
   int gate_open;
@@ -139,7 +139,7 @@ typedef struct{
   size_t (*rdc_key)(const void *);
   void (*free_key)(void *);
   void (*free_elt)(void *);
-} ht_divchn_pthread_t;
+};
 
 /**
    Initializes a hash table. An in-table elt_size block is guaranteed to
@@ -148,7 +148,7 @@ typedef struct{
    initialization operation is called and must return before any thread
    calls insert, remove, and/or delete, or search operation.
    ht               : a pointer to a preallocated block of size 
-                      sizeof(ht_divchn_pthread_t)
+                      sizeof(struct ht_divchn_pthread)
    key_size         : non-zero size of a key_size block; must account for
                       internal and trailing padding according to sizeof
    elt_size         : non-zero size of an elt_size block; must account for
@@ -215,7 +215,7 @@ typedef struct{
                       element except the elt_size block pointed to by the
                       argument
 */
-void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_init(struct ht_divchn_pthread *ht,
 			    size_t key_size,
 			    size_t elt_size,
 			    size_t min_num,
@@ -242,20 +242,21 @@ void ht_divchn_pthread_init(ht_divchn_pthread_t *ht,
    qualified/signed/unsigned version of the type. The operation is
    optionally called after ht_divchn_pthread_init is completed and before
    any other operation is called.
-   ht            : pointer to an initialized ht_divchn_pthread_t struct
+   ht            : pointer to an initialized ht_divchn_pthread struct
    elt_alignment : alignment requirement or size of the type, a pointer to
                    which is used to access the elt_size block of an element
                    in a hash table; if size, must account for internal
                    and trailing padding according to sizeof
 */
-void ht_divchn_pthread_align(ht_divchn_pthread_t *ht, size_t elt_alignment);
+void ht_divchn_pthread_align(struct ht_divchn_pthread *ht,
+			     size_t elt_alignment);
 
 /**
    Inserts a batch of keys and associated elements into a hash table
    by copying the corresponding key_size and elt_size blocks. If a key
    within a batch is already in the hash table according to cmp_key,
    then updates the element according to cmp_elt.
-   ht          : pointer to an initialized ht_divchn_pthread_t struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct   
    batch_keys  : non-NULL pointer to an array of key_size blocks of keys
    batch_elts  : non-NULL pointer to an array of elt_size blocks of
                  elements
@@ -263,7 +264,7 @@ void ht_divchn_pthread_align(ht_divchn_pthread_t *ht, size_t elt_alignment);
                  batch_keys; count of elt_size blocks in the array pointed
                  to by batch_elts
 */
-void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_insert(struct ht_divchn_pthread *ht,
 			      const void *batch_keys,
 			      const void *batch_elts,
 			      size_t batch_count);
@@ -276,10 +277,10 @@ void ht_divchn_pthread_insert(ht_divchn_pthread_t *ht,
    ht_divchn_pthread_align. The operation is called before/after all
    threads started/completed insert, remove, and delete operations and
    does not require thread synchronization overhead.
-   ht          : pointer to an initialized ht_divchn_pthread_t struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct   
    key         : non-NULL pointer to the key_size block of a key
 */
-void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
+void *ht_divchn_pthread_search(const struct ht_divchn_pthread *ht,
 			       const void *key);
 
 /**
@@ -290,14 +291,14 @@ void *ht_divchn_pthread_search(const ht_divchn_pthread_t *ht,
    the corresponding key_size and elt_size blocks in the hash table. If
    there is no matching key in the hash table according to cmp_key, leaves
    the corresponding elt_size block unchanged.
-   ht          : pointer to an initialized ht_divchn_pthread_t struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct   
    batch_keys  : non-NULL pointer to an array of key_size blocks of keys
    batch_elts  : non-NULL pointer to an array of elt_size blocks
    batch_count : count of key_size blocks in the array pointed to by
                  batch_keys; count of elt_size blocks in the array pointed
                  to by batch_elts
 */
-void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_remove(struct ht_divchn_pthread *ht,
 			      const void *batch_keys,
 			      void *batch_elts,
 			      size_t batch_count);
@@ -307,34 +308,34 @@ void ht_divchn_pthread_remove(ht_divchn_pthread_t *ht,
    there is a key in a hash table that equals to a key in the batch
    according to cmp_key, then deletes the in-table key element pair
    according to free_key and free_elt.
-   ht          : pointer to an initialized ht_divchn_pthread_t struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct   
    batch_keys  : non-NULL pointer to an array of key_size blocks of keys
    batch_count : count of key_size blocks in the array pointed to by
                  batch_keys
 */
-void ht_divchn_pthread_delete(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_delete(struct ht_divchn_pthread *ht,
 			      const void *batch_keys,
 			      size_t batch_count);
 
 /**
    Frees the memory of all keys and elements that are in a hash table
    according to free_key and free_elt, frees the memory of the hash table,
-   and leaves the block of size sizeof(ht_divchn_pthread_t) pointed to by
-   the ht parameter. The operation is called after all threads completed
+   and leaves the block of size sizeof(struct ht_divchn_pthread) pointed to
+   by the ht parameter. The operation is called after all threads completed
    insert, remove, delete, and search operations.
 */
-void ht_divchn_pthread_free(ht_divchn_pthread_t *ht);
+void ht_divchn_pthread_free(struct ht_divchn_pthread *ht);
 
 /**
    Help construct a hash table parameter value in multithreaded algorithms
    and data structures with a hash table parameter, complying with the stict
    aliasing rules and compatibility rules for function types. In each case,
-   a (qualified) ht_divchn_pthread_t *p0 is converted to (qualified) void *
-   and back to a (qualified) ht_divchn_pthread_t *p1, thus guaranteeing that
-   the value of p0 equals the value of p1.
+   a (qualified) struct ht_divchn_pthread *p0 is converted to (qualified)
+   void * and back to a (qualified) struct ht_divchn_pthread *p1, thus
+   guaranteeing that the value of p0 equals the value of p1.
 */
 
-void ht_divchn_pthread_init_helper(ht_divchn_pthread_t *ht,
+void ht_divchn_pthread_init_helper(struct ht_divchn_pthread *ht,
 				   size_t key_size,
 				   size_t elt_size,
 				   size_t min_num,

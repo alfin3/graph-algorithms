@@ -108,14 +108,14 @@ void cond_broadcast_perror(pthread_cond_t *cond){
    provided by mutex and condition variable operations.
 */
 
-void sema_init_perror(sema_t *sema, int value){
+void sema_init_perror(struct sema *sema, int value){
   sema->value = value;
   sema->num_wakeups = 0;
   mutex_init_perror(&sema->mutex);
   cond_init_perror(&sema->cond);
 }
 
-void sema_wait_perror(sema_t *sema){
+void sema_wait_perror(struct sema *sema){
   mutex_lock_perror(&sema->mutex);
   sema->value--;
   if (sema->value < 0){
@@ -128,7 +128,7 @@ void sema_wait_perror(sema_t *sema){
   mutex_unlock_perror(&sema->mutex);
 }
 
-void sema_signal_perror(sema_t *sema){
+void sema_signal_perror(struct sema *sema){
   mutex_lock_perror(&sema->mutex);
   sema->value++;
   if (sema->value <= 0){

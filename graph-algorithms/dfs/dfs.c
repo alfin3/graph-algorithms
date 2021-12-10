@@ -42,7 +42,7 @@
 
 static const size_t C_STACK_INIT_COUNT = 1;
 
-static void dfs_helper(const adj_lst_t *a,
+static void dfs_helper(const struct adj_lst *a,
 		       size_t start,
 		       size_t vt_alignment,
 		       size_t vdptr_alignment,
@@ -53,8 +53,8 @@ static void dfs_helper(const adj_lst_t *a,
 		       void *(*at_vt)(const void *, const void *),
 		       int (*cmp_vt)(const void *, const void *),
 		       void (*incr_vt)(void *));
-static void search(const adj_lst_t *a,
-		   stack_t *s,
+static void search(const struct adj_lst *a,
+		   struct stack *s,
 		   size_t offset,
 		   void *c,
 		   const void *nr,
@@ -110,7 +110,7 @@ static void *ptr(const void *block, size_t i, size_t size);
    incr_vt     : increments a value of the integer type used to represent
                  vertices
 */
-void dfs(const adj_lst_t *a,
+void dfs(const struct adj_lst *a,
 	 size_t start,
 	 void *pre,
 	 void *post,
@@ -149,7 +149,7 @@ void dfs(const adj_lst_t *a,
    vdp_alignment: alignment requirement of void * (i.e. alignof(void *)) or
                   size of void * according to sizeof
 */
-void dfs_align(const adj_lst_t *a,
+void dfs_align(const struct adj_lst *a,
 	       size_t start,
 	       size_t vt_alignment,
 	       size_t vdp_alignment,
@@ -173,7 +173,7 @@ void dfs_align(const adj_lst_t *a,
 	     incr_vt);
 }
 
-static void dfs_helper(const adj_lst_t *a,
+static void dfs_helper(const struct adj_lst *a,
 		       size_t start,
 		       size_t vt_alignment,
 		       size_t vdp_alignment,
@@ -186,7 +186,7 @@ static void dfs_helper(const adj_lst_t *a,
 		       void (*incr_vt)(void *)){
   size_t vt_rem, vdp_rem;
   size_t vt_offset, pair_size;
-  stack_t s;
+  struct stack s;
   /* variables in single block for cache-efficiency */
   void * const vars = malloc_perror(6, a->vt_size);
   void * const su = vars;
@@ -246,8 +246,8 @@ static void dfs_helper(const adj_lst_t *a,
    vertex pointed to by the ix parameter by emulating the recursion in DFS
    on a dynamically allocated stack data structure.
 */
-static void search(const adj_lst_t *a,
-		   stack_t *s,
+static void search(const struct adj_lst *a,
+		   struct stack *s,
 		   size_t vt_offset,
 		   void *c,
 		   const void *nr,

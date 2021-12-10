@@ -47,7 +47,7 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
-static void stack_grow(stack_t *s);
+static void stack_grow(struct stack *s);
 static void *ptr(const void *block, size_t i, size_t size);
 static void fprintf_stderr_exit(const char *s, int line);
 
@@ -55,7 +55,7 @@ static void fprintf_stderr_exit(const char *s, int line);
    Initializes a stack. By default the initialized stack can accomodate
    as many elt_size blocks as the system resources allow, starting from one
    elt_size block and growing by repetitive doubling.
-   s           : pointer to a preallocated block of size sizeof(stack_t)
+   s           : pointer to a preallocated block of size sizeof(struct stack)
    elt_size    : non-zero size of an elt_size block; must account for
                  internal and trailing padding according to sizeof
    free_elt    : - NULL if only elt_size blocks should be deleted in the
@@ -67,7 +67,7 @@ static void fprintf_stderr_exit(const char *s, int line);
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void stack_init(stack_t *s,
+void stack_init(struct stack *s,
 		size_t elt_size,
 		void (*free_elt)(void *)){
   s->count = 1;
@@ -87,7 +87,7 @@ void stack_init(stack_t *s,
    equal to init_count * 2**n for n > 0, then the last growth step sets
    the count of the stack to max_count. The operation is optionally called
    after stack_init is completed and before any other operation is called.
-   s           : pointer to a stack_t struct initialized with stack_init
+   s           : pointer to a stack struct initialized with stack_init
    init_count  : > 0 count of the elt_size blocks that can be simultaneously
                  present in an initial stack without reallocation
    max_count   : - if >= init_count, sets the maximum count of the elt_size
@@ -98,7 +98,7 @@ void stack_init(stack_t *s,
                  simultaneously present in a stack is only limited by the
                  available system resources 
 */
-void stack_bound(stack_t *s,
+void stack_bound(struct stack *s,
 		 size_t init_count,
 		 size_t max_count){
   s->init_count = init_count;
@@ -108,10 +108,10 @@ void stack_bound(stack_t *s,
 
 /**
    Pushes an element onto a stack.
-   s           : pointer to an initialized stack_t struct 
+   s           : pointer to an initialized stack struct 
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void stack_push(stack_t *s, const void *elt){
+void stack_push(struct stack *s, const void *elt){
   if (s->num_elts == s->count) stack_grow(s);
   memcpy(ptr(s->elts, s->num_elts, s->elt_size), elt, s->elt_size);
   s->num_elts++;
@@ -119,12 +119,12 @@ void stack_push(stack_t *s, const void *elt){
 
 /**
    Pops an element of a stack.
-   s           : pointer to an initialized stack_t struct   
+   s           : pointer to an initialized stack struct   
    elt         : non-NULL pointer to a preallocated elt_size block; if the
                  stack is empty, the memory block pointed to by elt remains
                  unchanged
 */
-void stack_pop(stack_t *s, void *elt){
+void stack_pop(struct stack *s, void *elt){
   if (s->num_elts == 0) return;
   memcpy(elt,
 	 ptr(s->elts, s->num_elts - 1, s->elt_size),
@@ -138,9 +138,9 @@ void stack_pop(stack_t *s, void *elt){
    the first element until a stack modifying operation is performed. If
    non-NULL, the returned pointed can be dereferenced as a pointer to the 
    type of the elt_size block, or as a character pointer.
-   s           : pointer to an initialized stack_t struct 
+   s           : pointer to an initialized stack struct 
 */
-void *stack_first(const stack_t *s){
+void *stack_first(const struct stack *s){
   if (s->num_elts == 0) return NULL;
   return ptr(s->elts, s->num_elts - 1, s->elt_size);
 }
@@ -148,9 +148,9 @@ void *stack_first(const stack_t *s){
 /**
    Frees the memory of all elements that are in a stack according to 
    free_elt, frees the memory of the stack, and leaves the block of size
-   sizeof(stack_t) pointed to by the s parameter.
+   sizeof(struct stack) pointed to by the s parameter.
 */
-void stack_free(stack_t *s){
+void stack_free(struct stack *s){
   size_t i;
   if (s->free_elt != NULL){
     for (i = 0; i < s->num_elts; i++){
@@ -169,7 +169,7 @@ void stack_free(stack_t *s){
    copying in the worst case of realloc calls. realloc's search is
    O(size of heap).
 */
-static void stack_grow(stack_t *s){
+static void stack_grow(struct stack *s){
   if (s->count == s->max_count){
     /* always enter if init_count == max_count */
     fprintf_stderr_exit("tried to exceed the count maximum", __LINE__);

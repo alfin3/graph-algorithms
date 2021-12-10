@@ -98,10 +98,10 @@ const double C_PROB_ZERO = 0.0;
 void print_uchar(const void *a);
 void print_ulong(const void *a);
 void print_double(const void *a);
-void print_adj_lst(const adj_lst_t *a,
+void print_adj_lst(const struct adj_lst *a,
 		   void (*print_vt)(const void *),
 		   void (*print_wt)(const void *));
-size_t sum_vts(const adj_lst_t *a,
+size_t sum_vts(const struct adj_lst *a,
 	       size_t i,
 	       size_t (*read_vt)(const void *));
 void print_test_result(int res);
@@ -115,7 +115,7 @@ void print_test_result(int res);
    unsigned char, unsigned long, and double weights.
 */
 
-void uchar_uchar_graph_init(graph_t *g){
+void uchar_uchar_graph_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned char),
@@ -126,7 +126,7 @@ void uchar_uchar_graph_init(graph_t *g){
   g->wts = (unsigned char *)C_UCHAR_WTS;
 }
 
-void uchar_ulong_graph_init(graph_t *g){
+void uchar_ulong_graph_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned char),
@@ -137,7 +137,7 @@ void uchar_ulong_graph_init(graph_t *g){
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
 
-void uchar_double_graph_init(graph_t *g){
+void uchar_double_graph_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned char),
@@ -153,7 +153,7 @@ void uchar_double_graph_init(graph_t *g){
    unsigned char, unsigned long, and double weights.
 */
 
-void ulong_uchar_graph_init(graph_t *g){
+void ulong_uchar_graph_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
@@ -164,7 +164,7 @@ void ulong_uchar_graph_init(graph_t *g){
   g->wts = (unsigned char *)C_UCHAR_WTS;
 }
 
-void ulong_ulong_graph_init(graph_t *g){
+void ulong_ulong_graph_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
@@ -175,7 +175,7 @@ void ulong_ulong_graph_init(graph_t *g){
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
 
-void ulong_double_graph_init(graph_t *g){
+void ulong_double_graph_init(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
@@ -191,8 +191,8 @@ void ulong_double_graph_init(graph_t *g){
    small graphs.
 */
 void run_small_graph_test(){
-  graph_t g;
-  adj_lst_t a;
+  struct graph g;
+  struct adj_lst a;
   /* unsigned char vertices, unsigned char weights */
   uchar_uchar_graph_init(&g);
   printf("uchar vertices, uchar weights\n");
@@ -284,7 +284,7 @@ void run_small_graph_test(){
    complete in the undirected form. num_vts is >= 1.
 */
 
-void complete_graph_init(graph_t *g,
+void complete_graph_init(struct graph *g,
 			 size_t num_vts,
 			 size_t vt_size,
 			 void (*write_vt)(void *, size_t)){
@@ -311,7 +311,7 @@ void complete_graph_init(graph_t *g,
   }
 }
 
-void complete_graph_free(graph_t *g){
+void complete_graph_free(struct graph *g){
   free(g->u);
   free(g->v);
   g->u = NULL;
@@ -325,8 +325,8 @@ void complete_graph_free(graph_t *g){
 void run_adj_lst_undir_build_test(size_t log_start, size_t log_end){
   size_t i, j;
   size_t num_vts;
-  graph_t g;
-  adj_lst_t a;
+  struct graph g;
+  struct adj_lst a;
   clock_t t;
   printf("Test adj_lst_undir_build on complete unweighted graphs across"
 	 " vertex types\n");
@@ -353,12 +353,12 @@ void run_adj_lst_undir_build_test(size_t log_start, size_t log_end){
    Test on random graphs.
 */
 
-typedef struct{
+struct bern_arg{
   double p;
-} bern_arg_t;
+};
 
 int bern(void *arg){
-  bern_arg_t *b = arg;
+  struct bern_arg *b = arg;
   if (b->p >= C_PROB_ONE) return 1;
   if (b->p <= C_PROB_ZERO) return 0;
   if (b->p > DRAND()) return 1;
@@ -371,10 +371,10 @@ int bern(void *arg){
 
 void add_edge_helper(size_t log_start,
 		     size_t log_end,
-		     void (*build)(adj_lst_t *,
-				   const graph_t *,
+		     void (*build)(struct adj_lst *,
+				   const struct graph *,
 				   size_t (*)(const void *)),
-		     void (*add_edge)(adj_lst_t *,
+		     void (*add_edge)(struct adj_lst *,
 				      size_t,
 				      size_t,
 				      const void *,
@@ -403,10 +403,10 @@ void run_adj_lst_add_undir_edge_test(size_t log_start, size_t log_end){
 
 void add_edge_helper(size_t log_start,
 		     size_t log_end,
-		     void (*build)(adj_lst_t *,
-				   const graph_t *,
+		     void (*build)(struct adj_lst *,
+				   const struct graph *,
 				   size_t (*)(const void *)),
-		     void (*add_edge)(adj_lst_t *,
+		     void (*add_edge)(struct adj_lst *,
 				      size_t,
 				      size_t,
 				      const void *,
@@ -416,9 +416,9 @@ void add_edge_helper(size_t log_start,
   int res = 1;
   size_t i, j, k, l;
   size_t num_vts;
-  bern_arg_t b;
-  graph_t g_blt, g_bld;
-  adj_lst_t a_blt, a_bld;
+  struct bern_arg b;
+  struct graph g_blt, g_bld;
+  struct adj_lst a_blt, a_bld;
   clock_t t;
   b.p = C_PROB_ONE;
   for (i = log_start; i <= log_end; i++){
@@ -465,7 +465,7 @@ void add_edge_helper(size_t log_start,
 void rand_build_helper(size_t log_start,
 		       size_t log_end,
 		       double prob,
-		       void (*rand_build)(adj_lst_t *,
+		       void (*rand_build)(struct adj_lst *,
 					  void (*)(void *, size_t),
 					  int (*)(void *),
 					  void *));
@@ -487,15 +487,15 @@ void run_adj_lst_rand_undir_test(size_t log_start, size_t log_end){
 void rand_build_helper(size_t log_start,
 		       size_t log_end,
 		       double prob,
-		       void (*rand_build)(adj_lst_t *,
+		       void (*rand_build)(struct adj_lst *,
 					  void (*)(void *, size_t),
 					  int (*)(void *),
 					  void *)){
   size_t i, j;
   size_t num_vts;
-  graph_t g;
-  adj_lst_t a;
-  bern_arg_t b;
+  struct graph g;
+  struct adj_lst a;
+  struct bern_arg b;
   b.p = prob;
   for (i = log_start; i <= log_end; i++){
     num_vts = pow_two_perror(i);
@@ -521,7 +521,7 @@ void rand_build_helper(size_t log_start,
    Sums the vertices in the ith stack in an adjacency list. Wraps around and
    does not check for overflow.
 */
-size_t sum_vts(const adj_lst_t *a,
+size_t sum_vts(const struct adj_lst *a,
 	       size_t i,
 	       size_t (*read_vt)(const void *)){
   void *p = NULL, *p_start = NULL, *p_end = NULL;
@@ -550,7 +550,7 @@ void print_double(const void *a){
   printf("%.2f ", *(const double *)a);
 }
   
-void print_adj_lst(const adj_lst_t *a,
+void print_adj_lst(const struct adj_lst *a,
 		   void (*print_vt)(const void *),
 		   void (*print_wt)(const void *)){
   size_t i;

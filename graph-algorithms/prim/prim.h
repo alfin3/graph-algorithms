@@ -57,7 +57,7 @@
    Prim hash table parameter struct, pointing to the hash table op
    helpers, pre-defined in each hash table.
 */
-typedef struct{
+struct prim_ht{
   void *ht;
   size_t alpha_n;
   size_t log_alpha_d;
@@ -76,7 +76,7 @@ typedef struct{
   void *(*search)(const void *, const void *);
   void (*remove)(void *, const void *, void *);
   void (*free)(void *);
-} prim_ht_t;
+};
 
 /**
    Computes and copies the edge weights of an mst of the connected component
@@ -137,12 +137,12 @@ typedef struct{
                  pointed to by the second, and zero integer value if the two
                  weight values are equal
 */
-void prim(const adj_lst_t *a,
+void prim(const struct adj_lst *a,
 	  size_t start,
 	  void *dist,
 	  void *prev,
 	  const void *wt_zero,
-	  const prim_ht_t *pmht,
+	  const struct prim_ht *pmht,
 	  size_t (*read_vt)(const void *),
 	  void (*write_vt)(void *, size_t),
 	  void *(*at_vt)(const void *, const void *),

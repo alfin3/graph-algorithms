@@ -46,7 +46,7 @@
 
 #include <stddef.h>
 
-typedef struct{
+struct queue{
   size_t count;
   size_t init_count;
   size_t max_count;
@@ -55,13 +55,13 @@ typedef struct{
   size_t elt_size;
   void *elts;
   void (*free_elt)(void *);
-} queue_t;
+};
 
 /**
    Initializes a queue. By default the initialized queue can accomodate
    as many elt_size blocks as the system resources allow, starting from two
    elt_size blocks and growing by repetitive doubling.
-   q           : pointer to a preallocated block of size sizeof(queue_t)
+   q           : pointer to a preallocated block of size sizeof(struct queue)
    elt_size    : non-zero size of an elt_size block; must account for
                  internal and trailing padding according to sizeof
    free_elt    : - NULL if only elt_size blocks should be deleted in the
@@ -73,7 +73,7 @@ typedef struct{
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void queue_init(queue_t *q,
+void queue_init(struct queue *q,
 		size_t elt_size,
 		void (*free_elt)(void *));
 
@@ -88,7 +88,7 @@ void queue_init(queue_t *q,
    max_count simultaneously present elt_size blocks. The operation is
    optionally called after queue_init is completed and before any other
    operation is called.
-   q           : pointer to a queue_t struct initialized with queue_init
+   q           : pointer to a queue struct initialized with queue_init
    init_count  : > 0 count of the elt_size blocks that can be
                  simultaneously present in an initial queue without
                  reallocation for any sequence of push and pop
@@ -105,25 +105,25 @@ void queue_init(queue_t *q,
                  simultaneously present in a queue is only limited by the
                  available system resources 
 */
-void queue_bound(queue_t *q,
+void queue_bound(struct queue *q,
 		 size_t init_count,
 		 size_t max_count);
 
 /**
    Pushes an element onto a queue.
-   q           : pointer to an initialized queue_t struct 
+   q           : pointer to an initialized queue struct 
    elt         : non-NULL pointer to the elt_size block of an element
 */
-void queue_push(queue_t *q, const void *elt);
+void queue_push(struct queue *q, const void *elt);
 
 /**
    Pops an element of a queue.
-   q           : pointer to an initialized queue_t struct   
+   q           : pointer to an initialized queue struct   
    elt         : non-NULL pointer to a preallocated elt_size block; if the
                  queue is empty, the memory block pointed to by elt remains
                  unchanged
 */
-void queue_pop(queue_t *q, void *elt);
+void queue_pop(struct queue *q, void *elt);
 
 /**
    If a queue is not empty, returns a pointer to the first elt_size block,
@@ -131,15 +131,15 @@ void queue_pop(queue_t *q, void *elt);
    the first element until a queue modifying operation is performed. If
    non-NULL, the returned pointer can be dereferenced as a pointer to the 
    type of the elt_size block, or as a character pointer.
-   s           : pointer to an initialized queue_t struct 
+   s           : pointer to an initialized queue struct 
 */
-void *queue_first(const queue_t *q);
+void *queue_first(const struct queue *q);
 
 /**
    Frees the memory of all elements that are in a queue according to 
    free_elt, frees the memory of the queue, and leaves the block of size
-   sizeof(queue_t) pointed to by the q parameter.
+   sizeof(struct queue) pointed to by the q parameter.
 */
-void queue_free(queue_t *q);
+void queue_free(struct queue *q);
 
 #endif

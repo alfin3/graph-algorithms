@@ -90,7 +90,7 @@
    incr_vt     : increments a value of the integer type used to represent
                  vertices
 */
-void bfs(const adj_lst_t *a,
+void bfs(const struct adj_lst *a,
 	 size_t start,
 	 void *dist,
 	 void *prev,

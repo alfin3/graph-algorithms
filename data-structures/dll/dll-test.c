@@ -51,10 +51,10 @@ const size_t C_INT_BIT = UINT_WIDTH_FROM_MAX(INT_MAX);
 /* tests */
 const int C_START_VAL = 0;
 
-void prepend_append_free(const dll_t *ll_prep,
-			 const dll_t *ll_app,
-			 dll_node_t **head_prep,
-			 dll_node_t **head_app,
+void prepend_append_free(const struct dll *ll_prep,
+			 const struct dll *ll_app,
+			 struct dll_node **head_prep,
+			 struct dll_node **head_app,
 			 int start_val,
 			 int num_ins,
 			 size_t key_size,
@@ -98,8 +98,8 @@ void run_prepend_append_free_int_test(int log_ins){
   int start_val = C_START_VAL;
   size_t key_size = sizeof(int);
   size_t elt_size = sizeof(int);
-  dll_t ll_prep, ll_app;
-  dll_node_t *head_prep, *head_app; /* uninitialized pointers for testing */
+  struct dll ll_prep, ll_app;
+  struct dll_node *head_prep, *head_app; /* uninitialized pointers for test */
   num_ins = pow_two_perror(log_ins);
   dll_init(&ll_prep, &head_prep, key_size);
   dll_init(&ll_app, &head_app, key_size);
@@ -164,33 +164,33 @@ void run_prepend_append_free_int_test(int log_ins){
 }
 
 /**
-   Run tests of a doubly linked list of non-contiguous int_ptr_t keys and
-   int_ptr_t elements. A pointer to a pointer to an int_ptr_t key is passed
+   Run tests of a doubly linked list of non-contiguous int_ptr keys and
+   int_ptr elements. A pointer to a pointer to an int_ptr key is passed
    as key parameter value in prepend_new and append_new ops and the pointer
-   to the int_ptr_t key is copied into a node as a key_size block. A
-   int_ptr_t-specific free_key is necessary to delete a node. The same
+   to the int_ptr key is copied into a node as a key_size block. A
+   int_ptr-specific free_key is necessary to delete a node. The same
    applies to an element.
 */
 
-typedef struct{
+struct int_ptr{
   int *val;
-} int_ptr_t;
+};
 
 void new_int_ptr(void *a, int val){
-  int_ptr_t **s = a;
-  (*s) = malloc_perror(1, sizeof(int_ptr_t));
+  struct int_ptr **s = a;
+  (*s) = malloc_perror(1, sizeof(struct int_ptr));
   (*s)->val = malloc_perror(1, sizeof(int));
   *((*s)->val) = val;
 }
 
 int val_int_ptr(const void *a){
-  return *((*(int_ptr_t **)a)->val);
+  return *((*(struct int_ptr **)a)->val);
 }
 
 int cmp_int_ptr(const void *a, const void *b){
-  if (*((*(int_ptr_t **)a)->val) > *((*(int_ptr_t **)b)->val)){
+  if (*((*(struct int_ptr **)a)->val) > *((*(struct int_ptr **)b)->val)){
     return 1;
-  }else if (*((*(int_ptr_t **)a)->val) < *((*(int_ptr_t **)b)->val)){
+  }else if (*((*(struct int_ptr **)a)->val) < *((*(struct int_ptr **)b)->val)){
     return -1;
   }else{
     return 0;
@@ -198,7 +198,7 @@ int cmp_int_ptr(const void *a, const void *b){
 }
 
 void free_int_ptr(void *a){
-  int_ptr_t **s = a;
+  struct int_ptr **s = a;
   free((*s)->val);
   (*s)->val = NULL;
   free(*s);
@@ -208,16 +208,16 @@ void free_int_ptr(void *a){
 void run_prepend_append_free_int_ptr_test(int log_ins){
   int num_ins;
   int start_val = C_START_VAL;
-  size_t key_size = sizeof(int_ptr_t *);
-  size_t elt_size = sizeof(int_ptr_t *);
-  dll_t ll_prep, ll_app;
-  dll_node_t *head_prep, *head_app; /* uninitialized pointers for testing */
+  size_t key_size = sizeof(struct int_ptr *);
+  size_t elt_size = sizeof(struct int_ptr *);
+  struct dll ll_prep, ll_app;
+  struct dll_node *head_prep, *head_app; /* uninitialized pointers for test */
   num_ins = pow_two_perror(log_ins);
   dll_init(&ll_prep, &head_prep, key_size);
   dll_init(&ll_app, &head_app, key_size);
-  dll_align_elt(&ll_prep, sizeof(int_ptr_t *));
-  dll_align_elt(&ll_app, sizeof(int_ptr_t *));
-  printf("Run prepend, append, free test on noncontiguous int_ptr_t "
+  dll_align_elt(&ll_prep, sizeof(struct int_ptr *));
+  dll_align_elt(&ll_app, sizeof(struct int_ptr *));
+  printf("Run prepend, append, free test on noncontiguous int_ptr "
 	 "keys and elements \n");
   printf("\tstart key value: %d, "
 	 "start elt value: %d, "
@@ -285,12 +285,12 @@ void run_corner_cases_test(){
   int i;
   size_t key_size = sizeof(int);
   size_t elt_size = sizeof(int);
-  dll_t ll_n;
-  dll_t ll_prep1, ll_app1;
-  dll_t ll_prep2, ll_app2;
-  dll_node_t *head_n;
-  dll_node_t *head_prep1, *head_app1;
-  dll_node_t *head_prep2, *head_app2;
+  struct dll ll_n;
+  struct dll ll_prep1, ll_app1;
+  struct dll ll_prep2, ll_app2;
+  struct dll_node *head_n;
+  struct dll_node *head_prep1, *head_app1;
+  struct dll_node *head_prep2, *head_app2;
   dll_init(&ll_n, &head_n, key_size);
   dll_init(&ll_prep1, &head_prep1, key_size);
   dll_init(&ll_app1, &head_app1, key_size);
@@ -370,10 +370,10 @@ void run_corner_cases_test(){
 /**
    Runs the prepend, append, and free test routine.
 */
-void prepend_append_free(const dll_t *ll_prep,
-			 const dll_t *ll_app,
-			 dll_node_t **head_prep,
-			 dll_node_t **head_app,
+void prepend_append_free(const struct dll *ll_prep,
+			 const struct dll *ll_app,
+			 struct dll_node **head_prep,
+			 struct dll_node **head_app,
 			 int start_val,
 			 int num_ins,
 			 size_t key_size,
@@ -389,7 +389,7 @@ void prepend_append_free(const dll_t *ll_prep,
   int i;
   void *keys_prep = NULL, *keys_app = NULL;
   void *elts_prep = NULL, *elts_app = NULL;
-  dll_node_t *node_prep = NULL, *node_app = NULL;
+  struct dll_node *node_prep = NULL, *node_app = NULL;
   clock_t t_prep, t_app, t_free_prep, t_free_app;
   keys_prep = malloc_perror(num_ins, key_size);
   keys_app = malloc_perror(num_ins, key_size);

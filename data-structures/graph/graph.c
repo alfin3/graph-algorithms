@@ -64,7 +64,8 @@ static const size_t C_STACK_INIT_COUNT = 1;
    Initializes a weighted or unweighted graph with num_vts vertices
    and no edges, providing a basis for graph construction. Makes no
    allocations.
-   g           : pointer to a preallocated block of size sizeof(graph_t)
+   g           : pointer to a preallocated block of
+                 size sizeof(struct graph)
    num_vts     : number of vertices
    vt_size     : non-zero size of the integer type used to represent a
                  vertex according to sizeof; equals to the size of the
@@ -74,7 +75,7 @@ static const size_t C_STACK_INIT_COUNT = 1;
                  must account for internal and trailing padding according to
                  sizeof
 */
-void graph_base_init(graph_t *g,
+void graph_base_init(struct graph *g,
 		     size_t num_vts,
 		     size_t vt_size,
 		     size_t wt_size){
@@ -93,11 +94,12 @@ void graph_base_init(graph_t *g,
    default according to their sizes because size of a type T >= alignment
    requirement of T (due to the structure of arrays), which may result in
    overalignment.
-   a           : pointer to a preallocated block of size sizeof(adj_lst_t)
-   g           : pointer to the graph_t struct of a graph that was
+   a           : pointer to a preallocated block of
+                 size sizeof(struct adj_lst)
+   g           : pointer to the graph struct of a graph that was
                  initialized with at least graph_base_init
 */
-void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
+void adj_lst_base_init(struct adj_lst *a, const struct graph *g){
   size_t i;
   size_t wt_rem, vt_rem;
   a->num_vts = g->num_vts;
@@ -120,11 +122,11 @@ void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
   a->buf = calloc_perror(1, a->pair_size);
   a->vt_wts = NULL;
   if (a->num_vts > 0){
-    a->vt_wts = malloc_perror(a->num_vts, sizeof(stack_t *));
+    a->vt_wts = malloc_perror(a->num_vts, sizeof(struct stack *));
   }
   /* initialize stacks */
   for (i = 0; i < a->num_vts; i++){
-    a->vt_wts[i] = malloc_perror(1, sizeof(stack_t));
+    a->vt_wts[i] = malloc_perror(1, sizeof(struct stack));
     stack_init(a->vt_wts[i], a->pair_size, NULL);
     stack_bound(a->vt_wts[i], C_STACK_INIT_COUNT, a->num_vts);
   }
@@ -141,7 +143,7 @@ void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
    adj_lst_base_init alone. The operation is optionally called after
    adj_lst_base_init is completed and before any other adj_list_ operation
    is called.
-   a            : pointer to an adj_lst_t struct initialized with
+   a            : pointer to an adj_lst struct initialized with
                   adj_lst_base_init
    vt_alignment : alignment requirement or size of the type of the vt_size
                   block of a vertex, which is the representation of an
@@ -151,7 +153,7 @@ void adj_lst_base_init(adj_lst_t *a, const graph_t *g){
                   block of a weight; if size, must account for internal and
                   trailing padding according to sizeof
 */
-void adj_lst_align(adj_lst_t *a,
+void adj_lst_align(struct adj_lst *a,
 		   size_t vt_alignment,
 		   size_t wt_alignment){
   size_t i;
@@ -184,15 +186,15 @@ void adj_lst_align(adj_lst_t *a,
    from the graph. The adjacency list also keeps the effective type of the
    copied wt_size blocks if the graph is weighted and the wt_size blocks
    have an effective type in the graph.
-   a            : pointer to an adj_lst_t struct initialized with
+   a            : pointer to an adj_lst struct initialized with
                   adj_lst_base_init and optionally with adj_lst_align
-   g            : pointer to the graph_t struct of a graph initialized with
+   g            : pointer to the graph struct of a graph initialized with
                   at least graph_base_init
    read_vt      : reads the integer value in the vt_size block of a vertex
                   pointed to by the argument and returns a size_t value
 */
-void adj_lst_dir_build(adj_lst_t *a,
-		       const graph_t *g,
+void adj_lst_dir_build(struct adj_lst *a,
+		       const struct graph *g,
 		       size_t (*read_vt)(const void *)){
   size_t i;
   const void *u = g->u;
@@ -218,15 +220,15 @@ void adj_lst_dir_build(adj_lst_t *a,
    values) from the graph. The adjacency list also keeps the effective
    type of the copied wt_size blocks if the graph is weighted and the
    wt_size blocks have an effective type in the graph.
-   a            : pointer to an adj_lst_t struct initialized with
+   a            : pointer to an adj_lst struct initialized with
                   adj_lst_base_init and optionally with adj_lst_align
-   g            : pointer to the graph_t struct of a graph initialized with
+   g            : pointer to the graph struct of a graph initialized with
                   at least graph_base_init
    read_vt      : reads the integer value in the vt_size block of a vertex
                   pointed to by the argument and returns a size_t value
 */
-void adj_lst_undir_build(adj_lst_t *a,
-			 const graph_t *g,
+void adj_lst_undir_build(struct adj_lst *a,
+			 const struct graph *g,
 			 size_t (*read_vt)(const void *)){
   size_t i;
   const void *u = g->u;
@@ -251,7 +253,7 @@ void adj_lst_undir_build(adj_lst_t *a,
 /**
    Adds a directed edge (u, v) to the adjacency list of a directed
    graph according to a Bernoulli distribution.
-   a            : pointer to an adj_lst_t struct initialized with
+   a            : pointer to an adj_lst struct initialized with
                   adj_lst_base_init and optionally with adj_lst_align
    u            : u of an (u, v) edge to be added; is less than the
                   number of vertices in an adjacency list
@@ -268,7 +270,7 @@ void adj_lst_undir_build(adj_lst_t *a,
    arg          : pointer that is taken as the value of the parameter of
                   bern
 */
-void adj_lst_add_dir_edge(adj_lst_t *a,
+void adj_lst_add_dir_edge(struct adj_lst *a,
 			  size_t u,
 			  size_t v,
 			  const void *wt,
@@ -290,7 +292,7 @@ void adj_lst_add_dir_edge(adj_lst_t *a,
    graph according to a Bernoulli distribution. Please see the parameter
    specification in adj_lst_add_dir_edge.
 */
-void adj_lst_add_undir_edge(adj_lst_t *a,
+void adj_lst_add_undir_edge(struct adj_lst *a,
 			    size_t u,
 			    size_t v,
 			    const void *wt,
@@ -319,7 +321,7 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
    block pair is not set and can be set by writing a weight value according
    to wt_offset after the call is completed. If the graph is not weighted,
    then there are no wt_size blocks.
-   a            : pointer to an adj_lst_t struct initialized with
+   a            : pointer to an adj_lst struct initialized with
                   adj_lst_base_init and optionally with adj_lst_align
    write_vt     : writes the integer value of the second argument to
                   the vt_size block pointed to by the first argument
@@ -330,7 +332,7 @@ void adj_lst_add_undir_edge(adj_lst_t *a,
    arg          : pointer that is taken as the value of the parameter of
                   bern
 */
-void adj_lst_rand_dir(adj_lst_t *a,
+void adj_lst_rand_dir(struct adj_lst *a,
 		      void (*write_vt)(void *, size_t),
 		      int (*bern)(void *),
 		      void *arg){
@@ -358,7 +360,7 @@ void adj_lst_rand_dir(adj_lst_t *a,
    there are no wt_size blocks. Please see the parameter specification
    in adj_lst_rand_dir.
 */
-void adj_lst_rand_undir(adj_lst_t *a,
+void adj_lst_rand_undir(struct adj_lst *a,
 			void (*write_vt)(void *, size_t),
 			int (*bern)(void *),
 			void *arg){
@@ -375,9 +377,9 @@ void adj_lst_rand_undir(adj_lst_t *a,
 /**
    Frees the memory allocated by adj_lst_base_init and any subsequent
    calls to adj_lst_ operations, and leaves a block of size
-   sizeof(adj_lst_t) pointed to by the a parameter.
+   sizeof(struct adj_lst) pointed to by the a parameter.
 */
-void adj_lst_free(adj_lst_t *a){
+void adj_lst_free(struct adj_lst *a){
   size_t i;
   for (i = 0; i < a->num_vts; i++){
     stack_free(a->vt_wts[i]);

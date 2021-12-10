@@ -13,12 +13,12 @@
 
 #include <pthread.h>
 
-typedef struct{
+struct sema{
   int value;
   unsigned int num_wakeups;
   pthread_mutex_t mutex; /* the result of referring to a copy is undefined */
   pthread_cond_t cond; /* the result of referring to a copy is undefined */
-} sema_t; /* the result of referring to a copy of an instance is undefined */
+}; /* the result of referring to a copy of an instance is undefined */
 
 
 /**
@@ -60,10 +60,10 @@ void cond_broadcast_perror(pthread_cond_t *cond);
    provided by mutex and condition variable operations.
 */
 
-void sema_init_perror(sema_t *sema, int value);
+void sema_init_perror(struct sema *sema, int value);
 
-void sema_wait_perror(sema_t *sema);
+void sema_wait_perror(struct sema *sema);
 
-void sema_signal_perror(sema_t *sema);
+void sema_signal_perror(struct sema *sema);
 
 #endif

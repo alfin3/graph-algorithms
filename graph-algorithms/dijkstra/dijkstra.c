@@ -57,11 +57,11 @@
 
 static const size_t C_HEAP_INIT_COUNT = 1;
 
-typedef struct{
+struct ht_def{
   size_t absent;
   size_t *elts;
   size_t (*read_vt)(const void *);
-} ht_def_t;
+};
 
 static void ht_def_init(void *ht,
 			size_t num_vts,
@@ -71,7 +71,7 @@ static void *ht_def_search(const void *ht, const void *vt);
 static void ht_def_remove(void *ht, const void *vt, void *ix);
 static void ht_def_free(void *ht);
 
-static size_t compute_wt_offset_perror(const adj_lst_t *a);
+static size_t compute_wt_offset_perror(const struct adj_lst *a);
 static void *ptr(const void *block, size_t i, size_t size);
 
 /**
@@ -138,21 +138,21 @@ static void *ptr(const void *block, size_t i, size_t size);
                  the user may include an overflow test in the function or
                  use a provided _perror-suffixed function
 */
-void dijkstra(const adj_lst_t *a,
+void dijkstra(const struct adj_lst *a,
 	      size_t start,
 	      void *dist,
 	      void *prev,
 	      const void *wt_zero,
-	      const dijkstra_ht_t *daht,
+	      const struct dijkstra_ht *daht,
 	      size_t (*read_vt)(const void *),
 	      void (*write_vt)(void *, size_t),
 	      void *(*at_vt)(const void *, const void *),
 	      int (*cmp_vt)(const void *, const void *),
 	      int (*cmp_wt)(const void *, const void *),
 	      void (*add_wt)(void *, const void *, const void *)){
-  ht_def_t ht_def;
-  heap_ht_t hht;
-  heap_t h;
+  struct ht_def ht_def;
+  struct heap_ht hht;
+  struct heap h;
   void *p = NULL, *p_start = NULL, *p_end = NULL;
   void *dp = NULL;
   /* variables in single block for cache-efficiency */
@@ -232,7 +232,7 @@ static void ht_def_init(void *ht,
 			size_t num_vts,
 			size_t (*read_vt)(const void *)){
   size_t i;
-  ht_def_t *ht_def = ht;
+  struct ht_def *ht_def = ht;
   ht_def->absent = num_vts;
   ht_def->elts = malloc_perror(num_vts, sizeof(size_t));
   for (i = 0; i < num_vts; i++){
@@ -243,12 +243,12 @@ static void ht_def_init(void *ht,
 }
 
 static void ht_def_insert(void *ht, const void *vt, const void *ix){
-  ht_def_t *ht_def = ht;
+  struct ht_def *ht_def = ht;
   ht_def->elts[ht_def->read_vt(vt)] = *(const size_t *)ix; 
 }
 
 static void *ht_def_search(const void *ht, const void *vt){
-  const ht_def_t *ht_def = ht;
+  const struct ht_def *ht_def = ht;
   const size_t *p = ht_def->elts + ht_def->read_vt(vt);
   if (*p != ht_def->absent){
     return (void *)p;
@@ -258,7 +258,7 @@ static void *ht_def_search(const void *ht, const void *vt){
 }
 
 static void ht_def_remove(void *ht, const void *vt, void *ix){
-  ht_def_t *ht_def = ht;
+  struct ht_def *ht_def = ht;
   size_t *p = ht_def->elts + ht_def->read_vt(vt);
   if (*p != ht_def->absent){
     *(size_t *)ix = *p;
@@ -267,7 +267,7 @@ static void ht_def_remove(void *ht, const void *vt, void *ix){
 }
 
 static void ht_def_free(void *ht){
-  ht_def_t *ht_def = ht;
+  struct ht_def *ht_def = ht;
   free(ht_def->elts);
   ht_def->elts = NULL;
 }
@@ -276,7 +276,7 @@ static void ht_def_free(void *ht){
    Computes the wt_offset from malloc's pointer in the vars block
    consisting of two vt_size blocks followed by two wt_size blocks.
 */
-static size_t compute_wt_offset_perror(const adj_lst_t *a){
+static size_t compute_wt_offset_perror(const struct adj_lst *a){
   size_t wt_rem;
   size_t vt_pair_size = mul_sz_perror(2, a->vt_size);
   if (vt_pair_size <= a->wt_size) return a->wt_size;

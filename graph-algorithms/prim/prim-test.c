@@ -98,34 +98,34 @@ const size_t C_SZ_WTS[4] = {4u, 3u, 2u, 1u};
 const double C_DOUBLE_WTS[4] = {4.0, 3.0, 2.0, 1.0};
 
 /* small graph initialization ops */
-void init_ushort_ushort(graph_t *g);
-void init_ushort_uint(graph_t *g);
-void init_ushort_ulong(graph_t *g);
-void init_ushort_sz(graph_t *g);
-void init_ushort_double(graph_t *g);
+void init_ushort_ushort(struct graph *g);
+void init_ushort_uint(struct graph *g);
+void init_ushort_ulong(struct graph *g);
+void init_ushort_sz(struct graph *g);
+void init_ushort_double(struct graph *g);
 
-void init_uint_ushort(graph_t *g);
-void init_uint_uint(graph_t *g);
-void init_uint_ulong(graph_t *g);
-void init_uint_sz(graph_t *g);
-void init_uint_double(graph_t *g);
+void init_uint_ushort(struct graph *g);
+void init_uint_uint(struct graph *g);
+void init_uint_ulong(struct graph *g);
+void init_uint_sz(struct graph *g);
+void init_uint_double(struct graph *g);
 
-void init_ulong_ushort(graph_t *g);
-void init_ulong_uint(graph_t *g);
-void init_ulong_ulong(graph_t *g);
-void init_ulong_sz(graph_t *g);
-void init_ulong_double(graph_t *g);
+void init_ulong_ushort(struct graph *g);
+void init_ulong_uint(struct graph *g);
+void init_ulong_ulong(struct graph *g);
+void init_ulong_sz(struct graph *g);
+void init_ulong_double(struct graph *g);
 
-void init_sz_ushort(graph_t *g);
-void init_sz_uint(graph_t *g);
-void init_sz_ulong(graph_t *g);
-void init_sz_sz(graph_t *g);
-void init_sz_double(graph_t *g);
+void init_sz_ushort(struct graph *g);
+void init_sz_uint(struct graph *g);
+void init_sz_ulong(struct graph *g);
+void init_sz_sz(struct graph *g);
+void init_sz_double(struct graph *g);
 
 const size_t C_FN_VT_COUNT = 4u;
 const size_t C_FN_WT_COUNT = 5u;
 const size_t C_FN_INTEGRAL_WT_COUNT = 4u;
-void (* const C_INIT_GRAPH[4][5])(graph_t *) ={
+void (* const C_INIT_GRAPH[4][5])(struct graph *) ={
   {init_ushort_ushort,
    init_ushort_uint,
    init_ushort_ulong,
@@ -247,7 +247,7 @@ unsigned int mul_high_uint(unsigned int a, unsigned int b);
 unsigned long mul_high_ulong(unsigned long a, unsigned long b);
 size_t mul_high_sz(size_t a, size_t b);
 
-void add_undir_ushort_edge(adj_lst_t *a,
+void add_undir_ushort_edge(struct adj_lst *a,
 			   size_t u,
 			   size_t v,
 			   const void *wt_l,
@@ -255,7 +255,7 @@ void add_undir_ushort_edge(adj_lst_t *a,
 			   void (*write_vt)(void *, size_t),
 			   int (*bern)(void *),
 			   void *arg);
-void add_undir_uint_edge(adj_lst_t *a,
+void add_undir_uint_edge(struct adj_lst *a,
 			 size_t u,
 			 size_t v,
 			 const void *wt_l,
@@ -263,7 +263,7 @@ void add_undir_uint_edge(adj_lst_t *a,
 			 void (*write_vt)(void *, size_t),
 			 int (*bern)(void *),
 			 void *arg);
-void add_undir_ulong_edge(adj_lst_t *a,
+void add_undir_ulong_edge(struct adj_lst *a,
 			  size_t u,
 			  size_t v,
 			  const void *wt_l,
@@ -271,7 +271,7 @@ void add_undir_ulong_edge(adj_lst_t *a,
 			  void (*write_vt)(void *, size_t),
 			  int (*bern)(void *),
 			  void *arg);
-void add_undir_sz_edge(adj_lst_t *a,
+void add_undir_sz_edge(struct adj_lst *a,
 		       size_t u,
 		       size_t v,
 		       const void *wt_l,
@@ -279,7 +279,7 @@ void add_undir_sz_edge(adj_lst_t *a,
 		       void (*write_vt)(void *, size_t),
 		       int (*bern)(void *),
 		       void *arg);
-void add_undir_double_edge(adj_lst_t *a,
+void add_undir_double_edge(struct adj_lst *a,
 			   size_t u,
 			   size_t v,
 			   const void *wt_l,
@@ -288,7 +288,7 @@ void add_undir_double_edge(adj_lst_t *a,
 			   int (*bern)(void *),
 			   void *arg);
 
-void (* const C_ADD_UNDIR_EDGE[5])(adj_lst_t *,
+void (* const C_ADD_UNDIR_EDGE[5])(struct adj_lst *,
 				   size_t,
 				   size_t,
 				   const void *,
@@ -400,16 +400,16 @@ void print_arr(const void *arr,
 	       size_t size,
 	       size_t n,
 	       void (*print_elt)(const void *));
-void print_prev(const adj_lst_t *a,
+void print_prev(const struct adj_lst *a,
 		const void *prev,
 		void (*print_vt)(const void *));
-void print_dist(const adj_lst_t *a,
+void print_dist(const struct adj_lst *a,
 		const void *dist,
 		const void *prev,
 		const void *wt_zero,
 		size_t (*read_vt)(const void *),
 		void (*print_wt)(const void *));
-void print_adj_lst(const adj_lst_t *a,
+void print_adj_lst(const struct adj_lst *a,
 		   void (*print_vt)(const void *),
 		   void (*print_wt)(const void *));
 void print_test_result(int res);
@@ -418,7 +418,7 @@ void print_test_result(int res);
    Initialize small graphs across vertex and weight types.
 */
 
-void init_ushort_ushort(graph_t *g){
+void init_ushort_ushort(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned short),
@@ -429,7 +429,7 @@ void init_ushort_ushort(graph_t *g){
   g->wts = (unsigned short *)C_USHORT_WTS;
 }
 
-void init_ushort_uint(graph_t *g){
+void init_ushort_uint(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned short),
@@ -440,7 +440,7 @@ void init_ushort_uint(graph_t *g){
   g->wts = (unsigned int *)C_UINT_WTS;
 }
 
-void init_ushort_ulong(graph_t *g){
+void init_ushort_ulong(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned short),
@@ -451,7 +451,7 @@ void init_ushort_ulong(graph_t *g){
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
 
-void init_ushort_sz(graph_t *g){
+void init_ushort_sz(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned short),
@@ -462,7 +462,7 @@ void init_ushort_sz(graph_t *g){
   g->wts = (size_t *)C_SZ_WTS;
 }
 
-void init_ushort_double(graph_t *g){
+void init_ushort_double(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned short),
@@ -473,7 +473,7 @@ void init_ushort_double(graph_t *g){
   g->wts = (double *)C_DOUBLE_WTS;
 }
 
-void init_uint_ushort(graph_t *g){
+void init_uint_ushort(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned int),
@@ -484,7 +484,7 @@ void init_uint_ushort(graph_t *g){
   g->wts = (unsigned short *)C_USHORT_WTS;
 }
 
-void init_uint_uint(graph_t *g){
+void init_uint_uint(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned int),
@@ -495,7 +495,7 @@ void init_uint_uint(graph_t *g){
   g->wts = (unsigned int *)C_UINT_WTS;
 }
 
-void init_uint_ulong(graph_t *g){
+void init_uint_ulong(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned int),
@@ -506,7 +506,7 @@ void init_uint_ulong(graph_t *g){
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
 
-void init_uint_sz(graph_t *g){
+void init_uint_sz(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned int),
@@ -517,7 +517,7 @@ void init_uint_sz(graph_t *g){
   g->wts = (size_t *)C_SZ_WTS;
 }
 
-void init_uint_double(graph_t *g){
+void init_uint_double(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned int),
@@ -528,7 +528,7 @@ void init_uint_double(graph_t *g){
   g->wts = (double *)C_DOUBLE_WTS;
 }
 
-void init_ulong_ushort(graph_t *g){
+void init_ulong_ushort(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
@@ -539,7 +539,7 @@ void init_ulong_ushort(graph_t *g){
   g->wts = (unsigned short *)C_USHORT_WTS;
 }
 
-void init_ulong_uint(graph_t *g){
+void init_ulong_uint(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
@@ -550,7 +550,7 @@ void init_ulong_uint(graph_t *g){
   g->wts = (unsigned int *)C_UINT_WTS;
 }
 
-void init_ulong_ulong(graph_t *g){
+void init_ulong_ulong(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
@@ -561,7 +561,7 @@ void init_ulong_ulong(graph_t *g){
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
 
-void init_ulong_sz(graph_t *g){
+void init_ulong_sz(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
@@ -572,7 +572,7 @@ void init_ulong_sz(graph_t *g){
   g->wts = (size_t *)C_SZ_WTS;
 }
 
-void init_ulong_double(graph_t *g){
+void init_ulong_double(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(unsigned long),
@@ -583,7 +583,7 @@ void init_ulong_double(graph_t *g){
   g->wts = (double *)C_DOUBLE_WTS;
 }
 
-void init_sz_ushort(graph_t *g){
+void init_sz_ushort(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(size_t),
@@ -594,7 +594,7 @@ void init_sz_ushort(graph_t *g){
   g->wts = (unsigned short *)C_USHORT_WTS;
 }
 
-void init_sz_uint(graph_t *g){
+void init_sz_uint(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(size_t),
@@ -605,7 +605,7 @@ void init_sz_uint(graph_t *g){
   g->wts = (unsigned int *)C_UINT_WTS;
 }
 
-void init_sz_ulong(graph_t *g){
+void init_sz_ulong(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(size_t),
@@ -616,7 +616,7 @@ void init_sz_ulong(graph_t *g){
   g->wts = (unsigned long *)C_ULONG_WTS;
 }
 
-void init_sz_sz(graph_t *g){
+void init_sz_sz(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(size_t),
@@ -627,7 +627,7 @@ void init_sz_sz(graph_t *g){
   g->wts = (size_t *)C_SZ_WTS;
 }
 
-void init_sz_double(graph_t *g){
+void init_sz_double(struct graph *g){
   graph_base_init(g,
 		  C_NUM_VTS,
 		  sizeof(size_t),
@@ -652,11 +652,11 @@ void run_small_graph_test(){
   void *wt_zero = NULL;
   void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
   void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
-  graph_t g;
-  adj_lst_t a;
-  ht_divchn_t ht_divchn;
-  ht_muloa_t ht_muloa;
-  prim_ht_t pmht_divchn, pmht_muloa;
+  struct graph g;
+  struct adj_lst a;
+  struct ht_divchn ht_divchn;
+  struct ht_muloa ht_muloa;
+  struct prim_ht pmht_divchn, pmht_muloa;
   pmht_divchn.ht = &ht_divchn;
   pmht_divchn.alpha_n = C_ALPHA_N_DIVCHN;
   pmht_divchn.log_alpha_d = C_LOG_ALPHA_D_DIVCHN;
@@ -678,8 +678,8 @@ void run_small_graph_test(){
   printf("Run a prim test on an undirected graph across vertex and"
 	 " weight types, with a\n"
 	 "i) default hash table (index array)\n"
-	 "ii) ht_divchn_t hash table\n"
-	 "iii) ht_muloa_t hash table\n\n");
+	 "ii) ht_divchn hash table\n"
+	 "iii) ht_muloa hash table\n\n");
   for (i = 0; i < C_NUM_VTS; i++){
     printf("\tstart vertex: %lu\n", TOLU(i));
     for (j = 0; j < C_FN_VT_COUNT; j++){
@@ -771,22 +771,22 @@ void run_small_graph_test(){
     adj_lst_rand_undir_wts builds a random adjacency list with one of the 
     above functions as a parameter value. g points to a graph preinitialized
     with graph_base_init with at least one vertex. a points to a
-    preallocated block of size sizeof(adj_lst_t).
+    preallocated block of size sizeof(struct adj_lst).
 */
 
-typedef struct{
+struct bern_arg{
   double p;
-} bern_arg_t;
+};
 
 int bern(void *arg){
-  bern_arg_t *b = arg;
+  struct bern_arg *b = arg;
   if (b->p >= 1.0) return 1;
   if (b->p <= 0.0) return 0;
   if (b->p > DRAND()) return 1;
   return 0;
 }
 
-void add_undir_ushort_edge(adj_lst_t *a,
+void add_undir_ushort_edge(struct adj_lst *a,
 			   size_t u,
 			   size_t v,
 			   const void *wt_l,
@@ -801,7 +801,7 @@ void add_undir_ushort_edge(adj_lst_t *a,
   adj_lst_add_undir_edge(a, u, v, &rand_val, write_vt, bern, arg);
 }
 
-void add_undir_uint_edge(adj_lst_t *a,
+void add_undir_uint_edge(struct adj_lst *a,
 			 size_t u,
 			 size_t v,
 			 const void *wt_l,
@@ -816,7 +816,7 @@ void add_undir_uint_edge(adj_lst_t *a,
   adj_lst_add_undir_edge(a, u, v, &rand_val, write_vt, bern, arg);
 }
 
-void add_undir_ulong_edge(adj_lst_t *a,
+void add_undir_ulong_edge(struct adj_lst *a,
 			  size_t u,
 			  size_t v,
 			  const void *wt_l,
@@ -831,7 +831,7 @@ void add_undir_ulong_edge(adj_lst_t *a,
   adj_lst_add_undir_edge(a, u, v, &rand_val, write_vt, bern, arg);
 }
 
-void add_undir_sz_edge(adj_lst_t *a,
+void add_undir_sz_edge(struct adj_lst *a,
 		       size_t u,
 		       size_t v,
 		       const void *wt_l,
@@ -846,7 +846,7 @@ void add_undir_sz_edge(adj_lst_t *a,
   adj_lst_add_undir_edge(a, u, v, &rand_val, write_vt, bern, arg);
 }
 
-void add_undir_double_edge(adj_lst_t *a,
+void add_undir_double_edge(struct adj_lst *a,
 			   size_t u,
 			   size_t v,
 			   const void *wt_l,
@@ -860,14 +860,14 @@ void add_undir_double_edge(adj_lst_t *a,
   adj_lst_add_undir_edge(a, u, v, &rand_val, write_vt, bern, arg);
 }
 
-void adj_lst_rand_undir_wts(const graph_t *g,
-			    adj_lst_t *a,
+void adj_lst_rand_undir_wts(const struct graph *g,
+			    struct adj_lst *a,
 			    const void *wt_l,
 			    const void *wt_h,
 			    void (*write_vt)(void *, size_t),
 			    int (*bern)(void *),
 			    void *arg,
-			    void (*add_undir_edge)(adj_lst_t *,
+			    void (*add_undir_edge)(struct adj_lst *,
 						   size_t,
 						   size_t,
 						   const void *,
@@ -904,12 +904,12 @@ void run_rand_test(size_t log_start, size_t log_end){
   void *dsum_def = NULL, *dsum_divchn = NULL, *dsum_muloa = NULL;
   void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
   void *prev_def = NULL, *prev_divchn = NULL, *prev_muloa = NULL;
-  graph_t g;
-  adj_lst_t a;
-  bern_arg_t b;
-  ht_divchn_t ht_divchn;
-  ht_muloa_t ht_muloa;
-  prim_ht_t pmht_divchn, pmht_muloa;
+  struct graph g;
+  struct adj_lst a;
+  struct bern_arg b;
+  struct ht_divchn ht_divchn;
+  struct ht_muloa ht_muloa;
+  struct prim_ht pmht_divchn, pmht_muloa;
   clock_t t_def, t_divchn, t_muloa;
   rand_start = malloc_perror(C_ITER, sizeof(size_t));
   pmht_divchn.ht = &ht_divchn;
@@ -1463,7 +1463,7 @@ void print_arr(const void *arr,
 /**
    Prints a prev array.
 */
-void print_prev(const adj_lst_t *a,
+void print_prev(const struct adj_lst *a,
 		const void *prev,
 		void (*print_vt)(const void *)){
   print_arr(prev, a->vt_size, a->num_vts, print_vt);
@@ -1472,7 +1472,7 @@ void print_prev(const adj_lst_t *a,
 /**
    Prints a dist array.
 */
-void print_dist(const adj_lst_t *a,
+void print_dist(const struct adj_lst *a,
 		const void *dist,
 		const void *prev,
 		const void *wt_zero,
@@ -1494,7 +1494,7 @@ void print_dist(const adj_lst_t *a,
    Prints an adjacency list. If the graph is unweighted, then print_wt is
    NULL.
 */
-void print_adj_lst(const adj_lst_t *a,
+void print_adj_lst(const struct adj_lst *a,
 		   void (*print_vt)(const void *),
 		   void (*print_wt)(const void *)){
   size_t i;

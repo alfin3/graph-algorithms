@@ -13,7 +13,7 @@
    including a fixed position if desired.
 
    A list node contains i) a malloc-aligned generic block of size key_size
-   (referred to as "key_size block"), ii) a dll_node_t struct for pointer
+   (referred to as "key_size block"), ii) a dll_node struct for pointer
    operations, and iii) an optionally aligned generic block of size elt_size
    (referred to as "elt_size block"), all within a single allocated block
    for cache-efficiency and to reduce administrative bytes.
@@ -37,7 +37,7 @@
    The same applies to elements and free_elt.
 
    The implementation provides a guarantee that a key_size block, a
-   dll_node_t struct, and an elt_size block belonging to the same node keep
+   dll_node struct, and an elt_size block belonging to the same node keep
    their addresses in memory throughout the lifetime of the node in a list.
    The implementation may not be slower (as tested) than a singly linked
    list due to instruction-level parallelism.
@@ -62,36 +62,35 @@
 #ifndef DLL_H  
 #define DLL_H
 
-typedef struct{
+struct dll{
   size_t key_offset; /* subtracted */
   size_t elt_offset; /* added */
-} dll_t; /* given char *p pointer to a dll_node_t,
-            p - key_offset points to key_size block and 
-            p + elt_offset points to elt_size block;
-            see dll_key_ptr and dll_elt_ptr functions */
+}; /* given char *p pointer to a dll_node, p - key_offset points to key_size
+      block and p + elt_offset points to elt_size block; see dll_key_ptr and
+      dll_elt_ptr functions */
 
-typedef struct dll_node{
+struct dll_node{
   struct dll_node *next;
   struct dll_node *prev;
-} dll_node_t;
+};
 
 /**
    Initializes an empty doubly linked list by setting a head pointer to NULL
-   and key_offset and elt_offset in a dll_t struct to values according to
+   and key_offset and elt_offset in a dll struct to values according to
    the memory alignment requirements for the key_size and elt_size blocks of
    a node. An in-list key_size block can be accessed with a pointer to any
    type with which a malloc'ed block can be accessed. An in-list elt_size
    block is guaranteed to be accessible only with a pointer to a character
    (e.g. for memcpy), unless additional alignment is performed by calling
    dll_align_elt.
-   ll          : pointer to a preallocated block of size of a dll_t struct
-   head        : pointer to a preallocated block of size of a dll_node_t
+   ll          : pointer to a preallocated block of size of a dll struct
+   head        : pointer to a preallocated block of size of a dll_node
                  pointer (head pointer)
    key_size    : non-zero size of a key_size block; must account for internal
                  and trailing padding according to sizeof
 */
-void dll_init(dll_t *ll,
-	      dll_node_t **head,
+void dll_init(struct dll *ll,
+	      struct dll_node **head,
 	      size_t key_size);
 
 /**
@@ -106,19 +105,19 @@ void dll_init(dll_t *ll,
    T can be the same or a cvr-qualified/signed/unsigned version of the
    type. The operation is optionally called after dll_init is
    completed and before any other operation is called.
-   ll          : pointer to an initialized dll_t struct
+   ll          : pointer to an initialized dll struct
    alignment   : alignment requirement or size of the type, a pointer to
                  which is used to access the elt_size block of a node; if
                  size, must account for internal and trailing padding
                  according to sizeof
 */
-void dll_align_elt(dll_t *ll, size_t alignment);
+void dll_align_elt(struct dll *ll, size_t alignment);
 
 /**
    Creates and prepends a node relative to a head pointer. A head pointer is
    NULL if the list is empty, or points to any node in the list to determine
    the position for the prepend operation.
-   ll          : pointer to an initialized dll_t struct
+   ll          : pointer to an initialized dll struct
    head        : pointer to a head pointer to an initialized list           
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
@@ -127,8 +126,8 @@ void dll_align_elt(dll_t *ll, size_t alignment);
    elt_size    : non-zero size of an elt_size block; must account for
                  internal and trailing padding according to sizeof
 */
-void dll_prepend_new(const dll_t *ll,
-		     dll_node_t **head,
+void dll_prepend_new(const struct dll *ll,
+		     struct dll_node **head,
 		     const void *key,
 		     const void *elt,
 		     size_t key_size,
@@ -138,8 +137,8 @@ void dll_prepend_new(const dll_t *ll,
    Creates and appends a node relative to a head pointer. Please see the
    parameter specification in dll_prepend_new.
 */
-void dll_append_new(const dll_t *ll,
-		    dll_node_t **head,
+void dll_append_new(const struct dll *ll,
+		    struct dll_node **head,
 		    const void *key,
 		    const void *elt,
 		    size_t key_size,
@@ -152,30 +151,30 @@ void dll_append_new(const dll_t *ll,
    head        : pointer to a head pointer to an initialized list           
    node        : non-NULL pointer to a node to be prepended
 */
-void dll_prepend(dll_node_t **head, dll_node_t *node);
+void dll_prepend(struct dll_node **head, struct dll_node *node);
 
 /**
    Appends a node relative to a head pointer. Please see the parameter
    specification in dll_prepend.
 */
-void dll_append(dll_node_t **head, dll_node_t *node);
+void dll_append(struct dll_node **head, struct dll_node *node);
 
 /**
    Returns a pointer to the key_size block of a node.
 */
-void *dll_key_ptr(const dll_t *ll, const dll_node_t *node);
+void *dll_key_ptr(const struct dll *ll, const struct dll_node *node);
 
 /**
    Returns a pointer to the elt_size block of a node.
 */
-void *dll_elt_ptr(const dll_t *ll, const dll_node_t *node);
+void *dll_elt_ptr(const struct dll *ll, const struct dll_node *node);
 
 /**
    Relative to a head pointer, returns a pointer to the clockwise (next)
    first node with a key that equals the key pointed to by the key parameter
    according to cmp_key, or NULL if such a node in not found. Temporarily
    modifies a node in the list to mark the end of the list during search.
-   ll          : pointer to an initialized dll_t struct
+   ll          : pointer to an initialized dll struct
    head        : pointer to a head pointer to an initialized list
    key         : non-NULL pointer to the key_size block of a key
    key_size    : non-zero size of a key_size block; must account for internal
@@ -187,11 +186,11 @@ void *dll_elt_ptr(const dll_t *ll, const dll_node_t *node);
                  first and the second arguments are equal; each argument is
                  a pointer to the key_size block of a key
 */
-dll_node_t *dll_search_key(const dll_t *ll,
-			   dll_node_t * const *head,
-			   const void *key,
-			   size_t key_size,
-			   int (*cmp_key)(const void *, const void *));
+struct dll_node *dll_search_key(const struct dll *ll,
+				struct dll_node * const *head,
+				const void *key,
+				size_t key_size,
+				int (*cmp_key)(const void *, const void *));
 
 /**
    Relative to a head pointer, returns a pointer to the clockwise (next)
@@ -202,11 +201,11 @@ dll_node_t *dll_search_key(const dll_t *ll,
    thread synchronization overhead. Please see the parameter specification
    in dll_search_key.
 */
-dll_node_t *dll_search_uq_key(const dll_t *ll,
-			      dll_node_t * const *head,
-			      const void *key,
-			      size_t key_size,
-			      int (*cmp_key)(const void *, const void *));
+struct dll_node *dll_search_uq_key(const struct dll *ll,
+				   struct dll_node * const *head,
+				   const void *key,
+				   size_t key_size,
+				   int (*cmp_key)(const void *, const void *));
 
 /**
    Removes a node in a doubly linked list.
@@ -216,11 +215,11 @@ dll_node_t *dll_search_uq_key(const dll_t *ll,
                  head pointer is set to point to the next node from the
                  removed node, or to NULL if the last node is removed
 */
-void dll_remove(dll_node_t **head, const dll_node_t *node);
+void dll_remove(struct dll_node **head, const struct dll_node *node);
 
 /**
    Deletes a node in a doubly linked list.
-   ll          : pointer to an initialized dll_t struct
+   ll          : pointer to an initialized dll struct
    head        : pointer to a head pointer to an initialized list
    node        : pointer to a node in an initialized list; if the pointer
                  points to the node pointed to by the head pointer, then the
@@ -241,20 +240,20 @@ void dll_remove(dll_node_t **head, const dll_node_t *node);
                  element as an argument, frees the memory of the element
                  except the elt_size block pointed to by the argument
 */
-void dll_delete(const dll_t *ll,
-		dll_node_t **head,
-		dll_node_t *node,
+void dll_delete(const struct dll *ll,
+		struct dll_node **head,
+		struct dll_node *node,
 		void (*free_key)(void *),
 		void (*free_elt)(void *));
 
 /**
    Frees the memory of all keys and elements that are in a list
    according to free_key and free_elt, frees the memory of the list,
-   and leaves the block of size sizeof(dll_t) pointed to by the ll
+   and leaves the block of size sizeof(struct dll) pointed to by the ll
    parameter. Please see the parameter specification in dll_delete.
 */
-void dll_free(const dll_t *ll,
-	      dll_node_t **head,
+void dll_free(const struct dll *ll,
+	      struct dll_node **head,
 	      void (*free_key)(void *),
 	      void (*free_elt)(void *));
 
