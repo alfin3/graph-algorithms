@@ -24,8 +24,6 @@ TODO: description of in-memory alignment approach to enable cache-efficient type
 
 TODO: options for overalignment to cache line boundaries in time performance-intensive multithreaded settings.
 
-TODO: remove typedefs from structs (also _t is reserved for POSIX)
-
 Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency are being profiled, which may result in implementation changes. 
 
 In each directory with a Makefile, run:
