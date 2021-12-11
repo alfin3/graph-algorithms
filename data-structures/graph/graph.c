@@ -47,16 +47,16 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
-static const unsigned char C_UCHAR_MAX = UCHAR_MAX;
-static const unsigned short C_USHORT_MAX = USHRT_MAX;
-static const unsigned int C_UINT_MAX = UINT_MAX;
-static const unsigned long C_ULONG_MAX = ULONG_MAX;
-static const size_t C_SZ_MAX = (size_t)-1;
+static const unsigned char C_UCHAR_ULIMIT = UCHAR_MAX;
+static const unsigned short C_USHORT_ULIMIT = USHRT_MAX;
+static const unsigned int C_UINT_ULIMIT = UINT_MAX;
+static const unsigned long C_ULONG_ULIMIT = ULONG_MAX;
+static const size_t C_SZ_ULIMIT = (size_t)-1;
 
-static const signed char C_SCHAR_MAX = SCHAR_MAX;
-static const short C_SHORT_MAX = SHRT_MAX;
-static const int C_INT_MAX = INT_MAX;
-static const long C_LONG_MAX = LONG_MAX;
+static const signed char C_SCHAR_ULIMIT = SCHAR_MAX;
+static const short C_SHORT_ULIMIT = SHRT_MAX;
+static const int C_INT_ULIMIT = INT_MAX;
+static const long C_LONG_ULIMIT = LONG_MAX;
 
 static const size_t C_STACK_INIT_COUNT = 1;
 
@@ -588,7 +588,7 @@ void graph_add_sz(void *s, const void *a, const void *b){
 
 void graph_add_uchar_perror(void *s, const void *a, const void *b){
   if (*(const unsigned char *)a >
-      C_UCHAR_MAX - *(const unsigned char *)b){
+      C_UCHAR_ULIMIT - *(const unsigned char *)b){
     perror("addition uchar overflow");
     exit(EXIT_FAILURE);
   }
@@ -598,7 +598,7 @@ void graph_add_uchar_perror(void *s, const void *a, const void *b){
 
 void graph_add_ushort_perror(void *s, const void *a, const void *b){
   if (*(const unsigned short *)a >
-      C_USHORT_MAX - *(const unsigned short *)b){
+      C_USHORT_ULIMIT - *(const unsigned short *)b){
     perror("addition ushort overflow");
     exit(EXIT_FAILURE);
   }
@@ -608,7 +608,7 @@ void graph_add_ushort_perror(void *s, const void *a, const void *b){
 
 void graph_add_uint_perror(void *s, const void *a, const void *b){
   if (*(const unsigned int *)a >
-      C_UINT_MAX - *(const unsigned int *)b){
+      C_UINT_ULIMIT - *(const unsigned int *)b){
     perror("addition uint overflow");
     exit(EXIT_FAILURE);
   }
@@ -618,7 +618,7 @@ void graph_add_uint_perror(void *s, const void *a, const void *b){
 
 void graph_add_ulong_perror(void *s, const void *a, const void *b){
   if (*(const unsigned long *)a >
-      C_ULONG_MAX - *(const unsigned long *)b){
+      C_ULONG_ULIMIT - *(const unsigned long *)b){
     perror("addition ulong overflow");
     exit(EXIT_FAILURE);
   }
@@ -628,7 +628,7 @@ void graph_add_ulong_perror(void *s, const void *a, const void *b){
 
 void graph_add_sz_perror(void *s, const void *a, const void *b){
   if (*(const size_t *)a >
-      C_SZ_MAX - *(const size_t *)b){
+      C_SZ_ULIMIT - *(const size_t *)b){
     perror("addition sz overflow");
     exit(EXIT_FAILURE);
   }
@@ -650,7 +650,7 @@ void graph_add_long(void *s, const void *a, const void *b){
 
 void graph_add_schar_perror(void *s, const void *a, const void *b){
   if (*(const signed char *)a >
-      C_SCHAR_MAX - *(const signed char *)b){
+      C_SCHAR_ULIMIT - *(const signed char *)b){
     perror("addition schar overflow");
     exit(EXIT_FAILURE);
   }
@@ -659,7 +659,7 @@ void graph_add_schar_perror(void *s, const void *a, const void *b){
 
 void graph_add_short_perror(void *s, const void *a, const void *b){
   if (*(const short *)a >
-      C_SHORT_MAX - *(const short *)b){
+      C_SHORT_ULIMIT - *(const short *)b){
     perror("addition short overflow");
     exit(EXIT_FAILURE);
   }
@@ -668,7 +668,7 @@ void graph_add_short_perror(void *s, const void *a, const void *b){
 
 void graph_add_int_perror(void *s, const void *a, const void *b){
   if (*(const int *)a >
-      C_INT_MAX - *(const int *)b){
+      C_INT_ULIMIT - *(const int *)b){
     perror("addition int overflow");
     exit(EXIT_FAILURE);
   }
@@ -677,7 +677,7 @@ void graph_add_int_perror(void *s, const void *a, const void *b){
 
 void graph_add_long_perror(void *s, const void *a, const void *b){
   if (*(const long *)a >
-      C_LONG_MAX - *(const long *)b){
+      C_LONG_ULIMIT - *(const long *)b){
     perror("addition long overflow");
     exit(EXIT_FAILURE);
   }

@@ -6,16 +6,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "utilities-mem.h"
 
-static const size_t C_SIZE_MAX = (size_t)-1;
+static const size_t C_SIZE_ULIMIT = (size_t)-1;
+
 
 /**
    size_t addition and multiplication with wrapped overflow checking.
 */
 
 size_t add_sz_perror(size_t a, size_t b){
-  if (a > C_SIZE_MAX - b){
+  if (a > C_SIZE_ULIMIT - b){
     perror("addition size_t overflow");
     exit(EXIT_FAILURE);
   }
@@ -23,11 +23,23 @@ size_t add_sz_perror(size_t a, size_t b){
 }
 
 size_t mul_sz_perror(size_t a, size_t b){
-  if (a > C_SIZE_MAX / b){
+  if (a > C_SIZE_ULIMIT / b){
     perror("multiplication size_t overflow");
     exit(EXIT_FAILURE);
   }
   return a * b;
+}
+
+/**
+   size_t multiplication with wrapped overflow and zero checking. Useful
+   for computing end pointers for pointer iteration.
+*/
+size_t mul_nzero_sz_perror(size_t a, size_t b){
+  if (a < 1 || b < 1){
+    perror("zero multiplication");
+    exit(EXIT_FAILURE);
+  }
+  return mul_sz_perror(a, b);
 }
 
 /**
@@ -39,7 +51,7 @@ size_t mul_sz_perror(size_t a, size_t b){
 
 void *malloc_perror(size_t num, size_t size){
   void *ptr = NULL;
-  if (num > C_SIZE_MAX / size){
+  if (num > C_SIZE_ULIMIT / size){
     perror("malloc integer overflow");
     exit(EXIT_FAILURE);
   }
@@ -53,7 +65,7 @@ void *malloc_perror(size_t num, size_t size){
 
 void *realloc_perror(void *ptr, size_t num, size_t size){
   void *new_ptr = NULL;
-  if (num > C_SIZE_MAX / size){
+  if (num > C_SIZE_ULIMIT / size){
     perror("realloc integer overflow");
     exit(EXIT_FAILURE);
   }
@@ -67,7 +79,7 @@ void *realloc_perror(void *ptr, size_t num, size_t size){
 
 void *calloc_perror(size_t num, size_t size){
   void *ptr = NULL;
-  if (num > C_SIZE_MAX / size){
+  if (num > C_SIZE_ULIMIT / size){
     perror("calloc integer overflow");
     exit(EXIT_FAILURE);
   }

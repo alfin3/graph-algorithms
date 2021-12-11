@@ -135,9 +135,9 @@ static const size_t C_PARTS_ACC_COUNTS[4] = {1u,
 					     1u + 8u * (2u + 3u + 4u)};
 static const size_t C_BUILD_SHIFT = 16u;
 static const size_t C_BYTE_BIT = CHAR_BIT;
-static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
-static const size_t C_LOG_COUNT_MIN = 8u; /* > 0 */
-static const size_t C_LOG_COUNT_MAX = UINT_WIDTH_FROM_MAX((size_t)-1) - 1u;
+static const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
+static const size_t C_LOG_COUNT_LLIMIT = 8u; /* > 0 */
+static const size_t C_LOG_COUNT_ULIMIT = PRECISION_FROM_ULIMIT((size_t)-1) - 1u;
 
 /* placeholder handling */
 static struct ke *ph_new();
@@ -247,8 +247,8 @@ void ht_muloa_init(struct ht_muloa *ht,
   /* elt_size block accessible with a character pointer */
   ht->elt_offset = sizeof(struct ke);
   ht->elt_alignment = 1;
-  ht->log_count = C_LOG_COUNT_MIN;
-  ht->count = pow_two_perror(C_LOG_COUNT_MIN);
+  ht->log_count = C_LOG_COUNT_LLIMIT;
+  ht->count = pow_two_perror(C_LOG_COUNT_LLIMIT);
   ht->alpha_n = alpha_n;
   ht->log_alpha_d = log_alpha_d;
   /* 0 <= max_sum < count */
@@ -349,7 +349,7 @@ void ht_muloa_insert(struct ht_muloa *ht, const void *key, const void *elt){
   if (ht->num_elts + ht->num_phs > ht->max_sum){
     if (ht->num_elts < ht->num_phs){
       ht_clean(ht);
-    }else if (ht->log_count < C_LOG_COUNT_MAX){
+    }else if (ht->log_count < C_LOG_COUNT_ULIMIT){
       ht_grow(ht);
     }
   }
@@ -658,12 +658,12 @@ static size_t mul_alpha(size_t n, size_t alpha_n, size_t log_alpha_d){
    Increases the count of a hash table to the next power of two that
    accomodates a load factor upper bound. The operation is called
    if the load factor upper bound was exceeded (i.e. num_elts + num_phs >
-   max_sum) and log_count is not equal to C_LOG_COUNT_MAX. A single call:
+   max_sum) and log_count is not equal to C_LOG_COUNT_ULIMIT. A single call:
    i)  lowers the load factor s.t. num_elts + num_phs <= max_sum if a
        sufficient power of two is available, or
    ii) lowers the load factor as low as possible.
-   The count is doubled at least once. If 2**C_LOG_COUNT_MAX is reached
-   log_count is set to C_LOG_COUNT_MAX.
+   The count is doubled at least once. If 2**C_LOG_COUNT_ULIMIT is reached
+   log_count is set to C_LOG_COUNT_ULIMIT.
 */
 static void ht_grow(struct ht_muloa *ht){
   size_t i, prev_count = ht->count;
@@ -689,15 +689,15 @@ static void ht_grow(struct ht_muloa *ht){
 /**
    Attempts to increase the count of a hash table. Returns 1 if the count
    was increased. Otherwise returns 0. Updates count, log_count, and max_sum
-   of the hash table accordingly. If 2**C_LOG_COUNT_MAX is reached, log_count
-   is set to C_LOG_COUNT_MAX.
+   of the hash table accordingly. If 2**C_LOG_COUNT_ULIMIT is reached,
+   log_count is set to C_LOG_COUNT_ULIMIT.
 */
 static int incr_count(struct ht_muloa *ht){
-  if (ht->log_count == C_LOG_COUNT_MAX) return 0;
+  if (ht->log_count == C_LOG_COUNT_ULIMIT) return 0;
   ht->log_count++;
   ht->count <<= 1;
   ht->max_sum = mul_alpha(ht->count, ht->alpha_n, ht->log_alpha_d);
-  /* 0 <= max_sum < count; count >= 2**C_LOG_COUNT_MIN */
+  /* 0 <= max_sum < count; count >= 2**C_LOG_COUNT_LLIMIT */
   if (ht->max_sum == ht->count) ht->max_sum = ht->count - 1;
   return 1;
 }

@@ -74,9 +74,9 @@ const char *C_USAGE =
   "[0, 1] : on/off for max edges test\n"
   "[0, 1] : on/off for no edges test\n"
   "[0, 1] : on/off for rand graph test\n";
-const int C_ARGC_MAX = 11;
+const int C_ARGC_ULIMIT = 11;
 const size_t C_ARGS_DEF[10] = {0u, 6u, 0u, 6u, 0u, 14u, 1u, 1u, 1u, 1u};
-const size_t C_USHORT_BIT = UINT_WIDTH_FROM_MAX((unsigned short)-1);
+const size_t C_USHORT_BIT = PRECISION_FROM_ULIMIT((unsigned short)-1);
 
 /* small graph test */
 const size_t C_NUM_VTS_A = 6u;
@@ -806,12 +806,12 @@ int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
   RGENS_SEED();
-  if (argc > C_ARGC_MAX){
+  if (argc > C_ARGC_ULIMIT){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
-  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_ULIMIT - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_ULIMIT - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }

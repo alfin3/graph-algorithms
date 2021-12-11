@@ -185,8 +185,8 @@ static const size_t C_PARTS_ACC_COUNTS[4] = {6u,
 					     6u + 16u * (2u + 3u + 4u)};
 static const size_t C_BUILD_SHIFT = 16u;
 static const size_t C_BYTE_BIT = CHAR_BIT;
-static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
-static const size_t C_SIZE_MAX = (size_t)-1;
+static const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
+static const size_t C_SIZE_ULIMIT = (size_t)-1;
 
 static size_t hash(const struct ht_divchn_pthread *ht, const void *key);
 static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d);
@@ -308,7 +308,7 @@ void ht_divchn_pthread_init(struct ht_divchn_pthread *ht,
   ht->num_in_threads = 0;
   ht->num_grow_threads = num_grow_threads;
   key_locks_count = pow_two_perror(log_num_locks);
-  ht->key_locks_mask = C_SIZE_MAX & (key_locks_count - 1);
+  ht->key_locks_mask = C_SIZE_ULIMIT & (key_locks_count - 1);
   mutex_init_perror(&ht->gate_lock);
   ht->key_locks = malloc_perror(key_locks_count,
 				sizeof(pthread_mutex_t));
@@ -415,7 +415,7 @@ void ht_divchn_pthread_insert(struct ht_divchn_pthread *ht,
   buf = NULL;
 
   /* grow ht if needed, and finish */
-  if (ht->count_ix != C_SIZE_MAX &&
+  if (ht->count_ix != C_SIZE_ULIMIT &&
       ht->count_ix != C_PRIME_PARTS_COUNT){
     mutex_lock_perror(&ht->gate_lock);
     ht->num_elts += increased;
@@ -680,7 +680,7 @@ static size_t convert_std_key(const struct ht_divchn_pthread *ht,
   size_t std_key = 0;
   size_t buf_size = sizeof(size_t);
   unsigned char buf[sizeof(size_t)];
-  const char *k = NULL, *k_start = NULL, *k_end = NULL;
+  const void *k = NULL, *k_start = NULL, *k_end = NULL;
   if (ht->rdc_key != NULL) return ht->rdc_key(key);
   sz_count = ht->key_size / buf_size; /* division by sizeof(size_t) */
   rem_size = ht->key_size - sz_count * buf_size;
@@ -690,9 +690,9 @@ static size_t convert_std_key(const struct ht_divchn_pthread *ht,
   for (i = 0; i < rem_size; i++){
     std_key += (size_t)buf[i] << (i * C_BYTE_BIT);
   }
-  k_start = k + rem_size;
-  k_end = k_start + sz_count * buf_size;
-  for (k = k_start; k != k_end; k += buf_size){
+  k_start = (char *)k + rem_size;
+  k_end = (char *)k_start + sz_count * buf_size;
+  for (k = k_start; k != k_end; k = (char *)k + buf_size){
     memcpy(buf, k, buf_size);
     for (i = 0; i < buf_size; i++){
       std_key += (size_t)buf[i] << (i * C_BYTE_BIT);
@@ -717,7 +717,7 @@ static size_t hash(const struct ht_divchn_pthread *ht, const void *key){
 static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
   size_t h, l;
   mul_ext(n, alpha_n, &h, &l);
-  if (h >> log_alpha_d) return C_SIZE_MAX; /* overflow after division */
+  if (h >> log_alpha_d) return C_SIZE_ULIMIT; /* overflow after division */
   l >>= log_alpha_d;
   h <<= (C_FULL_BIT - log_alpha_d);
   return l + h;
@@ -727,7 +727,7 @@ static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
    Increases the count of a hash table to the next prime number in the
    C_PRIME_PARTS array that accomodates a load factor upper bound.
    The operation is called if i) the load factor upper bound was exceeded
-   (i.e. num_elts > max_num_elts) and count_ix is not equal to C_SIZE_MAX or
+   (i.e. num_elts > max_num_elts) and count_ix is not equal to C_SIZE_ULIMIT or
    C_PRIME_PARTS_COUNT, and ii) it is guaranteed that only the calling
    thread has access to the hash table throughout the operation.
    A single call:
@@ -736,7 +736,7 @@ static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
        representable as size_t, or 
    ii) lowers the load factor as low as possible.
    If the largest representable prime is reached, count_ix may not yet be set
-   to C_SIZE_MAX or C_PRIME_PARTS_COUNT, which requires one additional call.
+   to C_SIZE_ULIMIT or C_PRIME_PARTS_COUNT, which requires one additional call.
    Otherwise, each call increases the count.
 */
 
@@ -809,7 +809,7 @@ static void ht_grow(struct ht_divchn_pthread *ht){
    Attempts to increase the count of a hash table. Returns 1 if the count
    was increased. Otherwise returns 0. Updates count_ix, group_ix, count,
    and max_num_elts accordingly. If the largest representable prime is
-   reached, count_ix may not yet be set to C_SIZE_MAX or
+   reached, count_ix may not yet be set to C_SIZE_ULIMIT or
    C_PRIME_PARTS_COUNT, which requires one additional call. Otherwise, each
    call increases the count.
 */
@@ -819,11 +819,11 @@ static int incr_count(struct ht_divchn_pthread *ht){
   if (ht->count_ix == C_PRIME_PARTS_COUNT){
     return 0;
   }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-    ht->count_ix = C_SIZE_MAX;
+    ht->count_ix = C_SIZE_ULIMIT;
     return 0;
   }else{
     ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-    /* 0 <= max_num_elts <= C_SIZE_MAX */
+    /* 0 <= max_num_elts <= C_SIZE_ULIMIT */
     ht->max_num_elts = mul_alpha_sz_max(ht->count,
 					ht->alpha_n,
 					ht->log_alpha_d);

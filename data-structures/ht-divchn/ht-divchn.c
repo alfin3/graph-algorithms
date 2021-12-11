@@ -139,8 +139,8 @@ static const size_t C_PARTS_ACC_COUNTS[4] = {6u,
 					     6u + 16u * (2u + 3u + 4u)};
 static const size_t C_BUILD_SHIFT = 16u;
 static const size_t C_BYTE_BIT = CHAR_BIT;
-static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
-static const size_t C_SIZE_MAX = (size_t)-1;
+static const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
+static const size_t C_SIZE_ULIMIT = (size_t)-1;
 
 static size_t hash(const struct ht_divchn *ht, const void *key);
 static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d);
@@ -281,7 +281,7 @@ void ht_divchn_insert(struct ht_divchn *ht, const void *key, const void *elt){
   }
   /* grow ht after ensuring it was insertion, not update */
   if (ht->num_elts > ht->max_num_elts && 
-      ht->count_ix != C_SIZE_MAX &&
+      ht->count_ix != C_SIZE_ULIMIT &&
       ht->count_ix != C_PRIME_PARTS_COUNT){
     ht_grow(ht);
   }
@@ -472,7 +472,7 @@ static size_t hash(const struct ht_divchn *ht, const void *key){
 static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
   size_t h, l;
   mul_ext(n, alpha_n, &h, &l);
-  if (h >> log_alpha_d) return C_SIZE_MAX; /* overflow after division */
+  if (h >> log_alpha_d) return C_SIZE_ULIMIT; /* overflow after division */
   l >>= log_alpha_d;
   h <<= (C_FULL_BIT - log_alpha_d);
   return l + h;
@@ -482,15 +482,15 @@ static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
    Increases the count of a hash table to the next prime number in the
    C_PRIME_PARTS array that accomodates a load factor upper bound.
    The operation is called if the load factor upper bound was exceeded (i.e.
-   num_elts > max_num_elts) and count_ix is not equal to C_SIZE_MAX or
+   num_elts > max_num_elts) and count_ix is not equal to C_SIZE_ULIMIT or
    C_PRIME_PARTS_COUNT. A single call:
    i)  lowers the load factor s.t. num_elts <= max_num_elts if a sufficiently
        large prime in the C_PRIME_PARTS array is available and is 
        representable as size_t, or 
    ii) lowers the load factor as low as possible.
    If the largest representable prime is reached, count_ix may not yet be set
-   to C_SIZE_MAX or C_PRIME_PARTS_COUNT, which requires one additional call.
-   Otherwise, each call increases the count.
+   to C_SIZE_ULIMIT or C_PRIME_PARTS_COUNT, which requires one additional
+   call. Otherwise, each call increases the count.
 */
 static void ht_grow(struct ht_divchn *ht){
   size_t i, prev_count = ht->count;
@@ -519,7 +519,7 @@ static void ht_grow(struct ht_divchn *ht){
    Attempts to increase the count of a hash table. Returns 1 if the count
    was increased. Otherwise returns 0. Updates count_ix, group_ix, count,
    and max_num_elts accordingly. If the largest representable prime was
-   reached, count_ix may not yet be set to C_SIZE_MAX or
+   reached, count_ix may not yet be set to C_SIZE_ULIMIT or
    C_PRIME_PARTS_COUNT, which requires one additional call. Otherwise, each
    call increases the count.
 */
@@ -529,11 +529,11 @@ static int incr_count(struct ht_divchn *ht){
   if (ht->count_ix == C_PRIME_PARTS_COUNT){
     return 0;
   }else if (is_overflow(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix])){
-    ht->count_ix = C_SIZE_MAX;
+    ht->count_ix = C_SIZE_ULIMIT;
     return 0;
   }else{
     ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
-    /* 0 <= max_num_elts <= C_SIZE_MAX */
+    /* 0 <= max_num_elts <= C_SIZE_ULIMIT */
     ht->max_num_elts = mul_alpha_sz_max(ht->count,
 					ht->alpha_n,
 					ht->log_alpha_d);

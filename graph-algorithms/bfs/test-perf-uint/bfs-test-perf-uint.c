@@ -57,9 +57,9 @@ const char *C_USAGE =
   "bfs-test-perf-uint\n"
   "[0, uint width - 1] : a\n"
   "[0, uint width - 1] : b s.t. 2**a <= V <= 2**b for rand graph test\n";
-const int C_ARGC_MAX = 3;
+const int C_ARGC_ULIMIT = 3;
 const size_t C_ARGS_DEF[2] = {14u, 14u};
-const size_t C_UINT_BIT = UINT_WIDTH_FROM_MAX((unsigned int)-1);
+const size_t C_UINT_BIT = PRECISION_FROM_ULIMIT((unsigned int)-1);
 
 /* random graph tests */
 const size_t C_FN_COUNT = 4;
@@ -214,12 +214,12 @@ int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
   RGENS_SEED();
-  if (argc > C_ARGC_MAX){
+  if (argc > C_ARGC_ULIMIT){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
-  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_ULIMIT - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_ULIMIT - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }

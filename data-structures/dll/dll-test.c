@@ -44,9 +44,9 @@ const char *C_USAGE =
   "[0, 1] : on/off prepend append free int test\n"
   "[0, 1] : on/off prepend append free int_ptr (noncontiguous) test\n"
   "[0, 1] : on/off corner cases test\n";
-const int C_ARGC_MAX = 5;
+const int C_ARGC_ULIMIT = 5;
 const size_t C_ARGS_DEF[4] = {13, 1, 1, 1};
-const size_t C_INT_BIT = UINT_WIDTH_FROM_MAX(INT_MAX);
+const size_t C_INT_BIT = PRECISION_FROM_ULIMIT(INT_MAX);
 
 /* tests */
 const int C_START_VAL = 0;
@@ -482,12 +482,12 @@ void print_test_result(int res){
 int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
-  if (argc > C_ARGC_MAX){
+  if (argc > C_ARGC_ULIMIT){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
-  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_ULIMIT - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_ULIMIT - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }

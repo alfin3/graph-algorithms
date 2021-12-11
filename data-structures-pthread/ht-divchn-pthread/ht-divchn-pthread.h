@@ -118,7 +118,7 @@ struct ht_divchn_pthread{
   size_t count;
   size_t alpha_n;
   size_t log_alpha_d;
-  size_t max_num_elts; /*  >= 0, <= C_SIZE_MAX, represents lf bound */
+  size_t max_num_elts; /*  >= 0, <= C_SIZE_ULIMIT, represents lf bound */
   size_t num_elts;
   struct dll *ll;
   struct dll_node **key_elts; /* array of pointers to nodes */

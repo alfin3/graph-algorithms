@@ -52,12 +52,12 @@ const char *C_USAGE =
   "[0, 1] : on/off push pop first free uint test\n"
   "[0, 1] : on/off push pop first free uint_ptr (noncontiguous) test\n"
   "[0, 1] : on/off uchar stack test\n";
-const int C_ARGC_MAX = 6;
+const int C_ARGC_ULIMIT = 6;
 const size_t C_ARGS_DEF[5] = {14, 15, 1, 1, 1};
-const size_t C_ULONG_BIT = UINT_WIDTH_FROM_MAX((unsigned long)-1);
+const size_t C_ULONG_BIT = PRECISION_FROM_ULIMIT((unsigned long)-1);
 
 /* tests */
-const unsigned char C_UCHAR_MAX = (unsigned char)-1;
+const unsigned char C_UCHAR_ULIMIT = (unsigned char)-1;
 const size_t C_START_VAL = 0; /* <= # inserts */
 
 void print_test_result(int res);
@@ -350,7 +350,7 @@ void run_uchar_stack_test(size_t log_ins){
 	 TOLU(num_ins));
   t_push = clock();
   for (i = 0; i < num_ins; i++){
-    stack_push(&s, &C_UCHAR_MAX);
+    stack_push(&s, &C_UCHAR_ULIMIT);
   }
   t_push = clock() - t_push;
   t_pop = clock();
@@ -374,12 +374,12 @@ void print_test_result(int res){
 int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
-  if (argc > C_ARGC_MAX){
+  if (argc > C_ARGC_ULIMIT){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
-  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_ULIMIT - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_ULIMIT - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }

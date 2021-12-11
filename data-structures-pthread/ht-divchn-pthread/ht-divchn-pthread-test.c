@@ -56,11 +56,11 @@ const char *C_USAGE =
   "[0, 1] : on/off insert search uint_ptr test\n"
   "[0, 1] : on/off remove delete uint_ptr test\n"
   "[0, 1] : on/off corner cases test\n";
-const int C_ARGC_MAX = 13;
+const int C_ARGC_ULIMIT = 13;
 const size_t C_ARGS_DEF[12] = {14u, 0u, 2u, 1024u, 30720u, 11u,
 			       10u, 1u, 1u, 1u, 1u, 1u};
-const size_t C_SIZE_MAX = (size_t)-1;
-const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
+const size_t C_SIZE_ULIMIT = (size_t)-1;
+const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
 
 /* corner cases test */
 const size_t C_CORNER_LOG_KEY_START = 0u;
@@ -1039,12 +1039,12 @@ int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
   RGENS_SEED();
-  if (argc > C_ARGC_MAX){
+  if (argc > C_ARGC_ULIMIT){
     fprintf(stderr, "USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
-  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_ULIMIT - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_ULIMIT - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }

@@ -18,6 +18,12 @@ size_t add_sz_perror(size_t a, size_t b);
 size_t mul_sz_perror(size_t a, size_t b);
 
 /**
+   Multiplication of size_t with wrapped overflow and zero checking. Useful
+   for computing end pointers for pointer iteration.
+*/
+size_t mul_nzero_sz_perror(size_t a, size_t b);
+
+/**
    Malloc, realloc, and calloc with wrapped error checking, including
    integer overflow checking. The latter is also included in calloc_perror
    because there is no guarantee that a calloc implementation checks for

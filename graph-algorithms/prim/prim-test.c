@@ -66,7 +66,7 @@ const char *C_USAGE =
   "[0, ushort width) : n for 2**n vertices in largest graph\n"
   "[0, 1] : small graph test on/off\n"
   "[0, 1] : random graphs with random weights test on/off\n";
-const int C_ARGC_MAX = 5;
+const int C_ARGC_ULIMIT = 5;
 const size_t C_ARGS_DEF[4] = {6u, 9u, 1u, 1u};
 
 /* hash table load factor upper bounds */
@@ -202,33 +202,33 @@ const char *C_WT_TYPES[5] = {"ushort",
 const size_t C_RANDOM_BIT = 15u;
 const unsigned int C_RANDOM_MASK = 32767u;
 
-const size_t C_USHORT_BIT = UINT_WIDTH_FROM_MAX(USHRT_MAX);
-const size_t C_USHORT_BIT_MOD = UINT_WIDTH_FROM_MAX(USHRT_MAX) / 15u;
-const size_t C_USHORT_HALF_BIT = UINT_WIDTH_FROM_MAX(USHRT_MAX) / 2u;
-const unsigned short C_USHORT_MAX = USHRT_MAX;
+const size_t C_USHORT_BIT = PRECISION_FROM_ULIMIT(USHRT_MAX);
+const size_t C_USHORT_BIT_MOD = PRECISION_FROM_ULIMIT(USHRT_MAX) / 15u;
+const size_t C_USHORT_HALF_BIT = PRECISION_FROM_ULIMIT(USHRT_MAX) / 2u;
+const unsigned short C_USHORT_ULIMIT = USHRT_MAX;
 const unsigned short C_USHORT_LOW_MASK =
-  ((unsigned short)-1 >> (UINT_WIDTH_FROM_MAX(USHRT_MAX) / 2u));
+  ((unsigned short)-1 >> (PRECISION_FROM_ULIMIT(USHRT_MAX) / 2u));
 
-const size_t C_UINT_BIT = UINT_WIDTH_FROM_MAX(UINT_MAX);
-const size_t C_UINT_BIT_MOD = UINT_WIDTH_FROM_MAX(UINT_MAX) / 15u;
-const size_t C_UINT_HALF_BIT = UINT_WIDTH_FROM_MAX(UINT_MAX) / 2u;
-const unsigned int C_UINT_MAX = UINT_MAX;
+const size_t C_UINT_BIT = PRECISION_FROM_ULIMIT(UINT_MAX);
+const size_t C_UINT_BIT_MOD = PRECISION_FROM_ULIMIT(UINT_MAX) / 15u;
+const size_t C_UINT_HALF_BIT = PRECISION_FROM_ULIMIT(UINT_MAX) / 2u;
+const unsigned int C_UINT_ULIMIT = UINT_MAX;
 const unsigned int C_UINT_LOW_MASK =
-  ((unsigned int)-1 >> (UINT_WIDTH_FROM_MAX(UINT_MAX) / 2u));
+  ((unsigned int)-1 >> (PRECISION_FROM_ULIMIT(UINT_MAX) / 2u));
 
-const size_t C_ULONG_BIT = UINT_WIDTH_FROM_MAX(ULONG_MAX);
-const size_t C_ULONG_BIT_MOD = UINT_WIDTH_FROM_MAX(ULONG_MAX) / 15u;
-const size_t C_ULONG_HALF_BIT = UINT_WIDTH_FROM_MAX(ULONG_MAX) / 2u;
-const unsigned long C_ULONG_MAX = ULONG_MAX;
+const size_t C_ULONG_BIT = PRECISION_FROM_ULIMIT(ULONG_MAX);
+const size_t C_ULONG_BIT_MOD = PRECISION_FROM_ULIMIT(ULONG_MAX) / 15u;
+const size_t C_ULONG_HALF_BIT = PRECISION_FROM_ULIMIT(ULONG_MAX) / 2u;
+const unsigned long C_ULONG_ULIMIT = ULONG_MAX;
 const unsigned long C_ULONG_LOW_MASK =
-  ((unsigned long)-1 >> (UINT_WIDTH_FROM_MAX(ULONG_MAX) / 2u));
+  ((unsigned long)-1 >> (PRECISION_FROM_ULIMIT(ULONG_MAX) / 2u));
 
-const size_t C_SZ_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
-const size_t C_SZ_BIT_MOD = UINT_WIDTH_FROM_MAX((size_t)-1) / 15u;
-const size_t C_SZ_HALF_BIT = UINT_WIDTH_FROM_MAX((size_t)-1) / 2u;
-const size_t C_SZ_MAX = (size_t)-1;
+const size_t C_SZ_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
+const size_t C_SZ_BIT_MOD = PRECISION_FROM_ULIMIT((size_t)-1) / 15u;
+const size_t C_SZ_HALF_BIT = PRECISION_FROM_ULIMIT((size_t)-1) / 2u;
+const size_t C_SZ_ULIMIT = (size_t)-1;
 const size_t C_SZ_LOW_MASK =
-  ((size_t)-1 >> (UINT_WIDTH_FROM_MAX((size_t)-1) / 2u));
+  ((size_t)-1 >> (PRECISION_FROM_ULIMIT((size_t)-1) / 2u));
 
 const size_t C_ITER = 10u;
 const size_t C_PROBS_COUNT = 7u;
@@ -309,11 +309,11 @@ void set_zero_ulong(void *a);
 void set_zero_sz(void *a);
 void set_zero_double(void *a);
 
-void set_test_max_ushort(void *a, size_t num_vts);
-void set_test_max_uint(void *a, size_t num_vts);
-void set_test_max_ulong(void *a, size_t num_vts);
-void set_test_max_sz(void *a, size_t num_vts);
-void set_test_max_double(void *a, size_t num_vts);
+void set_test_ulimit_ushort(void *a, size_t num_vts);
+void set_test_ulimit_uint(void *a, size_t num_vts);
+void set_test_ulimit_ulong(void *a, size_t num_vts);
+void set_test_ulimit_sz(void *a, size_t num_vts);
+void set_test_ulimit_double(void *a, size_t num_vts);
 
 void sum_dist_ushort(void *dist_sum,
 		     size_t *num_dist_wraps,
@@ -368,12 +368,12 @@ void (* const C_SET_ZERO[5])(void *) ={
   set_zero_ulong,
   set_zero_sz,
   set_zero_double};
-void (* const C_SET_TEST_MAX[5])(void *, size_t) ={
-  set_test_max_ushort,
-  set_test_max_uint,
-  set_test_max_ulong,
-  set_test_max_sz,
-  set_test_max_double};
+void (* const C_SET_TEST_ULIMIT[5])(void *, size_t) ={
+  set_test_ulimit_ushort,
+  set_test_ulimit_uint,
+  set_test_ulimit_ulong,
+  set_test_ulimit_sz,
+  set_test_ulimit_double};
 void (* const C_SUM_DIST[5])(void *,
 			     size_t *,
 			     size_t *,
@@ -942,7 +942,7 @@ void run_rand_test(size_t log_start, size_t log_end){
       wt_l = realloc_perror(wt_l, 2, wt_size);
       wt_h = ptr(wt_l, 1, wt_size);
       C_SET_ZERO[k](wt_l);
-      C_SET_TEST_MAX[k](wt_h, pow_two_perror(log_end));
+      C_SET_TEST_ULIMIT[k](wt_h, pow_two_perror(log_end));
       printf("\t%s range: [", C_WT_TYPES[k]);
       C_PRINT[k](wt_l);
       printf(", ");
@@ -970,7 +970,7 @@ void run_rand_test(size_t log_start, size_t log_end){
 	  dist_divchn = realloc_perror(dist_divchn, num_vts, wt_size);
 	  dist_muloa = realloc_perror(dist_muloa, num_vts, wt_size);
 	  C_SET_ZERO[k](wt_l);
-	  C_SET_TEST_MAX[k](wt_h, pow_two_perror(log_end));
+	  C_SET_TEST_ULIMIT[k](wt_h, pow_two_perror(log_end));
 	  C_SET_ZERO[k](wt_zero);
 	  for (l = 0; l < num_vts; l++){
 	    /* avoid trap representations in tests */
@@ -1261,42 +1261,42 @@ void set_zero_double(void *a){
   *(double *)a = 0.0;
 }
 
-void set_test_max_ushort(void *a, size_t num_vts){
+void set_test_ulimit_ushort(void *a, size_t num_vts){
   if (num_vts == 0){
-    *(unsigned short *)a = C_USHORT_MAX;
+    *(unsigned short *)a = C_USHORT_ULIMIT;
   }else{
     /* usual arithmetic conversions */
-    *(unsigned short *)a = C_USHORT_MAX / num_vts;
+    *(unsigned short *)a = C_USHORT_ULIMIT / num_vts;
   }
 }
 
-void set_test_max_uint(void *a, size_t num_vts){
+void set_test_ulimit_uint(void *a, size_t num_vts){
   if (num_vts == 0){
-    *(unsigned int *)a = C_UINT_MAX;
+    *(unsigned int *)a = C_UINT_ULIMIT;
   }else{
     /* usual arithmetic conversions */
-    *(unsigned int *)a = C_UINT_MAX / num_vts;
+    *(unsigned int *)a = C_UINT_ULIMIT / num_vts;
   }
 }
 
-void set_test_max_ulong(void *a, size_t num_vts){
+void set_test_ulimit_ulong(void *a, size_t num_vts){
   if (num_vts == 0){
-    *(unsigned long *)a = C_ULONG_MAX;
+    *(unsigned long *)a = C_ULONG_ULIMIT;
   }else{
     /* usual arithmetic conversions */
-    *(unsigned long *)a = C_ULONG_MAX / num_vts;
+    *(unsigned long *)a = C_ULONG_ULIMIT / num_vts;
   }
 }
 
-void set_test_max_sz(void *a, size_t num_vts){
+void set_test_ulimit_sz(void *a, size_t num_vts){
   if (num_vts == 0){
-    *(size_t *)a = C_SZ_MAX;
+    *(size_t *)a = C_SZ_ULIMIT;
   }else{
-    *(size_t *)a = C_SZ_MAX / num_vts;
+    *(size_t *)a = C_SZ_ULIMIT / num_vts;
   }
 }
 
-void set_test_max_double(void *a, size_t num_vts){
+void set_test_ulimit_double(void *a, size_t num_vts){
   if (num_vts == 0){
     *(double *)a = 1.0;
   }else{
@@ -1321,7 +1321,7 @@ void sum_dist_ushort(void *dist_sum,
   for (i = 0; i < num_vts; i++){
     p = read_vt(ptr(prev, i, vt_size));
     if (p != num_vts){
-      (*num_dist_wraps) += (C_USHORT_MAX - *dsum < d[i]);
+      (*num_dist_wraps) += (C_USHORT_ULIMIT - *dsum < d[i]);
       *dsum += d[i];
       (*num_paths)++;
     }
@@ -1345,7 +1345,7 @@ void sum_dist_uint(void *dist_sum,
   for (i = 0; i < num_vts; i++){
     p = read_vt(ptr(prev, i, vt_size));
     if (p != num_vts){
-      (*num_dist_wraps) += (C_UINT_MAX - *dsum < d[i]);
+      (*num_dist_wraps) += (C_UINT_ULIMIT - *dsum < d[i]);
       *dsum += d[i];
       (*num_paths)++;
     }
@@ -1369,7 +1369,7 @@ void sum_dist_ulong(void *dist_sum,
   for (i = 0; i < num_vts; i++){
     p = read_vt(ptr(prev, i, vt_size));
     if (p != num_vts){
-      (*num_dist_wraps) += (C_ULONG_MAX - *dsum < d[i]);
+      (*num_dist_wraps) += (C_ULONG_ULIMIT - *dsum < d[i]);
       *dsum += d[i];
       (*num_paths)++;
     }
@@ -1393,7 +1393,7 @@ void sum_dist_sz(void *dist_sum,
   for (i = 0; i < num_vts; i++){
     p = read_vt(ptr(prev, i, vt_size));
     if (p != num_vts){
-      (*num_dist_wraps) += (C_SZ_MAX - *dsum < d[i]);
+      (*num_dist_wraps) += (C_SZ_ULIMIT - *dsum < d[i]);
       *dsum += d[i];
       (*num_paths)++;
     }
@@ -1540,12 +1540,12 @@ int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
   RGENS_SEED();
-  if (argc > C_ARGC_MAX){
+  if (argc > C_ARGC_ULIMIT){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
-  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_ULIMIT - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_ULIMIT - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }

@@ -13,12 +13,12 @@
 #include "utilities-lim.h"
 
 static const size_t C_SIZE_HALF = (((size_t)1 <<
-				    (UINT_WIDTH_FROM_MAX((size_t)-1) / 2u)) -
+				    (PRECISION_FROM_ULIMIT((size_t)-1) / 2u)) -
 				   1u);
-static const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1);
-static const size_t C_HALF_BIT = UINT_WIDTH_FROM_MAX((size_t)-1) / 2u;
+static const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
+static const size_t C_HALF_BIT = PRECISION_FROM_ULIMIT((size_t)-1) / 2u;
 static const size_t C_LOW_MASK = ((size_t)-1 >>
-				  (UINT_WIDTH_FROM_MAX((size_t)-1) / 2u));
+				  (PRECISION_FROM_ULIMIT((size_t)-1) / 2u));
 
 /**
    Computes overflow-safe mod n of the kth power in O(logk) time,

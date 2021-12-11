@@ -51,19 +51,19 @@ const char *C_USAGE =
   "[0, size_t width) : n for 2**n # trials in tests \n"
   "[0, 1] : pow_mod, mul_mod, and sum_mod tests on/off \n"
   "[0, 1] : mul_ext, represent_uint, and pow_two_perror tests on/off \n";
-const int C_ARGC_MAX = 4;
+const int C_ARGC_ULIMIT = 4;
 const size_t C_ARGS_DEF[3] = {15u, 1u, 1u};
 
 /* tests */
-const unsigned char C_UCHAR_MAX = (unsigned char)-1;
-const size_t C_SIZE_MAX = (size_t)-1; /* >= 3 */
+const unsigned char C_UCHAR_ULIMIT = (unsigned char)-1;
+const size_t C_SIZE_ULIMIT = (size_t)-1; /* >= 3 */
 const size_t C_SIZE_HALF = (((size_t)1 <<
-			     (UINT_WIDTH_FROM_MAX((size_t)-1) / 2u)) - 1u);
+			     (PRECISION_FROM_ULIMIT((size_t)-1) / 2u)) - 1u);
 const size_t C_BYTE_BIT = CHAR_BIT;
-const size_t C_FULL_BIT = UINT_WIDTH_FROM_MAX((size_t)-1); /* >= 2 */
-const size_t C_HALF_BIT = UINT_WIDTH_FROM_MAX((size_t)-1) / 2u; /* >= 1 */
-const size_t C_BASE_MAX = (((size_t)1 << (CHAR_BIT / 2u))
-			   + 1u); /* >= 2, <= C_SIZE_MAX */
+const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1); /* >= 2 */
+const size_t C_HALF_BIT = PRECISION_FROM_ULIMIT((size_t)-1) / 2u; /* >= 1 */
+const size_t C_BASE_ULIMIT = (((size_t)1 << (CHAR_BIT / 2u))
+			      + 1u); /* >= 2, <= C_SIZE_ULIMIT */
 
 void print_test_result(int res);
 
@@ -74,21 +74,21 @@ void run_pow_mod_test(int log_trials){
   int res = 1;
   size_t i, trials;
   size_t k_max, n_max;
-  size_t base_sq_max = C_SIZE_MAX;
+  size_t base_sq_max = C_SIZE_ULIMIT;
   size_t j, k;
   size_t a, n;
   size_t r, r_wo;
   trials = pow_two_perror(log_trials);
   k_max = 1;
   n_max = C_SIZE_HALF - 1; /* >= 0 */
-  while (base_sq_max / C_BASE_MAX >= C_BASE_MAX){
-    base_sq_max /= C_BASE_MAX;
+  while (base_sq_max / C_BASE_ULIMIT >= C_BASE_ULIMIT){
+    base_sq_max /= C_BASE_ULIMIT;
     k_max++;
   }
   printf("Run pow_mod random test\n ");
   for (i = 0; i < trials; i++){
     r_wo = 1;
-    a = DRAND() * C_BASE_MAX;
+    a = DRAND() * C_BASE_ULIMIT;
     k = DRAND() * k_max;
     n = 1 + DRAND() * n_max; /* >= 1*/
     r = pow_mod(a, k, n);
@@ -99,11 +99,11 @@ void run_pow_mod_test(int log_trials){
     res *= (r == r_wo);
   }
   printf("\t0 <= a <= %lu, 0 <= k <= %lu, 0 < n <= 2**%lu - 1 --> ",
-	 TOLU(C_BASE_MAX), TOLU(k_max), TOLU(C_HALF_BIT));
+	 TOLU(C_BASE_ULIMIT), TOLU(k_max), TOLU(C_HALF_BIT));
   print_test_result(res);
   res = 1;
-  k_max = C_SIZE_MAX - 1;
-  n_max = C_SIZE_MAX - 2;
+  k_max = C_SIZE_ULIMIT - 1;
+  n_max = C_SIZE_ULIMIT - 2;
   for (i = 0; i < trials; i++){
     k = DRAND() * k_max;
     while (k & 1){
@@ -123,9 +123,10 @@ void run_pow_mod_test(int log_trials){
   res *= (pow_mod(2, 0, 1) == 0);
   res *= (pow_mod(0, 0, 2) == 1);
   res *= (pow_mod(2, 0, 2) == 1);
-  res *= (pow_mod(C_SIZE_MAX, C_SIZE_MAX, C_SIZE_MAX) == 0);
-  res *= (pow_mod(C_SIZE_MAX - 1, C_SIZE_MAX, C_SIZE_MAX) == C_SIZE_MAX - 1);
-  res *= (pow_mod(C_SIZE_MAX, C_SIZE_MAX - 1, C_SIZE_MAX) == 0);
+  res *= (pow_mod(C_SIZE_ULIMIT, C_SIZE_ULIMIT, C_SIZE_ULIMIT) == 0);
+  res *= (pow_mod(C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT, C_SIZE_ULIMIT) ==
+	  C_SIZE_ULIMIT - 1);
+  res *= (pow_mod(C_SIZE_ULIMIT, C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT) == 0);
   printf("\tcorner cases --> ");
   print_test_result(res);
 }
@@ -142,7 +143,7 @@ void run_mul_mod_test(int log_trials){
   trials = pow_two_perror(log_trials);
   a_max = C_SIZE_HALF;
   b_max = C_SIZE_HALF;
-  n_max = C_SIZE_MAX - 1;
+  n_max = C_SIZE_ULIMIT - 1;
   printf("Run mul_mod random test\n");
   for (i = 0; i < trials; i++){
     a = DRAND() * a_max;
@@ -169,13 +170,14 @@ void run_mul_mod_test(int log_trials){
   res *= (mul_mod(0, 1, 2) == 0);
   res *= (mul_mod(0, 2, 2) == 0);
   res *= (mul_mod(1, 1, 2) == 1);
-  res *= (mul_mod(0, C_SIZE_MAX - 1, C_SIZE_MAX) == 0);
-  res *= (mul_mod(C_SIZE_MAX - 1, 0, C_SIZE_MAX) == 0);
-  res *= (mul_mod(C_SIZE_MAX - 1, 1, C_SIZE_MAX) == C_SIZE_MAX - 1);
-  res *= (mul_mod(1, C_SIZE_MAX - 1, C_SIZE_MAX) == C_SIZE_MAX - 1);
-  res *= (mul_mod(C_SIZE_MAX - 1, C_SIZE_MAX - 1, C_SIZE_MAX - 1) == 0);
-  res *= (mul_mod(C_SIZE_MAX - 1, C_SIZE_MAX - 1, C_SIZE_MAX) == 1);
-  res *= (mul_mod(C_SIZE_MAX, C_SIZE_MAX, C_SIZE_MAX) == 0);
+  res *= (mul_mod(0, C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT) == 0);
+  res *= (mul_mod(C_SIZE_ULIMIT - 1, 0, C_SIZE_ULIMIT) == 0);
+  res *= (mul_mod(C_SIZE_ULIMIT - 1, 1, C_SIZE_ULIMIT) == C_SIZE_ULIMIT - 1);
+  res *= (mul_mod(1, C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT) == C_SIZE_ULIMIT - 1);
+  res *=
+    (mul_mod(C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT - 1) == 0);
+  res *= (mul_mod(C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT) == 1);
+  res *= (mul_mod(C_SIZE_ULIMIT, C_SIZE_ULIMIT, C_SIZE_ULIMIT) == 0);
   printf("\tcorner cases --> ");
   print_test_result(res);
 }
@@ -192,7 +194,7 @@ void run_sum_mod_test(int log_trials){
   trials = pow_two_perror(log_trials);
   a_max = pow_two_perror(C_FULL_BIT - 1) - 1;
   b_max = pow_two_perror(C_FULL_BIT - 1) - 1;
-  n_max = C_SIZE_MAX - 1;
+  n_max = C_SIZE_ULIMIT - 1;
   printf("Run sum_mod random test\n");
   for (i = 0; i < trials; i++){
     a = DRAND() * a_max;
@@ -219,8 +221,8 @@ void run_sum_mod_test(int log_trials){
   res *= (sum_mod(1, 0, 2) == 1);
   res *= (sum_mod(0, 1, 2) == 1);
   res *= (sum_mod(1, 1, 2) == 0);
-  res *= (sum_mod(C_SIZE_MAX - 1, C_SIZE_MAX - 1, C_SIZE_MAX) ==
-	  C_SIZE_MAX - 2);
+  res *= (sum_mod(C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT) ==
+	  C_SIZE_ULIMIT - 2);
   printf("\tcorner cases --> ");
   print_test_result(res);
 }
@@ -248,14 +250,14 @@ void run_mul_ext_test(int log_trials){
   print_test_result(res);
   res = 1;
   for (i = 0; i < trials; i++){
-    a = 1 + DRAND() * (C_SIZE_MAX - 1);
-    b = 1 + DRAND() * (C_SIZE_MAX - 1);
-    n = 1 + DRAND() * (C_SIZE_MAX - 1);
+    a = 1 + DRAND() * (C_SIZE_ULIMIT - 1);
+    b = 1 + DRAND() * (C_SIZE_ULIMIT - 1);
+    n = 1 + DRAND() * (C_SIZE_ULIMIT - 1);
     mul_ext(a, b, &h, &l);
     hl[0] = l;
     hl[1] = h;
     res *= (sum_mod(hl[0] % n,
-		    mul_mod(sum_mod(C_SIZE_MAX, 1, n), hl[1] % n, n),
+		    mul_mod(sum_mod(C_SIZE_ULIMIT, 1, n), hl[1] % n, n),
 		    n) == mul_mod(a, b, n));
   }
   printf("\t0 < a, b <= 2**%lu - 1 --> ", TOLU(C_FULL_BIT));
@@ -279,8 +281,8 @@ void run_mul_ext_test(int log_trials){
 	  &h,
 	  &l);
   res *= (h == pow_two_perror(C_FULL_BIT - 2) && l == 0);
-  mul_ext(C_SIZE_MAX, C_SIZE_MAX, &h, &l);
-  res *= (h == C_SIZE_MAX - 1 && l == 1);
+  mul_ext(C_SIZE_ULIMIT, C_SIZE_ULIMIT, &h, &l);
+  res *= (h == C_SIZE_ULIMIT - 1 && l == 1);
   printf("\tcorner cases --> ");
   print_test_result(res);
   free(hl);
@@ -310,8 +312,8 @@ void run_represent_uint_test(int log_trials){
   printf("Run represent_uint odds * 2**k test --> ");
   for (i = 0; i < trials; i++){
     for (j = 0; j <= C_FULL_BIT - C_BYTE_BIT; j++){
-      n = RANDOM() % C_UCHAR_MAX;
-      if (!(n & 1)) n++; /* <= C_UCHAR_MAX as size_t */
+      n = RANDOM() % C_UCHAR_ULIMIT;
+      if (!(n & 1)) n++; /* <= C_UCHAR_ULIMIT as size_t */
       represent_uint(pow_two_perror(j) * n, &k, &u);
       res *= (k == j && u == n);
     }
@@ -353,12 +355,12 @@ int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
   RGENS_SEED();
-  if (argc > C_ARGC_MAX){
+  if (argc > C_ARGC_ULIMIT){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
-  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_ULIMIT - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_ULIMIT - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }
