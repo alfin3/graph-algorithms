@@ -1,6 +1,6 @@
 # graph-algorithms
 
-A low memory footprint in graph algorithms and supporting data structures is achieved by parameterizing the hashing and using the generics in C.
+A low memory footprint in graph algorithms and supporting data structures is achieved by parameterizing the hashing and using the generics in C. Instances of algorithms and data structures on different types do not result in the duplication of instructions, thereby minimizing the executable size. The memory footprint is tunable by choice of i) the types suitable for representing a problem and ii) the values of the hashing parameters.
 
 An original approach to in-memory alignment is provided to enable cache-efficient type generics. A decomposition of common graph algorithms into small type-specific operations is demonstrated, while utilizing the "understanding" of memcpy by modern compilers. The provided algorithms and data structures are extremely portable.
 
