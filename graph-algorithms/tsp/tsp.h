@@ -34,25 +34,31 @@
 #include <stddef.h>
 #include "graph.h"
 
-typedef void (*tsp_ht_init)(void *,
-			    size_t,
-			    size_t,
-			    void (*)(void *), /* free_elt */
-			    void *); /* pointer to context */
-typedef void (*tsp_ht_insert)(void *, const void *, const void *);
-typedef void *(*tsp_ht_search)(const void *, const void *);
-typedef void (*tsp_ht_remove)(void *, const void *, void *);
-typedef void (*tsp_ht_free)(void *);
-
-typedef struct{
-  void *ht; /* points to a block of hash table struct size */
-  void *context; /* points to initialization context */
-  tsp_ht_init init;
-  tsp_ht_insert insert;
-  tsp_ht_search search;
-  tsp_ht_remove remove;
-  tsp_ht_free free;
-} tsp_ht_t;
+/**
+   TSP hash table parameter struct. The function pointers point to the
+   hash table op helpers, pre-defined in each hash table. ht points
+   to a preallocated hash table struct.
+*/
+struct tsp_ht{
+  void *ht;
+  size_t alpha_n;
+  size_t log_alpha_d;
+  void (*init)(void *,
+	       size_t,
+	       size_t,
+	       size_t,
+	       size_t,
+	       size_t,
+	       int (*)(const void *, const void *),
+	       size_t (*)(const void *),
+	       void (*)(void *),
+	       void (*)(void *));
+  void (*align)(void *, size_t);
+  void (*insert)(void *, const void *, const void *);
+  void *(*search)(const void *, const void *);
+  void (*remove)(void *, const void *, void *);
+  void (*free)(void *);
+};
 
 /**
    Copies to the block pointed to by dist the shortest tour length from 

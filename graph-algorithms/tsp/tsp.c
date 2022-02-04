@@ -36,57 +36,52 @@
 #include "stack.h"
 #include "utilities-mem.h"
 
-typedef enum{FALSE, TRUE} boolean_t;
+static const int C_FALSE = 0;
+static const int C_TRUE = 1;
 
-typedef struct{
+struct ht_def{
+  size_t set_size;
+  size_t wt_size;
   size_t num_vts;
-} context_t;
-
-typedef struct{
-  size_t key_size;
-  size_t elt_size;
-  size_t num_vts;
-  boolean_t *key_present;
+  unsigned char *present;
   void *elts;
-  void (*free_elt)(void *);
-} ht_def_t;
+};
 
-typedef struct{
-  size_t ix; /* index of the set element with a single set bit */
+struct ibit{
+  size_t ix;  /* index of the set element with a single set bit */
   size_t bit; /* set element with a single set bit */
-} ibit_t;
+};
 
-static const size_t C_SET_ELT_SIZE = sizeof(size_t);
-static const size_t C_SET_ELT_BIT = CHAR_BIT * sizeof(size_t);
+static const size_t C_SZ_SIZE = sizeof(size_t);
+static const size_t C_SZ_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
 
 /* set operations based on a bit array representation */
-static void set_init(ibit_t *ibit, size_t n);
-static size_t *set_member(const ibit_t *ibit, const size_t *set);
-static void set_union(const ibit_t *ibit, size_t *set);
+static void ib_init(struct ibit *ib, size_t n);
+static size_t *ib_set_member(const struct ibit *ib, const size_t *set);
+static void ib_set_union(const struct ibit *ib, size_t *set);
 
 /* default hash table operations */
-static void ht_def_init(ht_def_t *ht,
-			size_t key_size,
-			size_t elt_size,
-			void (*free_elt)(void *),
-			void *context);
-static void ht_def_insert(ht_def_t *ht, const size_t *key, const void *elt);
-static void *ht_def_search(const ht_def_t *ht, const size_t *key);
-static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt);
-static void ht_def_free(ht_def_t *ht);
+static void ht_def_init(void *ht,
+			size_t set_size,
+			size_t wt_size,
+			size_t num_vts);
+static void ht_def_insert(void *ht, const void *s, const void *wt);
+static void *ht_def_search(const void *ht, const void *s);
+static void ht_def_remove(void *ht, const void *s, void *wt);
+static void ht_def_free(void *ht);
 
 /* auxiliary functions */
-static void build_next(const adj_lst_t *a,
-		       stack_t *prev_s,
-		       stack_t *next_s,
-		       const tsp_ht_t *tht,
-		       void (*add_wt)(void *, const void *, const void *),
-		       int (*cmp_wt)(const void *, const void *));
-static size_t pow_two(size_t k);
+static void build_next(const struct adj_lst *a,
+		       struct stack *prev_s,
+		       struct stack *next_s,
+		       const struct tsp_ht *tht,
+		       size_t (*read_vt)(const void *),
+		       int (*cmp_wt)(const void *, const void *),
+		       void (*add_wt)(void *, const void *, const void *));
 static void fprintf_stderr_exit(const char *s, int line);
 
 /* functions for computing pointers */
-static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
+static void *ptr(const void *block, size_t i, size_t size);
 
 /**
    Copies to the block pointed to by dist the shortest tour length from 
@@ -119,64 +114,62 @@ static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
                  pointed to by the second, and zero integer value if the two
                  weight values are equal
 */
-int tsp(const adj_lst_t *a,
+int tsp(const struct adj_lst *a,
 	size_t start,
 	void *dist,
-	const tsp_ht_t *tht,
-	void (*add_wt)(void *, const void *, const void *),
-	int (*cmp_wt)(const void *, const void *)){
-  const char *p = NULL, *p_start = NULL, *p_end = NULL;
-  size_t wt_size = a->wt_size;
-  size_t set_count, set_size;
+	const void *wt_zero,
+	const struct tsp_ht *tht,
+	int (*cmp_wt)(const void *, const void *),
+	void (*add_wt)(void *, const void *, const void *)){
+  int final_dist_updated = C_FALSE;
+  size_t set_size =
+    mul_sz_perror(add_sz_perror(a->num_vts / C_SZ_BIT,
+				(a->num_vts % C_SZ_BIT > 0) + 1), C_SZ_SIZE);
   size_t u, v;
   size_t i;
-  size_t *prev_set = NULL;
-  void *sum_wt = NULL;
-  boolean_t final_dist_updated = FALSE;
-  stack_t prev_s, next_s;
-  ht_def_t ht_def;
-  context_t context;
-  tsp_ht_t tht_def;
-  const tsp_ht_t *thtp = tht;
-  set_count = a->num_vts / C_SET_ELT_BIT;
-  if (a->num_vts % C_SET_ELT_BIT){
-    set_count++;
-  }
-  set_count++; /* + last reached vertex representation */
-  set_size = set_count * C_SET_ELT_SIZE;
-  prev_set = calloc_perror(1, set_size);
-  sum_wt = malloc_perror(1, wt_size);
+  struct stack prev_s, next_s;
+  struct ht_def ht_def;
+  struct tsp_ht tht_def;
+  const struct tsp_ht *thtp = NULL;
+  const void *p = NULL, *p_start = NULL, *p_end = NULL;
+  size_t * const prev_set = calloc_perror(1, set_size);
+  void * const sum_wt = malloc_perror(1, a->wt_size);
   prev_set[0] = start;
-  memset(dist, 0, wt_size);
+  memcpy(dist, wt_zero, a->wt_size);
   stack_init(&prev_s, 1, set_size, NULL);
   stack_push(&prev_s, prev_set);
-  if (thtp == NULL){
-    context.num_vts = a->num_vts;
+  if (tht == NULL){
+    ht_def_init(&ht_def, set_size, a->wt_size, a->num_vts);
     tht_def.ht = &ht_def;
-    tht_def.context = &context;
-    tht_def.init = (tsp_ht_init)ht_def_init;
-    tht_def.insert = (tsp_ht_insert)ht_def_insert;
-    tht_def.search = (tsp_ht_search)ht_def_search;
-    tht_def.remove = (tsp_ht_remove)ht_def_remove;
-    tht_def.free = (tsp_ht_free)ht_def_free;
+    tht_def.alpha_n = 0;
+    tht_def.log_alpha_d = 0;
+    tht_def.init = NULL;
+    tht_def.align = NULL;
+    tht_def.insert = ht_def_insert;
+    tht_def.search = ht_def_search;
+    tht_def.remove = ht_def_remove;
+    tht_def.free = ht_def_free;
     thtp = &tht_def;
+  }else{
+    /* TODO initialize and align*/
+    thtp = tht;
+    thtp->init(thtp->ht, set_size, wt_size, NULL, thtp->context);
+    thtp->align(thtp->ht);
   }
-  thtp->init(thtp->ht, set_size, wt_size, NULL, thtp->context);
   thtp->insert(thtp->ht, prev_set, dist);
   for (i = 0; i < a->num_vts - 1; i++){
     stack_init(&next_s, 1, set_size, NULL);
-    build_next(a, &prev_s, &next_s, thtp, add_wt, cmp_wt);
+    build_next(a, set_size, wt_size, &prev_s, &next_s, thtp, add_wt, cmp_wt);
     stack_free(&prev_s);
     prev_s = next_s;
     if (prev_s.num_elts == 0){
-      /* no progress made */
+      /* no progress made ; TODO add a goto since the same as the end*/
       stack_free(&prev_s);
       thtp->free(thtp->ht);
       free(prev_set);
       free(sum_wt);
       thtp = NULL;
-      prev_set = NULL;
-      sum_wt = NULL;
+      /* prev_set adn sum_vt cannot be dereferenced */
       return 1;
     }
   }
@@ -205,9 +198,8 @@ int tsp(const adj_lst_t *a,
   thtp->free(thtp->ht);
   free(prev_set);
   free(sum_wt);
+  /* prev_set and sum_wt cannot be dereferenced */
   thtp = NULL;
-  prev_set = NULL;
-  sum_wt = NULL;
   if (!final_dist_updated && a->num_vts > 1) return 1;
   return 0;
 }
@@ -216,40 +208,41 @@ int tsp(const adj_lst_t *a,
    Builds reachable sets from previous sets and updates a hash table
    mapping a set to a distance. 
  */
-static void build_next(const adj_lst_t *a,
-		       stack_t *prev_s,
-		       stack_t *next_s,
-		       const tsp_ht_t *tht,
-		       void (*add_wt)(void *, const void *, const void *),
-		       int (*cmp_wt)(const void *, const void *)){
-  const char *p = NULL, *p_start = NULL, *p_end = NULL;
-  size_t wt_size = a->wt_size;
-  size_t set_size = prev_s->elt_size;
+static void build_next(const struct adj_lst *a,
+		       size_t set_size,
+		       size_t wt_size,
+		       struct stack *prev_s,
+		       struct stack *next_s,
+		       const struct tsp_ht *tht,
+		       size_t (*read_vt)(const void *),
+		       int (*cmp_wt)(const void *, const void *),
+		       void (*add_wt)(void *, const void *, const void *)){
   size_t u, v;
-  size_t *prev_set = NULL, *next_set = NULL;
-  void *prev_wt = NULL, *next_wt = NULL, *sum_wt = NULL;
-  ibit_t ibit;
-  prev_set = malloc_perror(1, set_size);
-  next_set = malloc_perror(1, set_size);
-  prev_wt = malloc_perror(1, wt_size);
-  sum_wt = malloc_perror(1, wt_size);
+  struct ibit ib;
+  const void *p = NULL, *p_start = NULL, *p_end = NULL;
+  const void *next_wt = NULL;
+  /* in single blocks for cache-efficiency, TODO move to the caller */
+  size_t * const prev_set = malloc_perror(2, set_size);
+  size_t * const next_set = ptr(prev_set, 1, set_size);
+  void * const prev_wt = malloc_perror(2, wt_size);
+  void * const sum_wt = ptr(prev_wt, 1, wt_size);
   while (prev_s->num_elts > 0){
     stack_pop(prev_s, prev_set);
     tht->remove(tht->ht, prev_set, prev_wt);
     u = prev_set[0];
     p_start = a->vt_wts[u]->elts;
-    p_end = p_start + a->vt_wts[u]->num_elts * a->pair_size;
-    for (p = p_start; p != p_end; p += a->pair_size){
-      v = *(const size_t *)p;
-      set_init(&ibit, v);
-      if (set_member(&ibit, &prev_set[1]) == NULL){
+    p_end = (char *)p_start + a->vt_wts[u]->num_elts * a->pair_size;
+    for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
+      v = read_vt(p); 
+      ib_init(&ib, v);
+      if (ib_set_member(&ib, &prev_set[1]) == NULL){
 	memcpy(next_set, prev_set, set_size);
         next_set[0] = v;
-        set_init(&ibit, u);
-	set_union(&ibit, &next_set[1]);
+        ib_init(&ib, u);
+	ib_set_union(&ib, &next_set[1]);
 	add_wt(sum_wt,
 	       prev_wt,
-	       p + a->offset);
+	       (char *)p + a->offset);
 	next_wt = tht->search(tht->ht, next_set);
 	if (next_wt == NULL){
 	  tht->insert(tht->ht, next_set, sum_wt);
@@ -261,107 +254,91 @@ static void build_next(const adj_lst_t *a,
     }
   }
   free(prev_set);
-  free(next_set);
   free(prev_wt);
-  free(sum_wt);
-  prev_set = NULL;
-  next_set = NULL;
-  prev_wt = NULL;
-  sum_wt = NULL;
+  /* {prev, next}_set, {prev, sum}_wt, cannot be dereferenced */
 }
 
 /**
    Set operations based on a bit array representation.
 */
 
-static void set_init(ibit_t *ibit, size_t n){
-  ibit->ix = n / C_SET_ELT_BIT;
-  ibit->bit = 1;
-  ibit->bit <<= n % C_SET_ELT_BIT;
+static void ib_init(struct ibit *ib, size_t n){
+  ib->ix = n / C_SZ_BIT;
+  ib->bit = 1;
+  ib->bit <<= n % C_SZ_BIT;
 }
 
-static size_t *set_member(const ibit_t *ibit, const size_t *set){
-  if (set[ibit->ix] & ibit->bit){
-    return (size_t *)(&set[ibit->ix]);
-  }else{
-    return NULL;
+static size_t *ib_set_member(const struct ibit *ib, const size_t *set){
+  if (set[ib->ix] & ib->bit){
+    return (size_t *)(&set[ib->ix]);
   }
+  return NULL;
 }
 
-static void set_union(const ibit_t *ibit, size_t *set){
-  set[ibit->ix] |= ibit->bit;
+static void ib_set_union(const struct ibit *ib, size_t *set){
+  set[ib->ix] |= ib->bit;
 }
 
 /**
    Default hash table operations.
 */
 
-static void ht_def_init(ht_def_t *ht,
-			size_t key_size,
-			size_t elt_size,
-			void (*free_elt)(void *),
-			void *context){
-  context_t *c = context;
-  if (c->num_vts >= C_SET_ELT_BIT){
+static void ht_def_init(void *ht,
+			size_t set_size,
+			size_t wt_size,
+			size_t num_vts){
+  struct ht_def *ht_def = ht;
+  if (c->num_vts >= C_SZ_BIT){
     fprintf_stderr_exit("default hash table allocation failed", __LINE__);
   }
-  ht->key_size = key_size;
-  ht->elt_size = elt_size;
-  ht->num_vts = c->num_vts;
-  ht->key_present = calloc_perror(mul_sz_perror(c->num_vts,
-						pow_two(c->num_vts)),
-				  sizeof(boolean_t));
-  ht->elts = malloc_perror(mul_sz_perror(c->num_vts, pow_two(c->num_vts)),
-			   elt_size);
-  ht->free_elt = free_elt;
+  ht->set_size = set_size;
+  ht->wt_size = wt_size;
+  ht->num_vts = num_vts;
+  ht->present =
+    calloc_perror(mul_sz_perror(num_vts, pow_two_perror(num_vts)),
+		  sizeof(unsigned char));
+  ht->wts =
+    malloc_perror(mul_sz_perror(num_vts, pow_two_perror(num_vts)),
+		  wt_size);
 }
 
-static void ht_def_insert(ht_def_t *ht, const size_t *key, const void *elt){
-  size_t ix = key[0] + ht->num_vts * key[1];
-  ht->key_present[ix] = TRUE;
-  memcpy(elt_ptr(ht->elts, ix, ht->elt_size),
-	 elt,
-	 ht->elt_size);
+static void ht_def_insert(void *ht, const void *s, const void *wt){
+  struct ht_def *ht_def = ht;
+  const size_t *set = s;
+  size_t ix = set[0] + ht->num_vts * set[1];
+  ht->present[ix] = C_TRUE; /* convert to unsigned char from int */
+  memcpy(ptr(ht->wts, ix, ht->wt_size),
+	 wt,
+	 ht->wt_size);
 }
 
-static void *ht_def_search(const ht_def_t *ht, const size_t *key){
-  size_t ix = key[0] + ht->num_vts * key[1];
-  if (ht->key_present[ix]){
-    return elt_ptr(ht->elts, ix, ht->elt_size);
+static void *ht_def_search(const void *ht, const void *s){
+  struct ht_def *ht_def = ht;
+  const size_t *set = s;
+  size_t ix = set[0] + ht->num_vts * set[1];
+  if (ht->present[ix]){
+    return ptr(ht->wts, ix, ht->wt_size);
   }else{
     return NULL;
   }
 }
 
-static void ht_def_remove(ht_def_t *ht, const size_t *key, void *elt){
-  size_t ix = key[0] + ht->num_vts * key[1];
-  ht->key_present[ix] = FALSE;
-  memcpy(elt,
-	 elt_ptr(ht->elts, ix, ht->elt_size),
-	 ht->elt_size);
+static void ht_def_remove(void *ht, const void *s, void *wt){
+  struct ht_def *ht_def = ht;
+  const size_t *set = s;
+  size_t ix = set[0] + ht->num_vts * set[1];
+  ht->present[ix] = C_FALSE;
+  memcpy(wt,
+	 ptr(ht->wts, ix, ht->wt_size),
+	 ht->wt_size);
 }
 
-static void ht_def_free(ht_def_t *ht){
-  size_t i;
-  if (ht->free_elt != NULL){
-    for (i = 0; i < ht->num_vts * pow_two(ht->num_vts); i++){
-      if (ht->key_present[i]){
-	ht->free_elt(elt_ptr(ht->elts, i, ht->elt_size));
-      }
-    }
-  }
-  free(ht->key_present);
-  free(ht->elts);
-  ht->key_present = NULL;
-  ht->elts = NULL;
-}
-
-/**
-   Returns the kth power of 2, where 0 <= k < C_SET_ELT_BIT.
-*/
-static size_t pow_two(size_t k){
-  size_t ret = 1;
-  return ret << k;
+static void ht_def_free(void *ht){
+  struct ht_def *ht_def = ht;
+  free(ht->present);
+  free(ht->wts);
+  ht->present = NULL;
+  ht->wts = NULL;
 }
 
 /**
@@ -373,9 +350,24 @@ static void fprintf_stderr_exit(const char *s, int line){
 }
 
 /**
-   Computes a pointer to an entry in the array of elements in a default hash
-   table.
+   Computes a pointer to the ith element in the block of elements.
+
+   According to C89 (draft):
+
+   "It is guaranteed, however, that a pointer to an object of a given
+   alignment may be converted to a pointer to an object of the same
+   alignment or a less strict alignment and back again; the result shall
+   compare equal to the original pointer. (An object that has character
+   type has the least strict alignment.)"
+   
+   "A pointer to void may be converted to or from a pointer to any
+   incomplete or object type. A pointer to any incomplete or object type
+   may be converted to a pointer to void and back again; the result shall
+   compare equal to the original pointer."
+
+   "A pointer to void shall have the same representation and alignment 
+   requirements as a pointer to a character type."
 */
-static void *elt_ptr(const void *elts, size_t i, size_t elt_size){
-  return (void *)((char *)elts + i * elt_size);
+static void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
 }
