@@ -55,6 +55,10 @@ struct ibit{
 static const size_t C_SZ_SIZE = sizeof(size_t);
 static const size_t C_SZ_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
 
+/* set comparison; faster than memcpy on set allocated with calloc */
+static int cmp_set(const void *a, const void *b);
+static size_t rdc_set(const void *a);
+
 /* set operations based on a bit array representation */
 static void ib_init(struct ibit *ib, size_t n);
 static size_t *ib_set_member(const struct ibit *ib, const size_t *set);
@@ -119,12 +123,13 @@ int tsp(const struct adj_lst *a,
 	void *dist,
 	const void *wt_zero,
 	const struct tsp_ht *tht,
+	size_t (*read_vt)(const void *),
 	int (*cmp_wt)(const void *, const void *),
 	void (*add_wt)(void *, const void *, const void *)){
   int final_dist_updated = C_FALSE;
-  size_t set_size =
-    mul_sz_perror(add_sz_perror(a->num_vts / C_SZ_BIT,
-				(a->num_vts % C_SZ_BIT > 0) + 1), C_SZ_SIZE);
+  size_t set_count = add_sz_perror(a->num_vts / C_SZ_BIT,
+				   (a->num_vts % C_SZ_BIT > 0) + 2);
+  size_t set_size = mul_sz_perror(set_count, C_SZ_SIZE);
   size_t u, v;
   size_t i;
   struct stack prev_s, next_s;
@@ -134,7 +139,8 @@ int tsp(const struct adj_lst *a,
   const void *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t * const prev_set = calloc_perror(1, set_size);
   void * const sum_wt = malloc_perror(1, a->wt_size);
-  prev_set[0] = start;
+  prev_set[0] = set_count;
+  prev_set[1] = start;
   memcpy(dist, wt_zero, a->wt_size);
   stack_init(&prev_s, 1, set_size, NULL);
   stack_push(&prev_s, prev_set);
@@ -151,10 +157,11 @@ int tsp(const struct adj_lst *a,
     tht_def.free = ht_def_free;
     thtp = &tht_def;
   }else{
-    /* TODO initialize and align*/
+    tht->init(tht->ht, set_size, wt_size,
+	      0, tht->alpha_n, tht->log_alpha_d,
+	      cmp_set, rdc_set, NULL, NULL);
+    tht->align(tht->ht, wt_size);
     thtp = tht;
-    thtp->init(thtp->ht, set_size, wt_size, NULL, thtp->context);
-    thtp->align(thtp->ht);
   }
   thtp->insert(thtp->ht, prev_set, dist);
   for (i = 0; i < a->num_vts - 1; i++){
@@ -176,18 +183,18 @@ int tsp(const struct adj_lst *a,
   /* compute the return to start */
   while (prev_s.num_elts > 0){
     stack_pop(&prev_s, prev_set);
-    u = prev_set[0];
+    u = prev_set[1];
     p_start = a->vt_wts[u]->elts;
-    p_end = p_start + a->vt_wts[u]->num_elts * a->pair_size;
-    for (p = p_start; p != p_end; p += a->pair_size){
-      v = *(const size_t *)p;
+    p_end = (char *)p_start + a->vt_wts[u]->num_elts * a->pair_size;
+    for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
+      v = read_vt(p);
       if (v == start){
 	add_wt(sum_wt,
 	       thtp->search(thtp->ht, prev_set),
-	       p + a->offset);
+	       (char *)p + a->offset);
 	if (!final_dist_updated){
 	  memcpy(dist, sum_wt, wt_size);
-	  final_dist_updated = TRUE;
+	  final_dist_updated = C_TRUE;
 	}else if (cmp_wt(dist, sum_wt) > 0){
 	  memcpy(dist, sum_wt, wt_size);
 	}
@@ -222,14 +229,14 @@ static void build_next(const struct adj_lst *a,
   const void *p = NULL, *p_start = NULL, *p_end = NULL;
   const void *next_wt = NULL;
   /* in single blocks for cache-efficiency, TODO move to the caller */
-  size_t * const prev_set = malloc_perror(2, set_size);
+  size_t * const prev_set = calloc_perror(2, set_size);
   size_t * const next_set = ptr(prev_set, 1, set_size);
   void * const prev_wt = malloc_perror(2, wt_size);
   void * const sum_wt = ptr(prev_wt, 1, wt_size);
   while (prev_s->num_elts > 0){
     stack_pop(prev_s, prev_set);
     tht->remove(tht->ht, prev_set, prev_wt);
-    u = prev_set[0];
+    u = prev_set[1];
     p_start = a->vt_wts[u]->elts;
     p_end = (char *)p_start + a->vt_wts[u]->num_elts * a->pair_size;
     for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
@@ -237,7 +244,7 @@ static void build_next(const struct adj_lst *a,
       ib_init(&ib, v);
       if (ib_set_member(&ib, &prev_set[1]) == NULL){
 	memcpy(next_set, prev_set, set_size);
-        next_set[0] = v;
+        next_set[1] = v;
         ib_init(&ib, u);
 	ib_set_union(&ib, &next_set[1]);
 	add_wt(sum_wt,
@@ -256,6 +263,28 @@ static void build_next(const struct adj_lst *a,
   free(prev_set);
   free(prev_wt);
   /* {prev, next}_set, {prev, sum}_wt, cannot be dereferenced */
+}
+
+/**
+   Set comparison. Each set has two size_t values (count of size_t values,
+   and last reached vertex) followed by a bit array representation of
+   previously reached vertices.
+*/
+
+static int cmp_set(const void *a, const void *b){
+  size_t i = 1; /* s[0] >= 2 for each set */
+  size_t *sa = a;
+  size_t *sb = b;
+  while (i < sa[0] && sa[i] == sb[i]) i++;
+  return (i != sa[0]);  
+}
+
+static size_t rdc_set(const void *a){
+  size_t i;
+  size_t ret = 0;
+  size_t *sa = a;
+  for (i = 1; i < sa[0]; i++) ret += sa[i]; /* with wrapping around */
+  return ret;
 }
 
 /**
