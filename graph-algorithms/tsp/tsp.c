@@ -2,12 +2,8 @@
    tsp.c
 
    An exact solution of TSP without vertex revisiting on graphs with generic
-   weights, including negative weights, with a hash table parameter.
-
-   Vertices are indexed from 0. Edge weights are of any basic type (e.g.
-   char, int, long, float, double), or are custom weights within a
-   contiguous block (e.g. pair of 64-bit segments to address the potential
-   overflow due to addition).
+   integer vertices and generic weights, including negative weights, and a
+   hash table parameter.
    
    The algorithm provides O(2^n n^2) assymptotic runtime, where n is the
    number of vertices in a tour, as well as tour existence detection. A bit
@@ -21,10 +17,21 @@
    is used, which contains an array with a count that is equal to n * 2^n,
    where n is the number of vertices in the graph.   
 
-   If E >> V and V < sizeof(size_t) * CHAR_BIT, a default hash table may
-   provide speed advantages by avoiding the computation of hash values. If V
-   is larger and the graph is sparse, a non-default hash table may provide
-   space advantages.
+   If E >> V and V < width of size_t, a default hash table may provide speed
+   advantages by avoiding the computation of hash values. A non-default hash
+   table may provide space advantages. A non-default hash may also enable
+   computation with V that would exceed the available memory resources with
+   the default hash table.
+
+   The implementation only uses integer and pointer operations. Given
+   parameter values within the specified ranges, the implementation
+   provides an error message and an exit is executed if an integer
+   overflow is attempted or an allocation is not completed due to
+   insufficient resources. The behavior outside the specified parameter
+   ranges is undefined.
+
+   The implementation does not use stdint.h and is portable under C89/C90
+   and C99.
 */
 
 #include <stdio.h>
@@ -55,7 +62,7 @@ struct ibit{
 static const size_t C_SZ_SIZE = sizeof(size_t);
 static const size_t C_SZ_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
 
-/* set comparison; faster than memcpy on set allocated with calloc */
+/* set comparison; faster than memcmp on sets allocated with calloc */
 static int cmp_set(const void *a, const void *b);
 static size_t rdc_set(const void *a);
 
@@ -83,8 +90,6 @@ static void build_next(const struct adj_lst *a,
 		       int (*cmp_wt)(const void *, const void *),
 		       void (*add_wt)(void *, const void *, const void *));
 static void fprintf_stderr_exit(const char *s, int line);
-
-/* functions for computing pointers */
 static void *ptr(const void *block, size_t i, size_t size);
 
 /**
@@ -93,23 +98,29 @@ static void *ptr(const void *block, size_t i, size_t size);
    Returns 0 if a tour exists, otherwise returns 1.
    a           : pointer to an adjacency list with at least one vertex
    start       : start vertex for running the algorithm
-   dist        : pointer to a preallocated block of the size of a weight in
-                 the adjacency list
+   dist        : pointer to a preallocated block of size wt_size (wt_size
+                 block) that equals to the size of a weight in the adjacency
+                 list; the value is written into the block if tsp returns 0;
+                 if the block pointed to by dist has no declared type and
+                 tsp returns 0, then tsp sets the effective type of the
+                 block to the type of a weight in the adjacency list by
+                 writing a value of the type
+   zero_wt     : pointer to a block of size wt_size with a zero value of
+                 the type used to represent a distance
    tht         : - NULL pointer, if a default hash table is used for
                  set hashing operations; a default hash table contains an
                  array with a count that is equal to n * 2^n, where n is the
                  number of vertices in the adjacency list; the maximal n
                  in a default hash table is system-dependent and is less
-                 than sizeof(size_t) * CHAR_BIT; if the allocation of a
-                 default hash table fails, the program terminates with an
-                 error message
+                 than the width of size_t; if the allocation of a default
+                 hash table fails for a given adjacency list, the program
+                 terminates with an error message
                  - a pointer to a set of parameters specifying a hash table
-                 used for set hashing operations; the size of a hash key is 
-                 k * (1 + lowest # k-sized blocks s.t. # bits >= # vertices),
-                 where k = sizeof(size_t)
-   add_wt      : addition function which copies the sum of the weight values
-                 pointed to by the second and third arguments to the
-                 preallocated weight block pointed to by the first argument
+                 used for set hashing operations
+   read_vt     : reads the integer value of the type used to represent
+                 vertices from the vt_size block pointed to by the argument
+                 and returns a size_t value; unsigned char provides an often
+                 sufficient and cache-efficient representation for vertices
    cmp_wt      : comparison function which returns a negative integer value
                  if the weight value pointed to by the first argument is
                  less than the weight value pointed to by the second, a
@@ -117,6 +128,12 @@ static void *ptr(const void *block, size_t i, size_t size);
                  the first argument is greater than the weight value 
                  pointed to by the second, and zero integer value if the two
                  weight values are equal
+   add_wt      : addition function which copies the sum of the weight values
+                 pointed to by the second and third arguments to the
+                 preallocated wt_size block pointed to by the first argument;
+                 if the distribution of weights can result in an overflow,
+                 the user may include an overflow test in the function or
+                 use a provided _perror-suffixed function
 */
 int tsp(const struct adj_lst *a,
 	size_t start,
