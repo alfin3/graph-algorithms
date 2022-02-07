@@ -51,7 +51,7 @@ struct ht_def{
   size_t wt_size;
   size_t num_vts;
   unsigned char *present;
-  void *elts;
+  void *wts;
 };
 
 struct ibit{
@@ -59,7 +59,6 @@ struct ibit{
   size_t bit; /* set element with a single set bit */
 };
 
-static const size_t C_SZ_SIZE = sizeof(size_t);
 static const size_t C_SZ_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
 
 /* set comparison; faster than memcmp on sets allocated with calloc */
@@ -100,11 +99,11 @@ static void *ptr(const void *block, size_t i, size_t size);
    start       : start vertex for running the algorithm
    dist        : pointer to a preallocated block of size wt_size (wt_size
                  block) that equals to the size of a weight in the adjacency
-                 list; the value is written into the block if tsp returns 0;
-                 if the block pointed to by dist has no declared type and
-                 tsp returns 0, then tsp sets the effective type of the
-                 block to the type of a weight in the adjacency list by
-                 writing a value of the type
+                 list; if the block pointed to by dist has no declared type,
+                 then tsp sets the effective type of the block to the type
+                 of a weight in the adjacency list by writing a value of the
+                 type; if tsp returns 1, then dist value is set to the value
+                 pointed to by zero_wt
    zero_wt     : pointer to a block of size wt_size with a zero value of
                  the type used to represent a distance
    tht         : - NULL pointer, if a default hash table is used for
@@ -144,22 +143,23 @@ int tsp(const struct adj_lst *a,
 	int (*cmp_wt)(const void *, const void *),
 	void (*add_wt)(void *, const void *, const void *)){
   int final_dist_updated = C_FALSE;
+  size_t i;
+  size_t u, v;
   size_t set_count = add_sz_perror(a->num_vts / C_SZ_BIT,
 				   (a->num_vts % C_SZ_BIT > 0) + 2);
-  size_t set_size = mul_sz_perror(set_count, C_SZ_SIZE);
-  size_t u, v;
-  size_t i;
+  size_t set_size = mul_sz_perror(set_count, sizeof(size_t));
   struct stack prev_s, next_s;
   struct ht_def ht_def;
   struct tsp_ht tht_def;
   const struct tsp_ht *thtp = NULL;
   const void *p = NULL, *p_start = NULL, *p_end = NULL;
-  size_t * const prev_set = calloc_perror(1, set_size);
+  size_t * const prev_set = malloc_perror(1, set_size);
   void * const sum_wt = malloc_perror(1, a->wt_size);
   prev_set[0] = set_count;
   prev_set[1] = start;
+  for (i = 2; i < set_count; i++) prev_set[i] == 0;
   memcpy(dist, wt_zero, a->wt_size);
-  stack_init(&prev_s, 1, set_size, NULL);
+  stack_init(&prev_s, set_size, NULL);
   stack_push(&prev_s, prev_set);
   if (tht == NULL){
     ht_def_init(&ht_def, set_size, a->wt_size, a->num_vts);
@@ -182,12 +182,14 @@ int tsp(const struct adj_lst *a,
   }
   thtp->insert(thtp->ht, prev_set, dist);
   for (i = 0; i < a->num_vts - 1; i++){
-    stack_init(&next_s, 1, set_size, NULL);
-    build_next(a, set_size, wt_size, &prev_s, &next_s, thtp, add_wt, cmp_wt);
+    stack_init(&next_s, set_size, NULL);
+    build_next(a, set_size, wt_size,
+	       &prev_s, &next_s, thtp,
+	       read_vt, add_wt, cmp_wt);
     stack_free(&prev_s);
     prev_s = next_s;
     if (prev_s.num_elts == 0){
-      /* no progress made ; TODO add a goto since the same as the end*/
+      /* no progress made */
       stack_free(&prev_s);
       thtp->free(thtp->ht);
       free(prev_set);
@@ -208,7 +210,7 @@ int tsp(const struct adj_lst *a,
       if (v == start){
 	add_wt(sum_wt,
 	       thtp->search(thtp->ht, prev_set),
-	       (char *)p + a->offset);
+	       (char *)p + a->wt_offset);
 	if (!final_dist_updated){
 	  memcpy(dist, sum_wt, wt_size);
 	  final_dist_updated = C_TRUE;
@@ -228,7 +230,7 @@ int tsp(const struct adj_lst *a,
   return 0;
 }
 
-/**
+/**TOREV
    Builds reachable sets from previous sets and updates a hash table
    mapping a set to a distance. 
  */
@@ -246,7 +248,7 @@ static void build_next(const struct adj_lst *a,
   const void *p = NULL, *p_start = NULL, *p_end = NULL;
   const void *next_wt = NULL;
   /* in single blocks for cache-efficiency, TODO move to the caller */
-  size_t * const prev_set = calloc_perror(2, set_size);
+  size_t * const prev_set = malloc_perror(2, set_size);
   size_t * const next_set = ptr(prev_set, 1, set_size);
   void * const prev_wt = malloc_perror(2, wt_size);
   void * const sum_wt = ptr(prev_wt, 1, wt_size);
@@ -266,7 +268,7 @@ static void build_next(const struct adj_lst *a,
 	ib_set_union(&ib, &next_set[1]);
 	add_wt(sum_wt,
 	       prev_wt,
-	       (char *)p + a->offset);
+	       (char *)p + a->wt_offset);
 	next_wt = tht->search(tht->ht, next_set);
 	if (next_wt == NULL){
 	  tht->insert(tht->ht, next_set, sum_wt);
@@ -283,17 +285,17 @@ static void build_next(const struct adj_lst *a,
 }
 
 /**
-   Set comparison. Each set has two size_t values (count of size_t values,
+   Set comparison. Each set has two size_t values (count of size_t values
    and last reached vertex) followed by a bit array representation of
    previously reached vertices.
 */
 
 static int cmp_set(const void *a, const void *b){
-  size_t i = 1; /* s[0] >= 2 for each set */
+  size_t i = 1; /* s[0] > 2 for each set */
   size_t *sa = a;
   size_t *sb = b;
   while (i < sa[0] && sa[i] == sb[i]) i++;
-  return (i != sa[0]);  
+  return (i < sa[0]);  
 }
 
 static size_t rdc_set(const void *a){
@@ -340,6 +342,7 @@ static void ht_def_init(void *ht,
   ht->set_size = set_size;
   ht->wt_size = wt_size;
   ht->num_vts = num_vts;
+  /* initialize with calloc for unsigned char which has no padding */
   ht->present =
     calloc_perror(mul_sz_perror(num_vts, pow_two_perror(num_vts)),
 		  sizeof(unsigned char));
@@ -350,9 +353,9 @@ static void ht_def_init(void *ht,
 
 static void ht_def_insert(void *ht, const void *s, const void *wt){
   struct ht_def *ht_def = ht;
-  const size_t *set = s;
-  size_t ix = set[0] + ht->num_vts * set[1];
-  ht->present[ix] = C_TRUE; /* convert to unsigned char from int */
+  const size_t *se = s;
+  size_t ix = se[1] + ht->num_vts * se[2]; /* set_count == 3 */
+  ht->present[ix] = C_TRUE; /* to unsigned char from int */
   memcpy(ptr(ht->wts, ix, ht->wt_size),
 	 wt,
 	 ht->wt_size);
@@ -360,19 +363,18 @@ static void ht_def_insert(void *ht, const void *s, const void *wt){
 
 static void *ht_def_search(const void *ht, const void *s){
   struct ht_def *ht_def = ht;
-  const size_t *set = s;
-  size_t ix = set[0] + ht->num_vts * set[1];
+  const size_t *se = s;
+  size_t ix = se[1] + ht->num_vts * se[2];
   if (ht->present[ix]){
     return ptr(ht->wts, ix, ht->wt_size);
-  }else{
-    return NULL;
   }
+  return NULL;
 }
 
 static void ht_def_remove(void *ht, const void *s, void *wt){
   struct ht_def *ht_def = ht;
-  const size_t *set = s;
-  size_t ix = set[0] + ht->num_vts * set[1];
+  const size_t *se = s;
+  size_t ix = se[1] + ht->num_vts * set[2];
   ht->present[ix] = C_FALSE;
   memcpy(wt,
 	 ptr(ht->wts, ix, ht->wt_size),

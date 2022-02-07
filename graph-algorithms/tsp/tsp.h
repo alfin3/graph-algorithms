@@ -75,11 +75,11 @@ struct tsp_ht{
    start       : start vertex for running the algorithm
    dist        : pointer to a preallocated block of size wt_size (wt_size
                  block) that equals to the size of a weight in the adjacency
-                 list; the value is written into the block if tsp returns 0;
-                 if the block pointed to by dist has no declared type and
-                 tsp returns 0, then tsp sets the effective type of the
-                 block to the type of a weight in the adjacency list by
-                 writing a value of the type
+                 list; if the block pointed to by dist has no declared type,
+                 then tsp sets the effective type of the block to the type
+                 of a weight in the adjacency list by writing a value of the
+                 type; if tsp returns 1, then dist value is set to the value
+                 pointed to by zero_wt
    zero_wt     : pointer to a block of size wt_size with a zero value of
                  the type used to represent a distance
    tht         : - NULL pointer, if a default hash table is used for
