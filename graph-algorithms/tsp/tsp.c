@@ -88,7 +88,6 @@ static void build_next(const struct adj_lst *a,
 		       size_t (*read_vt)(const void *),
 		       int (*cmp_wt)(const void *, const void *),
 		       void (*add_wt)(void *, const void *, const void *));
-static void fprintf_stderr_exit(const char *s, int line);
 static void *ptr(const void *block, size_t i, size_t size);
 
 /**
@@ -230,7 +229,7 @@ int tsp(const struct adj_lst *a,
   return 0;
 }
 
-/**TOREV
+/**
    Builds reachable sets from previous sets and updates a hash table
    mapping a set to a distance. 
  */
@@ -247,7 +246,7 @@ static void build_next(const struct adj_lst *a,
   struct ibit ib;
   const void *p = NULL, *p_start = NULL, *p_end = NULL;
   const void *next_wt = NULL;
-  /* in single blocks for cache-efficiency, TODO move to the caller */
+  /* in single blocks for cache-efficiency */
   size_t * const prev_set = malloc_perror(2, set_size);
   size_t * const next_set = ptr(prev_set, 1, set_size);
   void * const prev_wt = malloc_perror(2, wt_size);
@@ -261,11 +260,12 @@ static void build_next(const struct adj_lst *a,
     for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
       v = read_vt(p); 
       ib_init(&ib, v);
-      if (ib_set_member(&ib, &prev_set[1]) == NULL){
+      if (!ib_member(&ib, &prev_set[2]){
+        /* v not reached in prev_set; construct next set */
 	memcpy(next_set, prev_set, set_size);
         next_set[1] = v;
         ib_init(&ib, u);
-	ib_set_union(&ib, &next_set[1]);
+	ib_union(&ib, &next_set[2]);
 	add_wt(sum_wt,
 	       prev_wt,
 	       (char *)p + a->wt_offset);
@@ -274,7 +274,7 @@ static void build_next(const struct adj_lst *a,
 	  tht->insert(tht->ht, next_set, sum_wt);
 	  stack_push(next_s, next_set);
 	}else if (cmp_wt(next_wt, sum_wt) > 0){
-	  tht->insert(tht->ht, next_set, sum_wt);
+	  memcpy(next_wt, sum_wt, wt_size);
 	}
       }
     }
@@ -316,15 +316,12 @@ static void ib_init(struct ibit *ib, size_t n){
   ib->bit <<= n % C_SZ_BIT;
 }
 
-static size_t *ib_set_member(const struct ibit *ib, const size_t *set){
-  if (set[ib->ix] & ib->bit){
-    return (size_t *)(&set[ib->ix]);
-  }
-  return NULL;
+static int ib_member(const struct ibit *ib, const size_t *s){
+  return (s[ib->ix] & ib->bit); /* return non-zero if member */
 }
 
-static void ib_set_union(const struct ibit *ib, size_t *set){
-  set[ib->ix] |= ib->bit;
+static void ib_union(const struct ibit *ib, size_t *s){
+  s[ib->ix] |= ib->bit;
 }
 
 /**
@@ -336,9 +333,6 @@ static void ht_def_init(void *ht,
 			size_t wt_size,
 			size_t num_vts){
   struct ht_def *ht_def = ht;
-  if (c->num_vts >= C_SZ_BIT){
-    fprintf_stderr_exit("default hash table allocation failed", __LINE__);
-  }
   ht->set_size = set_size;
   ht->wt_size = wt_size;
   ht->num_vts = num_vts;
@@ -387,14 +381,6 @@ static void ht_def_free(void *ht){
   free(ht->wts);
   ht->present = NULL;
   ht->wts = NULL;
-}
-
-/**
-   Prints an error message and exits.
-*/
-static void fprintf_stderr_exit(const char *s, int line){
-  fprintf(stderr, "%s in %s at line %d\n", s,  __FILE__, line);
-  exit(EXIT_FAILURE);
 }
 
 /**
