@@ -5,16 +5,16 @@
    integer vertices and generic weights, including negative weights, and a
    hash table parameter.
    
-   The algorithm provides O(2^n n^2) assymptotic runtime, where n is the
+   The algorithm provides O(2**n n**2) assymptotic runtime, where n is the
    number of vertices in a tour, as well as tour existence detection. A bit
    array representation provides time and space efficient set membership and
-   union operations over O(2^n) sets.
+   union operations over O(2**n) sets.
 
    The hash table parameter specifies a hash table used for set hashing
    operations, and enables the optimization of the associated space and time
    resources by choice of a hash table and its load factor upper bound.
    If NULL is passed as a hash table parameter value, a default hash table
-   is used, which contains an array with a count that is equal to n * 2^n,
+   is used, which contains an array with a count that is equal to n * 2**n,
    where n is the number of vertices in the graph.   
 
    If E >> V and V < width of size_t, a default hash table may provide speed
@@ -42,6 +42,8 @@
 #include "graph.h"
 #include "stack.h"
 #include "utilities-mem.h"
+#include "utilities-mod.h"
+#include "utilities-lim.h"
 
 static const int C_FALSE = 0;
 static const int C_TRUE = 1;
@@ -66,8 +68,8 @@ static int cmp_set(const void *a, const void *b);
 static size_t rdc_set(const void *a);
 
 /* set operations based on a bit array representation */
-static void ib_init(struct ibit *ib, size_t n);
-static size_t *ib_set_member(const struct ibit *ib, const size_t *set);
+static void ib_init(struct ibit *ib, size_t vt);
+static int ib_set_member(const struct ibit *ib, const size_t *set);
 static void ib_set_union(const struct ibit *ib, size_t *set);
 
 /* default hash table operations */
@@ -82,6 +84,8 @@ static void ht_def_free(void *ht);
 
 /* auxiliary functions */
 static void build_next(const struct adj_lst *a,
+		       size_t set_size,
+		       size_t wt_size,
 		       struct stack *prev_s,
 		       struct stack *next_s,
 		       const struct tsp_ht *tht,
@@ -156,7 +160,7 @@ int tsp(const struct adj_lst *a,
   void * const sum_wt = malloc_perror(1, a->wt_size);
   prev_set[0] = set_count;
   prev_set[1] = start;
-  for (i = 2; i < set_count; i++) prev_set[i] == 0;
+  for (i = 2; i < set_count; i++) prev_set[i] = 0;
   memcpy(dist, wt_zero, a->wt_size);
   stack_init(&prev_s, set_size, NULL);
   stack_push(&prev_s, prev_set);
@@ -173,18 +177,18 @@ int tsp(const struct adj_lst *a,
     tht_def.free = ht_def_free;
     thtp = &tht_def;
   }else{
-    tht->init(tht->ht, set_size, wt_size,
+    tht->init(tht->ht, set_size, a->wt_size,
 	      0, tht->alpha_n, tht->log_alpha_d,
 	      cmp_set, rdc_set, NULL, NULL);
-    tht->align(tht->ht, wt_size);
+    tht->align(tht->ht, a->wt_size);
     thtp = tht;
   }
   thtp->insert(thtp->ht, prev_set, dist);
-  for (i = 0; i < a->num_vts - 1; i++){
+  for (i = 1; i < a->num_vts; i++){
     stack_init(&next_s, set_size, NULL);
-    build_next(a, set_size, wt_size,
+    build_next(a, set_size, a->wt_size,
 	       &prev_s, &next_s, thtp,
-	       read_vt, add_wt, cmp_wt);
+	       read_vt, cmp_wt, add_wt);
     stack_free(&prev_s);
     prev_s = next_s;
     if (prev_s.num_elts == 0){
@@ -211,10 +215,10 @@ int tsp(const struct adj_lst *a,
 	       thtp->search(thtp->ht, prev_set),
 	       (char *)p + a->wt_offset);
 	if (!final_dist_updated){
-	  memcpy(dist, sum_wt, wt_size);
+	  memcpy(dist, sum_wt, a->wt_size);
 	  final_dist_updated = C_TRUE;
 	}else if (cmp_wt(dist, sum_wt) > 0){
-	  memcpy(dist, sum_wt, wt_size);
+	  memcpy(dist, sum_wt, a->wt_size);
 	}
       }
     }
@@ -245,7 +249,7 @@ static void build_next(const struct adj_lst *a,
   size_t u, v;
   struct ibit ib;
   const void *p = NULL, *p_start = NULL, *p_end = NULL;
-  const void *next_wt = NULL;
+  void *next_wt = NULL;
   /* in single blocks for cache-efficiency */
   size_t * const prev_set = malloc_perror(2, set_size);
   size_t * const next_set = ptr(prev_set, 1, set_size);
@@ -260,12 +264,12 @@ static void build_next(const struct adj_lst *a,
     for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
       v = read_vt(p); 
       ib_init(&ib, v);
-      if (!ib_member(&ib, &prev_set[2]){
+      if (!ib_set_member(&ib, &prev_set[2])){
         /* v not reached in prev_set; construct next set */
 	memcpy(next_set, prev_set, set_size);
         next_set[1] = v;
         ib_init(&ib, u);
-	ib_union(&ib, &next_set[2]);
+	ib_set_union(&ib, &next_set[2]);
 	add_wt(sum_wt,
 	       prev_wt,
 	       (char *)p + a->wt_offset);
@@ -292,8 +296,8 @@ static void build_next(const struct adj_lst *a,
 
 static int cmp_set(const void *a, const void *b){
   size_t i = 1; /* s[0] > 2 for each set */
-  size_t *sa = a;
-  size_t *sb = b;
+  const size_t *sa = a;
+  const size_t *sb = b;
   while (i < sa[0] && sa[i] == sb[i]) i++;
   return (i < sa[0]);  
 }
@@ -301,7 +305,7 @@ static int cmp_set(const void *a, const void *b){
 static size_t rdc_set(const void *a){
   size_t i;
   size_t ret = 0;
-  size_t *sa = a;
+  const size_t *sa = a;
   for (i = 1; i < sa[0]; i++) ret += sa[i]; /* with wrapping around */
   return ret;
 }
@@ -310,17 +314,17 @@ static size_t rdc_set(const void *a){
    Set operations based on a bit array representation.
 */
 
-static void ib_init(struct ibit *ib, size_t n){
-  ib->ix = n / C_SZ_BIT;
+static void ib_init(struct ibit *ib, size_t vt){
+  ib->ix = vt / C_SZ_BIT;
   ib->bit = 1;
-  ib->bit <<= n % C_SZ_BIT;
+  ib->bit <<= vt % C_SZ_BIT;
 }
 
-static int ib_member(const struct ibit *ib, const size_t *s){
+static int ib_set_member(const struct ibit *ib, const size_t *s){
   return (s[ib->ix] & ib->bit); /* return non-zero if member */
 }
 
-static void ib_union(const struct ibit *ib, size_t *s){
+static void ib_set_union(const struct ibit *ib, size_t *s){
   s[ib->ix] |= ib->bit;
 }
 
@@ -333,14 +337,14 @@ static void ht_def_init(void *ht,
 			size_t wt_size,
 			size_t num_vts){
   struct ht_def *ht_def = ht;
-  ht->set_size = set_size;
-  ht->wt_size = wt_size;
-  ht->num_vts = num_vts;
+  ht_def->set_size = set_size;
+  ht_def->wt_size = wt_size;
+  ht_def->num_vts = num_vts;
   /* initialize with calloc for unsigned char which has no padding */
-  ht->present =
+  ht_def->present =
     calloc_perror(mul_sz_perror(num_vts, pow_two_perror(num_vts)),
 		  sizeof(unsigned char));
-  ht->wts =
+  ht_def->wts =
     malloc_perror(mul_sz_perror(num_vts, pow_two_perror(num_vts)),
 		  wt_size);
 }
@@ -348,19 +352,19 @@ static void ht_def_init(void *ht,
 static void ht_def_insert(void *ht, const void *s, const void *wt){
   struct ht_def *ht_def = ht;
   const size_t *se = s;
-  size_t ix = se[1] + ht->num_vts * se[2]; /* set_count == 3 */
-  ht->present[ix] = C_TRUE; /* to unsigned char from int */
-  memcpy(ptr(ht->wts, ix, ht->wt_size),
+  size_t ix = se[1] + ht_def->num_vts * se[2]; /* set_count == 3 */
+  ht_def->present[ix] = C_TRUE; /* to unsigned char from int */
+  memcpy(ptr(ht_def->wts, ix, ht_def->wt_size),
 	 wt,
-	 ht->wt_size);
+	 ht_def->wt_size);
 }
 
 static void *ht_def_search(const void *ht, const void *s){
-  struct ht_def *ht_def = ht;
+  const struct ht_def *ht_def = ht;
   const size_t *se = s;
-  size_t ix = se[1] + ht->num_vts * se[2];
-  if (ht->present[ix]){
-    return ptr(ht->wts, ix, ht->wt_size);
+  size_t ix = se[1] + ht_def->num_vts * se[2];
+  if (ht_def->present[ix]){
+    return ptr(ht_def->wts, ix, ht_def->wt_size);
   }
   return NULL;
 }
@@ -368,19 +372,19 @@ static void *ht_def_search(const void *ht, const void *s){
 static void ht_def_remove(void *ht, const void *s, void *wt){
   struct ht_def *ht_def = ht;
   const size_t *se = s;
-  size_t ix = se[1] + ht->num_vts * set[2];
-  ht->present[ix] = C_FALSE;
+  size_t ix = se[1] + ht_def->num_vts * se[2];
+  ht_def->present[ix] = C_FALSE;
   memcpy(wt,
-	 ptr(ht->wts, ix, ht->wt_size),
-	 ht->wt_size);
+	 ptr(ht_def->wts, ix, ht_def->wt_size),
+	 ht_def->wt_size);
 }
 
 static void ht_def_free(void *ht){
   struct ht_def *ht_def = ht;
-  free(ht->present);
-  free(ht->wts);
-  ht->present = NULL;
-  ht->wts = NULL;
+  free(ht_def->present);
+  free(ht_def->wts);
+  ht_def->present = NULL;
+  ht_def->wts = NULL;
 }
 
 /**
