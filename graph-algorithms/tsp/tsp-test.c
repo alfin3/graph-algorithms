@@ -655,6 +655,7 @@ void add_double(void *s, const void *a, const void *b){
 }
 
 void run_small_graph_test(){
+  int ret_def = -1, ret_divchn = -1, ret_muloa = -1;
   size_t i, j, k;
   void *wt_zero = NULL;
   void *dist_def = NULL, *dist_divchn = NULL, *dist_muloa = NULL;
@@ -705,21 +706,24 @@ void run_small_graph_test(){
 	C_SET_ZERO[k](dist_def);
 	C_SET_ZERO[k](dist_divchn);
 	C_SET_ZERO[k](dist_muloa);
-	tsp(&a, i, dist_def, wt_zero, NULL,
-	    C_READ_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
-	tsp(&a, i, dist_divchn, wt_zero, &tht_divchn,
-	    C_READ_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
-	tsp(&a, i, dist_muloa, wt_zero, &tht_muloa,
-	    C_READ_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
+	ret_def = tsp(&a, i, dist_def, wt_zero, NULL,
+		      C_READ_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
+	ret_divchn = tsp(&a, i, dist_divchn, wt_zero, &tht_divchn,
+			 C_READ_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
+	ret_muloa = tsp(&a, i, dist_muloa, wt_zero, &tht_muloa,
+			C_READ_VT[j], C_CMP_WT[k], C_ADD_WT[k]);
 	adj_lst_free(&a);
 	printf("\t\t\t\tdefault dist: ");
 	C_PRINT[k](dist_def);
+	printf(", tour exists: %s", ret_def ? "N" : "Y");
 	printf("\n");
 	printf("\t\t\t\tdivchn dist:  ");
 	C_PRINT[k](dist_divchn);
+	printf(", tour exists: %s", ret_divchn ? "N" : "Y");
 	printf("\n");
 	printf("\t\t\t\tmuloa dist:   ");
 	C_PRINT[k](dist_muloa);
+	printf(", tour exists: %s", ret_muloa ? "N" : "Y");
 	printf("\n");
       }
     }

@@ -229,8 +229,7 @@ int tsp(const struct adj_lst *a,
   free(sum_wt);
   /* prev_set and sum_wt cannot be dereferenced */
   thtp = NULL;
-  if (!final_dist_updated && a->num_vts > 1) return 1;
-  return 0;
+  return (!final_dist_updated && a->num_vts > 1);
 }
 
 /**
