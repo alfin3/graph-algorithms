@@ -1,14 +1,16 @@
-
-A hash table is modified by threads calling insert, remove, and/or delete operations concurrently. The design provides the following guarantees with respect to the final state of a hash table, defined as a pair of i) a load factor, and ii) the set of sets of key-element pairs for each slot of the hash table, after all operations are completed:
-- a single final state is guaranteed with respect to concurrent insert, remove, and/or delete operations if the sets of keys used by threads are disjoint,
-- if insert operations are called by more than one thread concurrently and the sets of keys used by threads are not disjoint, then a single final state of the hash table is guaranteed according to a user-defined reduction function (e.g. min, max, add, multiply, and, or, xor of key-associated elements),
-- because chaining does not limit the number of insertions, each thread is theoretically guaranteed to complete its batch operation i) before a load factor upper bound (alpha) is exceeded, ii) before the hash table grows as a part of a called insert operation when alpha is temporarily* exceeded**, or iii) after the hash table reaches its maximum count of slots on a given system and alpha no longer bounds the load factor.
+A hash table can be modified by threads calling insert, remove, and/or delete operations concurrently. The hash table design provides the following guarantees with respect to the final state of a hash table, which is defined as a pair of i) a load factor, and ii) a set S consisting of sets of key-element pairs, where the number of sets in S is equal to the number of slots in the hash table\*:
+- a single final state is guaranteed after concurrent insert, remove, and/or delete operations if the sets of keys used by threads are disjoint,
+- a single final state is guaranteed according to a user-defined element comparison function (e.g. min, max)** after concurrent insert operations if the sets of keys used by threads are not disjoint.
+   
+A hash table always reaches a final state, including the single final state if it is guaranteed, because chaining does not limit the number of insertions. According to the hash table design, a thread completes a batch operation i) before a load factor upper bound is exceeded, ii) before the hash table grows when the load factor bound is temporarily*** exceeded, or iii) after the hash table reaches its maximum count of slots on a given system and the load factor is no longer bounded. In ii) and iii) a thread is guaranteed to complete its operation, because for any load factor upper bound, if it is exceeded, the hash table does not limit the number of insertions due to chaining.
 
 The provided design and associated guarantees are suited for the use of hash tables in multithreaded graph algorithms, e.g. in multithreaded looping in an adjacency list.
 
-\* unless the growth step that follows does not lower the load factor below alpha because the maximum count of slots is reached during the growth step, in which case alpha no longer bounds the load factor
+\* each set in S formally includes a unique token
 
-** to the extent dependent on the number of threads that passed the first critical section and their batch sizes
+** other reduction functions to be added in future versions (e.g. add, multiply, and, or, xor)
+
+*** unless the growth step that follows does not lower the load factor sufficiently because the maximum count of slots on a given system is reached during the growth step and the load factor is no longer bounded
 
 ![alt text](https://github.com/alfin3/graph-algorithms/blob/master/readme/divchn-diag-gate-open.jpg)
 ![alt text](https://github.com/alfin3/graph-algorithms/blob/master/readme/divchn-diag-gate-closed.jpg)
