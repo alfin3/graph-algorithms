@@ -2,10 +2,11 @@
    mergesort-pthread.c
 
    Functions for optimizing and running a generic merge sort algorithm
-   with parallel sorting and parallel merging. 
+   with parallel sorting and parallel merging.
 
-   The algorithm provides \Theta(n/log^{2}n) theoretical parallelism within
-   the dynamic multithreading model.
+   The design decouples merge and sort parallelisms in mergesort. The
+   algorithm provides \Theta(n/log^{2}n) theoretical parallelism within the
+   dynamic multithreading model.
 
    The implementation provides i) a set of parameters for setting the
    constant base case upper bounds for switching from parallel sorting to
@@ -19,13 +20,22 @@
    recursion depth is limited by switching to a base case non-recursive
    sort algorithm.
 
+   The implementation only uses integer and pointer operations. Given
+   parameter values within the specified ranges, the implementation provides
+   an error message and an exit is executed if an integer overflow is
+   attempted or an allocation is not completed due to insufficient resources.
+   The behavior outside the specified parameter ranges is undefined.
+
+   The implementation does not use stdint.h and is portable under C89/C90
+   and C99. The requirement is that pthreads API is available.
+
    On a 4-core machine, the optimization of the base case upper bound
    parameters resulted in a speedup of approximately 2.6X in comparison
    to serial qsort (stdlib.h) on arrays of 10M random integer or double
    elements.
 */
 
-#define _POSIX_C_SOURCE 200112L
+#define _XOPEN_SOURCE 600
 
 #include <unistd.h>
 #include <stdio.h>
@@ -37,7 +47,7 @@
 #include "utilities-mem.h"
 #include "utilities-pthread.h"
 
-typedef struct{
+struct mergesort_arg{
   size_t p, r;
   size_t sbase_count; /* >0, count of sort base case bound */
   size_t mbase_count; /* >1, count of merge base case bound */
@@ -46,9 +56,9 @@ typedef struct{
   void *cat_elts; /* pointer to concatenation buffer for merging */
   void *elts; /* pointer to an input array */
   int (*cmp)(const void *, const void *);
-} mergesort_arg_t;
+};
 
-typedef struct{
+struct merge_arg{
   size_t ap, ar, bp, br, cs;
   size_t mbase_count; /* >1, count of merge base case bound */
   size_t elt_size;
@@ -56,22 +66,21 @@ typedef struct{
   void *cat_seg_elts; /* pointer to concatenation buffer segment */
   void *elts; /* pointer to an input array */
   int (*cmp)(const void *, const void *);
-} merge_arg_t;
+};
 
-const size_t C_SIZE_MAX = (size_t)-1; /* cannot be reached as array index */
+static const size_t C_SIZE_ULIMIT = (size_t)-1; /* not reached as index */
 
 static void *mergesort_thread(void *arg);
 static void *merge_thread(void *arg);
-static void merge(merge_arg_t *ma);
-static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
+static void merge(struct merge_arg *ma);
+void *ptr(const void *block, size_t i, size_t size);
 
 /**
    Sorts a given array pointed to by elts in ascending order according to
    cmp. The array contains count elements of elt_size bytes. The first
    thread entry is placed on the thread stack of the caller.
    elts        : pointer to the array to sort
-   count       : > 0, < 2^{CHAR_BIT * sizeof(size_t) - 1} count of elements
-                 in the array
+   count       : > 0, < 2**{size_t width - 1} count of elements in the array
    elt_size    : size of each element in the array in bytes
    sbase_count : > 0 base case upper bound for parallel sorting; if the count
                  of an unsorted subarray is less or equal to sbase_count,
@@ -93,7 +102,7 @@ void mergesort_pthread(void *elts,
 		       size_t sbase_count,
 		       size_t mbase_count,
 		       int (*cmp)(const void *, const void *)){
-  mergesort_arg_t msa;
+  struct mergesort_arg msa;
   if (count < 1) return;
   msa.p = 0;
   msa.r = count - 1;
@@ -116,12 +125,12 @@ void mergesort_pthread(void *elts,
 */
 static void *mergesort_thread(void *arg){
   size_t q;
-  mergesort_arg_t *msa = arg;
-  mergesort_arg_t child_msas[2];
+  struct mergesort_arg *msa = arg;
+  struct mergesort_arg child_msas[2];
+  struct merge_arg ma;
   pthread_t child_ids[2];
-  merge_arg_t ma;
   if (msa->r - msa->p + 1 <= msa->sbase_count){
-    qsort(elt_ptr(msa->elts, msa->p, msa->elt_size),
+    qsort(ptr(msa->elts, msa->p, msa->elt_size),
 	  msa->r - msa->p + 1,
 	  msa->elt_size,
 	  msa->cmp);
@@ -167,13 +176,13 @@ static void *mergesort_thread(void *arg){
     ma.mbase_count = msa->mbase_count;
     ma.elt_size = msa->elt_size;
     ma.num_onthread_rec = msa->num_onthread_rec;
-    ma.cat_seg_elts = elt_ptr(msa->cat_elts, msa->p, msa->elt_size);
+    ma.cat_seg_elts = ptr(msa->cat_elts, msa->p, msa->elt_size);
     ma.elts = msa->elts;
     ma.cmp = msa->cmp;
     merge_thread(&ma);
     /* copy the merged result into the input array */
-    memcpy(elt_ptr(msa->elts, msa->p, msa->elt_size),
-	   elt_ptr(ma.cat_seg_elts, 0, msa->elt_size),
+    memcpy(ptr(msa->elts, msa->p, msa->elt_size),
+	   ptr(ma.cat_seg_elts, 0, msa->elt_size),
 	   (msa->r - msa->p + 1) * msa->elt_size);
   }
   return NULL;
@@ -184,11 +193,11 @@ static void *mergesort_thread(void *arg){
 */
 static void *merge_thread(void *arg){
   size_t aq, bq, ix;
-  merge_arg_t *ma = arg;
-  merge_arg_t child_mas[2];
+  struct merge_arg *ma = arg;
+  struct merge_arg child_mas[2];
   pthread_t child_ids[2];
-  if ((ma->ap == C_SIZE_MAX && ma->ar == C_SIZE_MAX) ||
-      (ma->bp == C_SIZE_MAX && ma->br == C_SIZE_MAX) ||
+  if ((ma->ap == C_SIZE_ULIMIT && ma->ar == C_SIZE_ULIMIT) ||
+      (ma->bp == C_SIZE_ULIMIT && ma->br == C_SIZE_ULIMIT) ||
       (ma->ar - ma->ap) + (ma->br - ma->bp) + 2 <= ma->mbase_count){
     merge(ma);
     return NULL;
@@ -202,22 +211,22 @@ static void *merge_thread(void *arg){
     child_mas[0].cs = ma->cs;
     child_mas[1].ap = aq + 1;
     child_mas[1].ar = ma->ar;
-    ix = leq_bsearch(elt_ptr(ma->elts, aq, ma->elt_size),
-		     elt_ptr(ma->elts, ma->bp, ma->elt_size),
+    ix = leq_bsearch(ptr(ma->elts, aq, ma->elt_size),
+		     ptr(ma->elts, ma->bp, ma->elt_size),
 		     ma->br - ma->bp + 1, /* at least 1 element */
 		     ma->elt_size,
 		     ma->cmp);
     if (ix == ma->br - ma->bp + 1){
-      child_mas[0].bp = C_SIZE_MAX;
-      child_mas[0].br = C_SIZE_MAX;
+      child_mas[0].bp = C_SIZE_ULIMIT;
+      child_mas[0].br = C_SIZE_ULIMIT;
       child_mas[1].bp = ma->bp;
       child_mas[1].br = ma->br;
       child_mas[1].cs = ma->cs + (aq - ma->ap + 1);
     }else if (ix == ma->br - ma->bp){
       child_mas[0].bp = ma->bp;
       child_mas[0].br = ma->br;
-      child_mas[1].bp = C_SIZE_MAX;
-      child_mas[1].br = C_SIZE_MAX;
+      child_mas[1].bp = C_SIZE_ULIMIT;
+      child_mas[1].br = C_SIZE_ULIMIT;
       child_mas[1].cs = ma->cs + (aq - ma->ap) + (ma->br - ma->bp) + 2;
     }else{
       child_mas[0].bp = ma->bp;
@@ -233,22 +242,22 @@ static void *merge_thread(void *arg){
     child_mas[0].cs = ma->cs;
     child_mas[1].bp = bq + 1;
     child_mas[1].br = ma->br;
-    ix = leq_bsearch(elt_ptr(ma->elts, bq, ma->elt_size),
-		     elt_ptr(ma->elts, ma->ap, ma->elt_size),
+    ix = leq_bsearch(ptr(ma->elts, bq, ma->elt_size),
+		     ptr(ma->elts, ma->ap, ma->elt_size),
 		     ma->ar - ma->ap + 1, /* at least 1 element */
 		     ma->elt_size,
 		     ma->cmp);
     if (ix == ma->ar - ma->ap + 1){
-      child_mas[0].ap = C_SIZE_MAX;
-      child_mas[0].ar = C_SIZE_MAX;
+      child_mas[0].ap = C_SIZE_ULIMIT;
+      child_mas[0].ar = C_SIZE_ULIMIT;
       child_mas[1].ap = ma->ap;
       child_mas[1].ar = ma->ar;
       child_mas[1].cs = ma->cs + (bq - ma->bp + 1);
     }else if (ix == ma->ar - ma->ap){
       child_mas[0].ap = ma->ap;
       child_mas[0].ar = ma->ar;
-      child_mas[1].ap = C_SIZE_MAX;
-      child_mas[1].ar = C_SIZE_MAX;
+      child_mas[1].ap = C_SIZE_ULIMIT;
+      child_mas[1].ar = C_SIZE_ULIMIT;
       child_mas[1].cs = ma->cs + (ma->ar - ma->ap) + (bq - ma->bp) + 2;
     }else{
       child_mas[0].ap = ma->ap;
@@ -290,18 +299,18 @@ static void *merge_thread(void *arg){
    Merges two sorted subarrays onto a concatenation array as the base case
    of parallel merge.
 */
-static void merge(merge_arg_t *ma){
+static void merge(struct merge_arg *ma){
   size_t first_ix, second_ix, cat_ix;
   size_t elt_size = ma->elt_size;
-  if (ma->ap == C_SIZE_MAX && ma->ar == C_SIZE_MAX){
+  if (ma->ap == C_SIZE_ULIMIT && ma->ar == C_SIZE_ULIMIT){
     /* a is empty */
-    memcpy(elt_ptr(ma->cat_seg_elts, ma->cs, elt_size),
-	   elt_ptr(ma->elts, ma->bp, elt_size),
+    memcpy(ptr(ma->cat_seg_elts, ma->cs, elt_size),
+	   ptr(ma->elts, ma->bp, elt_size),
 	   (ma->br - ma->bp + 1) * elt_size);
-  }else if (ma->bp == C_SIZE_MAX && ma->br == C_SIZE_MAX){
+  }else if (ma->bp == C_SIZE_ULIMIT && ma->br == C_SIZE_ULIMIT){
     /* b is empty */
-    memcpy(elt_ptr(ma->cat_seg_elts, ma->cs, elt_size),
-	   elt_ptr(ma->elts, ma->ap, elt_size),
+    memcpy(ptr(ma->cat_seg_elts, ma->cs, elt_size),
+	   ptr(ma->elts, ma->ap, elt_size),
 	   (ma->ar - ma->ap + 1) * elt_size);
   }else{
     /* a and b are each not empty */
@@ -309,36 +318,36 @@ static void merge(merge_arg_t *ma){
     second_ix = ma->bp;
     cat_ix = ma->cs;
     while(first_ix <= ma->ar && second_ix <= ma->br){
-      if (ma->cmp(elt_ptr(ma->elts, first_ix, elt_size),
-		  elt_ptr(ma->elts, second_ix, elt_size)) < 0){
-	memcpy(elt_ptr(ma->cat_seg_elts, cat_ix, elt_size),
-	       elt_ptr(ma->elts, first_ix, elt_size),
+      if (ma->cmp(ptr(ma->elts, first_ix, elt_size),
+		  ptr(ma->elts, second_ix, elt_size)) < 0){
+	memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
+	       ptr(ma->elts, first_ix, elt_size),
 	       elt_size);
 	cat_ix++;
 	first_ix++;
       }else{
-	memcpy(elt_ptr(ma->cat_seg_elts, cat_ix, elt_size),
-	       elt_ptr(ma->elts, second_ix, elt_size),
+	memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
+	       ptr(ma->elts, second_ix, elt_size),
 	       elt_size);
 	cat_ix++;
 	second_ix++;
       }
     }
     if (second_ix == ma->br + 1){
-      memcpy(elt_ptr(ma->cat_seg_elts, cat_ix, elt_size),
-	     elt_ptr(ma->elts, first_ix, elt_size),
+      memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
+	     ptr(ma->elts, first_ix, elt_size),
 	     (ma->ar - first_ix + 1) * elt_size);
     }else{
-      memcpy(elt_ptr(ma->cat_seg_elts, cat_ix, elt_size),
-	     elt_ptr(ma->elts, second_ix, elt_size),
+      memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
+	     ptr(ma->elts, second_ix, elt_size),
 	     (ma->br - second_ix + 1) * elt_size);
     }
   }
 }
 
 /**
-   Computes a pointer to an element in an element array.
+   Computes a pointer to the ith element in the block of elements.
 */
-static void *elt_ptr(const void *elts, size_t i, size_t elt_size){
-  return (void *)((char *)elts + i * elt_size);
+void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
 }

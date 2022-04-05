@@ -6,12 +6,12 @@
 
    The following command line arguments can be used to customize tests:
    mergesort-pthread-test
-      [0, # bits in size_t - 1) : a
-      [0, # bits in size_t - 1) : b s.t. 2^a <= count <= 2^b
-      [0, # bits in size_t) : c
-      [0, # bits in size_t) : d s.t. 2^c <= sort base case bound <= 2^d
-      [1, # bits in size_t) : e
-      [1, # bits in size_t) : f s.t. 2^e <= merge base case bound <= 2^f
+      [0, size_t width - 1) : a
+      [0, size_t width - 1) : b s.t. 2**a <= count <= 2**b
+      [0, size_t width) : c
+      [0, size_t width) : d s.t. 2**c <= sort base case bound <= 2**d
+      [1, size_t width) : e
+      [1, size_t width) : f s.t. 2**e <= merge base case bound <= 2**f
       [0, 1] : int corner test on/off
       [0, 1] : int performance test on/off
       [0, 1] : double corner test on/off
@@ -29,12 +29,14 @@
    values are used for the unspecified arguments according to the
    C_ARGS_DEF array.
 
-   The implementation of tests does not use stdint.h and is portable under
-   C89/C90 with the requirements that CHAR_BIT * sizeof(size_t) is even and
-   pthreads API is available.
+   The implementation does not use stdint.h and is portable under C89/C90
+   and C99. The requirements are: i) the width of size_t is less than 2040
+   and is even, and ii) pthreads API is available.
+   
+   TODO: add portable printing of size_t
 */
 
-#define _POSIX_C_SOURCE 200112L
+#define _XOPEN_SOURCE 600
 
 #include <unistd.h>
 #include <stdio.h>
@@ -46,6 +48,7 @@
 #include "mergesort-pthread.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
+#include "utilities-lim.h"
 
 /**
    Generate random numbers in a portable way for test purposes only; rand()
@@ -61,55 +64,44 @@
 
 /* input handling */
 const char *C_USAGE =
-  "mergesort-pthread-test \n"
-  "[0, # bits in size_t - 1) : a \n"
-  "[0, # bits in size_t - 1) : b s.t. 2^a <= count <= 2^b \n"
-  "[0, # bits in size_t) : c \n"
-  "[0, # bits in size_t) : d s.t. 2^c <= sort base case bound <= 2^d \n"
-  "[1, # bits in size_t) : e \n"
-  "[1, # bits in size_t) : f s.t. 2^e <= merge base case bound <= 2^f \n"
-  "[0, 1] : int corner test on/off \n"
-  "[0, 1] : int performance test on/off \n"
-  "[0, 1] : double corner test on/off \n"
-  "[0, 1] : double performance test on/off \n";
-const int C_ARGC_MAX = 11;
-const size_t C_ARGS_DEF[10] = {15, 15, 10, 15, 10, 15, 1, 1, 1, 1};
-const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+  "mergesort-pthread-test\n"
+  "[0, size_t width - 1) : a\n"
+  "[0, size_t width - 1) : b s.t. 2**a <= count <= 2**b\n"
+  "[0, size_t width) : c\n"
+  "[0, size_t width) : d s.t. 2**c <= sort base case bound <= 2**d\n"
+  "[1, size_t width) : e\n"
+  "[1, size_t width) : f s.t. 2**e <= merge base case bound <= 2**f\n"
+  "[0, 1] : int corner test on/off\n"
+  "[0, 1] : int performance test on/off\n"
+  "[0, 1] : double corner test on/off\n"
+  "[0, 1] : double performance test on/off\n";
+const int C_ARGC_ULIMIT = 11;
+const size_t C_ARGS_DEF[10] = {15u, 15u, 10u, 15u, 10u, 15u, 1u, 1u, 1u, 1u};
+const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
 
 /* corner cases */
-const size_t C_CORNER_TRIALS = 10;
-const size_t C_CORNER_COUNT_MAX = 17;
-const size_t C_CORNER_SBASE_START = 1;
-const size_t C_CORNER_SBASE_END = 17;
-const size_t C_CORNER_MBASE_START = 2;
-const size_t C_CORNER_MBASE_END = 20;
+const size_t C_CORNER_TRIALS = 10u;
+const size_t C_CORNER_COUNT_ULIMIT = 17u;
+const size_t C_CORNER_SBASE_START = 1u;
+const size_t C_CORNER_SBASE_END = 17u;
+const size_t C_CORNER_MBASE_START = 2u;
+const size_t C_CORNER_MBASE_END = 20u;
 const double C_HALF_PROB = 0.5;
 
 /* performance tests */
-const size_t C_TRIALS = 5;
+const size_t C_TRIALS = 5u;
 
 double timer();
-void print_uint_elts(const size_t *a, size_t count);
 void print_test_result(int res);
 
 int cmp_int(const void *a, const void *b){
-  if (*(int *)a > *(int *)b){
-    return 1;
-  }else if  (*(int *)a < *(int *)b){
-    return -1;
-  }else{
-    return 0;
-  }
+  return ((*(const int *)a > *(const int *)b) -
+	  (*(const int *)a < *(const int *)b));
 }
 
 int cmp_double(const void *a, const void *b){
-  if (*(double *)a > *(double *)b){
-    return 1;
-  }else if  (*(double *)a < *(double *)b){
-    return -1;
-  }else{
-    return 0;
-  }
+  return ((*(const double *)a > *(const double *)b) -
+	  (*(const double *)a < *(const double *)b));
 }
 
 /**
@@ -121,11 +113,11 @@ void run_int_corner_test(){
   size_t count, sb, mb;
   size_t i, j;
   size_t elt_size =  sizeof(int);
-  arr_a =  malloc_perror(C_CORNER_COUNT_MAX, elt_size);
-  arr_b =  malloc_perror(C_CORNER_COUNT_MAX, elt_size);
+  arr_a =  malloc_perror(C_CORNER_COUNT_ULIMIT, elt_size);
+  arr_b =  malloc_perror(C_CORNER_COUNT_ULIMIT, elt_size);
   printf("Test mergesort_pthread on corner cases on random "
 	 "integer arrays\n");
-  for (count = 1; count <= C_CORNER_COUNT_MAX; count++){
+  for (count = 1; count <= C_CORNER_COUNT_ULIMIT; count++){
     for (sb = C_CORNER_SBASE_START; sb <= C_CORNER_SBASE_END; sb++){
       for (mb = C_CORNER_MBASE_START; mb <= C_CORNER_MBASE_END; mb++){
 	for(i = 0; i < C_CORNER_TRIALS; i++){
@@ -154,31 +146,31 @@ void run_int_corner_test(){
    Runs a test comparing mergesort_pthread vs. qsort performance on random 
    integer arrays across sort and merge base count bounds.
 */
-void run_int_opt_test(int pow_count_start,
-		      int pow_count_end,
-		      int pow_sbase_start,
-		      int pow_sbase_end,
-		      int pow_mbase_start,
-		      int pow_mbase_end){
+void run_int_opt_test(size_t log_count_start,
+		      size_t log_count_end,
+		      size_t log_sbase_start,
+		      size_t log_sbase_end,
+		      size_t log_mbase_start,
+		      size_t log_mbase_end){
   int res = 1;
   int *arr_a = NULL, *arr_b = NULL;
-  int ci, si, mi;
+  size_t ci, si, mi;
   size_t count, sbase, mbase;
   size_t i, j;
   size_t elt_size = sizeof(int);
   double tot_m, tot_q, t_m, t_q;
-  arr_a =  malloc_perror(pow_two(pow_count_end), elt_size);
-  arr_b =  malloc_perror(pow_two(pow_count_end), elt_size);
+  arr_a =  malloc_perror(pow_two_perror(log_count_end), elt_size);
+  arr_b =  malloc_perror(pow_two_perror(log_count_end), elt_size);
   printf("Test mergesort_pthread performance on random integer arrays\n");
-  for (ci = pow_count_start; ci <= pow_count_end; ci++){
-    count = pow_two(ci); /* > 0 */
+  for (ci = log_count_start; ci <= log_count_end; ci++){
+    count = pow_two_perror(ci); /* > 0 */
     printf("\t# trials: %lu, array count: %lu\n",
 	   TOLU(C_TRIALS), TOLU(count));
-    for (si = pow_sbase_start; si <= pow_sbase_end; si++){
-      sbase = pow_two(si);
+    for (si = log_sbase_start; si <= log_sbase_end; si++){
+      sbase = pow_two_perror(si);
       printf("\t\tsort base count: %lu\n", TOLU(sbase));
-      for (mi = pow_mbase_start; mi <= pow_mbase_end; mi++){
-	mbase = pow_two(mi);
+      for (mi = log_mbase_start; mi <= log_mbase_end; mi++){
+	mbase = pow_two_perror(mi);
 	printf("\t\t\tmerge base count: %lu\n", TOLU(mbase));
 	tot_m = 0.0;
 	tot_q = 0.0;
@@ -223,11 +215,11 @@ void run_double_corner_test(){
   size_t i, j;
   size_t elt_size =  sizeof(double);
   double *arr_a = NULL, *arr_b = NULL;
-  arr_a =  malloc_perror(C_CORNER_COUNT_MAX, elt_size);
-  arr_b =  malloc_perror(C_CORNER_COUNT_MAX, elt_size);
+  arr_a =  malloc_perror(C_CORNER_COUNT_ULIMIT, elt_size);
+  arr_b =  malloc_perror(C_CORNER_COUNT_ULIMIT, elt_size);
   printf("Test mergesort_pthread on corner cases on random "
 	 "double arrays\n");
-  for (count = 1; count <= C_CORNER_COUNT_MAX; count++){
+  for (count = 1; count <= C_CORNER_COUNT_ULIMIT; count++){
     for (sb = C_CORNER_SBASE_START; sb <= C_CORNER_SBASE_END; sb++){
       for (mb = C_CORNER_MBASE_START; mb <= C_CORNER_MBASE_END; mb++){
 	for(i = 0; i < C_CORNER_TRIALS; i++){
@@ -256,31 +248,31 @@ void run_double_corner_test(){
    Runs a test comparing mergesort_pthread vs. qsort performance on random 
    double arrays across sort and merge base count bounds.
 */
-void run_double_opt_test(int pow_count_start,
-			 int pow_count_end,
-			 int pow_sbase_start,
-			 int pow_sbase_end,
-			 int pow_mbase_start,
-			 int pow_mbase_end){
+void run_double_opt_test(size_t log_count_start,
+			 size_t log_count_end,
+			 size_t log_sbase_start,
+			 size_t log_sbase_end,
+			 size_t log_mbase_start,
+			 size_t log_mbase_end){
   int res = 1;
-  int ci, si, mi;
+  size_t ci, si, mi;
   size_t count, sbase, mbase;
   size_t i, j;
   size_t elt_size = sizeof(double);
   double *arr_a = NULL, *arr_b = NULL;
   double tot_m, tot_q, t_m, t_q;
-  arr_a =  malloc_perror(pow_two(pow_count_end), elt_size);
-  arr_b =  malloc_perror(pow_two(pow_count_end), elt_size);
+  arr_a =  malloc_perror(pow_two_perror(log_count_end), elt_size);
+  arr_b =  malloc_perror(pow_two_perror(log_count_end), elt_size);
   printf("Test mergesort_pthread performance on random double arrays\n");
-  for (ci = pow_count_start; ci <= pow_count_end; ci++){
-    count = pow_two(ci); /* > 0 */
+  for (ci = log_count_start; ci <= log_count_end; ci++){
+    count = pow_two_perror(ci); /* > 0 */
     printf("\t# trials: %lu, array count: %lu\n",
 	   TOLU(C_TRIALS), TOLU(count));
-    for (si = pow_sbase_start; si <= pow_sbase_end; si++){
-      sbase = pow_two(si);
+    for (si = log_sbase_start; si <= log_sbase_end; si++){
+      sbase = pow_two_perror(si);
       printf("\t\tsort base count: %lu\n", TOLU(sbase));
-      for (mi = pow_mbase_start; mi <= pow_mbase_end; mi++){
-	mbase = pow_two(mi);
+      for (mi = log_mbase_start; mi <= log_mbase_end; mi++){
+	mbase = pow_two_perror(mi);
 	printf("\t\t\tmerge base count: %lu\n", TOLU(mbase));
 	tot_m = 0.0;
 	tot_q = 0.0;
@@ -326,17 +318,8 @@ double timer(){
 }
 
 /**
-   Print helper functions.
+   Print result.
 */
-
-void print_uint_elts(const size_t *a, size_t count){
-  size_t i;
-  for (i = 0; i < count; i++){
-    printf("%lu ", TOLU(a[i]));
-  }
-  printf("\n");
-}
-
 void print_test_result(int res){
   if (res){
     printf("SUCCESS\n");
@@ -349,12 +332,12 @@ int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
   RGENS_SEED();
-  if (argc > C_ARGC_MAX){
+  if (argc > C_ARGC_ULIMIT){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
-  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_ULIMIT - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_ULIMIT - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }

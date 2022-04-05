@@ -25,10 +25,12 @@ CC = gcc
 UTILS_ALG_DIR  = ../../utilities/utilities-alg/
 UTILS_MEM_DIR  = ../../utilities/utilities-mem/
 UTILS_MOD_DIR  = ../../utilities/utilities-mod/
+UTILS_LIM_DIR = ../../utilities/utilities-lim/
 UTILS_PTHD_DIR = ../utilities-pthread/
 CFLAGS = -I$(UTILS_ALG_DIR)                              \
          -I$(UTILS_MEM_DIR)                              \
          -I$(UTILS_MOD_DIR)                              \
+         -I$(UTILS_LIM_DIR)                              \
          -I$(UTILS_PTHD_DIR)                             \
          ${CFLAGS_BUILD_MODE} -pthread -Wall -Wextra -O3
 
@@ -44,7 +46,8 @@ mergesort-pthread-test : $(OBJ)
 
 mergesort-pthread-test.o             : mergesort-pthread.h                  \
                                        $(UTILS_MEM_DIR)utilities-mem.h      \
-                                       $(UTILS_MOD_DIR)utilities-mod.h
+                                       $(UTILS_MOD_DIR)utilities-mod.h      \
+                                       $(UTILS_LIM_DIR)utilities-lim.h
 mergesort-pthread.o                  : mergesort-pthread.h                  \
                                        $(UTILS_ALG_DIR)utilities-alg.h      \
                                        $(UTILS_MEM_DIR)utilities-mem.h      \
@@ -52,7 +55,8 @@ mergesort-pthread.o                  : mergesort-pthread.h                  \
 $(UTILS_ALG_DIR)utilities-alg.o      : $(UTILS_ALG_DIR)utilities-alg.h      \
                                        $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o      : $(UTILS_MEM_DIR)utilities-mem.h
-$(UTILS_MOD_DIR)utilities-mod.o      : $(UTILS_MOD_DIR)utilities-mod.h
+$(UTILS_MOD_DIR)utilities-mod.o      : $(UTILS_MOD_DIR)utilities-mod.h      \
+                                       $(UTILS_LIM_DIR)utilities-lim.h
 $(UTILS_PTHD_DIR)utilities-pthread.o : $(UTILS_PTHD_DIR)utilities-pthread.h
 
 .PHONY : clean clean-all

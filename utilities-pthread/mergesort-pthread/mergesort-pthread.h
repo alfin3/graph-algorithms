@@ -5,8 +5,9 @@
    and running a generic merge sort algorithm with parallel sorting and
    parallel merging. 
 
-   The algorithm provides \Theta(n/log^{2}n) theoretical parallelism within
-   the dynamic multithreading model.
+   The design decouples merge and sort parallelisms in mergesort. The
+   algorithm provides \Theta(n/log^{2}n) theoretical parallelism within the
+   dynamic multithreading model.
 
    The implementation provides i) a set of parameters for setting the
    constant base case upper bounds for switching from parallel sorting to
@@ -20,11 +21,21 @@
    recursion depth is limited by switching to a base case non-recursive
    sort algorithm.
 
+   The implementation only uses integer and pointer operations. Given
+   parameter values within the specified ranges, the implementation provides
+   an error message and an exit is executed if an integer overflow is
+   attempted or an allocation is not completed due to insufficient resources.
+   The behavior outside the specified parameter ranges is undefined.
+
+   The implementation does not use stdint.h and is portable under C89/C90
+   and C99. The requirement is that pthreads API is available.
+
    On a 4-core machine, the optimization of the base case upper bound
    parameters resulted in a speedup of approximately 2.6X in comparison
    to serial qsort (stdlib.h) on arrays of 10M random integer or double
    elements.
 */
+
 
 #ifndef MERGESORT_PTHREAD_H  
 #define MERGESORT_PTHREAD_H
@@ -36,8 +47,7 @@
    cmp. The array contains count elements of elt_size bytes. The first
    thread entry is placed on the thread stack of the caller.
    elts        : pointer to the array to sort
-   count       : > 0, < 2^{CHAR_BIT * sizeof(size_t) - 1} count of elements
-                 in the array
+   count       : > 0, < 2**{size_t width - 1} count of elements in the array
    elt_size    : size of each element in the array in bytes
    sbase_count : > 0 base case upper bound for parallel sorting; if the count
                  of an unsorted subarray is less or equal to sbase_count,
