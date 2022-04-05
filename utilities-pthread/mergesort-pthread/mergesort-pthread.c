@@ -73,7 +73,7 @@ static const size_t C_SIZE_ULIMIT = (size_t)-1; /* not reached as index */
 static void *mergesort_thread(void *arg);
 static void *merge_thread(void *arg);
 static void merge(struct merge_arg *ma);
-void *ptr(const void *block, size_t i, size_t size);
+static void *ptr(const void *block, size_t i, size_t size);
 
 /**
    Sorts a given array pointed to by elts in ascending order according to
@@ -348,6 +348,6 @@ static void merge(struct merge_arg *ma){
 /**
    Computes a pointer to the ith element in the block of elements.
 */
-void *ptr(const void *block, size_t i, size_t size){
+static void *ptr(const void *block, size_t i, size_t size){
   return (void *)((char *)block + i * size);
 }
