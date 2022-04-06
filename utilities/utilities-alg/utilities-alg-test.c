@@ -5,10 +5,9 @@
 
    The following command line arguments can be used to customize tests:
    utilities-alg-test
-      [0, # bits in size_t) : n for 2^n trials in geq_leq_bsearch tests
-      [0, # bits in size_t) : a
-      [0, # bits in size_t) : b s.t. 2^a <= count <= 2^b in 
-                              geq_leq_bsearch tests
+      [0, size_t width) : n for 2**n trials in geq_leq_bsearch tests
+      [0, size_t width) : a
+      [0, size_t width) : b s.t. 2**a <= count <= 2**b in geq_leq_bsearch tests
       [0, 1] : geq_leq_bsearch int test on/off
       [0, 1] : geq_leq_bsearch double test on/off
 
@@ -25,6 +24,11 @@
 
    The implementation of tests does not use stdint.h and is portable under
    C89/C90 with the only requirement that CHAR_BIT * sizeof(size_t) is even.
+
+   The implementation of tests does not use stdint.h and is portable under
+   C89/C90 and C99. The tests require that:
+   - clock_t is convertible to double,
+   - the width of size_t is less than 2040 and even.
 */
 
 #include <stdio.h>
@@ -35,6 +39,7 @@
 #include "utilities-alg.h"
 #include "utilities-mem.h"
 #include "utilities-mod.h"
+#include "utilities-lim.h"
 
 /**
    Generate random numbers in a portable way for test purposes only; rand()
@@ -50,22 +55,21 @@
 
 /* input handling */
 const char *C_USAGE =
-  "utilities-alg-test \n"
-  "[0, # bits in size_t) : n for 2^n trials in geq_leq_bsearch tests \n"
-  "[0, # bits in size_t) : a \n"
-  "[0, # bits in size_t) : b s.t. 2^a <= count <= 2^b in "
-  "geq_leq_bsearch tests \n"
-  "[0, 1] : geq_leq_bsearch int test on/off \n"
-  "[0, 1] : geq_leq_bsearch double test on/off \n";
-const int C_ARGC_MAX = 6;
-const size_t C_ARGS_DEF[5] = {10, 10, 15, 1, 1};
-const size_t C_FULL_BIT = CHAR_BIT * sizeof(size_t);
+  "utilities-alg-test\n"
+  "[0, size_t width) : n for 2**n trials in geq_leq_bsearch tests\n"
+  "[0, size_t width) : a\n"
+  "[0, size_t width) : b s.t. 2**a <= count <= 2**b in geq_leq_bsearch tests\n"
+  "[0, 1] : geq_leq_bsearch int test on/off\n"
+  "[0, 1] : geq_leq_bsearch double test on/off\n";
+const int C_ARGC_ULIMIT = 6u;
+const size_t C_ARGS_DEF[5] = {10u, 10u, 15u, 1u, 1u};
+const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
 
 /* tests */
-const size_t C_NRAND_COUNT_MAX = 100;
+const size_t C_NRAND_COUNT_ULIMIT = 100u;
 const double C_HALF_PROB = 0.5;
 
-void *elt_ptr(const void *elts, size_t i, size_t elt_size);
+void *ptr(const void *block, size_t i, size_t size);
 void print_test_result(int result);
 
 /**
@@ -73,23 +77,13 @@ void print_test_result(int result);
 */
 
 int cmp_int(const void *a, const void *b){
-  if (*(int *)a > *(int *)b){
-    return 1;
-  }else if  (*(int *)a < *(int *)b){
-    return -1;
-  }else{
-    return 0;
-  }
+  return ((*(const int *)a > *(const int *)b) -
+	  (*(const int *)a < *(const int *)b));
 }
 
 int cmp_double(const void *a, const void *b){
-  if (*(double *)a > *(double *)b){
-    return 1;
-  }else if  (*(double *)a < *(double *)b){
-    return -1;
-  }else{
-    return 0;
-  }
+  return ((*(const double *)a > *(const double *)b) -
+	  (*(const double *)a < *(const double *)b));
 }
 
 int is_geq_leq_correct(const void *key,
@@ -100,25 +94,24 @@ int is_geq_leq_correct(const void *key,
 		       size_t leq_ix,
 		       int (*cmp)(const void *, const void *));
 
-void run_geq_leq_bsearch_int_test(int pow_trials,
-				  int pow_count_start,
-				  int pow_count_end){
+void run_geq_leq_bsearch_int_test(size_t log_trials,
+				  size_t log_count_start,
+				  size_t log_count_end){
   int res = 1;
-  int i;
   int key;
   int *elts = NULL, *nrand_elts = NULL;
-  size_t j, count;
+  size_t i, j, count;
   size_t k, trials;
   size_t elt_size = sizeof(int);
   size_t geq_ix, leq_ix;
   double tot_geq, tot_leq, tot;
   clock_t t_geq, t_leq, t;
-  trials = pow_two(pow_trials);
-  elts = malloc_perror(pow_two(pow_count_end), elt_size);
-  nrand_elts = malloc_perror(C_NRAND_COUNT_MAX, elt_size);
+  trials = pow_two_perror(log_trials);
+  elts = malloc_perror(pow_two_perror(log_count_end), elt_size);
+  nrand_elts = malloc_perror(C_NRAND_COUNT_ULIMIT, elt_size);
   printf("Test geq_bsearch and leq_bsearch on random int arrays\n");
-  for (i = pow_count_start; i <= pow_count_end; i++){
-    count = pow_two(i);
+  for (i = log_count_start; i <= log_count_end; i++){
+    count = pow_two_perror(i);
     for (j = 0; j < count; j++){
       elts[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * RANDOM();
     }
@@ -157,14 +150,14 @@ void run_geq_leq_bsearch_int_test(int pow_trials,
   }
   printf("\tnon-random array and corner cases\n");
   res = 1;
-  for (j = 0; j < C_NRAND_COUNT_MAX; j++){
+  for (j = 0; j < C_NRAND_COUNT_ULIMIT; j++){
     if (j == 0){
       nrand_elts[j] = 1;
     }else{
       nrand_elts[j] = nrand_elts[j - 1] + 2; /* odd elements */
     }
   }
-  for (count = 1; count <= C_NRAND_COUNT_MAX; count++){
+  for (count = 1; count <= C_NRAND_COUNT_ULIMIT; count++){
     for (j = 0; j <= count; j++){
       key = 2 * j; /* even keys */
       geq_ix = geq_bsearch(&key,
@@ -194,12 +187,11 @@ void run_geq_leq_bsearch_int_test(int pow_trials,
   nrand_elts = NULL;
 }
 
-void run_geq_leq_bsearch_double_test(int pow_trials,
-				     int pow_count_start,
-				     int pow_count_end){
+void run_geq_leq_bsearch_double_test(size_t log_trials,
+				     size_t log_count_start,
+				     size_t log_count_end){
   int res = 1;
-  int i;
-  size_t j, count;
+  size_t i, j, count;
   size_t k, trials;
   size_t elt_size = sizeof(double);
   size_t geq_ix, leq_ix;
@@ -207,12 +199,12 @@ void run_geq_leq_bsearch_double_test(int pow_trials,
   double *elts = NULL, *nrand_elts = NULL;
   double tot_geq, tot_leq, tot;
   clock_t t_geq, t_leq, t;
-  trials = pow_two(pow_trials);
-  elts = malloc_perror(pow_two(pow_count_end), elt_size);
-  nrand_elts = malloc_perror(C_NRAND_COUNT_MAX, elt_size);
+  trials = pow_two_perror(log_trials);
+  elts = malloc_perror(pow_two_perror(log_count_end), elt_size);
+  nrand_elts = malloc_perror(C_NRAND_COUNT_ULIMIT, elt_size);
   printf("Test geq_bsearch and leq_bsearch on random double arrays\n");
-  for (i = pow_count_start; i <= pow_count_end; i++){
-    count = pow_two(i);
+  for (i = log_count_start; i <= log_count_end; i++){
+    count = pow_two_perror(i);
     for (j = 0; j < count; j++){
       elts[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * DRAND();
     }
@@ -251,14 +243,14 @@ void run_geq_leq_bsearch_double_test(int pow_trials,
   }
   printf("\tnon-random array and corner cases\n");
   res = 1;
-  for (j = 0; j < C_NRAND_COUNT_MAX; j++){
+  for (j = 0; j < C_NRAND_COUNT_ULIMIT; j++){
     if (j == 0){
       nrand_elts[j] = 1;
     }else{
       nrand_elts[j] = nrand_elts[j - 1] + 2;
     }
   }
-  for (count = 1; count <= C_NRAND_COUNT_MAX; count++){
+  for (count = 1; count <= C_NRAND_COUNT_ULIMIT; count++){
     for (j = 0; j <= count; j++){
       key = 2 * j;
       geq_ix = geq_bsearch(&key,
@@ -297,29 +289,29 @@ int is_geq_leq_correct(const void *key,
 		       int (*cmp)(const void *, const void *)){
   int res = 1;
   if (geq_ix == count){
-    res *= (cmp(key, elt_ptr(elts, count - 1, elt_size)) > 0);
+    res *= (cmp(key, ptr(elts, count - 1, elt_size)) > 0);
   }else if (geq_ix == 0){
-    res *= (cmp(key, elt_ptr(elts, geq_ix, elt_size)) <= 0);
+    res *= (cmp(key, ptr(elts, geq_ix, elt_size)) <= 0);
   }else{
-    res *= (cmp(key, elt_ptr(elts, geq_ix, elt_size)) <= 0);
-    res *= (cmp(key, elt_ptr(elts, geq_ix - 1, elt_size)) >= 0);
+    res *= (cmp(key, ptr(elts, geq_ix, elt_size)) <= 0);
+    res *= (cmp(key, ptr(elts, geq_ix - 1, elt_size)) >= 0);
   }
   if (leq_ix == count){
-    res *= (cmp(key, elt_ptr(elts, 0, elt_size)) < 0);
+    res *= (cmp(key, ptr(elts, 0, elt_size)) < 0);
   }else if (leq_ix == count - 1){
-    res *= (cmp(key, elt_ptr(elts, leq_ix, elt_size)) >= 0);
+    res *= (cmp(key, ptr(elts, leq_ix, elt_size)) >= 0);
   }else{
-    res *= (cmp(key, elt_ptr(elts, leq_ix, elt_size)) >= 0);
-    res *= (cmp(key, elt_ptr(elts, leq_ix + 1, elt_size)) <= 0);
+    res *= (cmp(key, ptr(elts, leq_ix, elt_size)) >= 0);
+    res *= (cmp(key, ptr(elts, leq_ix + 1, elt_size)) <= 0);
   }
   return res;
 }									 
 
 /**
-   Computes a pointer to the ith element in an array pointed to by elts.
+   Computes a pointer to the ith element in the block of elements.
 */
-void *elt_ptr(const void *elts, size_t i, size_t elt_size){
-  return (void *)((char *)elts + i * elt_size);
+void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
 }
 
 /**
@@ -337,12 +329,12 @@ int main(int argc, char *argv[]){
   int i;
   size_t *args = NULL;
   RGENS_SEED();
-  if (argc > C_ARGC_MAX){
+  if (argc > C_ARGC_ULIMIT){
     printf("USAGE:\n%s", C_USAGE);
     exit(EXIT_FAILURE);
   }
-  args = malloc_perror(C_ARGC_MAX - 1, sizeof(size_t));
-  memcpy(args, C_ARGS_DEF, (C_ARGC_MAX - 1) * sizeof(size_t));
+  args = malloc_perror(C_ARGC_ULIMIT - 1, sizeof(size_t));
+  memcpy(args, C_ARGS_DEF, (C_ARGC_ULIMIT - 1) * sizeof(size_t));
   for (i = 1; i < argc; i++){
     args[i - 1] = atoi(argv[i]);
   }

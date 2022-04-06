@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "utilities-mem.h"
 
-static void *elt_ptr(const void *elts, size_t i, size_t elt_size);
+static void *ptr(const void *block, size_t i, size_t size);
 
 /**
    Performs "greater or equal" binary search on an array with count
@@ -29,15 +29,15 @@ size_t geq_bsearch(const void *key,
 		   int (*cmp)(const void *, const void *)){
   size_t cur = (count - 1) / 2;
   size_t  prev_low = 0, prev_high = count - 1;
-  if (cmp(key, elt_ptr(elts, prev_low, elt_size)) <= 0) return 0;
-  if (cmp(key, elt_ptr(elts, prev_high, elt_size)) > 0) return count;
+  if (cmp(key, ptr(elts, prev_low, elt_size)) <= 0) return 0;
+  if (cmp(key, ptr(elts, prev_high, elt_size)) > 0) return count;
   while (1){
     /* a. A[0] < key element <= A[count - 1], A's count > 1 */
-    if (cmp(key, elt_ptr(elts, cur, elt_size)) < 0){
+    if (cmp(key, ptr(elts, cur, elt_size)) < 0){
       prev_high = cur;
       /* b. must decrease each time, since cur is not prev_low */
       cur = (cur + prev_low) / 2;
-    }else if (cmp(key, elt_ptr(elts, cur + 1, elt_size)) > 0){
+    }else if (cmp(key, ptr(elts, cur + 1, elt_size)) > 0){
       prev_low = cur;
       /* c. must increase each time, since cur + 1 is not prev_high */
       cur = (cur + prev_high) / 2; /* < count - 1 */
@@ -67,7 +67,7 @@ size_t leq_bsearch(const void *key,
 		   size_t elt_size,
 		   int (*cmp)(const void *, const void *)){
   size_t cur;
-  if (cmp(key, elt_ptr(elts, 0, elt_size)) < 0){
+  if (cmp(key, ptr(elts, 0, elt_size)) < 0){
     /* key element < A[0], thus no element in A <= key element */
     return count;
   }
@@ -81,8 +81,8 @@ size_t leq_bsearch(const void *key,
 }
 
 /**
-   Computes a pointer to the ith element in an array pointed to by elts.
+   Computes a pointer to the ith element in the block of elements.
 */
-static void *elt_ptr(const void *elts, size_t i, size_t elt_size){
-  return (void *)((char *)elts + i * elt_size);
+static void *ptr(const void *block, size_t i, size_t size){
+  return (void *)((char *)block + i * size);
 }

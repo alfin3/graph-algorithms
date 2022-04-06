@@ -1,7 +1,7 @@
 /**
    utilities-alg.h
 
-   Implementations of general algorithms.
+   Declarations of accessible functions of general algorithms.
 */
 
 #ifndef UTILITIES_ALG_H

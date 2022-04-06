@@ -24,8 +24,10 @@ CC = gcc
 
 UTILS_MEM_DIR = ../utilities-mem/
 UTILS_MOD_DIR = ../utilities-mod/
+UTILS_LIM_DIR = ../utilities-lim/
 CFLAGS = -I$(UTILS_MEM_DIR)                                        \
          -I$(UTILS_MOD_DIR)                                        \
+         -I$(UTILS_LIM_DIR)                                        \
          ${CFLAGS_BUILD_MODE} -Wno-unused-result -Wall -Wextra -O3
 
 OBJ = utilities-alg-test.o            \
@@ -33,16 +35,19 @@ OBJ = utilities-alg-test.o            \
       $(UTILS_MEM_DIR)utilities-mem.o \
       $(UTILS_MOD_DIR)utilities-mod.o
 
+
 utilities-alg-test : $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 utilities-alg-test.o            : utilities-alg.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
-                                  $(UTILS_MOD_DIR)utilities-mod.h
+                                  $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 utilities-alg.o                 : utilities-alg.h                 \
                                   $(UTILS_MEM_DIR)utilities-mem.h
 $(UTILS_MEM_DIR)utilities-mem.o : $(UTILS_MEM_DIR)utilities-mem.h
-$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h
+$(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 
 .PHONY : clean clean-all
 
