@@ -604,7 +604,7 @@ void ht_divchn_pthread_free(struct ht_divchn_pthread *ht){
    guaranteeing that the value of p0 equals the value of p1.
 */
 
-void ht_divchn_pthread_init_helper(struct ht_divchn_pthread *ht,
+void ht_divchn_pthread_init_helper(void *ht,
 				   size_t key_size,
 				   size_t elt_size,
 				   size_t min_num,
