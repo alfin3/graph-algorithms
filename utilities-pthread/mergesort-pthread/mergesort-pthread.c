@@ -97,11 +97,11 @@ static void *ptr(const void *block, size_t i, size_t size);
                  integer value if the two elements are equal
 */
 void mergesort_pthread(void *elts,
-		       size_t count,
-		       size_t elt_size,
-		       size_t sbase_count,
-		       size_t mbase_count,
-		       int (*cmp)(const void *, const void *)){
+                       size_t count,
+                       size_t elt_size,
+                       size_t sbase_count,
+                       size_t mbase_count,
+                       int (*cmp)(const void *, const void *)){
   struct mergesort_arg msa;
   if (count < 1) return;
   msa.p = 0;
@@ -116,7 +116,7 @@ void mergesort_pthread(void *elts,
   mergesort_thread(&msa);
   free(msa.cat_elts);
 }
-  
+
 /**
    Enters a mergesort thread that spawns mergesort threads recursively.
    The total number of threads is reduced and an additional speedup is
@@ -131,11 +131,11 @@ static void *mergesort_thread(void *arg){
   pthread_t child_ids[2];
   if (msa->r - msa->p + 1 <= msa->sbase_count){
     qsort(ptr(msa->elts, msa->p, msa->elt_size),
-	  msa->r - msa->p + 1,
-	  msa->elt_size,
-	  msa->cmp);
+          msa->r - msa->p + 1,
+          msa->elt_size,
+          msa->cmp);
   }else{
-    
+
     /* sort recursion */
     q = (msa->p + msa->r) / 2; /* rounds down */
     child_msas[0].p = msa->p;
@@ -182,8 +182,8 @@ static void *mergesort_thread(void *arg){
     merge_thread(&ma);
     /* copy the merged result into the input array */
     memcpy(ptr(msa->elts, msa->p, msa->elt_size),
-	   ptr(ma.cat_seg_elts, 0, msa->elt_size),
-	   (msa->r - msa->p + 1) * msa->elt_size);
+           ptr(ma.cat_seg_elts, 0, msa->elt_size),
+           (msa->r - msa->p + 1) * msa->elt_size);
   }
   return NULL;
 }
@@ -202,7 +202,7 @@ static void *merge_thread(void *arg){
     merge(ma);
     return NULL;
   }
-  
+
   /* rec. parameters with <= 3/4 problem size for the larger subproblem */
   if (ma->ar - ma->ap > ma->br - ma->bp){
     aq = (ma->ap + ma->ar) / 2;
@@ -212,10 +212,10 @@ static void *merge_thread(void *arg){
     child_mas[1].ap = aq + 1;
     child_mas[1].ar = ma->ar;
     ix = leq_bsearch(ptr(ma->elts, aq, ma->elt_size),
-		     ptr(ma->elts, ma->bp, ma->elt_size),
-		     ma->br - ma->bp + 1, /* at least 1 element */
-		     ma->elt_size,
-		     ma->cmp);
+                     ptr(ma->elts, ma->bp, ma->elt_size),
+                     ma->br - ma->bp + 1, /* at least 1 element */
+                     ma->elt_size,
+                     ma->cmp);
     if (ix == ma->br - ma->bp + 1){
       child_mas[0].bp = C_SIZE_ULIMIT;
       child_mas[0].br = C_SIZE_ULIMIT;
@@ -243,10 +243,10 @@ static void *merge_thread(void *arg){
     child_mas[1].bp = bq + 1;
     child_mas[1].br = ma->br;
     ix = leq_bsearch(ptr(ma->elts, bq, ma->elt_size),
-		     ptr(ma->elts, ma->ap, ma->elt_size),
-		     ma->ar - ma->ap + 1, /* at least 1 element */
-		     ma->elt_size,
-		     ma->cmp);
+                     ptr(ma->elts, ma->ap, ma->elt_size),
+                     ma->ar - ma->ap + 1, /* at least 1 element */
+                     ma->elt_size,
+                     ma->cmp);
     if (ix == ma->ar - ma->ap + 1){
       child_mas[0].ap = C_SIZE_ULIMIT;
       child_mas[0].ar = C_SIZE_ULIMIT;
@@ -305,13 +305,13 @@ static void merge(struct merge_arg *ma){
   if (ma->ap == C_SIZE_ULIMIT && ma->ar == C_SIZE_ULIMIT){
     /* a is empty */
     memcpy(ptr(ma->cat_seg_elts, ma->cs, elt_size),
-	   ptr(ma->elts, ma->bp, elt_size),
-	   (ma->br - ma->bp + 1) * elt_size);
+           ptr(ma->elts, ma->bp, elt_size),
+           (ma->br - ma->bp + 1) * elt_size);
   }else if (ma->bp == C_SIZE_ULIMIT && ma->br == C_SIZE_ULIMIT){
     /* b is empty */
     memcpy(ptr(ma->cat_seg_elts, ma->cs, elt_size),
-	   ptr(ma->elts, ma->ap, elt_size),
-	   (ma->ar - ma->ap + 1) * elt_size);
+           ptr(ma->elts, ma->ap, elt_size),
+           (ma->ar - ma->ap + 1) * elt_size);
   }else{
     /* a and b are each not empty */
     first_ix = ma->ap;
@@ -319,28 +319,28 @@ static void merge(struct merge_arg *ma){
     cat_ix = ma->cs;
     while(first_ix <= ma->ar && second_ix <= ma->br){
       if (ma->cmp(ptr(ma->elts, first_ix, elt_size),
-		  ptr(ma->elts, second_ix, elt_size)) < 0){
-	memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
-	       ptr(ma->elts, first_ix, elt_size),
-	       elt_size);
-	cat_ix++;
-	first_ix++;
+                  ptr(ma->elts, second_ix, elt_size)) < 0){
+        memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
+               ptr(ma->elts, first_ix, elt_size),
+               elt_size);
+        cat_ix++;
+        first_ix++;
       }else{
-	memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
-	       ptr(ma->elts, second_ix, elt_size),
-	       elt_size);
-	cat_ix++;
-	second_ix++;
+        memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
+               ptr(ma->elts, second_ix, elt_size),
+               elt_size);
+        cat_ix++;
+        second_ix++;
       }
     }
     if (second_ix == ma->br + 1){
       memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
-	     ptr(ma->elts, first_ix, elt_size),
-	     (ma->ar - first_ix + 1) * elt_size);
+             ptr(ma->elts, first_ix, elt_size),
+             (ma->ar - first_ix + 1) * elt_size);
     }else{
       memcpy(ptr(ma->cat_seg_elts, cat_ix, elt_size),
-	     ptr(ma->elts, second_ix, elt_size),
-	     (ma->br - second_ix + 1) * elt_size);
+             ptr(ma->elts, second_ix, elt_size),
+             (ma->br - second_ix + 1) * elt_size);
     }
   }
 }

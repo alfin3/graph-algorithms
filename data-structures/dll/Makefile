@@ -8,7 +8,7 @@
 #  Additional information is available at:
 #  https://gcc.gnu.org/onlinedocs/gcc/Submodel-Options.html#Submodel-Options
 #  https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#x86-Options
-#   
+#
 #  usage examples:
 #    make
 #    make BUILD_MODE=M32
@@ -36,7 +36,7 @@ OBJ = dll-test.o                      \
       $(UTILS_MOD_DIR)utilities-mod.o
 
 dll-test : $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ 
+	$(CC) $(CFLAGS) -o $@ $^
 
 dll-test.o                      : dll.h                           \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
@@ -52,5 +52,5 @@ $(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
 
 clean :
 	rm $(OBJ)
-clean-all : 
-	rm -f dll-test $(OBJ) 
+clean-all :
+	rm -f dll-test $(OBJ)

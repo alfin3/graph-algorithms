@@ -80,8 +80,8 @@
                  and trailing padding according to sizeof
 */
 void dll_init(struct dll *ll,
-	      struct dll_node **head,
-	      size_t key_size){
+              struct dll_node **head,
+              size_t key_size){
   size_t rem;
   /* align dll_node relative to a malloc's pointer */
   if (key_size <= sizeof(struct dll_node *)){
@@ -90,7 +90,7 @@ void dll_init(struct dll *ll,
     rem = key_size % sizeof(struct dll_node *);
     ll->key_offset = key_size;
     ll->key_offset = add_sz_perror(ll->key_offset,
-				   (rem > 0) * (sizeof(struct dll_node *) - rem));
+                                   (rem > 0) * (sizeof(struct dll_node *) - rem));
   }
   /* elt_size block guaranteed to be accessible with a character pointer */
   ll->elt_offset = sizeof(struct dll_node);
@@ -98,7 +98,7 @@ void dll_init(struct dll *ll,
 }
 
 /**
-   Aligns each in-list elt_size block to be accessible with a pointer to a 
+   Aligns each in-list elt_size block to be accessible with a pointer to a
    type T other than character (in addition to a character pointer). If
    alignment requirement of T is unknown, the size of T can be used
    as a value of the alignment parameter because size of T >= alignment
@@ -121,11 +121,11 @@ void dll_align_elt(struct dll *ll, size_t alignment){
   /* elt_offset to align elt_size block relative to malloc's pointer */
   if (alloc_ptr_offset <= alignment){
     ll->elt_offset = add_sz_perror(ll->elt_offset,
-				   alignment - alloc_ptr_offset);
+                                   alignment - alloc_ptr_offset);
   }else{
     rem = alloc_ptr_offset % alignment;
     ll->elt_offset = add_sz_perror(ll->elt_offset,
-				   (rem > 0) * (alignment - rem));
+                                   (rem > 0) * (alignment - rem));
   }
 }
 
@@ -134,7 +134,7 @@ void dll_align_elt(struct dll *ll, size_t alignment){
    NULL if the list is empty, or points to any node in the list to determine
    the position for the prepend operation.
    ll          : pointer to an initialized dll struct
-   head        : pointer to a head pointer to an initialized list           
+   head        : pointer to a head pointer to an initialized list
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
    key_size    : non-zero size of a key_size block; must account for internal
@@ -143,17 +143,17 @@ void dll_align_elt(struct dll *ll, size_t alignment){
                  internal and trailing padding according to sizeof
 */
 void dll_prepend_new(const struct dll *ll,
-		     struct dll_node **head,
-		     const void *key,
-		     const void *elt,
-		     size_t key_size,
-		     size_t elt_size){
+                     struct dll_node **head,
+                     const void *key,
+                     const void *elt,
+                     size_t key_size,
+                     size_t elt_size){
   void *node_block = NULL;
   struct dll_node *node = NULL;
   /* allocate single block for cache efficiency and to reduce admin bytes */
-  node_block =  
+  node_block =
     malloc_perror(1, add_sz_perror(ll->key_offset,
-				   add_sz_perror(ll->elt_offset, elt_size)));
+                                   add_sz_perror(ll->elt_offset, elt_size)));
   node = (struct dll_node *)((char *)node_block + ll->key_offset);
   memcpy(dll_key_ptr(ll, node), key, key_size);
   memcpy(dll_elt_ptr(ll, node), elt, elt_size);
@@ -174,11 +174,11 @@ void dll_prepend_new(const struct dll *ll,
    parameter specification in dll_prepend_new.
 */
 void dll_append_new(const struct dll *ll,
-		    struct dll_node **head,
-		    const void *key,
-		    const void *elt,
-		    size_t key_size,
-		    size_t elt_size){
+                    struct dll_node **head,
+                    const void *key,
+                    const void *elt,
+                    size_t key_size,
+                    size_t elt_size){
   dll_prepend_new(ll, head, key, elt, key_size, elt_size);
   *head = (*head)->next;
 }
@@ -187,7 +187,7 @@ void dll_append_new(const struct dll *ll,
    Prepends a node relative to a head pointer. A head pointer is NULL if
    the list is empty, or points to any node in the list to determine the
    position for the prepend operation.
-   head        : pointer to a head pointer to an initialized list           
+   head        : pointer to a head pointer to an initialized list
    node        : non-NULL pointer to a node to be prepended
 */
 void dll_prepend(struct dll_node **head, struct dll_node *node){
@@ -200,7 +200,7 @@ void dll_prepend(struct dll_node **head, struct dll_node *node){
     (*head)->prev->next = node;
     (*head)->prev = node;
   }
-  *head = node; 
+  *head = node;
 }
 
 /**
@@ -244,10 +244,10 @@ void *dll_elt_ptr(const struct dll *ll, const struct dll_node *node){
                  a pointer to the key_size block of a key
 */
 struct dll_node *dll_search_key(const struct dll *ll,
-				struct dll_node * const *head,
-				const void *key,
-				size_t key_size,
-				int (*cmp_key)(const void *, const void *)){
+                                struct dll_node * const *head,
+                                const void *key,
+                                size_t key_size,
+                                int (*cmp_key)(const void *, const void *)){
   const struct dll_node *node = *head;
   if (node == NULL) return NULL;
   /* NULL marker to avoid undef. behavior of pointer comparison */
@@ -255,16 +255,16 @@ struct dll_node *dll_search_key(const struct dll *ll,
   if (cmp_key != NULL){
     while(node != NULL){
       if (cmp_key(dll_key_ptr(ll, node), key) == 0){
-	(*head)->prev->next = *head;
-	return (struct dll_node *)node;
+        (*head)->prev->next = *head;
+        return (struct dll_node *)node;
       }
       node = node->next;
     }
   }else{
     while(node != NULL){
       if (memcmp(dll_key_ptr(ll, node), key, key_size) == 0){
-	(*head)->prev->next = *head;
-	return (struct dll_node *)node;
+        (*head)->prev->next = *head;
+        return (struct dll_node *)node;
       }
       node = node->next;
     }
@@ -277,16 +277,16 @@ struct dll_node *dll_search_key(const struct dll *ll,
    Relative to a head pointer, returns a pointer to the clockwise (next)
    first node with a key that equals the key pointed to by the key parameter
    according to cmp_key, or NULL if such a node in not found. Assumes that
-   every key in a list is unique according to cmp_key. The list is not 
-   modified during the operation which enables parallel queries without 
+   every key in a list is unique according to cmp_key. The list is not
+   modified during the operation which enables parallel queries without
    thread synchronization overhead. Please see the parameter specification
    in dll_search_key.
 */
 struct dll_node *dll_search_uq_key(const struct dll *ll,
-				   struct dll_node * const *head,
-				   const void *key,
-				   size_t key_size,
-				   int (*cmp_key)(const void *, const void *)){
+                                   struct dll_node * const *head,
+                                   const void *key,
+                                   size_t key_size,
+                                   int (*cmp_key)(const void *, const void *)){
   const void *last_key = NULL;
   const struct dll_node *node = *head;
   if (node == NULL) return NULL;
@@ -295,7 +295,7 @@ struct dll_node *dll_search_uq_key(const struct dll *ll,
   if (cmp_key != NULL){
     while(cmp_key(dll_key_ptr(ll, node), last_key) != 0){
       if (cmp_key(dll_key_ptr(ll, node), key) == 0){
-	return (struct dll_node *)node;
+        return (struct dll_node *)node;
       }
       node = node->next;
     }
@@ -306,7 +306,7 @@ struct dll_node *dll_search_uq_key(const struct dll *ll,
   }else{
     while(memcmp(dll_key_ptr(ll, node), last_key, key_size) != 0){
       if (memcmp(dll_key_ptr(ll, node), key, key_size) == 0){
-	return (struct dll_node *)node;
+        return (struct dll_node *)node;
       }
       node = node->next;
     }
@@ -355,7 +355,7 @@ void dll_remove(struct dll_node **head, const struct dll_node *node){
                  deleted node, or to NULL if the last node is deleted
    free_key    : - NULL if only a key_size block should be deleted (e.g.
                  because a key was entirely copied as a key_size block, or
-                 because a pointer was copied as a key_size block and only 
+                 because a pointer was copied as a key_size block and only
                  the pointer should be deleted)
                  - otherwise takes a pointer to the key_size block of a key
                  as an argument, frees the memory of the key except the
@@ -369,10 +369,10 @@ void dll_remove(struct dll_node **head, const struct dll_node *node){
                  except the elt_size block pointed to by the argument
 */
 void dll_delete(const struct dll *ll,
-		struct dll_node **head,
-		struct dll_node *node,
-		void (*free_key)(void *),
-		void (*free_elt)(void *)){
+                struct dll_node **head,
+                struct dll_node *node,
+                void (*free_key)(void *),
+                void (*free_elt)(void *)){
   int is_same_node = 0;
   if (*head == NULL || node == NULL) return;
   /* NULL marker to avoid undef. behavior of pointer comparison */
@@ -404,9 +404,9 @@ void dll_delete(const struct dll *ll,
    parameter. Please see the parameter specification in dll_delete.
 */
 void dll_free(const struct dll *ll,
-	      struct dll_node **head,
-	      void (*free_key)(void *),
-	      void (*free_elt)(void *)){
+              struct dll_node **head,
+              void (*free_key)(void *),
+              void (*free_elt)(void *)){
   struct dll_node *node = *head, *next_node = NULL;
   if (node != NULL) (*head)->prev->next = NULL;
   while(node != NULL){

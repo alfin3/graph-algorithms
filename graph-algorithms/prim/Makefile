@@ -8,7 +8,7 @@
 #  Additional information is available at:
 #  https://gcc.gnu.org/onlinedocs/gcc/Submodel-Options.html#Submodel-Options
 #  https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#x86-Options
-#   
+#
 #  usage examples:
 #    make
 #    make BUILD_MODE=M32
@@ -57,7 +57,7 @@ OBJ = prim-test.o                     \
       $(UTILS_MOD_DIR)utilities-mod.o
 
 prim-test : $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ 
+	$(CC) $(CFLAGS) -o $@ $^
 
 prim-test.o                     : prim.h                          \
                                   $(HEAP_DIR)heap.h               \
@@ -100,5 +100,5 @@ $(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
 
 clean :
 	rm $(OBJ)
-clean-all : 
+clean-all :
 	rm -f prim-test $(OBJ)

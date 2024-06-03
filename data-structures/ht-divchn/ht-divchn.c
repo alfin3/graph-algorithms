@@ -2,18 +2,18 @@
    ht-divchn.c
 
    A hash table with generic contiguous or non-contiguous keys and generic
-   contiguous or non-contiguous elements. 
+   contiguous or non-contiguous elements.
 
-   The implementation is based on a division method for hashing into upto  
+   The implementation is based on a division method for hashing into upto
    the number of slots determined by the largest prime number in the
    C_PRIME_PARTS array, representable as size_t on a given system, and a
    chaining method for resolving collisions. Due to chaining, the number
    of keys and elements that can be inserted is not limited by the hash
    table implementation.
-   
-   The load factor of a hash table is the expected number of keys in a slot 
-   under the simple uniform hashing assumption, and is upper-bounded by the 
-   alpha parameters. The alpha parameters do not provide an upper bound 
+
+   The load factor of a hash table is the expected number of keys in a slot
+   under the simple uniform hashing assumption, and is upper-bounded by the
+   alpha parameters. The alpha parameters do not provide an upper bound
    after the maximum count of slots in a hash table is reached.
 
    A distinction is made between a key and a "key_size block", and an
@@ -37,7 +37,7 @@
    and pointers are copied into a hash table, then setting free_key to NULL
    will not affect the original set of images throughout the lifetime of the
    hash table. The same applies to elements and free_elt.
-   
+
    The implementation only uses integer and pointer operations. Integer
    arithmetic is used in load factor operations, thereby eliminating the
    use of float. Given parameter values within the specified ranges,
@@ -71,8 +71,8 @@
 #include "utilities-lim.h"
 
 /**
-   An array of primes in the increasing order, approximately doubling in 
-   magnitude, that are not too close to the powers of 2 and 10 to avoid 
+   An array of primes in the increasing order, approximately doubling in
+   magnitude, that are not too close to the powers of 2 and 10 to avoid
    hashing regularities due to the structure of data.
 */
 static const size_t C_PRIME_PARTS[6 * 1 + 16 * (2 + 3 + 4)] =
@@ -134,9 +134,9 @@ static const size_t C_PRIME_PARTS[6 * 1 + 16 * (2 + 3 + 4)] =
 static const size_t C_PRIME_PARTS_COUNT = 6u + 16u * (2u + 3u + 4u);
 static const size_t C_PARTS_PER_PRIME[4] = {1u, 2u, 3u, 4u};
 static const size_t C_PARTS_ACC_COUNTS[4] = {6u,
-					     6u + 16u * 2u,
-					     6u + 16u * (2u + 3u),
-					     6u + 16u * (2u + 3u + 4u)};
+                                             6u + 16u * 2u,
+                                             6u + 16u * (2u + 3u),
+                                             6u + 16u * (2u + 3u + 4u)};
 static const size_t C_BUILD_SHIFT = 16u;
 static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
@@ -153,7 +153,7 @@ static size_t build_prime(size_t start, size_t count);
    Initializes a hash table. An in-table elt_size block is guaranteed to
    be accessible only with a pointer to a character, unless additional
    alignment is performed by calling ht_divchn_align.
-   ht          : a pointer to a preallocated block of size 
+   ht          : a pointer to a preallocated block of size
                  sizeof(struct ht_divchn).
    key_size    : non-zero size of a key_size block; must account for internal
                  and trailing padding according to sizeof
@@ -199,15 +199,15 @@ static size_t build_prime(size_t start, size_t count);
                  except the elt_size block pointed to by the argument
 */
 void ht_divchn_init(struct ht_divchn *ht,
-		    size_t key_size,
-		    size_t elt_size,
-		    size_t min_num,
-		    size_t alpha_n,
-		    size_t log_alpha_d,
-		    int (*cmp_key)(const void *, const void *),
-		    size_t (*rdc_key)(const void *),
-		    void (*free_key)(void *),
-		    void (*free_elt)(void *)){
+                    size_t key_size,
+                    size_t elt_size,
+                    size_t min_num,
+                    size_t alpha_n,
+                    size_t log_alpha_d,
+                    int (*cmp_key)(const void *, const void *),
+                    size_t (*rdc_key)(const void *),
+                    void (*free_key)(void *),
+                    void (*free_elt)(void *)){
   size_t i;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
@@ -261,7 +261,7 @@ void ht_divchn_align(struct ht_divchn *ht, size_t elt_alignment){
    the key parameter is already in the hash table according to cmp_key,
    then deletes the previous element according to free_elt and copies
    the elt_size block pointed to by the elt parameter.
-   ht          : pointer to an initialized ht_divchn struct   
+   ht          : pointer to an initialized ht_divchn struct
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
 */
@@ -280,7 +280,7 @@ void ht_divchn_insert(struct ht_divchn *ht, const void *key, const void *elt){
     memcpy(dll_elt_ptr(ht->ll, node), elt, ht->elt_size);
   }
   /* grow ht after ensuring it was insertion, not update */
-  if (ht->num_elts > ht->max_num_elts && 
+  if (ht->num_elts > ht->max_num_elts &&
       ht->count_ix != C_SIZE_ULIMIT &&
       ht->count_ix != C_PRIME_PARTS_COUNT){
     ht_grow(ht);
@@ -292,15 +292,15 @@ void ht_divchn_insert(struct ht_divchn *ht, const void *key, const void *elt){
    pointer to the elt_size block of its associated element in the hash table.
    Otherwise returns NULL. The returned pointer can be dereferenced according
    to the preceding calls to ht_divchn_init and ht_divchn_align_elt.
-   ht          : pointer to an initialized ht_divchn struct   
+   ht          : pointer to an initialized ht_divchn struct
    key         : non-NULL pointer to the key_size block of a key
 */
 void *ht_divchn_search(const struct ht_divchn *ht, const void *key){
   const struct dll_node *node = dll_search_key(ht->ll,
-					       &ht->key_elts[hash(ht, key)],
-					       key,
-					       ht->key_size,
-					       ht->cmp_key);
+                                               &ht->key_elts[hash(ht, key)],
+                                               key,
+                                               ht->key_size,
+                                               ht->cmp_key);
   if (node == NULL){
     return NULL;
   }else{
@@ -316,7 +316,7 @@ void *ht_divchn_search(const struct ht_divchn *ht, const void *key){
    elt_size blocks in the hash table. If there is no matching key in the
    hash table according to cmp_key, leaves the hash table and the block
    pointed to by elt unchanged.
-   ht          : pointer to an initialized ht_divchn struct   
+   ht          : pointer to an initialized ht_divchn struct
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to a preallocated elt_size block
 */
@@ -336,7 +336,7 @@ void ht_divchn_remove(struct ht_divchn *ht, const void *key, void *elt){
    If there is a key in a hash table that equals to the key pointed to
    by the key parameter according to cmp_key, then deletes the in-table key
    element pair according to free_key and free_elt.
-   ht          : pointer to an initialized ht_divchn struct   
+   ht          : pointer to an initialized ht_divchn struct
    key         : non-NULL pointer to the key_size block of a key
 */
 void ht_divchn_delete(struct ht_divchn *ht, const void *key){
@@ -376,25 +376,25 @@ void ht_divchn_free(struct ht_divchn *ht){
 */
 
 void ht_divchn_init_helper(void *ht,
-			   size_t key_size,
-			   size_t elt_size,
-			   size_t min_num,
-			   size_t alpha_n,
-			   size_t log_alpha_d,
-			   int (*cmp_key)(const void *, const void *),
-			   size_t (*rdc_key)(const void *),
-			   void (*free_key)(void *),
-			   void (*free_elt)(void *)){
+                           size_t key_size,
+                           size_t elt_size,
+                           size_t min_num,
+                           size_t alpha_n,
+                           size_t log_alpha_d,
+                           int (*cmp_key)(const void *, const void *),
+                           size_t (*rdc_key)(const void *),
+                           void (*free_key)(void *),
+                           void (*free_elt)(void *)){
   ht_divchn_init(ht,
-		 key_size,
-		 elt_size,
-		 min_num,
-		 alpha_n,
-		 log_alpha_d,
-		 cmp_key,
-		 rdc_key,
-		 free_key,
-		 free_elt);
+                 key_size,
+                 elt_size,
+                 min_num,
+                 alpha_n,
+                 log_alpha_d,
+                 cmp_key,
+                 rdc_key,
+                 free_key,
+                 free_elt);
 }
 
 void ht_divchn_align_helper(void *ht, size_t elt_alignment){
@@ -419,12 +419,12 @@ void ht_divchn_delete_helper(void *ht, const void *key){
 
 void ht_divchn_free_helper(void *ht){
   ht_divchn_free(ht);
-} 
+}
 
 /** Auxiliary functions */
 
 /**
-   Converts a key to a size_t value (standard key). If rdc_key is NULL, 
+   Converts a key to a size_t value (standard key). If rdc_key is NULL,
    applies a safe conversion of any bit pattern in the key_size block of a
    key to reduce it to size_t. Otherwise, returns the value after applying
    rdc_key to the key.
@@ -457,10 +457,10 @@ static size_t convert_std_key(const struct ht_divchn *ht, const void *key){
 }
 
 /**
-   Maps a hash key to a slot index in a hash table with a division method. 
+   Maps a hash key to a slot index in a hash table with a division method.
 */
 static size_t hash(const struct ht_divchn *ht, const void *key){
-  return convert_std_key(ht, key) % ht->count; 
+  return convert_std_key(ht, key) % ht->count;
 }
 
 /**
@@ -485,8 +485,8 @@ static size_t mul_alpha_sz_max(size_t n, size_t alpha_n, size_t log_alpha_d){
    num_elts > max_num_elts) and count_ix is not equal to C_SIZE_ULIMIT or
    C_PRIME_PARTS_COUNT. A single call:
    i)  lowers the load factor s.t. num_elts <= max_num_elts if a sufficiently
-       large prime in the C_PRIME_PARTS array is available and is 
-       representable as size_t, or 
+       large prime in the C_PRIME_PARTS array is available and is
+       representable as size_t, or
    ii) lowers the load factor as low as possible.
    If the largest representable prime is reached, count_ix may not yet be set
    to C_SIZE_ULIMIT or C_PRIME_PARTS_COUNT, which requires one additional
@@ -535,8 +535,8 @@ static int incr_count(struct ht_divchn *ht){
     ht->count = build_prime(ht->count_ix, C_PARTS_PER_PRIME[ht->group_ix]);
     /* 0 <= max_num_elts <= C_SIZE_ULIMIT */
     ht->max_num_elts = mul_alpha_sz_max(ht->count,
-					ht->alpha_n,
-					ht->log_alpha_d);
+                                        ht->alpha_n,
+                                        ht->log_alpha_d);
   }
   return 1;
 }

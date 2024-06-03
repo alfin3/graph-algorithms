@@ -37,7 +37,7 @@
    not included due to an overhead that decreased the performance in tests.
 */
 
-#ifndef BFS_H  
+#ifndef BFS_H
 #define BFS_H
 
 #include <stddef.h>
@@ -91,9 +91,9 @@
                  vertices
 */
 void bfs(const struct adj_lst *a,
-	 size_t start,
-	 void *dist,
-	 void *prev,
+         size_t start,
+         void *dist,
+         void *prev,
          size_t (*read_vt)(const void *),
          void (*write_vt)(void *, size_t),
          void *(*at_vt)(const void *, const void *),

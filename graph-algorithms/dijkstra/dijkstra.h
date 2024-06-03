@@ -11,7 +11,7 @@
    hash table and its load factor upper bound. If NULL is passed as a hash
    table parameter value, a default hash table is used, which contains an
    index array with a count that is equal to the number of vertices in the
-   graph.   
+   graph.
 
    If E >> V, a default hash table may provide speed advantages by avoiding
    the computation of hash values. If V is large and the graph is sparse,
@@ -47,7 +47,7 @@
    and C99.
 */
 
-#ifndef DIJKSTRA_H  
+#ifndef DIJKSTRA_H
 #define DIJKSTRA_H
 
 #include <stddef.h>
@@ -62,15 +62,15 @@ struct dijkstra_ht{
   size_t alpha_n;
   size_t log_alpha_d;
   void (*init)(void *,
-	       size_t,
-	       size_t,
-	       size_t,
-	       size_t,
-	       size_t,
-	       int (*)(const void *, const void *),
-	       size_t (*)(const void *),
-	       void (*)(void *),
-	       void (*)(void *));
+               size_t,
+               size_t,
+               size_t,
+               size_t,
+               size_t,
+               int (*)(const void *, const void *),
+               size_t (*)(const void *),
+               void (*)(void *),
+               void (*)(void *));
   void (*align)(void *, size_t);
   void (*insert)(void *, const void *, const void *);
   void *(*search)(const void *, const void *);
@@ -92,7 +92,7 @@ struct dijkstra_ht{
                  pointed to by dist has no declared type then dijkstra sets
                  the effective type of each element corresponding to a
                  reached vertex to the type of a weight in the adjacency list
-                 by writing a value of the type; if distances are of an 
+                 by writing a value of the type; if distances are of an
                  integer type and the block was allocated with calloc then
                  under C99 and C11 each element corresponding to an unreached
                  vertex can be safely read as the integer type and will
@@ -132,7 +132,7 @@ struct dijkstra_ht{
                  if the weight value pointed to by the first argument is
                  less than the weight value pointed to by the second, a
                  positive integer value if the weight value pointed to by
-                 the first argument is greater than the weight value 
+                 the first argument is greater than the weight value
                  pointed to by the second, and zero integer value if the two
                  weight values are equal
    add_wt      : addition function which copies the sum of the weight values
@@ -143,15 +143,15 @@ struct dijkstra_ht{
                  use a provided _perror-suffixed function
 */
 void dijkstra(const struct adj_lst *a,
-	      size_t start,
-	      void *dist,
-	      void *prev,
-	      const void *wt_zero,
-	      const struct dijkstra_ht *daht,
-	      size_t (*read_vt)(const void *),
-	      void (*write_vt)(void *, size_t),
-	      void *(*at_vt)(const void *, const void *),
-	      int (*cmp_vt)(const void *, const void *),
-	      int (*cmp_wt)(const void *, const void *),
-	      void (*add_wt)(void *, const void *, const void *));
+              size_t start,
+              void *dist,
+              void *prev,
+              const void *wt_zero,
+              const struct dijkstra_ht *daht,
+              size_t (*read_vt)(const void *),
+              void (*write_vt)(void *, size_t),
+              void *(*at_vt)(const void *, const void *),
+              int (*cmp_vt)(const void *, const void *),
+              int (*cmp_wt)(const void *, const void *),
+              void (*add_wt)(void *, const void *, const void *));
 #endif

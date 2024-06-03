@@ -3,7 +3,7 @@
 
    Declarations of accessible functions and macro definitions for optimizing
    and running a generic merge sort algorithm with parallel sorting and
-   parallel merging. 
+   parallel merging.
 
    The design decouples merge and sort parallelisms in mergesort. The
    algorithm provides \Theta(n/log^{2}n) theoretical parallelism within the
@@ -37,7 +37,7 @@
 */
 
 
-#ifndef MERGESORT_PTHREAD_H  
+#ifndef MERGESORT_PTHREAD_H
 #define MERGESORT_PTHREAD_H
 
 #include <stddef.h>
@@ -64,11 +64,11 @@
                  integer value if the two elements are equal
 */
 void mergesort_pthread(void *elts,
-		       size_t count,
-		       size_t elt_size,
-		       size_t sbase_count,
-		       size_t mbase_count,
-		       int (*cmp)(const void *, const void *));
+                       size_t count,
+                       size_t elt_size,
+                       size_t sbase_count,
+                       size_t mbase_count,
+                       int (*cmp)(const void *, const void *));
 
 /**
    A constant upper bound for the number of recursive calls of thread entry

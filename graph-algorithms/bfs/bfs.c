@@ -97,9 +97,9 @@ static void *ptr(const void *block, size_t i, size_t size);
                  vertices
 */
 void bfs(const struct adj_lst *a,
-	 size_t start,
-	 void *dist,
-	 void *prev,
+         size_t start,
+         void *dist,
+         void *prev,
          size_t (*read_vt)(const void *),
          void (*write_vt)(void *, size_t),
          void *(*at_vt)(const void *, const void *),
@@ -136,9 +136,9 @@ void bfs(const struct adj_lst *a,
     p_end = (char *)p_start + a->vt_wts[read_vt(u)]->num_elts * a->pair_size;
     for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
       if (cmp_vt(at_vt(prev, p), nr) == 0){
-	memcpy(at_vt(dist, p), d, a->vt_size);
-	memcpy(at_vt(prev, p), u, a->vt_size);
-	queue_push(&q, p);
+        memcpy(at_vt(dist, p), d, a->vt_size);
+        memcpy(at_vt(prev, p), u, a->vt_size);
+        queue_push(&q, p);
       }
     }
   }
@@ -157,13 +157,13 @@ void bfs(const struct adj_lst *a,
    alignment or a less strict alignment and back again; the result shall
    compare equal to the original pointer. (An object that has character
    type has the least strict alignment.)"
-   
+
    "A pointer to void may be converted to or from a pointer to any
    incomplete or object type. A pointer to any incomplete or object type
    may be converted to a pointer to void and back again; the result shall
    compare equal to the original pointer."
 
-   "A pointer to void shall have the same representation and alignment 
+   "A pointer to void shall have the same representation and alignment
    requirements as a pointer to a character type."
 */
 static void *ptr(const void *block, size_t i, size_t size){

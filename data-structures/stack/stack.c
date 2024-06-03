@@ -5,7 +5,7 @@
    dynamic set of generic elements in the stack form.
 
    A distinction is made between an element and an "elt_size block". During
-   an insertion a contiguous block of size elt_size ("elt_size block") is 
+   an insertion a contiguous block of size elt_size ("elt_size block") is
    copied into a stack. An element may be within a contiguous or non-
    contiguous memory block. Given an element, the user decides what is
    copied into the elt_size block of the stack. If the element is within a
@@ -22,18 +22,18 @@
    as elements and pointers are copied into a stack, then setting free_elt
    to NULL will not affect the original set of images throughout the
    lifetime of the stack.
-  
+
    The implementation only uses integer and pointer operations. Given
    parameter values within the specified ranges, the implementation
    provides an error message and an exit is executed if an integer overflow
    is attempted or an allocation is not completed due to insufficient
    resources. The behavior outside the specified parameter ranges is
    undefined.
-   
+
    The implementation does not use stdint.h and is portable under
    C89/C90 and C99.
-   
-   Functions in stack.h and stack.c are similar to the implementation in 
+
+   Functions in stack.h and stack.c are similar to the implementation in
    https://see.stanford.edu/Course/CS107, with i) additional bound
    parameters to minimize the memory use in problems with the prior
    knowledge of the count of elements, ii) integer overflow safety, iii)
@@ -68,8 +68,8 @@ static void fprintf_stderr_exit(const char *s, int line);
                  except the elt_size block pointed to by the argument
 */
 void stack_init(struct stack *s,
-		size_t elt_size,
-		void (*free_elt)(void *)){
+                size_t elt_size,
+                void (*free_elt)(void *)){
   s->count = 1;
   s->init_count = 1;
   s->max_count = 0;
@@ -96,11 +96,11 @@ void stack_init(struct stack *s,
                  attempt is made to exceed it
                  - otherwise, the count of the elt_size blocks that can be
                  simultaneously present in a stack is only limited by the
-                 available system resources 
+                 available system resources
 */
 void stack_bound(struct stack *s,
-		 size_t init_count,
-		 size_t max_count){
+                 size_t init_count,
+                 size_t max_count){
   s->init_count = init_count;
   s->max_count = max_count;
   s->elts = realloc_perror(s->elts, s->init_count, s->elt_size);
@@ -108,7 +108,7 @@ void stack_bound(struct stack *s,
 
 /**
    Pushes an element onto a stack.
-   s           : pointer to an initialized stack struct 
+   s           : pointer to an initialized stack struct
    elt         : non-NULL pointer to the elt_size block of an element
 */
 void stack_push(struct stack *s, const void *elt){
@@ -119,7 +119,7 @@ void stack_push(struct stack *s, const void *elt){
 
 /**
    Pops an element of a stack.
-   s           : pointer to an initialized stack struct   
+   s           : pointer to an initialized stack struct
    elt         : non-NULL pointer to a preallocated elt_size block; if the
                  stack is empty, the memory block pointed to by elt remains
                  unchanged
@@ -127,8 +127,8 @@ void stack_push(struct stack *s, const void *elt){
 void stack_pop(struct stack *s, void *elt){
   if (s->num_elts == 0) return;
   memcpy(elt,
-	 ptr(s->elts, s->num_elts - 1, s->elt_size),
-	 s->elt_size);
+         ptr(s->elts, s->num_elts - 1, s->elt_size),
+         s->elt_size);
   s->num_elts--;
 }
 
@@ -136,9 +136,9 @@ void stack_pop(struct stack *s, void *elt){
    If a stack is not empty, returns a pointer to the first elt_size block,
    otherwise returns NULL. The returned pointer is guaranteed to point to
    the first element until a stack modifying operation is performed. If
-   non-NULL, the returned pointed can be dereferenced as a pointer to the 
+   non-NULL, the returned pointed can be dereferenced as a pointer to the
    type of the elt_size block, or as a character pointer.
-   s           : pointer to an initialized stack struct 
+   s           : pointer to an initialized stack struct
 */
 void *stack_first(const struct stack *s){
   if (s->num_elts == 0) return NULL;
@@ -146,7 +146,7 @@ void *stack_first(const struct stack *s){
 }
 
 /**
-   Frees the memory of all elements that are in a stack according to 
+   Frees the memory of all elements that are in a stack according to
    free_elt, frees the memory of the stack, and leaves the block of size
    sizeof(struct stack) pointed to by the s parameter.
 */
@@ -155,7 +155,7 @@ void stack_free(struct stack *s){
   if (s->free_elt != NULL){
     for (i = 0; i < s->num_elts; i++){
       s->free_elt(ptr(s->elts, i, s->elt_size));
-    } 
+    }
   }
   free(s->elts);
   s->elts = NULL;
@@ -174,7 +174,7 @@ static void stack_grow(struct stack *s){
     /* always enter if init_count == max_count */
     fprintf_stderr_exit("tried to exceed the count maximum", __LINE__);
   }else if (s->max_count > s->init_count &&
-	    s->max_count - s->count < s->count){
+            s->max_count - s->count < s->count){
     s->count = s->max_count;
   }else{
     /* always enter if init_count > max_count */

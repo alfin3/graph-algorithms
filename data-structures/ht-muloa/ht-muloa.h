@@ -1,21 +1,21 @@
 /**
    ht-muloa.h
 
-   Struct declarations and declarations of accessible functions of a hash 
+   Struct declarations and declarations of accessible functions of a hash
    table with generic contiguous or non-contiguous keys and generic
    contiguous or non-contiguous elements.
-   
+
    The implementation is based on a multiplication method for hashing into
    upto 2**(size_t width - 1) slots and an open addressing method with
    double hashing for resolving collisions.
-   
-   The load factor of a hash table is the expected number of keys in a slot 
-   under the simple uniform hashing assumption, and is upper-bounded by 
-   the alpha parameters. The expected number of probes in a search is 
-   upper-bounded by 1/(1 - load factor bound), under the uniform hashing
-   assumption. 
 
-   The alpha parameters do not provide an upper bound after the maximum 
+   The load factor of a hash table is the expected number of keys in a slot
+   under the simple uniform hashing assumption, and is upper-bounded by
+   the alpha parameters. The expected number of probes in a search is
+   upper-bounded by 1/(1 - load factor bound), under the uniform hashing
+   assumption.
+
+   The alpha parameters do not provide an upper bound after the maximum
    count of slots in a hash table is reached. After exceeding the load
    factor bound, the load factor is <= 1.0 due to open addressing, and the
    expected number of probes is upper-bounded by 1/(1 - load factor) before
@@ -63,7 +63,7 @@
    of computing bounds, which is defined by the implementation.
 */
 
-#ifndef HT_MULOA_H  
+#ifndef HT_MULOA_H
 #define HT_MULOA_H
 
 #include <stddef.h>
@@ -72,7 +72,7 @@ struct ke{
   size_t fval; /* first hash value with first bit only set in placeholder */
   size_t sval; /* second hash value */
 };             /* given p pointer to a ke,
-                  (char *)p - key_offset points to key_size block and 
+                  (char *)p - key_offset points to key_size block and
                   (char *)p + elt_offset points to elt_size block;
                   see ke_key_ptr and ke_elt_ptr functions */
 
@@ -104,7 +104,7 @@ struct ht_muloa{
    Initializes a hash table. An in-table elt_size block is guaranteed to
    be accessible only with a pointer to a character, unless additional
    alignment is performed by calling ht_muloa_align.
-   ht          : a pointer to a preallocated block of size 
+   ht          : a pointer to a preallocated block of size
                  sizeof(struct ht_muloa).
    key_size    : non-zero size of a key_size block; must account for internal
                  and trailing padding according to sizeof
@@ -151,15 +151,15 @@ struct ht_muloa{
                  except the elt_size block pointed to by the argument
 */
 void ht_muloa_init(struct ht_muloa *ht,
-		   size_t key_size,
-		   size_t elt_size,
-		   size_t min_num,
-		   size_t alpha_n,
-		   size_t log_alpha_d,
-		   int (*cmp_key)(const void *, const void *),
-		   size_t (*rdc_key)(const void *),
-		   void (*free_key)(void *),
-		   void (*free_elt)(void *));
+                   size_t key_size,
+                   size_t elt_size,
+                   size_t min_num,
+                   size_t alpha_n,
+                   size_t log_alpha_d,
+                   int (*cmp_key)(const void *, const void *),
+                   size_t (*rdc_key)(const void *),
+                   void (*free_key)(void *),
+                   void (*free_elt)(void *));
 
 /**
    Aligns each in-table elt_size block to be accessible with a pointer to a
@@ -187,7 +187,7 @@ void ht_muloa_align(struct ht_muloa *ht, size_t elt_alignment);
    the key parameter is already in the hash table according to cmp_key,
    then deletes the previous element according to free_elt and copies
    the elt_size block pointed to by the elt parameter.
-   ht          : pointer to an initialized ht_muloa struct   
+   ht          : pointer to an initialized ht_muloa struct
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
 */
@@ -198,7 +198,7 @@ void ht_muloa_insert(struct ht_muloa *ht, const void *key, const void *elt);
    pointer to the elt_size block of its associated element in the hash table.
    Otherwise returns NULL. The returned pointer can be dereferenced according
    to the preceding calls to ht_muloa_init and ht_muloa_align_elt.
-   ht          : pointer to an initialized ht_muloa struct   
+   ht          : pointer to an initialized ht_muloa struct
    key         : non-NULL pointer to the key_size block of a key
 */
 void *ht_muloa_search(const struct ht_muloa *ht, const void *key);
@@ -211,7 +211,7 @@ void *ht_muloa_search(const struct ht_muloa *ht, const void *key);
    elt_size blocks in the hash table. If there is no matching key in the
    hash table according to cmp_key, leaves the hash table and the block
    pointed to by elt unchanged.
-   ht          : pointer to an initialized ht_muloa struct   
+   ht          : pointer to an initialized ht_muloa struct
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to a preallocated elt_size block
 */
@@ -221,7 +221,7 @@ void ht_muloa_remove(struct ht_muloa *ht, const void *key, void *elt);
    If there is a key in a hash table that equals to the key pointed to
    by the key parameter according to cmp_key, then deletes the in-table key
    element pair according to free_key and free_elt.
-   ht          : pointer to an initialized ht_muloa struct   
+   ht          : pointer to an initialized ht_muloa struct
    key         : non-NULL pointer to the key_size block of a key
 */
 void ht_muloa_delete(struct ht_muloa *ht, const void *key);
@@ -244,15 +244,15 @@ void ht_muloa_free(struct ht_muloa *ht);
 */
 
 void ht_muloa_init_helper(void *ht,
-			  size_t key_size,
-			  size_t elt_size,
-			  size_t min_num,
-			  size_t alpha_n,
-			  size_t log_alpha_d,
-			  int (*cmp_key)(const void *, const void *),
-			  size_t (*rdc_key)(const void *),
-			  void (*free_key)(void *),
-			  void (*free_elt)(void *));
+                          size_t key_size,
+                          size_t elt_size,
+                          size_t min_num,
+                          size_t alpha_n,
+                          size_t log_alpha_d,
+                          int (*cmp_key)(const void *, const void *),
+                          size_t (*rdc_key)(const void *),
+                          void (*free_key)(void *),
+                          void (*free_elt)(void *));
 
 void ht_muloa_align_helper(void *ht, size_t elt_alignment);
 

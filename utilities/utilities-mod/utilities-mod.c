@@ -2,7 +2,7 @@
    utilities-mod.c
 
    Utility functions in modular arithmetic. The utility functions are
-   integer overflow-safe. The provided implementations assume that 
+   integer overflow-safe. The provided implementations assume that
    the width of size_t is even.
 */
 
@@ -13,18 +13,18 @@
 #include "utilities-lim.h"
 
 static const size_t C_SIZE_HALF = (((size_t)1 <<
-				    (PRECISION_FROM_ULIMIT((size_t)-1) / 2u)) -
-				   1u);
+                                    (PRECISION_FROM_ULIMIT((size_t)-1) / 2u)) -
+                                   1u);
 static const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
 static const size_t C_HALF_BIT = PRECISION_FROM_ULIMIT((size_t)-1) / 2u;
 static const size_t C_LOW_MASK = ((size_t)-1 >>
-				  (PRECISION_FROM_ULIMIT((size_t)-1) / 2u));
+                                  (PRECISION_FROM_ULIMIT((size_t)-1) / 2u));
 
 /**
    Computes overflow-safe mod n of the kth power in O(logk) time,
    based on the binary representation of k and inductively applying the
    following relations:
-   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then 
+   if a1 ≡ b1 (mod n) and a2 ≡ b2 (mod n) then
    a1 a2 ≡ b1 b2 (mod n), and a1 + a2 ≡ b1 + b2 (mod n).
 */
 size_t pow_mod(size_t a, size_t k, size_t n){
@@ -112,12 +112,12 @@ void mul_ext(size_t a, size_t b, size_t *h, size_t *l){
   al_bl = al * bl;
   al_bh = al * bh;
   overlap = ((bl * ah & C_LOW_MASK) +
-	     (al_bh & C_LOW_MASK) +
-	     (al_bl >> C_HALF_BIT));
+             (al_bh & C_LOW_MASK) +
+             (al_bl >> C_HALF_BIT));
   *h = ((overlap >> C_HALF_BIT) +
-	ah * bh +
-	(ah * bl >> C_HALF_BIT) +
-	(al_bh >> C_HALF_BIT));
+        ah * bh +
+        (ah * bl >> C_HALF_BIT) +
+        (al_bh >> C_HALF_BIT));
   *l = (overlap << C_HALF_BIT) + (al_bl & C_LOW_MASK);
 }
 
@@ -145,4 +145,4 @@ size_t pow_two_perror(size_t k){
     exit(EXIT_FAILURE);
   }
   return (size_t)1 << k;
-} 
+}

@@ -2,7 +2,7 @@
    heap.c
 
    A (min) heap with generic contiguous priorities, generic contiguous or
-   non-contiguous elements, and a hash table parameter. 
+   non-contiguous elements, and a hash table parameter.
 
    The implementation provides a dynamic set in the min heap form for any
    elements in memory associated with contiguous priority values (e.g. basic
@@ -80,7 +80,7 @@ static void *elt_ptr(const struct heap *h, size_t i);
                  if the priority value pointed to by the first argument is
                  less than the priority value pointed to by the second, a
                  positive integer value if the priority value pointed to by
-                 the first argument is greater than the priority value 
+                 the first argument is greater than the priority value
                  pointed to by the second, and zero integer value if the two
                  priority values are equal
    cmp_elt     : - if NULL then a default memcmp-based comparison of elt_size
@@ -107,14 +107,14 @@ static void *elt_ptr(const struct heap *h, size_t i);
                  except the elt_size block pointed to by the argument
 */
 void heap_init(struct heap *h,
-	       size_t pty_size,
-	       size_t elt_size,
-	       size_t min_num,
-	       const struct heap_ht *hht,
-	       int (*cmp_pty)(const void *, const void *),
-	       int (*cmp_elt)(const void *, const void *),
-	       size_t (*rdc_elt)(const void *),
-	       void (*free_elt)(void *)){
+               size_t pty_size,
+               size_t elt_size,
+               size_t min_num,
+               const struct heap_ht *hht,
+               int (*cmp_pty)(const void *, const void *),
+               int (*cmp_elt)(const void *, const void *),
+               size_t (*rdc_elt)(const void *),
+               void (*free_elt)(void *)){
   size_t elt_rem, pty_rem;
   h->pty_size = pty_size;
   h->elt_size = elt_size;
@@ -124,11 +124,11 @@ void heap_init(struct heap *h,
   }else{
     elt_rem = h->pty_size % h->elt_size;
     h->elt_offset = add_sz_perror(h->pty_size,
-				  (elt_rem > 0) * (h->elt_size - elt_rem));
+                                  (elt_rem > 0) * (h->elt_size - elt_rem));
   }
   pty_rem = add_sz_perror(h->elt_offset, h->elt_size) % h->pty_size;
   h->pair_size = add_sz_perror(h->elt_offset + h->elt_size,
-			       (pty_rem > 0) * (h->pty_size - pty_rem));
+                               (pty_rem > 0) * (h->pty_size - pty_rem));
   h->count = min_num;
   h->num_elts = 0;
   h->buf = malloc_perror(1, h->pair_size); /* heapify */
@@ -141,15 +141,15 @@ void heap_init(struct heap *h,
   /* hash table maps an element to a size_t index  */
   if (h->hht->init != NULL && h->hht->align != NULL){
     h->hht->init(hht->ht,
-		 h->elt_size,
-		 sizeof(size_t),
-		 h->count,
-		 hht->alpha_n,
-		 hht->log_alpha_d,
-		 h->cmp_elt,
-		 h->rdc_elt,
-		 NULL, /* only elt_size block is deleted in hash table */
-		 NULL);
+                 h->elt_size,
+                 sizeof(size_t),
+                 h->count,
+                 hht->alpha_n,
+                 hht->log_alpha_d,
+                 h->cmp_elt,
+                 h->rdc_elt,
+                 NULL, /* only elt_size block is deleted in hash table */
+                 NULL);
     /* elements dereferenced with size_t *; may be slighly overaligned */
     h->hht->align(h->hht->ht, sizeof(size_t));
   }
@@ -180,20 +180,20 @@ void heap_init(struct heap *h,
                    size_t
 */
 void heap_align(struct heap *h,
-		size_t pty_alignment,
-		size_t elt_alignment,
-		size_t sz_alignment){
+                size_t pty_alignment,
+                size_t elt_alignment,
+                size_t sz_alignment){
   size_t elt_rem, pty_rem;
   if (h->pty_size <= elt_alignment){
     h->elt_offset = elt_alignment;
   }else{
     elt_rem = h->pty_size % elt_alignment;
     h->elt_offset = add_sz_perror(h->pty_size,
-				  (elt_rem > 0) * (elt_alignment - elt_rem));
+                                  (elt_rem > 0) * (elt_alignment - elt_rem));
   }
   pty_rem = add_sz_perror(h->elt_offset, h->elt_size) % pty_alignment;
   h->pair_size = add_sz_perror(h->elt_offset + h->elt_size,
-			       (pty_rem > 0) * (pty_alignment - pty_rem));
+                               (pty_rem > 0) * (pty_alignment - pty_rem));
   h->buf = realloc_perror(h->buf, 2, h->pair_size);
   memset(h->buf, 0, 2 * h->pair_size);
   h->pty_elts = realloc_perror(h->pty_elts, h->count, h->pair_size);
@@ -215,7 +215,7 @@ void heap_align(struct heap *h,
 void heap_push(struct heap *h, const void *pty, const void *elt){
   size_t ix = h->num_elts;
   if (h->count == ix){
-    /* grow heap; amortized constant overhead per push, 
+    /* grow heap; amortized constant overhead per push,
        without considering realloc's search */
     h->count = mul_sz_perror(2, h->count);
     h->pty_elts = realloc_perror(h->pty_elts, h->count, h->pair_size);
@@ -227,7 +227,7 @@ void heap_push(struct heap *h, const void *pty, const void *elt){
   heapify_up(h, ix);
 }
 
-/** 
+/**
    Returns a pointer to the priority value associated with an element in a
    heap according to cmp_elt. Returns NULL if the element is not in the heap
    according to cmp_elt. Runs in O(1) time in expectation under the uniformity
@@ -251,7 +251,7 @@ void *heap_search(const struct heap *h, const void *elt){
 
 /**
    Updates the priority value of an element that is in a heap. Prior
-   to updating, the membership of an element can be tested, if necessary, 
+   to updating, the membership of an element can be tested, if necessary,
    with heap_search in O(1) time in expectation under the uniformity
    assumptions suitable for the used hash table.
    h           : pointer to an initialized heap
@@ -267,11 +267,11 @@ void heap_update(struct heap *h, const void *pty, const void *elt){
 }
 
 /**
-   Pops an element associated with a minimal priority value in a heap 
-   according to cmp_pty. If the heap is empty, the memory blocks pointed 
+   Pops an element associated with a minimal priority value in a heap
+   according to cmp_pty. If the heap is empty, the memory blocks pointed
    to by elt and pty parameters remain unchanged.
    h           : pointer to an initialized heap
-   pty         : non-NULL pointer to a block of size pty_size 
+   pty         : non-NULL pointer to a block of size pty_size
    elt         : non-NULL pointer to a block of size elt_size
 */
 void heap_pop(struct heap *h, void *pty, void *elt){
@@ -297,7 +297,7 @@ void heap_free(struct heap *h){
   if (h->free_elt != NULL){
     for (i = 0; i < h->num_elts; i++){
       h->free_elt(elt_ptr(h, i));
-    } 
+    }
   }
   free(h->buf);
   free(h->pty_elts);
@@ -352,7 +352,7 @@ static void heapify_down(struct heap *h, size_t i){
     jl = 2 * ix + 1;
     jr = 2 * ix + 2;
     if (h->cmp_pty(h->buf, pty_ptr(h, jl)) > 0 &&
-	h->cmp_pty(pty_ptr(h, jl), pty_ptr(h, jr)) <= 0){
+        h->cmp_pty(pty_ptr(h, jl), pty_ptr(h, jr)) <= 0){
       half_swap(h, ix, jl);
       ix = jl;
     }else if (h->cmp_pty(h->buf, pty_ptr(h, jr)) > 0){

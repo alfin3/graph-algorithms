@@ -22,10 +22,10 @@
    returned. Returns count, if A[count - 1] < element pointed to by key.
 */
 size_t geq_bsearch(const void *key,
-		   const void *elts,
-		   size_t count,
-		   size_t elt_size,
-		   int (*cmp)(const void *, const void *));
+                   const void *elts,
+                   size_t count,
+                   size_t elt_size,
+                   int (*cmp)(const void *, const void *));
 
 /**
    Performs "less or equal" binary search on an array with count elements,
@@ -40,9 +40,9 @@ size_t geq_bsearch(const void *key,
    returned. Returns count, if A[0] > element pointed to by key.
 */
 size_t leq_bsearch(const void *key,
-		   const void *elts,
-		   size_t count,
-		   size_t elt_size,
-		   int (*cmp)(const void *, const void *));
+                   const void *elts,
+                   size_t count,
+                   size_t elt_size,
+                   int (*cmp)(const void *, const void *));
 
 #endif

@@ -49,7 +49,7 @@
    and C99.
 */
 
-#ifndef HEAP_H  
+#ifndef HEAP_H
 #define HEAP_H
 
 #include <stddef.h>
@@ -67,15 +67,15 @@ struct heap_ht{
   size_t alpha_n;
   size_t log_alpha_d;
   void (*init)(void *,
-	       size_t,
-	       size_t,
-	       size_t,
-	       size_t,
-	       size_t,
-	       int (*)(const void *, const void *),
-	       size_t (*)(const void *),
-	       void (*)(void *),
-	       void (*)(void *));
+               size_t,
+               size_t,
+               size_t,
+               size_t,
+               size_t,
+               int (*)(const void *, const void *),
+               size_t (*)(const void *),
+               void (*)(void *),
+               void (*)(void *));
   void (*align)(void *, size_t);
   void (*insert)(void *, const void *, const void *);
   void *(*search)(const void *, const void *);
@@ -123,7 +123,7 @@ struct heap{
                  if the priority value pointed to by the first argument is
                  less than the priority value pointed to by the second, a
                  positive integer value if the priority value pointed to by
-                 the first argument is greater than the priority value 
+                 the first argument is greater than the priority value
                  pointed to by the second, and zero integer value if the two
                  priority values are equal
    cmp_elt     : - if NULL then a default memcmp-based comparison of elt_size
@@ -150,14 +150,14 @@ struct heap{
                  except the elt_size block pointed to by the argument
 */
 void heap_init(struct heap *h,
-	       size_t pty_size,
-	       size_t elt_size,
-	       size_t min_num,
-	       const struct heap_ht *hht,
-	       int (*cmp_pty)(const void *, const void *),
-	       int (*cmp_elt)(const void *, const void *),
-	       size_t (*rdc_elt)(const void *),
-	       void (*free_elt)(void *));
+               size_t pty_size,
+               size_t elt_size,
+               size_t min_num,
+               const struct heap_ht *hht,
+               int (*cmp_pty)(const void *, const void *),
+               int (*cmp_elt)(const void *, const void *),
+               size_t (*rdc_elt)(const void *),
+               void (*free_elt)(void *));
 
 /**
    Aligns the in-heap pty_size blocks, elt_size block, and size_t indices,
@@ -184,9 +184,9 @@ void heap_init(struct heap *h,
                    size_t
 */
 void heap_align(struct heap *h,
-		size_t pty_alignment,
-		size_t elt_alignment,
-		size_t sz_alignment);
+                size_t pty_alignment,
+                size_t elt_alignment,
+                size_t sz_alignment);
 
 /**
    Inserts (pushes) a priority value and an associated element not yet in a
@@ -202,7 +202,7 @@ void heap_align(struct heap *h,
 */
 void heap_push(struct heap *h, const void *pty, const void *elt);
 
-/** 
+/**
    Returns a pointer to the priority value associated with an element in a
    heap according to cmp_elt. Returns NULL if the element is not in the heap
    according to cmp_elt. Runs in O(1) time in expectation under the uniformity
@@ -219,7 +219,7 @@ void *heap_search(const struct heap *h, const void *elt);
 
 /**
    Updates the priority value of an element that is in a heap. Prior
-   to updating, the membership of an element can be tested, if necessary, 
+   to updating, the membership of an element can be tested, if necessary,
    with heap_search in O(1) time in expectation under the uniformity
    assumptions suitable for the used hash table.
    h           : pointer to an initialized heap
@@ -230,11 +230,11 @@ void *heap_search(const struct heap *h, const void *elt);
 void heap_update(struct heap *h, const void *pty, const void *elt);
 
 /**
-   Pops an element associated with a minimal priority value in a heap 
-   according to cmp_pty. If the heap is empty, the memory blocks pointed 
+   Pops an element associated with a minimal priority value in a heap
+   according to cmp_pty. If the heap is empty, the memory blocks pointed
    to by elt and pty parameters remain unchanged.
    h           : pointer to an initialized heap
-   pty         : non-NULL pointer to a block of size pty_size 
+   pty         : non-NULL pointer to a block of size pty_size
    elt         : non-NULL pointer to a block of size elt_size
 */
 void heap_pop(struct heap *h, void *pty, void *elt);

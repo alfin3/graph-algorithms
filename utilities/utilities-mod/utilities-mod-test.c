@@ -9,7 +9,7 @@
       [0, 1] : pow_mod, mul_mod, and sum_mod tests on/off
       [0, 1] : mul_ext, represent_uint, and pow_two_perror tests on/off
 
-   usage examples: 
+   usage examples:
    ./utilities-mod-test 20
    ./utilities-mod-test 20 0 1
 
@@ -58,12 +58,12 @@ const size_t C_ARGS_DEF[3] = {15u, 1u, 1u};
 const unsigned char C_UCHAR_ULIMIT = (unsigned char)-1;
 const size_t C_SIZE_ULIMIT = (size_t)-1; /* >= 3 */
 const size_t C_SIZE_HALF = (((size_t)1 <<
-			     (PRECISION_FROM_ULIMIT((size_t)-1) / 2u)) - 1u);
+                             (PRECISION_FROM_ULIMIT((size_t)-1) / 2u)) - 1u);
 const size_t C_BYTE_BIT = CHAR_BIT;
 const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1); /* >= 2 */
 const size_t C_HALF_BIT = PRECISION_FROM_ULIMIT((size_t)-1) / 2u; /* >= 1 */
 const size_t C_BASE_ULIMIT = (((size_t)1 << (CHAR_BIT / 2u))
-			      + 1u); /* >= 2, <= C_SIZE_ULIMIT */
+                              + 1u); /* >= 2, <= C_SIZE_ULIMIT */
 
 void print_test_result(int res);
 
@@ -99,7 +99,7 @@ void run_pow_mod_test(int log_trials){
     res *= (r == r_wo);
   }
   printf("\t0 <= a <= %lu, 0 <= k <= %lu, 0 < n <= 2**%lu - 1 --> ",
-	 TOLU(C_BASE_ULIMIT), TOLU(k_max), TOLU(C_HALF_BIT));
+         TOLU(C_BASE_ULIMIT), TOLU(k_max), TOLU(C_HALF_BIT));
   print_test_result(res);
   res = 1;
   k_max = C_SIZE_ULIMIT - 1;
@@ -115,8 +115,8 @@ void run_pow_mod_test(int log_trials){
     res *= (r == 1);
   }
   printf("\ta = n - 1, 0 <= k < 2**%lu - 1, 1 < n <= 2**%lu - 1, "
-	 "where 0 = k (mod 2) --> ",
-	 TOLU(C_FULL_BIT), TOLU(C_FULL_BIT));
+         "where 0 = k (mod 2) --> ",
+         TOLU(C_FULL_BIT), TOLU(C_FULL_BIT));
   print_test_result(res);
   res = 1;
   res *= (pow_mod(0, 0, 1) == 0);
@@ -125,7 +125,7 @@ void run_pow_mod_test(int log_trials){
   res *= (pow_mod(2, 0, 2) == 1);
   res *= (pow_mod(C_SIZE_ULIMIT, C_SIZE_ULIMIT, C_SIZE_ULIMIT) == 0);
   res *= (pow_mod(C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT, C_SIZE_ULIMIT) ==
-	  C_SIZE_ULIMIT - 1);
+          C_SIZE_ULIMIT - 1);
   res *= (pow_mod(C_SIZE_ULIMIT, C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT) == 0);
   printf("\tcorner cases --> ");
   print_test_result(res);
@@ -154,7 +154,7 @@ void run_mul_mod_test(int log_trials){
     res *= (r == r_wo);
   }
   printf("\ta, b <= 2**%lu - 1, 0 < n <= 2**%lu - 1 --> ",
-	 TOLU(C_HALF_BIT), TOLU(C_FULL_BIT));
+         TOLU(C_HALF_BIT), TOLU(C_FULL_BIT));
   print_test_result(res);
   res = 1;
   for (i = 0; i < trials; i++){
@@ -205,7 +205,7 @@ void run_sum_mod_test(int log_trials){
     res *= (r == r_wo);
   }
   printf("\ta, b <= 2**%lu - 1, 0 < n <= 2**%lu - 1 --> ",
-	 TOLU(C_FULL_BIT - 1), TOLU(C_FULL_BIT));
+         TOLU(C_FULL_BIT - 1), TOLU(C_FULL_BIT));
   print_test_result(res);
   res = 1;
   for (i = 0; i < trials; i++){
@@ -214,7 +214,7 @@ void run_sum_mod_test(int log_trials){
     res *= (r == b - 1);
   }
   printf("\ta = 2**%lu - 2, 0 < b <= 2**%lu - 1, n = 2**%lu - 1 --> ",
-	 TOLU(C_FULL_BIT), TOLU(C_FULL_BIT), TOLU(C_FULL_BIT));
+         TOLU(C_FULL_BIT), TOLU(C_FULL_BIT), TOLU(C_FULL_BIT));
   print_test_result(res);
   res = 1;
   res *= (sum_mod(0, 0, 1) == 0);
@@ -222,7 +222,7 @@ void run_sum_mod_test(int log_trials){
   res *= (sum_mod(0, 1, 2) == 1);
   res *= (sum_mod(1, 1, 2) == 0);
   res *= (sum_mod(C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT - 1, C_SIZE_ULIMIT) ==
-	  C_SIZE_ULIMIT - 2);
+          C_SIZE_ULIMIT - 2);
   printf("\tcorner cases --> ");
   print_test_result(res);
 }
@@ -257,8 +257,8 @@ void run_mul_ext_test(int log_trials){
     hl[0] = l;
     hl[1] = h;
     res *= (sum_mod(hl[0] % n,
-		    mul_mod(sum_mod(C_SIZE_ULIMIT, 1, n), hl[1] % n, n),
-		    n) == mul_mod(a, b, n));
+                    mul_mod(sum_mod(C_SIZE_ULIMIT, 1, n), hl[1] % n, n),
+                    n) == mul_mod(a, b, n));
   }
   printf("\t0 < a, b <= 2**%lu - 1 --> ", TOLU(C_FULL_BIT));
   print_test_result(res);
@@ -272,14 +272,14 @@ void run_mul_ext_test(int log_trials){
   mul_ext(1, 1, &h, &l);
   res *= (h == 0 && l == 1);
   mul_ext(pow_two_perror(C_HALF_BIT),
-	  pow_two_perror(C_HALF_BIT),
-	  &h,
-	  &l);
+          pow_two_perror(C_HALF_BIT),
+          &h,
+          &l);
   res *= (h == 1 && l == 0);
   mul_ext(pow_two_perror(C_FULL_BIT - 1),
-	  pow_two_perror(C_FULL_BIT - 1),
-	  &h,
-	  &l);
+          pow_two_perror(C_FULL_BIT - 1),
+          &h,
+          &l);
   res *= (h == pow_two_perror(C_FULL_BIT - 2) && l == 0);
   mul_ext(C_SIZE_ULIMIT, C_SIZE_ULIMIT, &h, &l);
   res *= (h == C_SIZE_ULIMIT - 1 && l == 1);

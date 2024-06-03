@@ -11,7 +11,7 @@
       [0, 1] : geq_leq_bsearch int test on/off
       [0, 1] : geq_leq_bsearch double test on/off
 
-   usage examples: 
+   usage examples:
    ./utilities-alg-test
    ./utilities-alg-test 0 0 10
    ./utilities-alg-test 0 25 25
@@ -78,25 +78,25 @@ void print_test_result(int result);
 
 int cmp_int(const void *a, const void *b){
   return ((*(const int *)a > *(const int *)b) -
-	  (*(const int *)a < *(const int *)b));
+          (*(const int *)a < *(const int *)b));
 }
 
 int cmp_double(const void *a, const void *b){
   return ((*(const double *)a > *(const double *)b) -
-	  (*(const double *)a < *(const double *)b));
+          (*(const double *)a < *(const double *)b));
 }
 
 int is_geq_leq_correct(const void *key,
-		       const void *elts,
-		       size_t count,
-		       size_t elt_size,
-		       size_t geq_ix,
-		       size_t leq_ix,
-		       int (*cmp)(const void *, const void *));
+                       const void *elts,
+                       size_t count,
+                       size_t elt_size,
+                       size_t geq_ix,
+                       size_t leq_ix,
+                       int (*cmp)(const void *, const void *));
 
 void run_geq_leq_bsearch_int_test(size_t log_trials,
-				  size_t log_count_start,
-				  size_t log_count_end){
+                                  size_t log_count_start,
+                                  size_t log_count_end){
   int res = 1;
   int key;
   int *elts = NULL, *nrand_elts = NULL;
@@ -134,12 +134,12 @@ void run_geq_leq_bsearch_int_test(size_t log_trials,
       t = clock() - t;
       tot += (double)t / CLOCKS_PER_SEC;
       res *= is_geq_leq_correct(&key,
-				elts,
-				count,
-				elt_size,
-				geq_ix,
-				leq_ix,
-				cmp_int);
+                                elts,
+                                count,
+                                elt_size,
+                                geq_ix,
+                                leq_ix,
+                                cmp_int);
     }
     printf("\tarray count: %lu, # trials: %lu\n", TOLU(count), TOLU(trials));
     printf("\t\t\tgeq_bsearch: %.6f seconds\n", tot_geq);
@@ -161,21 +161,21 @@ void run_geq_leq_bsearch_int_test(size_t log_trials,
     for (j = 0; j <= count; j++){
       key = 2 * j; /* even keys */
       geq_ix = geq_bsearch(&key,
-			   nrand_elts,
-			   count,
-			   elt_size,
-			   cmp_int);
+                           nrand_elts,
+                           count,
+                           elt_size,
+                           cmp_int);
       leq_ix = leq_bsearch(&key,
-			   nrand_elts,
-			   count,
-			   elt_size,
-			   cmp_int);
+                           nrand_elts,
+                           count,
+                           elt_size,
+                           cmp_int);
       if (j == 0){
-	res *= (geq_ix == 0 && leq_ix == count);
+        res *= (geq_ix == 0 && leq_ix == count);
       }else if (j == count){
-	res *= (geq_ix == count && leq_ix == count - 1);
+        res *= (geq_ix == count && leq_ix == count - 1);
       }else{
-	res *= (geq_ix == j && leq_ix == j - 1);
+        res *= (geq_ix == j && leq_ix == j - 1);
       }
     }
   }
@@ -188,8 +188,8 @@ void run_geq_leq_bsearch_int_test(size_t log_trials,
 }
 
 void run_geq_leq_bsearch_double_test(size_t log_trials,
-				     size_t log_count_start,
-				     size_t log_count_end){
+                                     size_t log_count_start,
+                                     size_t log_count_end){
   int res = 1;
   size_t i, j, count;
   size_t k, trials;
@@ -227,12 +227,12 @@ void run_geq_leq_bsearch_double_test(size_t log_trials,
       t = clock() - t;
       tot += (double)t / CLOCKS_PER_SEC;
       res *= is_geq_leq_correct(&key,
-				elts,
-				count,
-				elt_size,
-				geq_ix,
-				leq_ix,
-				cmp_double);
+                                elts,
+                                count,
+                                elt_size,
+                                geq_ix,
+                                leq_ix,
+                                cmp_double);
     }
     printf("\tarray count: %lu, # trials: %lu\n", TOLU(count), TOLU(trials));
     printf("\t\t\tgeq_bsearch: %.6f seconds\n", tot_geq);
@@ -254,21 +254,21 @@ void run_geq_leq_bsearch_double_test(size_t log_trials,
     for (j = 0; j <= count; j++){
       key = 2 * j;
       geq_ix = geq_bsearch(&key,
-			   nrand_elts,
-			   count,
-			   elt_size,
-			   cmp_double);
+                           nrand_elts,
+                           count,
+                           elt_size,
+                           cmp_double);
       leq_ix = leq_bsearch(&key,
-			   nrand_elts,
-			   count,
-			   elt_size,
-			   cmp_double);
+                           nrand_elts,
+                           count,
+                           elt_size,
+                           cmp_double);
       if (j == 0){
-	res *= (geq_ix == 0 && leq_ix == count);
+        res *= (geq_ix == 0 && leq_ix == count);
       }else if (j == count){
-	res *= (geq_ix == count && leq_ix == count - 1);
+        res *= (geq_ix == count && leq_ix == count - 1);
       }else{
-	res *= (geq_ix == j && leq_ix == j - 1);
+        res *= (geq_ix == j && leq_ix == j - 1);
       }
     }
   }
@@ -281,12 +281,12 @@ void run_geq_leq_bsearch_double_test(size_t log_trials,
 }
 
 int is_geq_leq_correct(const void *key,
-		       const void *elts,
-		       size_t count,
-		       size_t elt_size,
-		       size_t geq_ix,
-		       size_t leq_ix,
-		       int (*cmp)(const void *, const void *)){
+                       const void *elts,
+                       size_t count,
+                       size_t elt_size,
+                       size_t geq_ix,
+                       size_t leq_ix,
+                       int (*cmp)(const void *, const void *)){
   int res = 1;
   if (geq_ix == count){
     res *= (cmp(key, ptr(elts, count - 1, elt_size)) > 0);
@@ -305,7 +305,7 @@ int is_geq_leq_correct(const void *key,
     res *= (cmp(key, ptr(elts, leq_ix + 1, elt_size)) <= 0);
   }
   return res;
-}									 
+}
 
 /**
    Computes a pointer to the ith element in the block of elements.

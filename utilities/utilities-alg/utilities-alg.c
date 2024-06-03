@@ -23,10 +23,10 @@ static void *ptr(const void *block, size_t i, size_t size);
    returned. Returns count, if A[count - 1] < element pointed to by key.
 */
 size_t geq_bsearch(const void *key,
-		   const void *elts,
-		   size_t count,
-		   size_t elt_size,
-		   int (*cmp)(const void *, const void *)){
+                   const void *elts,
+                   size_t count,
+                   size_t elt_size,
+                   int (*cmp)(const void *, const void *)){
   size_t cur = (count - 1) / 2;
   size_t  prev_low = 0, prev_high = count - 1;
   if (cmp(key, ptr(elts, prev_low, elt_size)) <= 0) return 0;
@@ -62,10 +62,10 @@ size_t geq_bsearch(const void *key,
    returned. Returns count, if A[0] > element pointed to by key.
 */
 size_t leq_bsearch(const void *key,
-		   const void *elts,
-		   size_t count,
-		   size_t elt_size,
-		   int (*cmp)(const void *, const void *)){
+                   const void *elts,
+                   size_t count,
+                   size_t elt_size,
+                   int (*cmp)(const void *, const void *)){
   size_t cur;
   if (cmp(key, ptr(elts, 0, elt_size)) < 0){
     /* key element < A[0], thus no element in A <= key element */

@@ -12,7 +12,7 @@
       [0, 1] : non-random graph test on/off
       [0, 1] : random graph test on/off
 
-   usage examples: 
+   usage examples:
    ./graph-test
    ./graph-test 10 14
    ./graph-test 0 10 0 1 0
@@ -99,27 +99,27 @@ void print_uchar(const void *a);
 void print_ulong(const void *a);
 void print_double(const void *a);
 void print_adj_lst(const struct adj_lst *a,
-		   void (*print_vt)(const void *),
-		   void (*print_wt)(const void *));
+                   void (*print_vt)(const void *),
+                   void (*print_wt)(const void *));
 size_t sum_vts(const struct adj_lst *a,
-	       size_t i,
-	       size_t (*read_vt)(const void *));
+               size_t i,
+               size_t (*read_vt)(const void *));
 void print_test_result(int res);
 
-/** 
+/**
    Test on small graphs.
 */
 
 /**
-   Initialize small graphs with unsigned char vertices and 
+   Initialize small graphs with unsigned char vertices and
    unsigned char, unsigned long, and double weights.
 */
 
 void uchar_uchar_graph_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS,
-		  sizeof(unsigned char),
-		  sizeof(unsigned char));
+                  C_NUM_VTS,
+                  sizeof(unsigned char),
+                  sizeof(unsigned char));
   g->num_es = C_NUM_ES;
   g->u = (unsigned char *)C_UCHAR_U;
   g->v = (unsigned char *)C_UCHAR_V;
@@ -128,9 +128,9 @@ void uchar_uchar_graph_init(struct graph *g){
 
 void uchar_ulong_graph_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS,
-		  sizeof(unsigned char),
-		  sizeof(unsigned long));
+                  C_NUM_VTS,
+                  sizeof(unsigned char),
+                  sizeof(unsigned long));
   g->num_es = C_NUM_ES;
   g->u = (unsigned char *)C_UCHAR_U;
   g->v = (unsigned char *)C_UCHAR_V;
@@ -139,9 +139,9 @@ void uchar_ulong_graph_init(struct graph *g){
 
 void uchar_double_graph_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS,
-		  sizeof(unsigned char),
-		  sizeof(double));
+                  C_NUM_VTS,
+                  sizeof(unsigned char),
+                  sizeof(double));
   g->num_es = C_NUM_ES;
   g->u = (unsigned char *)C_UCHAR_U;
   g->v = (unsigned char *)C_UCHAR_V;
@@ -149,15 +149,15 @@ void uchar_double_graph_init(struct graph *g){
 }
 
 /**
-   Initialize small graphs with unsigned long vertices and 
+   Initialize small graphs with unsigned long vertices and
    unsigned char, unsigned long, and double weights.
 */
 
 void ulong_uchar_graph_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS,
-		  sizeof(unsigned long),
-		  sizeof(unsigned char));
+                  C_NUM_VTS,
+                  sizeof(unsigned long),
+                  sizeof(unsigned char));
   g->num_es = C_NUM_ES;
   g->u = (unsigned long *)C_ULONG_U;
   g->v = (unsigned long *)C_ULONG_V;
@@ -166,9 +166,9 @@ void ulong_uchar_graph_init(struct graph *g){
 
 void ulong_ulong_graph_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS,
-		  sizeof(unsigned long),
-		  sizeof(unsigned long));
+                  C_NUM_VTS,
+                  sizeof(unsigned long),
+                  sizeof(unsigned long));
   g->num_es = C_NUM_ES;
   g->u = (unsigned long *)C_ULONG_U;
   g->v = (unsigned long *)C_ULONG_V;
@@ -177,9 +177,9 @@ void ulong_ulong_graph_init(struct graph *g){
 
 void ulong_double_graph_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS,
-		  sizeof(unsigned long),
-		  sizeof(double));
+                  C_NUM_VTS,
+                  sizeof(unsigned long),
+                  sizeof(double));
   g->num_es = C_NUM_ES;
   g->u = (unsigned long *)C_ULONG_U;
   g->v = (unsigned long *)C_ULONG_V;
@@ -187,7 +187,7 @@ void ulong_double_graph_init(struct graph *g){
 }
 
 /**
-   Runs a test of adj_lst_{init, dir_build, undir_build, free} on 
+   Runs a test of adj_lst_{init, dir_build, undir_build, free} on
    small graphs.
 */
 void run_small_graph_test(){
@@ -285,17 +285,17 @@ void run_small_graph_test(){
 */
 
 void complete_graph_init(struct graph *g,
-			 size_t num_vts,
-			 size_t vt_size,
-			 void (*write_vt)(void *, size_t)){
+                         size_t num_vts,
+                         size_t vt_size,
+                         void (*write_vt)(void *, size_t)){
   size_t i, j;
   size_t num_es = mul_sz_perror(num_vts, num_vts - 1) >> 1;
   void *up = NULL;
   void *vp = NULL;
   graph_base_init(g,
-		  num_vts,
-		  vt_size,
-		  0);
+                  num_vts,
+                  vt_size,
+                  0);
   g->num_es = num_es;
   g->u = malloc_perror(g->num_es, vt_size);
   g->v = malloc_perror(g->num_es, vt_size);
@@ -329,9 +329,9 @@ void run_adj_lst_undir_build_test(size_t log_start, size_t log_end){
   struct adj_lst a;
   clock_t t;
   printf("Test adj_lst_undir_build on complete unweighted graphs across"
-	 " vertex types\n");
+         " vertex types\n");
   printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) "
-	 "directed edges\n");
+         "directed edges\n");
   for (i = log_start; i <= log_end; i++){
     num_vts = pow_two_perror(i);
     printf("\t\tvertices: %lu\n", TOLU(num_vts));
@@ -344,7 +344,7 @@ void run_adj_lst_undir_build_test(size_t log_start, size_t log_end){
       adj_lst_free(&a);
       complete_graph_free(&g);
       printf("\t\t\t%s build time:      %.6f seconds\n",
-	     C_VT_TYPES[j], (float)t / CLOCKS_PER_SEC);
+             C_VT_TYPES[j], (float)t / CLOCKS_PER_SEC);
     }
   }
 }
@@ -370,49 +370,49 @@ int bern(void *arg){
 */
 
 void add_edge_helper(size_t log_start,
-		     size_t log_end,
-		     void (*build)(struct adj_lst *,
-				   const struct graph *,
-				   size_t (*)(const void *)),
-		     void (*add_edge)(struct adj_lst *,
-				      size_t,
-				      size_t,
-				      const void *,
-				      void (*)(void *, size_t),
-				      int (*)(void *),
-				      void *));
+                     size_t log_end,
+                     void (*build)(struct adj_lst *,
+                                   const struct graph *,
+                                   size_t (*)(const void *)),
+                     void (*add_edge)(struct adj_lst *,
+                                      size_t,
+                                      size_t,
+                                      const void *,
+                                      void (*)(void *, size_t),
+                                      int (*)(void *),
+                                      void *));
 
 void run_adj_lst_add_dir_edge_test(size_t log_start, size_t log_end){
   printf("Test adj_lst_add_dir_edge on DAGs \n");
   printf("\tn vertices, 0 as source, n(n - 1)/2 directed edges \n");
   add_edge_helper(log_start,
-		  log_end,
-		  adj_lst_dir_build,
-		  adj_lst_add_dir_edge);
+                  log_end,
+                  adj_lst_dir_build,
+                  adj_lst_add_dir_edge);
 }
 
 void run_adj_lst_add_undir_edge_test(size_t log_start, size_t log_end){
   printf("Test adj_lst_add_undir_edge on complete graphs \n");
   printf("\tn vertices, n(n - 1)/2 edges represented by n(n - 1) "
-	 "directed edges \n");
+         "directed edges \n");
   add_edge_helper(log_start,
-		  log_end,
-		  adj_lst_undir_build,
-		  adj_lst_add_undir_edge);
+                  log_end,
+                  adj_lst_undir_build,
+                  adj_lst_add_undir_edge);
 }
 
 void add_edge_helper(size_t log_start,
-		     size_t log_end,
-		     void (*build)(struct adj_lst *,
-				   const struct graph *,
-				   size_t (*)(const void *)),
-		     void (*add_edge)(struct adj_lst *,
-				      size_t,
-				      size_t,
-				      const void *,
-				      void (*)(void *, size_t),
-				      int (*)(void *),
-				      void *)){
+                     size_t log_end,
+                     void (*build)(struct adj_lst *,
+                                   const struct graph *,
+                                   size_t (*)(const void *)),
+                     void (*add_edge)(struct adj_lst *,
+                                      size_t,
+                                      size_t,
+                                      const void *,
+                                      void (*)(void *, size_t),
+                                      int (*)(void *),
+                                      void *)){
   int res = 1;
   size_t i, j, k, l;
   size_t num_vts;
@@ -427,23 +427,23 @@ void add_edge_helper(size_t log_start,
     for (j = 0; j < C_FN_COUNT; j++){
       complete_graph_init(&g_blt, num_vts, C_VT_SIZES[j], C_WRITE[j]);
       graph_base_init(&g_bld,
-		      num_vts,
-		      C_VT_SIZES[j],
-		      0);
+                      num_vts,
+                      C_VT_SIZES[j],
+                      0);
       adj_lst_base_init(&a_blt, &g_blt);
       adj_lst_base_init(&a_bld, &g_bld);
       build(&a_blt, &g_blt, C_READ[j]);
       t = clock();
       for (k = 0; k < num_vts - 1; k++){
-	for (l = k + 1; l < num_vts; l++){
-	  add_edge(&a_bld, k, l, NULL, C_WRITE[j], bern, &b);
-	}
+        for (l = k + 1; l < num_vts; l++){
+          add_edge(&a_bld, k, l, NULL, C_WRITE[j], bern, &b);
+        }
       }
       t = clock() - t;
       for (k = 0; k < num_vts; k++){
-	res *= (a_blt.vt_wts[k]->num_elts == a_bld.vt_wts[k]->num_elts);
-	res *= (sum_vts(&a_blt, k, C_READ[j]) ==
-		sum_vts(&a_bld, k, C_READ[j]));
+        res *= (a_blt.vt_wts[k]->num_elts == a_bld.vt_wts[k]->num_elts);
+        res *= (sum_vts(&a_blt, k, C_READ[j]) ==
+                sum_vts(&a_bld, k, C_READ[j]));
       }
       res *= (a_blt.num_vts == a_bld.num_vts);
       res *= (a_blt.num_es == a_bld.num_es);
@@ -451,46 +451,46 @@ void add_edge_helper(size_t log_start,
       adj_lst_free(&a_blt);
       adj_lst_free(&a_bld);
       printf("\t\t\t%s build time:      %.6f seconds\n",
-	     C_VT_TYPES[j], (float)t / CLOCKS_PER_SEC);
+             C_VT_TYPES[j], (float)t / CLOCKS_PER_SEC);
     }
   }
   printf("\t\tcorrectness across all builds --> ");
   print_test_result(res);
 }
 
-/** 
+/**
    Test adj_lst_rand_dir and adj_lst_rand_undir.
 */
 
 void rand_build_helper(size_t log_start,
-		       size_t log_end,
-		       double prob,
-		       void (*rand_build)(struct adj_lst *,
-					  void (*)(void *, size_t),
-					  int (*)(void *),
-					  void *));
+                       size_t log_end,
+                       double prob,
+                       void (*rand_build)(struct adj_lst *,
+                                          void (*)(void *, size_t),
+                                          int (*)(void *),
+                                          void *));
 
 void run_adj_lst_rand_dir_test(size_t log_start, size_t log_end){
   printf("Test adj_lst_rand_dir on the number of edges in expectation\n");
   printf("\tn vertices, E[# of directed edges] = n(n - 1) * (%.1f * 1)\n",
-	 C_PROB_HALF);
+         C_PROB_HALF);
   rand_build_helper(log_start, log_end, C_PROB_HALF, adj_lst_rand_dir);
 }
 
 void run_adj_lst_rand_undir_test(size_t log_start, size_t log_end){
   printf("Test adj_lst_rand_undir on the number of edges in expectation\n");
   printf("\tn vertices, E[# of directed edges] = n(n - 1)/2 * (%.1f * 2)\n",
-	 C_PROB_HALF);
+         C_PROB_HALF);
   rand_build_helper(log_start, log_end, C_PROB_HALF, adj_lst_rand_undir);
 }
 
 void rand_build_helper(size_t log_start,
-		       size_t log_end,
-		       double prob,
-		       void (*rand_build)(struct adj_lst *,
-					  void (*)(void *, size_t),
-					  int (*)(void *),
-					  void *)){
+                       size_t log_end,
+                       double prob,
+                       void (*rand_build)(struct adj_lst *,
+                                          void (*)(void *, size_t),
+                                          int (*)(void *),
+                                          void *)){
   size_t i, j;
   size_t num_vts;
   struct graph g;
@@ -500,14 +500,14 @@ void rand_build_helper(size_t log_start,
   for (i = log_start; i <= log_end; i++){
     num_vts = pow_two_perror(i);
     printf("\t\tvertices: %lu, expected directed edges: %.1f\n",
-	   TOLU(num_vts), prob * num_vts * (num_vts - 1));
+           TOLU(num_vts), prob * num_vts * (num_vts - 1));
     for (j = 0; j < C_FN_COUNT; j++){
       graph_base_init(&g, num_vts, C_VT_SIZES[j], 0);
       adj_lst_base_init(&a, &g);
       rand_build(&a, C_WRITE[j], bern, &b);
       printf("\t\t\t%s directed edges:   %lu\n",
-	     C_VT_TYPES[j],
-	     TOLU(a.num_es));
+             C_VT_TYPES[j],
+             TOLU(a.num_es));
       adj_lst_free(&a);
     }
   }
@@ -522,8 +522,8 @@ void rand_build_helper(size_t log_start,
    does not check for overflow.
 */
 size_t sum_vts(const struct adj_lst *a,
-	       size_t i,
-	       size_t (*read_vt)(const void *)){
+               size_t i,
+               size_t (*read_vt)(const void *)){
   void *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t ret = 0;
   p_start = a->vt_wts[i]->elts;
@@ -549,10 +549,10 @@ void print_ulong(const void *a){
 void print_double(const void *a){
   printf("%.2f ", *(const double *)a);
 }
-  
+
 void print_adj_lst(const struct adj_lst *a,
-		   void (*print_vt)(const void *),
-		   void (*print_wt)(const void *)){
+                   void (*print_vt)(const void *),
+                   void (*print_wt)(const void *)){
   size_t i;
   void *p = NULL, *p_start = NULL, *p_end = NULL;
   printf("\t\tvertices: \n");
@@ -572,7 +572,7 @@ void print_adj_lst(const struct adj_lst *a,
       p_start = a->vt_wts[i]->elts;
       p_end = (char *)p_start + a->vt_wts[i]->num_elts * a->pair_size;
       for (p = p_start; p != p_end; p = (char *)p + a->pair_size){
-	print_wt((char *)p + a->wt_offset);
+        print_wt((char *)p + a->wt_offset);
       }
       printf("\n");
     }

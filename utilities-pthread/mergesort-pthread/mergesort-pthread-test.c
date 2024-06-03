@@ -17,7 +17,7 @@
       [0, 1] : double corner test on/off
       [0, 1] : double performance test on/off
 
-   usage examples: 
+   usage examples:
    ./mergesort-pthread-test
    ./mergesort-pthread-test 17 17
    ./mergesort-pthread-test 20 20 15 20 15 20
@@ -32,7 +32,7 @@
    The implementation does not use stdint.h and is portable under C89/C90
    and C99. The requirements are: i) the width of size_t is less than 2040
    and is even, and ii) pthreads API is available.
-   
+
    TODO: add portable printing of size_t
 */
 
@@ -96,12 +96,12 @@ void print_test_result(int res);
 
 int cmp_int(const void *a, const void *b){
   return ((*(const int *)a > *(const int *)b) -
-	  (*(const int *)a < *(const int *)b));
+          (*(const int *)a < *(const int *)b));
 }
 
 int cmp_double(const void *a, const void *b){
   return ((*(const double *)a > *(const double *)b) -
-	  (*(const double *)a < *(const double *)b));
+          (*(const double *)a < *(const double *)b));
 }
 
 /**
@@ -116,21 +116,21 @@ void run_int_corner_test(){
   arr_a =  malloc_perror(C_CORNER_COUNT_ULIMIT, elt_size);
   arr_b =  malloc_perror(C_CORNER_COUNT_ULIMIT, elt_size);
   printf("Test mergesort_pthread on corner cases on random "
-	 "integer arrays\n");
+         "integer arrays\n");
   for (count = 1; count <= C_CORNER_COUNT_ULIMIT; count++){
     for (sb = C_CORNER_SBASE_START; sb <= C_CORNER_SBASE_END; sb++){
       for (mb = C_CORNER_MBASE_START; mb <= C_CORNER_MBASE_END; mb++){
-	for(i = 0; i < C_CORNER_TRIALS; i++){
-	  for (j = 0; j < count; j++){
-	    arr_a[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * RANDOM();
-	  }
-	  memcpy(arr_b, arr_a, count * elt_size);
-	  mergesort_pthread(arr_a, count, elt_size, sb, mb, cmp_int);
-	  qsort(arr_b, count, elt_size, cmp_int);
-	  for (j = 0; j < count; j++){
-	    res *= (arr_a[j] == arr_b[j]);
-	  }
-	}
+        for(i = 0; i < C_CORNER_TRIALS; i++){
+          for (j = 0; j < count; j++){
+            arr_a[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * RANDOM();
+          }
+          memcpy(arr_b, arr_a, count * elt_size);
+          mergesort_pthread(arr_a, count, elt_size, sb, mb, cmp_int);
+          qsort(arr_b, count, elt_size, cmp_int);
+          for (j = 0; j < count; j++){
+            res *= (arr_a[j] == arr_b[j]);
+          }
+        }
       }
     }
   }
@@ -143,15 +143,15 @@ void run_int_corner_test(){
 }
 
 /**
-   Runs a test comparing mergesort_pthread vs. qsort performance on random 
+   Runs a test comparing mergesort_pthread vs. qsort performance on random
    integer arrays across sort and merge base count bounds.
 */
 void run_int_opt_test(size_t log_count_start,
-		      size_t log_count_end,
-		      size_t log_sbase_start,
-		      size_t log_sbase_end,
-		      size_t log_mbase_start,
-		      size_t log_mbase_end){
+                      size_t log_count_end,
+                      size_t log_sbase_start,
+                      size_t log_sbase_end,
+                      size_t log_mbase_start,
+                      size_t log_mbase_end){
   int res = 1;
   int *arr_a = NULL, *arr_b = NULL;
   size_t ci, si, mi;
@@ -165,38 +165,38 @@ void run_int_opt_test(size_t log_count_start,
   for (ci = log_count_start; ci <= log_count_end; ci++){
     count = pow_two_perror(ci); /* > 0 */
     printf("\t# trials: %lu, array count: %lu\n",
-	   TOLU(C_TRIALS), TOLU(count));
+           TOLU(C_TRIALS), TOLU(count));
     for (si = log_sbase_start; si <= log_sbase_end; si++){
       sbase = pow_two_perror(si);
       printf("\t\tsort base count: %lu\n", TOLU(sbase));
       for (mi = log_mbase_start; mi <= log_mbase_end; mi++){
-	mbase = pow_two_perror(mi);
-	printf("\t\t\tmerge base count: %lu\n", TOLU(mbase));
-	tot_m = 0.0;
-	tot_q = 0.0;
-	for(i = 0; i < C_TRIALS; i++){
-	  for (j = 0; j < count; j++){
-	    arr_a[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * RANDOM();
-	  }
-	  memcpy(arr_b, arr_a, count * elt_size);
-	  t_m = timer();
-	  mergesort_pthread(arr_a, count, elt_size, sbase, mbase, cmp_int);
-	  t_m = timer() - t_m;
-	  t_q = timer();
-	  qsort(arr_b, count, elt_size, cmp_int);
-	  t_q = timer() - t_q;
-	  tot_m += t_m;
-	  tot_q += t_q;
-	  for (j = 0; j < count; j++){
-	    res *= (arr_a[j] == arr_b[j]);
-	  }
-	}
-	printf("\t\t\tave pthread mergesort: %.6f seconds\n",
-	       tot_m / C_TRIALS);
-	printf("\t\t\tave qsort:             %.6f seconds\n",
-	       tot_q / C_TRIALS);
-	printf("\t\t\tcorrectness:           ");
-	print_test_result(res);
+        mbase = pow_two_perror(mi);
+        printf("\t\t\tmerge base count: %lu\n", TOLU(mbase));
+        tot_m = 0.0;
+        tot_q = 0.0;
+        for(i = 0; i < C_TRIALS; i++){
+          for (j = 0; j < count; j++){
+            arr_a[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * RANDOM();
+          }
+          memcpy(arr_b, arr_a, count * elt_size);
+          t_m = timer();
+          mergesort_pthread(arr_a, count, elt_size, sbase, mbase, cmp_int);
+          t_m = timer() - t_m;
+          t_q = timer();
+          qsort(arr_b, count, elt_size, cmp_int);
+          t_q = timer() - t_q;
+          tot_m += t_m;
+          tot_q += t_q;
+          for (j = 0; j < count; j++){
+            res *= (arr_a[j] == arr_b[j]);
+          }
+        }
+        printf("\t\t\tave pthread mergesort: %.6f seconds\n",
+               tot_m / C_TRIALS);
+        printf("\t\t\tave qsort:             %.6f seconds\n",
+               tot_q / C_TRIALS);
+        printf("\t\t\tcorrectness:           ");
+        print_test_result(res);
       }
     }
   }
@@ -218,21 +218,21 @@ void run_double_corner_test(){
   arr_a =  malloc_perror(C_CORNER_COUNT_ULIMIT, elt_size);
   arr_b =  malloc_perror(C_CORNER_COUNT_ULIMIT, elt_size);
   printf("Test mergesort_pthread on corner cases on random "
-	 "double arrays\n");
+         "double arrays\n");
   for (count = 1; count <= C_CORNER_COUNT_ULIMIT; count++){
     for (sb = C_CORNER_SBASE_START; sb <= C_CORNER_SBASE_END; sb++){
       for (mb = C_CORNER_MBASE_START; mb <= C_CORNER_MBASE_END; mb++){
-	for(i = 0; i < C_CORNER_TRIALS; i++){
-	  for (j = 0; j < count; j++){
-	    arr_a[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * DRAND();
-	  }
-	  memcpy(arr_b, arr_a, count * elt_size);
-	  mergesort_pthread(arr_a, count, elt_size, sb, mb, cmp_double);
-	  qsort(arr_b, count, elt_size, cmp_double);
-	  for (j = 0; j < count; j++){
-	    res *= (arr_a[j] == arr_b[j]);
-	  }
-	}
+        for(i = 0; i < C_CORNER_TRIALS; i++){
+          for (j = 0; j < count; j++){
+            arr_a[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * DRAND();
+          }
+          memcpy(arr_b, arr_a, count * elt_size);
+          mergesort_pthread(arr_a, count, elt_size, sb, mb, cmp_double);
+          qsort(arr_b, count, elt_size, cmp_double);
+          for (j = 0; j < count; j++){
+            res *= (arr_a[j] == arr_b[j]);
+          }
+        }
       }
     }
   }
@@ -245,15 +245,15 @@ void run_double_corner_test(){
 }
 
 /**
-   Runs a test comparing mergesort_pthread vs. qsort performance on random 
+   Runs a test comparing mergesort_pthread vs. qsort performance on random
    double arrays across sort and merge base count bounds.
 */
 void run_double_opt_test(size_t log_count_start,
-			 size_t log_count_end,
-			 size_t log_sbase_start,
-			 size_t log_sbase_end,
-			 size_t log_mbase_start,
-			 size_t log_mbase_end){
+                         size_t log_count_end,
+                         size_t log_sbase_start,
+                         size_t log_sbase_end,
+                         size_t log_mbase_start,
+                         size_t log_mbase_end){
   int res = 1;
   size_t ci, si, mi;
   size_t count, sbase, mbase;
@@ -267,38 +267,38 @@ void run_double_opt_test(size_t log_count_start,
   for (ci = log_count_start; ci <= log_count_end; ci++){
     count = pow_two_perror(ci); /* > 0 */
     printf("\t# trials: %lu, array count: %lu\n",
-	   TOLU(C_TRIALS), TOLU(count));
+           TOLU(C_TRIALS), TOLU(count));
     for (si = log_sbase_start; si <= log_sbase_end; si++){
       sbase = pow_two_perror(si);
       printf("\t\tsort base count: %lu\n", TOLU(sbase));
       for (mi = log_mbase_start; mi <= log_mbase_end; mi++){
-	mbase = pow_two_perror(mi);
-	printf("\t\t\tmerge base count: %lu\n", TOLU(mbase));
-	tot_m = 0.0;
-	tot_q = 0.0;
-	for(i = 0; i < C_TRIALS; i++){
-	  for (j = 0; j < count; j++){
-	    arr_a[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * DRAND();
-	  }
-	  memcpy(arr_b, arr_a, count * elt_size);
-	  t_m = timer();
-	  mergesort_pthread(arr_a, count, elt_size, sbase, mbase, cmp_double);
-	  t_m = timer() - t_m;
-	  t_q = timer();
-	  qsort(arr_b, count, elt_size, cmp_double);
-	  t_q = timer() - t_q;
-	  tot_m += t_m;
-	  tot_q += t_q;
-	  for (j = 0; j < count; j++){
-	    res *= (arr_a[j] == arr_b[j]);
-	  }
-	}
-	printf("\t\t\tave pthread mergesort: %.6f seconds\n",
-	       tot_m / C_TRIALS);
-	printf("\t\t\tave qsort:             %.6f seconds\n",
-	       tot_q / C_TRIALS);
-	printf("\t\t\tcorrectness:           ");
-	print_test_result(res);
+        mbase = pow_two_perror(mi);
+        printf("\t\t\tmerge base count: %lu\n", TOLU(mbase));
+        tot_m = 0.0;
+        tot_q = 0.0;
+        for(i = 0; i < C_TRIALS; i++){
+          for (j = 0; j < count; j++){
+            arr_a[j] = (DRAND() < C_HALF_PROB ? -1 : 1) * DRAND();
+          }
+          memcpy(arr_b, arr_a, count * elt_size);
+          t_m = timer();
+          mergesort_pthread(arr_a, count, elt_size, sbase, mbase, cmp_double);
+          t_m = timer() - t_m;
+          t_q = timer();
+          qsort(arr_b, count, elt_size, cmp_double);
+          t_q = timer() - t_q;
+          tot_m += t_m;
+          tot_q += t_q;
+          for (j = 0; j < count; j++){
+            res *= (arr_a[j] == arr_b[j]);
+          }
+        }
+        printf("\t\t\tave pthread mergesort: %.6f seconds\n",
+               tot_m / C_TRIALS);
+        printf("\t\t\tave qsort:             %.6f seconds\n",
+               tot_q / C_TRIALS);
+        printf("\t\t\tcorrectness:           ");
+        print_test_result(res);
       }
     }
   }
@@ -361,18 +361,18 @@ int main(int argc, char *argv[]){
   }
   if (args[6]) run_int_corner_test();
   if (args[7]) run_int_opt_test(args[0],
-				args[1],
-				args[2],
-				args[3],
-				args[4],
-				args[5]);
+                                args[1],
+                                args[2],
+                                args[3],
+                                args[4],
+                                args[5]);
   if (args[8]) run_double_corner_test();
   if (args[9]) run_double_opt_test(args[0],
-				   args[1],
-				   args[2],
-				   args[3],
-				   args[4],
-				   args[5]);
+                                   args[1],
+                                   args[2],
+                                   args[3],
+                                   args[4],
+                                   args[5]);
   free(args);
   args = NULL;
   return 0;

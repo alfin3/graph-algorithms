@@ -8,7 +8,7 @@
 #  Additional information is available at:
 #  https://gcc.gnu.org/onlinedocs/gcc/Submodel-Options.html#Submodel-Options
 #  https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#x86-Options
-#   
+#
 #  usage examples:
 #    make
 #    make BUILD_MODE=M32
@@ -36,7 +36,7 @@ OBJ = ht-muloa-test.o                   \
       $(UTILS_MOD_DIR)utilities-mod.o
 
 ht-muloa-test : $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ 
+	$(CC) $(CFLAGS) -o $@ $^
 
 ht-muloa-test.o                 : ht-muloa.h                      \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
@@ -54,5 +54,5 @@ $(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
 
 clean :
 	rm $(OBJ)
-clean-all : 
+clean-all :
 	rm -f ht-muloa-test $(OBJ)

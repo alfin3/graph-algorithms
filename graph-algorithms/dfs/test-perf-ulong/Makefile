@@ -8,7 +8,7 @@
 #  Additional information is available at:
 #  https://gcc.gnu.org/onlinedocs/gcc/Submodel-Options.html#Submodel-Options
 #  https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#x86-Options
-#   
+#
 #  usage examples:
 #    make
 #    make BUILD_MODE=M32
@@ -42,11 +42,11 @@ OBJ = dfs-test-perf-ulong.o           \
       $(GRAPH_DIR)graph.o             \
       $(STACK_DIR)stack.o             \
       $(UTILS_MEM_DIR)utilities-mem.o \
-      $(UTILS_MOD_DIR)utilities-mod.o 
+      $(UTILS_MOD_DIR)utilities-mod.o
 
 
 dfs-test-perf-ulong : $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ 
+	$(CC) $(CFLAGS) -o $@ $^
 
 dfs-test-perf-ulong.o           : $(DFS_DIR)dfs.h                 \
                                   $(GRAPH_DIR)graph.h             \
@@ -57,7 +57,7 @@ dfs-test-perf-ulong.o           : $(DFS_DIR)dfs.h                 \
 $(DFS_DIR)dfs.o                 : $(DFS_DIR)dfs.h                 \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
-                                  $(UTILS_MEM_DIR)utilities-mem.h 
+                                  $(UTILS_MEM_DIR)utilities-mem.h
 $(GRAPH_DIR)graph.o             : $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h
@@ -71,5 +71,5 @@ $(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
 
 clean :
 	rm $(OBJ)
-clean-all : 
+clean-all :
 	rm -f dfs-test-perf-ulong $(OBJ)

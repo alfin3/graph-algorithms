@@ -8,7 +8,7 @@
 #  Additional information is available at:
 #  https://gcc.gnu.org/onlinedocs/gcc/Submodel-Options.html#Submodel-Options
 #  https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#x86-Options
-#   
+#
 #  usage examples:
 #    make
 #    make BUILD_MODE=M32
@@ -45,7 +45,7 @@ OBJ = heap-test.o                     \
       $(UTILS_MOD_DIR)utilities-mod.o
 
 heap-test : $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ 
+	$(CC) $(CFLAGS) -o $@ $^
 
 heap-test.o                     : heap.h                          \
                                   $(HT_DIVCHN_DIR)ht-divchn.h     \
@@ -75,5 +75,5 @@ $(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
 
 clean :
 	rm $(OBJ)
-clean-all : 
+clean-all :
 	rm -f heap-test $(OBJ)

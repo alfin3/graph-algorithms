@@ -43,28 +43,28 @@
 static const size_t C_STACK_INIT_COUNT = 1;
 
 static void dfs_helper(const struct adj_lst *a,
-		       size_t start,
-		       size_t vt_alignment,
-		       size_t vdptr_alignment,
-		       void *pre,
-		       void *post,
-		       size_t (*read_vt)(const void *),
-		       void (*write_vt)(void *, size_t),
-		       void *(*at_vt)(const void *, const void *),
-		       int (*cmp_vt)(const void *, const void *),
-		       void (*incr_vt)(void *));
+                       size_t start,
+                       size_t vt_alignment,
+                       size_t vdptr_alignment,
+                       void *pre,
+                       void *post,
+                       size_t (*read_vt)(const void *),
+                       void (*write_vt)(void *, size_t),
+                       void *(*at_vt)(const void *, const void *),
+                       int (*cmp_vt)(const void *, const void *),
+                       void (*incr_vt)(void *));
 static void search(const struct adj_lst *a,
-		   struct stack *s,
-		   size_t offset,
-		   void *c,
-		   const void *nr,
-		   const void *ix,
-		   void *pre,
-		   void *post,
-		   size_t (*read_vt)(const void *),
-		   void *(*at_vt)(const void *, const void *),
-		   int (*cmp_vt)(const void *, const void *),
-		   void (*incr_vt)(void *));
+                   struct stack *s,
+                   size_t offset,
+                   void *c,
+                   const void *nr,
+                   const void *ix,
+                   void *pre,
+                   void *post,
+                   size_t (*read_vt)(const void *),
+                   void *(*at_vt)(const void *, const void *),
+                   int (*cmp_vt)(const void *, const void *),
+                   void (*incr_vt)(void *));
 static void *ptr(const void *block, size_t i, size_t size);
 
 /**
@@ -111,25 +111,25 @@ static void *ptr(const void *block, size_t i, size_t size);
                  vertices
 */
 void dfs(const struct adj_lst *a,
-	 size_t start,
-	 void *pre,
-	 void *post,
-	 size_t (*read_vt)(const void *),
-	 void (*write_vt)(void *, size_t),
-	 void *(*at_vt)(const void *, const void *),
-	 int (*cmp_vt)(const void *, const void *),
-	 void (*incr_vt)(void *)){
+         size_t start,
+         void *pre,
+         void *post,
+         size_t (*read_vt)(const void *),
+         void (*write_vt)(void *, size_t),
+         void *(*at_vt)(const void *, const void *),
+         int (*cmp_vt)(const void *, const void *),
+         void (*incr_vt)(void *)){
   dfs_helper(a,
-	     start,
-	     a->vt_size,
-	     sizeof(void *),
-	     pre,
-	     post,
-	     read_vt,
-	     write_vt,
-	     at_vt,
-	     cmp_vt,
-	     incr_vt);
+             start,
+             a->vt_size,
+             sizeof(void *),
+             pre,
+             post,
+             read_vt,
+             write_vt,
+             at_vt,
+             cmp_vt,
+             incr_vt);
 }
 
 /**
@@ -150,40 +150,40 @@ void dfs(const struct adj_lst *a,
                   size of void * according to sizeof
 */
 void dfs_align(const struct adj_lst *a,
-	       size_t start,
-	       size_t vt_alignment,
-	       size_t vdp_alignment,
-	       void *pre,
-	       void *post,
-	       size_t (*read_vt)(const void *),
-	       void (*write_vt)(void *, size_t),
-	       void *(*at_vt)(const void *, const void *),
-	       int (*cmp_vt)(const void *, const void *),
-	       void (*incr_vt)(void *)){
+               size_t start,
+               size_t vt_alignment,
+               size_t vdp_alignment,
+               void *pre,
+               void *post,
+               size_t (*read_vt)(const void *),
+               void (*write_vt)(void *, size_t),
+               void *(*at_vt)(const void *, const void *),
+               int (*cmp_vt)(const void *, const void *),
+               void (*incr_vt)(void *)){
   dfs_helper(a,
-	     start,
-	     vt_alignment,
-	     vdp_alignment,
-	     pre,
-	     post,
-	     read_vt,
-	     write_vt,
-	     at_vt,
-	     cmp_vt,
-	     incr_vt);
+             start,
+             vt_alignment,
+             vdp_alignment,
+             pre,
+             post,
+             read_vt,
+             write_vt,
+             at_vt,
+             cmp_vt,
+             incr_vt);
 }
 
 static void dfs_helper(const struct adj_lst *a,
-		       size_t start,
-		       size_t vt_alignment,
-		       size_t vdp_alignment,
-		       void *pre,
-		       void *post,
-		       size_t (*read_vt)(const void *),
-		       void (*write_vt)(void *, size_t),
-		       void *(*at_vt)(const void *, const void *),
-		       int (*cmp_vt)(const void *, const void *),
-		       void (*incr_vt)(void *)){
+                       size_t start,
+                       size_t vt_alignment,
+                       size_t vdp_alignment,
+                       void *pre,
+                       void *post,
+                       size_t (*read_vt)(const void *),
+                       void (*write_vt)(void *, size_t),
+                       void *(*at_vt)(const void *, const void *),
+                       int (*cmp_vt)(const void *, const void *),
+                       void (*incr_vt)(void *)){
   size_t vt_rem, vdp_rem;
   size_t vt_offset, pair_size;
   struct stack s;
@@ -211,11 +211,11 @@ static void dfs_helper(const struct adj_lst *a,
   }else{
     vt_rem = sizeof(void *) % vt_alignment;
     vt_offset = add_sz_perror(sizeof(void *),
-			      (vt_rem > 0) * (vt_alignment - vt_rem));
+                              (vt_rem > 0) * (vt_alignment - vt_rem));
   }
   vdp_rem = add_sz_perror(vt_offset, a->vt_size) % vdp_alignment;
   pair_size = add_sz_perror(vt_offset + a->vt_size,
-			    (vdp_rem > 0) * (vdp_alignment - vdp_rem));
+                            (vdp_rem > 0) * (vdp_alignment - vdp_rem));
   /* run search with recursion emulation on a stack ds */
   stack_init(&s, pair_size, NULL);
   stack_bound(&s, C_STACK_INIT_COUNT, a->num_vts);
@@ -223,7 +223,7 @@ static void dfs_helper(const struct adj_lst *a,
   while (cmp_vt(ix, end) != 0){
     if (cmp_vt(at_vt(pre, ix), nr) == 0){
       search(a, &s, vt_offset, c, nr, ix, pre, post,
-	     read_vt, at_vt, cmp_vt, incr_vt);
+             read_vt, at_vt, cmp_vt, incr_vt);
     }
     incr_vt(ix);
   }
@@ -232,7 +232,7 @@ static void dfs_helper(const struct adj_lst *a,
   while (cmp_vt(ix, end) != 0){
     if (cmp_vt(at_vt(pre, ix), nr) == 0){
       search(a, &s, vt_offset, c, nr, ix, pre, post,
-	     read_vt, at_vt, cmp_vt, incr_vt);
+             read_vt, at_vt, cmp_vt, incr_vt);
     }
     incr_vt(ix);
   }
@@ -247,17 +247,17 @@ static void dfs_helper(const struct adj_lst *a,
    on a dynamically allocated stack data structure.
 */
 static void search(const struct adj_lst *a,
-		   struct stack *s,
-		   size_t vt_offset,
-		   void *c,
-		   const void *nr,
-		   const void *ix,
-		   void *pre,
-		   void *post,
-		   size_t (*read_vt)(const void *),
-		   void *(*at_vt)(const void *, const void *),
-		   int (*cmp_vt)(const void *, const void *),
-		   void (*incr_vt)(void *)){
+                   struct stack *s,
+                   size_t vt_offset,
+                   void *c,
+                   const void *nr,
+                   const void *ix,
+                   void *pre,
+                   void *post,
+                   size_t (*read_vt)(const void *),
+                   void *(*at_vt)(const void *, const void *),
+                   int (*cmp_vt)(const void *, const void *),
+                   void (*incr_vt)(void *)){
   const void *v = NULL, *v_end = NULL;
   void * const v_uval = malloc_perror(1, s->elt_size);
   const void ** const vp  = v_uval;
@@ -271,8 +271,8 @@ static void search(const struct adj_lst *a,
     stack_pop(s, v_uval);
     v = *vp; /* for performance */
     v_end = ptr(a->vt_wts[read_vt(u)]->elts,
-		a->vt_wts[read_vt(u)]->num_elts,
-		a->pair_size);
+                a->vt_wts[read_vt(u)]->num_elts,
+                a->pair_size);
     /* iterate v across the u's stack */
     while (v != v_end && cmp_vt(at_vt(pre, v), nr) != 0){
       v = (char *)v + a->pair_size;
@@ -304,13 +304,13 @@ static void search(const struct adj_lst *a,
    alignment or a less strict alignment and back again; the result shall
    compare equal to the original pointer. (An object that has character
    type has the least strict alignment.)"
-   
+
    "A pointer to void may be converted to or from a pointer to any
    incomplete or object type. A pointer to any incomplete or object type
    may be converted to a pointer to void and back again; the result shall
    compare equal to the original pointer."
 
-   "A pointer to void shall have the same representation and alignment 
+   "A pointer to void shall have the same representation and alignment
    requirements as a pointer to a character type."
 */
 static void *ptr(const void *block, size_t i, size_t size){

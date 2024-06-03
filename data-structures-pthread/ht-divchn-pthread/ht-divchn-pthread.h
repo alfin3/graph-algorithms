@@ -6,16 +6,16 @@
    contiguous or non-contiguous elements that is concurrently accessible
    and modifiable.
 
-   The implementation is based on a division method for hashing into upto  
+   The implementation is based on a division method for hashing into upto
    the number of slots determined by the largest prime number in the
    C_PRIME_PARTS array, representable as size_t on a given system, and a
    chaining method for resolving collisions. Due to chaining, the number
    of keys and elements that can be inserted is not limited by the hash
    table implementation.
-   
-   The load factor of a hash table is the expected number of keys in a slot 
-   under the simple uniform hashing assumption, and is upper-bounded by the 
-   alpha parameters. The alpha parameters do not provide an upper bound 
+
+   The load factor of a hash table is the expected number of keys in a slot
+   under the simple uniform hashing assumption, and is upper-bounded by the
+   alpha parameters. The alpha parameters do not provide an upper bound
    after the maximum count of slots in a hash table is reached.
 
    A distinction is made between a key and a "key_size block", and an
@@ -28,7 +28,7 @@
    be entirely copied as a key_size block, or a pointer to it can be copied
    as a key_size block. If the key is within a non-contiguous memory block,
    then a pointer to it is copied as a key_size block. The same applies to
-   an element. 
+   an element.
 
    When a pointer to a key is copied into a hash table as a key_size block,
    the user can also decide if only the pointer or the entire key is deleted
@@ -57,7 +57,7 @@
      remove, and/or delete operations if the sets of keys used by threads
      are disjoint,
      - a single final state is guaranteed, according to a user-defined
-     comparison function cmp_elt, after concurrent insert operations 
+     comparison function cmp_elt, after concurrent insert operations
      if the sets of keys used by threads are not disjoint.
 
    A hash table always reaches a final state, including the single
@@ -96,10 +96,10 @@
    operations, which is defined, and overflow detection as a part
    of computing bounds, which is defined by the implementation
 
-   TODO: add division with magic number multiplication.   
+   TODO: add division with magic number multiplication.
 */
 
-#ifndef HT_DIVCHN_PTHREAD_H  
+#ifndef HT_DIVCHN_PTHREAD_H
 #define HT_DIVCHN_PTHREAD_H
 
 #define _XOPEN_SOURCE 600
@@ -147,7 +147,7 @@ struct ht_divchn_pthread{
    alignment is performed by calling ht_divchn_pthread_align. The
    initialization operation is called and must return before any thread
    calls insert, remove, and/or delete, or search operation.
-   ht               : a pointer to a preallocated block of size 
+   ht               : a pointer to a preallocated block of size
                       sizeof(struct ht_divchn_pthread)
    key_size         : non-zero size of a key_size block; must account for
                       internal and trailing padding according to sizeof
@@ -180,7 +180,7 @@ struct ht_divchn_pthread{
    cmp_elt          : comparison function that determines if a thread updates
                       an element in a hash table when there is a key match
                       according to cmp_key during insertion:
-                      - if NULL then the element is always updated, 
+                      - if NULL then the element is always updated,
                       - otherwise comparison function is applied which
                       returns a zero integer value iff the element in the
                       hash table accessed through the first argument should
@@ -216,18 +216,18 @@ struct ht_divchn_pthread{
                       argument
 */
 void ht_divchn_pthread_init(struct ht_divchn_pthread *ht,
-			    size_t key_size,
-			    size_t elt_size,
-			    size_t min_num,
-			    size_t alpha_n,
-			    size_t log_alpha_d,
-			    size_t log_num_locks,
-			    size_t num_grow_threads,
-			    int (*cmp_key)(const void *, const void *),
-			    int (*cmp_elt)(const void *, const void *),
-			    size_t (*rdc_key)(const void *),
-			    void (*free_key)(void *),
-			    void (*free_elt)(void *));
+                            size_t key_size,
+                            size_t elt_size,
+                            size_t min_num,
+                            size_t alpha_n,
+                            size_t log_alpha_d,
+                            size_t log_num_locks,
+                            size_t num_grow_threads,
+                            int (*cmp_key)(const void *, const void *),
+                            int (*cmp_elt)(const void *, const void *),
+                            size_t (*rdc_key)(const void *),
+                            void (*free_key)(void *),
+                            void (*free_elt)(void *));
 
 /**
    Aligns each in-table elt_size block to be accessible with a pointer to a
@@ -249,14 +249,14 @@ void ht_divchn_pthread_init(struct ht_divchn_pthread *ht,
                    and trailing padding according to sizeof
 */
 void ht_divchn_pthread_align(struct ht_divchn_pthread *ht,
-			     size_t elt_alignment);
+                             size_t elt_alignment);
 
 /**
    Inserts a batch of keys and associated elements into a hash table
    by copying the corresponding key_size and elt_size blocks. If a key
    within a batch is already in the hash table according to cmp_key,
    then updates the element according to cmp_elt.
-   ht          : pointer to an initialized ht_divchn_pthread struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct
    batch_keys  : non-NULL pointer to an array of key_size blocks of keys
    batch_elts  : non-NULL pointer to an array of elt_size blocks of
                  elements
@@ -265,9 +265,9 @@ void ht_divchn_pthread_align(struct ht_divchn_pthread *ht,
                  to by batch_elts
 */
 void ht_divchn_pthread_insert(struct ht_divchn_pthread *ht,
-			      const void *batch_keys,
-			      const void *batch_elts,
-			      size_t batch_count);
+                              const void *batch_keys,
+                              const void *batch_elts,
+                              size_t batch_count);
 
 /**
    If a key is present in a hash table, according to cmp_key, then returns a
@@ -277,11 +277,11 @@ void ht_divchn_pthread_insert(struct ht_divchn_pthread *ht,
    ht_divchn_pthread_align. The operation is called before/after all
    threads started/completed insert, remove, and delete operations and
    does not require thread synchronization overhead.
-   ht          : pointer to an initialized ht_divchn_pthread struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct
    key         : non-NULL pointer to the key_size block of a key
 */
 void *ht_divchn_pthread_search(const struct ht_divchn_pthread *ht,
-			       const void *key);
+                               const void *key);
 
 /**
    Removes a batch of keys and associated elements from a hash table that
@@ -291,7 +291,7 @@ void *ht_divchn_pthread_search(const struct ht_divchn_pthread *ht,
    the corresponding key_size and elt_size blocks in the hash table. If
    there is no matching key in the hash table according to cmp_key, leaves
    the corresponding elt_size block unchanged.
-   ht          : pointer to an initialized ht_divchn_pthread struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct
    batch_keys  : non-NULL pointer to an array of key_size blocks of keys
    batch_elts  : non-NULL pointer to an array of elt_size blocks
    batch_count : count of key_size blocks in the array pointed to by
@@ -299,23 +299,23 @@ void *ht_divchn_pthread_search(const struct ht_divchn_pthread *ht,
                  to by batch_elts
 */
 void ht_divchn_pthread_remove(struct ht_divchn_pthread *ht,
-			      const void *batch_keys,
-			      void *batch_elts,
-			      size_t batch_count);
+                              const void *batch_keys,
+                              void *batch_elts,
+                              size_t batch_count);
 
 /**
    Deletes a batch of keys and associated elements from a hash table. If
    there is a key in a hash table that equals to a key in the batch
    according to cmp_key, then deletes the in-table key element pair
    according to free_key and free_elt.
-   ht          : pointer to an initialized ht_divchn_pthread struct   
+   ht          : pointer to an initialized ht_divchn_pthread struct
    batch_keys  : non-NULL pointer to an array of key_size blocks of keys
    batch_count : count of key_size blocks in the array pointed to by
                  batch_keys
 */
 void ht_divchn_pthread_delete(struct ht_divchn_pthread *ht,
-			      const void *batch_keys,
-			      size_t batch_count);
+                              const void *batch_keys,
+                              size_t batch_count);
 
 /**
    Frees the memory of all keys and elements that are in a hash table
@@ -336,37 +336,37 @@ void ht_divchn_pthread_free(struct ht_divchn_pthread *ht);
 */
 
 void ht_divchn_pthread_init_helper(void *ht,
-				   size_t key_size,
-				   size_t elt_size,
-				   size_t min_num,
-				   size_t alpha_n,
-				   size_t log_alpha_d,
-				   size_t log_num_locks,
-				   size_t num_grow_threads,
-				   int (*cmp_key)(const void *, const void *),
-				   int (*cmp_elt)(const void *, const void *),
-				   size_t (*rdc_key)(const void *),
-				   void (*free_key)(void *),
-				   void (*free_elt)(void *));
+                                   size_t key_size,
+                                   size_t elt_size,
+                                   size_t min_num,
+                                   size_t alpha_n,
+                                   size_t log_alpha_d,
+                                   size_t log_num_locks,
+                                   size_t num_grow_threads,
+                                   int (*cmp_key)(const void *, const void *),
+                                   int (*cmp_elt)(const void *, const void *),
+                                   size_t (*rdc_key)(const void *),
+                                   void (*free_key)(void *),
+                                   void (*free_elt)(void *));
 
 void ht_divchn_pthread_align_helper(void *ht, size_t elt_alignment);
 
 void ht_divchn_pthread_insert_helper(void *ht,
-				     const void *batch_keys,
-				     const void *batch_elts,
-				     size_t batch_count);
+                                     const void *batch_keys,
+                                     const void *batch_elts,
+                                     size_t batch_count);
 
 void *ht_divchn_pthread_search_helper(const void *ht,
-				      const void *key);
+                                      const void *key);
 
 void ht_divchn_pthread_remove_helper(void *ht,
-				     const void *batch_keys,
-				     void *batch_elts,
-				     size_t batch_count);
+                                     const void *batch_keys,
+                                     void *batch_elts,
+                                     size_t batch_count);
 
 void ht_divchn_pthread_delete_helper(void *ht,
-				     const void *batch_keys,
-				     size_t batch_count);
+                                     const void *batch_keys,
+                                     size_t batch_count);
 
 void ht_divchn_pthread_free_helper(void *ht);
 

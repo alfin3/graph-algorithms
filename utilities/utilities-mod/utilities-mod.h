@@ -6,7 +6,7 @@
    implementations assume that the width of size_t is even.
 */
 
-#ifndef UTILITIES_MOD_H  
+#ifndef UTILITIES_MOD_H
 #define UTILITIES_MOD_H
 
 #include <stddef.h>

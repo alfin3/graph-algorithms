@@ -16,7 +16,7 @@
    https://groups.google.com/g/comp.lang.c/c/1kiXXt5T0TQ/m/S_B_8D4VmOkJ
 */
 #define PRECISION_FROM_ULIMIT(m) ((m) / ((m) % 255u + 1u) / 255u % 255u * 8u \
-				  + 7u - \
-				  86u / ((m) % 255u + 12u))
+                                  + 7u - \
+                                  86u / ((m) % 255u + 12u))
 
 #endif

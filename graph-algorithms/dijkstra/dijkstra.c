@@ -10,7 +10,7 @@
    hash table and its load factor upper bound. If NULL is passed as a hash
    table parameter value, a default hash table is used, which contains an
    index array with a count that is equal to the number of vertices in the
-   graph.   
+   graph.
 
    If E >> V, a default hash table may provide speed advantages by avoiding
    the computation of hash values. If V is large and the graph is sparse,
@@ -64,8 +64,8 @@ struct ht_def{
 };
 
 static void ht_def_init(void *ht,
-			size_t num_vts,
-			size_t (*read_vt)(const void *));
+                        size_t num_vts,
+                        size_t (*read_vt)(const void *));
 static void ht_def_insert(void *ht, const void *vt, const void *ix);
 static void *ht_def_search(const void *ht, const void *vt);
 static void ht_def_remove(void *ht, const void *vt, void *ix);
@@ -88,7 +88,7 @@ static void *ptr(const void *block, size_t i, size_t size);
                  pointed to by dist has no declared type then dijkstra sets
                  the effective type of each element corresponding to a
                  reached vertex to the type of a weight in the adjacency list
-                 by writing a value of the type; if distances are of an 
+                 by writing a value of the type; if distances are of an
                  integer type and the block was allocated with calloc then
                  under C99 and C11 each element corresponding to an unreached
                  vertex can be safely read as the integer type and will
@@ -128,7 +128,7 @@ static void *ptr(const void *block, size_t i, size_t size);
                  if the weight value pointed to by the first argument is
                  less than the weight value pointed to by the second, a
                  positive integer value if the weight value pointed to by
-                 the first argument is greater than the weight value 
+                 the first argument is greater than the weight value
                  pointed to by the second, and zero integer value if the two
                  weight values are equal
    add_wt      : addition function which copies the sum of the weight values
@@ -139,17 +139,17 @@ static void *ptr(const void *block, size_t i, size_t size);
                  use a provided _perror-suffixed function
 */
 void dijkstra(const struct adj_lst *a,
-	      size_t start,
-	      void *dist,
-	      void *prev,
-	      const void *wt_zero,
-	      const struct dijkstra_ht *daht,
-	      size_t (*read_vt)(const void *),
-	      void (*write_vt)(void *, size_t),
-	      void *(*at_vt)(const void *, const void *),
-	      int (*cmp_vt)(const void *, const void *),
-	      int (*cmp_wt)(const void *, const void *),
-	      void (*add_wt)(void *, const void *, const void *)){
+              size_t start,
+              void *dist,
+              void *prev,
+              const void *wt_zero,
+              const struct dijkstra_ht *daht,
+              size_t (*read_vt)(const void *),
+              void (*write_vt)(void *, size_t),
+              void *(*at_vt)(const void *, const void *),
+              int (*cmp_vt)(const void *, const void *),
+              int (*cmp_wt)(const void *, const void *),
+              void (*add_wt)(void *, const void *, const void *)){
   struct ht_def ht_def;
   struct heap_ht hht;
   struct heap h;
@@ -158,7 +158,7 @@ void dijkstra(const struct adj_lst *a,
   /* variables in single block for cache-efficiency */
   void * const vars =
     malloc_perror(1, add_sz_perror(compute_wt_offset_perror(a),
-				   mul_sz_perror(2, a->wt_size)));
+                                   mul_sz_perror(2, a->wt_size)));
   void * const u = vars;
   void * const nr = (char *)u + a->vt_size;
   void * const du = (char *)u + compute_wt_offset_perror(a);
@@ -197,7 +197,7 @@ void dijkstra(const struct adj_lst *a,
     hht.free = daht->free;
   }
   heap_init(&h, a->wt_size, a->vt_size, C_HEAP_INIT_COUNT, &hht,
-	    cmp_wt, cmp_vt, read_vt, NULL);
+            cmp_wt, cmp_vt, read_vt, NULL);
   heap_push(&h, du, u);
   while (h.num_elts > 0){
     heap_pop(&h, du, u);
@@ -207,14 +207,14 @@ void dijkstra(const struct adj_lst *a,
       add_wt(s, du, (char *)p + a->wt_offset);
       dp = ptr(dist, read_vt(p), a->wt_size);
       if (cmp_vt(at_vt(prev, p), nr) == 0){
-	memcpy(dp, s, a->wt_size);
-	memcpy(at_vt(prev, p), u, a->vt_size);
-	heap_push(&h, dp, p);
+        memcpy(dp, s, a->wt_size);
+        memcpy(at_vt(prev, p), u, a->vt_size);
+        heap_push(&h, dp, p);
       }else if (cmp_wt(dp, s) > 0){
-	/* must be in the heap */
-	memcpy(dp, s, a->wt_size);
-	memcpy(at_vt(prev, p), u, a->vt_size);
-	heap_update(&h, dp, p);
+        /* must be in the heap */
+        memcpy(dp, s, a->wt_size);
+        memcpy(at_vt(prev, p), u, a->vt_size);
+        heap_update(&h, dp, p);
       }
     }
   }
@@ -229,14 +229,14 @@ void dijkstra(const struct adj_lst *a,
 */
 
 static void ht_def_init(void *ht,
-			size_t num_vts,
-			size_t (*read_vt)(const void *)){
+                        size_t num_vts,
+                        size_t (*read_vt)(const void *)){
   size_t i;
   struct ht_def *ht_def = ht;
   ht_def->absent = num_vts;
   ht_def->elts = malloc_perror(num_vts, sizeof(size_t));
   for (i = 0; i < num_vts; i++){
-    /* <= num_vts elements in the heap; indices are < num_vts */ 
+    /* <= num_vts elements in the heap; indices are < num_vts */
     ht_def->elts[i] = num_vts;
   }
   ht_def->read_vt = read_vt;
@@ -244,7 +244,7 @@ static void ht_def_init(void *ht,
 
 static void ht_def_insert(void *ht, const void *vt, const void *ix){
   struct ht_def *ht_def = ht;
-  ht_def->elts[ht_def->read_vt(vt)] = *(const size_t *)ix; 
+  ht_def->elts[ht_def->read_vt(vt)] = *(const size_t *)ix;
 }
 
 static void *ht_def_search(const void *ht, const void *vt){
@@ -294,13 +294,13 @@ static size_t compute_wt_offset_perror(const struct adj_lst *a){
    alignment or a less strict alignment and back again; the result shall
    compare equal to the original pointer. (An object that has character
    type has the least strict alignment.)"
-   
+
    "A pointer to void may be converted to or from a pointer to any
    incomplete or object type. A pointer to any incomplete or object type
    may be converted to a pointer to void and back again; the result shall
    compare equal to the original pointer."
 
-   "A pointer to void shall have the same representation and alignment 
+   "A pointer to void shall have the same representation and alignment
    requirements as a pointer to a character type."
 */
 static void *ptr(const void *block, size_t i, size_t size){

@@ -5,7 +5,7 @@
    TSP without vertex revisiting on graphs with generic integer vertices
    and generic weights, including negative weights, and a hash table
    parameter.
-   
+
    The algorithm provides O(2^n n^2) assymptotic runtime, where n is the
    number of vertices in a tour, as well as tour existence detection. A bit
    array representation provides time and space efficient set membership and
@@ -16,7 +16,7 @@
    resources by choice of a hash table and its load factor upper bound.
    If NULL is passed as a hash table parameter value, a default hash table
    is used, which contains an array with a count that is equal to n * 2^n,
-   where n is the number of vertices in the graph.   
+   where n is the number of vertices in the graph.
 
    If E >> V and V < width of size_t, a default hash table may provide speed
    advantages by avoiding the computation of hash values. A non-default hash
@@ -35,7 +35,7 @@
    and C99.
 */
 
-#ifndef TSP_H  
+#ifndef TSP_H
 #define TSP_H
 
 #include <stddef.h>
@@ -51,15 +51,15 @@ struct tsp_ht{
   size_t alpha_n;
   size_t log_alpha_d;
   void (*init)(void *,
-	       size_t,
-	       size_t,
-	       size_t,
-	       size_t,
-	       size_t,
-	       int (*)(const void *, const void *),
-	       size_t (*)(const void *),
-	       void (*)(void *),
-	       void (*)(void *));
+               size_t,
+               size_t,
+               size_t,
+               size_t,
+               size_t,
+               int (*)(const void *, const void *),
+               size_t (*)(const void *),
+               void (*)(void *),
+               void (*)(void *));
   void (*align)(void *, size_t);
   void (*insert)(void *, const void *, const void *);
   void *(*search)(const void *, const void *);
@@ -68,8 +68,8 @@ struct tsp_ht{
 };
 
 /**
-   Copies to the block pointed to by dist the shortest tour length from 
-   start to start across all vertices without revisiting, if a tour exists. 
+   Copies to the block pointed to by dist the shortest tour length from
+   start to start across all vertices without revisiting, if a tour exists.
    Returns 0 if a tour exists, otherwise returns 1.
    a           : pointer to an adjacency list with at least one vertex
    start       : start vertex for running the algorithm
@@ -100,7 +100,7 @@ struct tsp_ht{
                  if the weight value pointed to by the first argument is
                  less than the weight value pointed to by the second, a
                  positive integer value if the weight value pointed to by
-                 the first argument is greater than the weight value 
+                 the first argument is greater than the weight value
                  pointed to by the second, and zero integer value if the two
                  weight values are equal
    add_wt      : addition function which copies the sum of the weight values
@@ -111,11 +111,11 @@ struct tsp_ht{
                  use a provided _perror-suffixed function
 */
 int tsp(const struct adj_lst *a,
-	size_t start,
-	void *dist,
-	const void *wt_zero,
-	const struct tsp_ht *tht,
-	size_t (*read_vt)(const void *),
-	int (*cmp_wt)(const void *, const void *),
-	void (*add_wt)(void *, const void *, const void *));
+        size_t start,
+        void *dist,
+        const void *wt_zero,
+        const struct tsp_ht *tht,
+        size_t (*read_vt)(const void *),
+        int (*cmp_wt)(const void *, const void *),
+        void (*add_wt)(void *, const void *, const void *));
 #endif

@@ -1,7 +1,7 @@
 /**
    dfs.h
 
-   Declarations of accessible functions for running the DFS algorithm on 
+   Declarations of accessible functions for running the DFS algorithm on
    graphs with generic integer vertices indexed from 0.  A graph may be
    unweighted or weighted. In the latter case the weights of the graph are
    ignored.
@@ -33,7 +33,7 @@
    not included due to an overhead that decreased the performance in tests.
 */
 
-#ifndef DFS_H  
+#ifndef DFS_H
 #define DFS_H
 
 #include <stddef.h>
@@ -83,14 +83,14 @@
                  vertices
 */
 void dfs(const struct adj_lst *a,
-	 size_t start,
-	 void *pre,
-	 void *post,
-	 size_t (*read_vt)(const void *),
-	 void (*write_vt)(void *, size_t),
-	 void *(*at_vt)(const void *, const void *),
-	 int (*cmp_vt)(const void *, const void *),
-	 void (*incr_vt)(void *));
+         size_t start,
+         void *pre,
+         void *post,
+         size_t (*read_vt)(const void *),
+         void (*write_vt)(void *, size_t),
+         void *(*at_vt)(const void *, const void *),
+         int (*cmp_vt)(const void *, const void *),
+         void (*incr_vt)(void *));
 
 /**
    Computes and copies to the arrays pointed to by pre and post the previsit
@@ -110,15 +110,15 @@ void dfs(const struct adj_lst *a,
                   size of void * according to sizeof
 */
 void dfs_align(const struct adj_lst *a,
-	       size_t start,
-	       size_t vt_alignment,
-	       size_t vdp_alignment,
-	       void *pre,
-	       void *post,
-	       size_t (*read_vt)(const void *),
-	       void (*write_vt)(void *, size_t),
-	       void *(*at_vt)(const void *, const void *),
-	       int (*cmp_vt)(const void *, const void *),
-	       void (*incr_vt)(void *));
+               size_t start,
+               size_t vt_alignment,
+               size_t vdp_alignment,
+               void *pre,
+               void *post,
+               size_t (*read_vt)(const void *),
+               void (*write_vt)(void *, size_t),
+               void *(*at_vt)(const void *, const void *),
+               int (*cmp_vt)(const void *, const void *),
+               void (*incr_vt)(void *));
 
 #endif

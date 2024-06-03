@@ -8,7 +8,7 @@
 #  Additional information is available at:
 #  https://gcc.gnu.org/onlinedocs/gcc/Submodel-Options.html#Submodel-Options
 #  https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#x86-Options
-#   
+#
 #  usage examples:
 #    make
 #    make BUILD_MODE=M32
@@ -53,7 +53,7 @@ OBJ = tsp-test.o                      \
       $(UTILS_MOD_DIR)utilities-mod.o
 
 tsp-test : $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ 
+	$(CC) $(CFLAGS) -o $@ $^
 
 tsp-test.o                      : tsp.h                           \
                                   $(GRAPH_DIR)graph.h             \
@@ -94,5 +94,5 @@ $(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
 
 clean :
 	rm $(OBJ)
-clean-all : 
+clean-all :
 	rm -f tsp-test $(OBJ)

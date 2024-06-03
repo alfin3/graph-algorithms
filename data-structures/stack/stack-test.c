@@ -63,7 +63,7 @@ const size_t C_START_VAL = 0; /* <= # inserts */
 void print_test_result(int res);
 
 /**
-   Run tests of a stack of size_t elements. A pointer to an element is 
+   Run tests of a stack of size_t elements. A pointer to an element is
    passed as elt in stack_push and the size_t element is copied onto the
    stack. NULL as free_elt is sufficient to free the stack.
 */
@@ -77,21 +77,21 @@ void run_uint_push_pop_test(size_t log_ins){
   num_ins = pow_two_perror(log_ins);
   stack_init(&s, sizeof(size_t), NULL);
   printf("Run a stack_{push, pop} test on %lu size_t elements\n",
-	 TOLU(num_ins));
+         TOLU(num_ins));
   printf("\tinitial count: %lu, max count: %lu\n",
-	 TOLU(s.init_count), TOLU(s.max_count));
+         TOLU(s.init_count), TOLU(s.max_count));
   uint_push_pop_helper(&s, start_val, num_ins);
   stack_free(&s);
   stack_init(&s, sizeof(size_t), NULL);
   stack_bound(&s, 1, num_ins);
   printf("\tinitial count: %lu, max count: %lu\n",
-	 TOLU(s.init_count), TOLU(s.max_count));
+         TOLU(s.init_count), TOLU(s.max_count));
   uint_push_pop_helper(&s, start_val, num_ins);
   stack_free(&s);
   stack_init(&s, sizeof(size_t), NULL);
   stack_bound(&s, num_ins, num_ins);
   printf("\tinitial count: %lu, max count: %lu\n",
-	 TOLU(s.init_count), TOLU(s.max_count));
+         TOLU(s.init_count), TOLU(s.max_count));
   uint_push_pop_helper(&s, start_val, num_ins);
   stack_free(&s);
 }
@@ -181,7 +181,7 @@ void run_uint_free_test(size_t log_ins){
 }
 
 /**
-   Run tests of a stack of uint_ptr elements. A pointer to a pointer to 
+   Run tests of a stack of uint_ptr elements. A pointer to a pointer to
    an uint_ptr element is passed as elt in stack_push and the pointer to
    the uint_ptr element is copied onto the stack. A uint_ptr-
    specific free_elt, taking a pointer to a pointer to an element as its
@@ -201,8 +201,8 @@ void free_uint_ptr(void *a){
 }
 
 void uint_ptr_push_pop_helper(struct stack *s,
-			      size_t start_val,
-			      size_t num_ins);
+                              size_t start_val,
+                              size_t num_ins);
 
 void run_uint_ptr_push_pop_test(size_t log_ins){
   size_t num_ins;
@@ -213,26 +213,26 @@ void run_uint_ptr_push_pop_test(size_t log_ins){
   printf("Run a stack_{push, pop} test on %lu noncontiguous uint_ptr "
          "elements\n", TOLU(num_ins));
   printf("\tinitial count: %lu, max count: %lu\n",
-	 TOLU(s.init_count), TOLU(s.max_count));
+         TOLU(s.init_count), TOLU(s.max_count));
   uint_ptr_push_pop_helper(&s, start_val, num_ins);
   stack_free(&s);
   stack_init(&s, sizeof(struct uint_ptr *), free_uint_ptr);
   stack_bound(&s, 1, num_ins);
   printf("\tinitial count: %lu, max count: %lu\n",
-	 TOLU(s.init_count), TOLU(s.max_count));
+         TOLU(s.init_count), TOLU(s.max_count));
   uint_ptr_push_pop_helper(&s, start_val, num_ins);
   stack_free(&s);
   stack_init(&s, sizeof(struct uint_ptr *), free_uint_ptr);
   stack_bound(&s, num_ins, num_ins);
   printf("\tinitial count: %lu, max count: %lu\n",
-	 TOLU(s.init_count), TOLU(s.max_count));
+         TOLU(s.init_count), TOLU(s.max_count));
   uint_ptr_push_pop_helper(&s, start_val, num_ins);
   stack_free(&s);
 }
 
 void uint_ptr_push_pop_helper(struct stack *s,
-			      size_t start_val,
-			      size_t num_ins){
+                              size_t start_val,
+                              size_t num_ins){
   int res = 1;
   size_t i;
   struct uint_ptr **pushed = NULL, **popped = NULL;
@@ -283,7 +283,7 @@ void run_uint_ptr_first_test(size_t log_ins){
   num_ins = pow_two_perror(log_ins);
   stack_init(&s, sizeof(struct uint_ptr *), free_uint_ptr);
   printf("Run a stack_first test on %lu noncontiguous uint_ptr elements\n",
-	 TOLU(num_ins));
+         TOLU(num_ins));
   for (i = 0; i < num_ins; i++){
     if (s.num_elts == 0){
       res *= (stack_first(&s) == NULL);
@@ -297,13 +297,13 @@ void run_uint_ptr_first_test(size_t log_ins){
   }
   for (i = 0; i < num_ins; i++){
     res *= (*(*(struct uint_ptr **)stack_first(&s))->val ==
-	    num_ins - 1 - i + start_val);
+            num_ins - 1 - i + start_val);
     stack_pop(&s, &popped);
     if (s.num_elts == 0){
       res *= (stack_first(&s) == NULL);
     }
     free_uint_ptr(&popped);
-    popped = NULL; 
+    popped = NULL;
   }
   res *= (s.num_elts == 0);
   res *= (s.count >= num_ins);
@@ -311,6 +311,7 @@ void run_uint_ptr_first_test(size_t log_ins){
   print_test_result(res);
   stack_free(&s);
 }
+
 
 void run_uint_ptr_free_test(size_t log_ins){
   size_t i;
@@ -321,7 +322,7 @@ void run_uint_ptr_free_test(size_t log_ins){
   num_ins = pow_two_perror(log_ins);
   stack_init(&s, sizeof(struct uint_ptr *), free_uint_ptr);
   printf("Run a stack_free test on %lu noncontiguous uint_ptr elements\n",
-	 TOLU(num_ins));
+         TOLU(num_ins));
   for (i = 0; i < num_ins; i++){
     pushed = malloc_perror(1, sizeof(struct uint_ptr));
     pushed->val = malloc_perror(1, sizeof(size_t));
@@ -347,7 +348,7 @@ void run_uchar_stack_test(size_t log_ins){
   num_ins = pow_two_perror(log_ins);
   stack_init(&s, sizeof(unsigned char), NULL);
   printf("Run a stack_{push, pop} test on %lu char elements\n",
-	 TOLU(num_ins));
+         TOLU(num_ins));
   t_push = clock();
   for (i = 0; i < num_ins; i++){
     stack_push(&s, &C_UCHAR_ULIMIT);

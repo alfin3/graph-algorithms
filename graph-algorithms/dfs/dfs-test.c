@@ -17,7 +17,7 @@
      [0, 1] : on/off for no edges test
      [0, 1] : on/off for rand graph test
 
-   usage examples: 
+   usage examples:
    ./dfs-test
    ./dfs-test 10 14 10 14 10 14
    ./dfs-test 10 14 10 14 10 14 0 1 1 1
@@ -85,9 +85,9 @@ const size_t C_START_A = 0u;
 const unsigned short C_USHORT_U_A[7] = {0u, 1u, 2u, 3u, 0u, 4u, 4u};
 const unsigned short C_USHORT_V_A[7] = {1u, 2u, 3u, 1u, 3u, 2u, 5u};
 const unsigned short C_USHORT_WTS_A[7] = {(unsigned short)-1, 1u,
-					  (unsigned short)-1, 2u,
-					  (unsigned short)-1, 3u,
-					  (unsigned short)-1};
+                                          (unsigned short)-1, 2u,
+                                          (unsigned short)-1, 3u,
+                                          (unsigned short)-1};
 const unsigned short C_USHORT_DIR_PRE_A[6] = {0u, 1u, 2u, 3u, 8u, 9u};
 const unsigned short C_USHORT_DIR_POST_A[6] = {7u, 6u, 5u, 4u, 11u, 10u};
 const unsigned short C_USHORT_UNDIR_PRE_A[6] = {0u, 1u, 2u, 3u, 5u, 6u};
@@ -96,9 +96,9 @@ const unsigned short C_USHORT_UNDIR_POST_A[6] = {11u, 10u, 9u, 4u, 8u, 7u};
 const unsigned long C_ULONG_U_A[7] = {0u, 1u, 2u, 3u, 0u, 4u, 4u};
 const unsigned long C_ULONG_V_A[7] = {1u, 2u, 3u, 1u, 3u, 2u, 5u};
 const unsigned long C_ULONG_WTS_A[7] = {(unsigned long)-1, 1u,
-					(unsigned long)-1, 2u,
-					(unsigned long)-1, 3u,
-					(unsigned long)-1};
+                                        (unsigned long)-1, 2u,
+                                        (unsigned long)-1, 3u,
+                                        (unsigned long)-1};
 const unsigned long C_ULONG_DIR_PRE_A[6] = {0u, 1u, 2u, 3u, 8u, 9u};
 const unsigned long C_ULONG_DIR_POST_A[6] = {7u, 6u, 5u, 4u, 11u, 10u};
 const unsigned long C_ULONG_UNDIR_PRE_A[6] = {0u, 1u, 2u, 3u, 5u, 6u};
@@ -110,8 +110,8 @@ const size_t C_START_B = 0u;
 const unsigned short C_USHORT_U_B[5] = {0u, 1u, 2u, 3u, 4u};
 const unsigned short C_USHORT_V_B[5] = {1u, 2u, 3u, 4u, 5u};
 const unsigned long C_USHORT_WTS_B[5] = {1u, (unsigned short)-1,
-					 2u, (unsigned short)-1,
-					 3u};
+                                         2u, (unsigned short)-1,
+                                         3u};
 const unsigned short C_USHORT_DIR_PRE_B[6] = {0u, 1u, 2u, 3u, 4u, 5u};
 const unsigned short C_USHORT_DIR_POST_B[6] = {11u, 10u, 9u, 8u, 7u, 6u};
 const unsigned short C_USHORT_UNDIR_PRE_B[6] = {0u, 1u, 2u, 3u, 4u, 5u};
@@ -119,8 +119,8 @@ const unsigned short C_USHORT_UNDIR_POST_B[6] = {11u, 10u, 9u, 8u, 7u, 6u};
 const unsigned long C_ULONG_U_B[5] = {0u, 1u, 2u, 3u, 4u};
 const unsigned long C_ULONG_V_B[5] = {1u, 2u, 3u, 4u, 5u};
 const unsigned long C_ULONG_WTS_B[5] = {1u, (unsigned long)-1,
-					2u, (unsigned long)-1,
-					3u};
+                                        2u, (unsigned long)-1,
+                                        3u};
 const unsigned long C_ULONG_DIR_PRE_B[6] = {0u, 1u, 2u, 3u, 4u, 5u};
 const unsigned long C_ULONG_DIR_POST_B[6] = {11u, 10u, 9u, 8u, 7u, 6u};
 const unsigned long C_ULONG_UNDIR_PRE_B[6] = {0u, 1u, 2u, 3u, 4u, 5u};
@@ -166,10 +166,10 @@ const double C_PROB_ONE = 1.0;
 const double C_PROB_ZERO = 0.0;
 
 int cmp_arr(const void *a,
-	    const void *b,
-	    size_t size,
-	    size_t n,
-	    int (*cmp)(const void *, const void *));
+            const void *b,
+            size_t size,
+            size_t n,
+            int (*cmp)(const void *, const void *));
 void *ptr(const void *block, size_t i, size_t size);
 void print_test_result(int res);
 
@@ -179,9 +179,9 @@ void print_test_result(int res);
 
 void ushort_none_graph_a_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS_A,
-		  sizeof(unsigned short),
-		  0);
+                  C_NUM_VTS_A,
+                  sizeof(unsigned short),
+                  0);
   g->num_es = C_NUM_ES_A;
   g->u = (unsigned short *)C_USHORT_U_A;
   g->v = (unsigned short *)C_USHORT_V_A;
@@ -189,9 +189,9 @@ void ushort_none_graph_a_init(struct graph *g){
 
 void ulong_none_graph_a_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS_A,
-		  sizeof(unsigned long),
-		  0);
+                  C_NUM_VTS_A,
+                  sizeof(unsigned long),
+                  0);
   g->num_es = C_NUM_ES_A;
   g->u = (unsigned long *)C_ULONG_U_A;
   g->v = (unsigned long *)C_ULONG_V_A;
@@ -199,9 +199,9 @@ void ulong_none_graph_a_init(struct graph *g){
 
 void ushort_ulong_graph_a_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS_A,
-		  sizeof(unsigned short),
-		  sizeof(unsigned long));
+                  C_NUM_VTS_A,
+                  sizeof(unsigned short),
+                  sizeof(unsigned long));
   g->num_es = C_NUM_ES_A;
   g->u = (unsigned short *)C_USHORT_U_A;
   g->v = (unsigned short *)C_USHORT_V_A;
@@ -210,9 +210,9 @@ void ushort_ulong_graph_a_init(struct graph *g){
 
 void ulong_ushort_graph_a_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS_A,
-		  sizeof(unsigned long),
-		  sizeof(unsigned short));
+                  C_NUM_VTS_A,
+                  sizeof(unsigned long),
+                  sizeof(unsigned short));
   g->num_es = C_NUM_ES_A;
   g->u = (unsigned long *)C_ULONG_U_A;
   g->v = (unsigned long *)C_ULONG_V_A;
@@ -221,9 +221,9 @@ void ulong_ushort_graph_a_init(struct graph *g){
 
 void ushort_none_graph_b_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS_B,
-		  sizeof(unsigned short),
-		  0);
+                  C_NUM_VTS_B,
+                  sizeof(unsigned short),
+                  0);
   g->num_es = C_NUM_ES_B;
   g->u = (unsigned short *)C_USHORT_U_B;
   g->v = (unsigned short *)C_USHORT_V_B;
@@ -231,9 +231,9 @@ void ushort_none_graph_b_init(struct graph *g){
 
 void ulong_none_graph_b_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS_B,
-		  sizeof(unsigned long),
-		  0);
+                  C_NUM_VTS_B,
+                  sizeof(unsigned long),
+                  0);
   g->num_es = C_NUM_ES_B;
   g->u = (unsigned long *)C_ULONG_U_B;
   g->v = (unsigned long *)C_ULONG_V_B;
@@ -241,9 +241,9 @@ void ulong_none_graph_b_init(struct graph *g){
 
 void ushort_ulong_graph_b_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS_B,
-		  sizeof(unsigned short),
-		  sizeof(unsigned long));
+                  C_NUM_VTS_B,
+                  sizeof(unsigned short),
+                  sizeof(unsigned long));
   g->num_es = C_NUM_ES_B;
   g->u = (unsigned short *)C_USHORT_U_B;
   g->v = (unsigned short *)C_USHORT_V_B;
@@ -252,9 +252,9 @@ void ushort_ulong_graph_b_init(struct graph *g){
 
 void ulong_ushort_graph_b_init(struct graph *g){
   graph_base_init(g,
-		  C_NUM_VTS_B,
-		  sizeof(unsigned long),
-		  sizeof(unsigned short));
+                  C_NUM_VTS_B,
+                  sizeof(unsigned long),
+                  sizeof(unsigned short));
   g->num_es = C_NUM_ES_B;
   g->u = (unsigned long *)C_ULONG_U_B;
   g->v = (unsigned long *)C_ULONG_V_B;
@@ -266,120 +266,120 @@ void ulong_ushort_graph_b_init(struct graph *g){
 */
 
 void small_graph_helper(const struct graph *g,
-			size_t start,
-			const void *ret_pre,
-			const void *ret_post,
-			void (*build)(struct adj_lst *,
-				      const struct graph *,
-				      size_t (*)(const void *)),
-			size_t (*read_vt)(const void *),
-			void (*write_vt)(void *, size_t),
-			void *(*at_vt)(const void *, const void *),
-			int (*cmp_vt)(const void *, const void *),
-			void (*incr_vt)(void *),
-			int *res);
+                        size_t start,
+                        const void *ret_pre,
+                        const void *ret_post,
+                        void (*build)(struct adj_lst *,
+                                      const struct graph *,
+                                      size_t (*)(const void *)),
+                        size_t (*read_vt)(const void *),
+                        void (*write_vt)(void *, size_t),
+                        void *(*at_vt)(const void *, const void *),
+                        int (*cmp_vt)(const void *, const void *),
+                        void (*incr_vt)(void *),
+                        int *res);
 
 void run_graph_a_test(){
   int res = 1;
   struct graph g;
   printf("Run a dfs test on the first small graph with ushort "
-	 "vertices --> ");
+         "vertices --> ");
   ushort_none_graph_a_init(&g);
   small_graph_helper(&g,
-		     C_START_A,
-		     C_USHORT_DIR_PRE_A,
-		     C_USHORT_DIR_POST_A,
-		     adj_lst_dir_build,
-		     graph_read_ushort,
-		     graph_write_ushort,
-		     graph_at_ushort,
-		     graph_cmpeq_ushort,
-		     graph_incr_ushort,
-		     &res);
+                     C_START_A,
+                     C_USHORT_DIR_PRE_A,
+                     C_USHORT_DIR_POST_A,
+                     adj_lst_dir_build,
+                     graph_read_ushort,
+                     graph_write_ushort,
+                     graph_at_ushort,
+                     graph_cmpeq_ushort,
+                     graph_incr_ushort,
+                     &res);
   small_graph_helper(&g,
-		     C_START_A,
-		     C_USHORT_UNDIR_PRE_A,
-		     C_USHORT_UNDIR_POST_A,
-		     adj_lst_undir_build,
-		     graph_read_ushort,
-		     graph_write_ushort,
-		     graph_at_ushort,
-		     graph_cmpeq_ushort,
-		     graph_incr_ushort,
-		     &res);
+                     C_START_A,
+                     C_USHORT_UNDIR_PRE_A,
+                     C_USHORT_UNDIR_POST_A,
+                     adj_lst_undir_build,
+                     graph_read_ushort,
+                     graph_write_ushort,
+                     graph_at_ushort,
+                     graph_cmpeq_ushort,
+                     graph_incr_ushort,
+                     &res);
   ushort_ulong_graph_a_init(&g);
   small_graph_helper(&g,
-		     C_START_A,
-		     C_USHORT_DIR_PRE_A,
-		     C_USHORT_DIR_POST_A,
-		     adj_lst_dir_build,
-		     graph_read_ushort,
-		     graph_write_ushort,
-		     graph_at_ushort,
-		     graph_cmpeq_ushort,
-		     graph_incr_ushort,
-		     &res);
+                     C_START_A,
+                     C_USHORT_DIR_PRE_A,
+                     C_USHORT_DIR_POST_A,
+                     adj_lst_dir_build,
+                     graph_read_ushort,
+                     graph_write_ushort,
+                     graph_at_ushort,
+                     graph_cmpeq_ushort,
+                     graph_incr_ushort,
+                     &res);
   small_graph_helper(&g,
-		     C_START_A,
-		     C_USHORT_UNDIR_PRE_A,
-		     C_USHORT_UNDIR_POST_A,
-		     adj_lst_undir_build,
-		     graph_read_ushort,
-		     graph_write_ushort,
-		     graph_at_ushort,
-		     graph_cmpeq_ushort,
-		     graph_incr_ushort,
-		     &res);
+                     C_START_A,
+                     C_USHORT_UNDIR_PRE_A,
+                     C_USHORT_UNDIR_POST_A,
+                     adj_lst_undir_build,
+                     graph_read_ushort,
+                     graph_write_ushort,
+                     graph_at_ushort,
+                     graph_cmpeq_ushort,
+                     graph_incr_ushort,
+                     &res);
   print_test_result(res);
   res = 1;
   printf("Run a dfs test on the first small graph with ulong "
-	 "vertices --> ");
+         "vertices --> ");
   ulong_none_graph_a_init(&g);
   small_graph_helper(&g,
-		     C_START_A,
-		     C_ULONG_DIR_PRE_A,
-		     C_ULONG_DIR_POST_A,
-		     adj_lst_dir_build,
-		     graph_read_ulong,
-		     graph_write_ulong,
-		     graph_at_ulong,
-		     graph_cmpeq_ulong,
-		     graph_incr_ulong,
-		     &res);
+                     C_START_A,
+                     C_ULONG_DIR_PRE_A,
+                     C_ULONG_DIR_POST_A,
+                     adj_lst_dir_build,
+                     graph_read_ulong,
+                     graph_write_ulong,
+                     graph_at_ulong,
+                     graph_cmpeq_ulong,
+                     graph_incr_ulong,
+                     &res);
   small_graph_helper(&g,
-		     C_START_A,
-		     C_ULONG_UNDIR_PRE_A,
-		     C_ULONG_UNDIR_POST_A,
-		     adj_lst_undir_build,
-		     graph_read_ulong,
-		     graph_write_ulong,
-		     graph_at_ulong,
-		     graph_cmpeq_ulong,
-		     graph_incr_ulong,
-		     &res);
+                     C_START_A,
+                     C_ULONG_UNDIR_PRE_A,
+                     C_ULONG_UNDIR_POST_A,
+                     adj_lst_undir_build,
+                     graph_read_ulong,
+                     graph_write_ulong,
+                     graph_at_ulong,
+                     graph_cmpeq_ulong,
+                     graph_incr_ulong,
+                     &res);
   ulong_ushort_graph_a_init(&g);
   small_graph_helper(&g,
-		     C_START_A,
-		     C_ULONG_DIR_PRE_A,
-		     C_ULONG_DIR_POST_A,
-		     adj_lst_dir_build,
-		     graph_read_ulong,
-		     graph_write_ulong,
-		     graph_at_ulong,
-		     graph_cmpeq_ulong,
-		     graph_incr_ulong,
-		     &res);
+                     C_START_A,
+                     C_ULONG_DIR_PRE_A,
+                     C_ULONG_DIR_POST_A,
+                     adj_lst_dir_build,
+                     graph_read_ulong,
+                     graph_write_ulong,
+                     graph_at_ulong,
+                     graph_cmpeq_ulong,
+                     graph_incr_ulong,
+                     &res);
   small_graph_helper(&g,
-		     C_START_A,
-		     C_ULONG_UNDIR_PRE_A,
-		     C_ULONG_UNDIR_POST_A,
-		     adj_lst_undir_build,
-		     graph_read_ulong,
-		     graph_write_ulong,
-		     graph_at_ulong,
-		     graph_cmpeq_ulong,
-		     graph_incr_ulong,
-		     &res);
+                     C_START_A,
+                     C_ULONG_UNDIR_PRE_A,
+                     C_ULONG_UNDIR_POST_A,
+                     adj_lst_undir_build,
+                     graph_read_ulong,
+                     graph_write_ulong,
+                     graph_at_ulong,
+                     graph_cmpeq_ulong,
+                     graph_incr_ulong,
+                     &res);
   print_test_result(res);
 }
 
@@ -387,119 +387,119 @@ void run_graph_b_test(){
   int res = 1;
   struct graph g;
   printf("Run a dfs test on the second small graph with ushort "
-	 "vertices --> ");
+         "vertices --> ");
   ushort_none_graph_b_init(&g);
   small_graph_helper(&g,
-		     C_START_B,
-		     C_USHORT_DIR_PRE_B,
-		     C_USHORT_DIR_POST_B,
-		     adj_lst_dir_build,
-		     graph_read_ushort,
-		     graph_write_ushort,
-		     graph_at_ushort,
-		     graph_cmpeq_ushort,
-		     graph_incr_ushort,
-		     &res);
+                     C_START_B,
+                     C_USHORT_DIR_PRE_B,
+                     C_USHORT_DIR_POST_B,
+                     adj_lst_dir_build,
+                     graph_read_ushort,
+                     graph_write_ushort,
+                     graph_at_ushort,
+                     graph_cmpeq_ushort,
+                     graph_incr_ushort,
+                     &res);
   small_graph_helper(&g,
-		     C_START_B,
-		     C_USHORT_UNDIR_PRE_B,
-		     C_USHORT_UNDIR_POST_B,
-		     adj_lst_undir_build,
-		     graph_read_ushort,
-		     graph_write_ushort,
-		     graph_at_ushort,
-		     graph_cmpeq_ushort,
-		     graph_incr_ushort,
-		     &res);
+                     C_START_B,
+                     C_USHORT_UNDIR_PRE_B,
+                     C_USHORT_UNDIR_POST_B,
+                     adj_lst_undir_build,
+                     graph_read_ushort,
+                     graph_write_ushort,
+                     graph_at_ushort,
+                     graph_cmpeq_ushort,
+                     graph_incr_ushort,
+                     &res);
   ushort_ulong_graph_b_init(&g);
   small_graph_helper(&g,
-		     C_START_B,
-		     C_USHORT_DIR_PRE_B,
-		     C_USHORT_DIR_POST_B,
-		     adj_lst_dir_build,
-		     graph_read_ushort,
-		     graph_write_ushort,
-		     graph_at_ushort,
-		     graph_cmpeq_ushort,
-		     graph_incr_ushort,
-		     &res);
+                     C_START_B,
+                     C_USHORT_DIR_PRE_B,
+                     C_USHORT_DIR_POST_B,
+                     adj_lst_dir_build,
+                     graph_read_ushort,
+                     graph_write_ushort,
+                     graph_at_ushort,
+                     graph_cmpeq_ushort,
+                     graph_incr_ushort,
+                     &res);
   small_graph_helper(&g,
-		     C_START_B,
-		     C_USHORT_UNDIR_PRE_B,
-		     C_USHORT_UNDIR_POST_B,
-		     adj_lst_undir_build,
-		     graph_read_ushort,
-		     graph_write_ushort,
-		     graph_at_ushort,
-		     graph_cmpeq_ushort,
-		     graph_incr_ushort,
-		     &res);
+                     C_START_B,
+                     C_USHORT_UNDIR_PRE_B,
+                     C_USHORT_UNDIR_POST_B,
+                     adj_lst_undir_build,
+                     graph_read_ushort,
+                     graph_write_ushort,
+                     graph_at_ushort,
+                     graph_cmpeq_ushort,
+                     graph_incr_ushort,
+                     &res);
   print_test_result(res);
   res = 1;
   printf("Run a dfs test on the second small graph with ulong "
-	 "vertices --> ");
+         "vertices --> ");
   ulong_none_graph_b_init(&g);
   small_graph_helper(&g,
-		     C_START_B,
-		     C_ULONG_DIR_PRE_B,
-		     C_ULONG_DIR_POST_B,
-		     adj_lst_dir_build,
-		     graph_read_ulong,
-		     graph_write_ulong,
-		     graph_at_ulong,
-		     graph_cmpeq_ulong,
-		     graph_incr_ulong,
-		     &res);
+                     C_START_B,
+                     C_ULONG_DIR_PRE_B,
+                     C_ULONG_DIR_POST_B,
+                     adj_lst_dir_build,
+                     graph_read_ulong,
+                     graph_write_ulong,
+                     graph_at_ulong,
+                     graph_cmpeq_ulong,
+                     graph_incr_ulong,
+                     &res);
   small_graph_helper(&g,
-		     C_START_B,
-		     C_ULONG_UNDIR_PRE_B,
-		     C_ULONG_UNDIR_POST_B,
-		     adj_lst_undir_build,
-		     graph_read_ulong,
-		     graph_write_ulong,
-		     graph_at_ulong,
-		     graph_cmpeq_ulong,
-		     graph_incr_ulong,
-		     &res);
+                     C_START_B,
+                     C_ULONG_UNDIR_PRE_B,
+                     C_ULONG_UNDIR_POST_B,
+                     adj_lst_undir_build,
+                     graph_read_ulong,
+                     graph_write_ulong,
+                     graph_at_ulong,
+                     graph_cmpeq_ulong,
+                     graph_incr_ulong,
+                     &res);
   ulong_ushort_graph_b_init(&g);
   small_graph_helper(&g,
-		     C_START_B,
-		     C_ULONG_DIR_PRE_B,
-		     C_ULONG_DIR_POST_B,
-		     adj_lst_dir_build,
-		     graph_read_ulong,
-		     graph_write_ulong,
-		     graph_at_ulong,
-		     graph_cmpeq_ulong,
-		     graph_incr_ulong,
-		     &res);
+                     C_START_B,
+                     C_ULONG_DIR_PRE_B,
+                     C_ULONG_DIR_POST_B,
+                     adj_lst_dir_build,
+                     graph_read_ulong,
+                     graph_write_ulong,
+                     graph_at_ulong,
+                     graph_cmpeq_ulong,
+                     graph_incr_ulong,
+                     &res);
   small_graph_helper(&g,
-		     C_START_B,
-		     C_ULONG_UNDIR_PRE_B,
-		     C_ULONG_UNDIR_POST_B,
-		     adj_lst_undir_build,
-		     graph_read_ulong,
-		     graph_write_ulong,
-		     graph_at_ulong,
-		     graph_cmpeq_ulong,
-		     graph_incr_ulong,
-		     &res);
+                     C_START_B,
+                     C_ULONG_UNDIR_PRE_B,
+                     C_ULONG_UNDIR_POST_B,
+                     adj_lst_undir_build,
+                     graph_read_ulong,
+                     graph_write_ulong,
+                     graph_at_ulong,
+                     graph_cmpeq_ulong,
+                     graph_incr_ulong,
+                     &res);
    print_test_result(res);
 }
 
 void small_graph_helper(const struct graph *g,
-			size_t start,
-			const void *ret_pre,
-			const void *ret_post,
-			void (*build)(struct adj_lst *,
-				      const struct graph *,
-				      size_t (*)(const void *)),
-			size_t (*read_vt)(const void *),
-			void (*write_vt)(void *, size_t),
-			void *(*at_vt)(const void *, const void *),
-			int (*cmp_vt)(const void *, const void *),
-			void (*incr_vt)(void *),
-			int *res){
+                        size_t start,
+                        const void *ret_pre,
+                        const void *ret_post,
+                        void (*build)(struct adj_lst *,
+                                      const struct graph *,
+                                      size_t (*)(const void *)),
+                        size_t (*read_vt)(const void *),
+                        void (*write_vt)(void *, size_t),
+                        void *(*at_vt)(const void *, const void *),
+                        int (*cmp_vt)(const void *, const void *),
+                        void (*incr_vt)(void *),
+                        int *res){
   void *pre = NULL, *post = NULL;
   struct adj_lst a;
   adj_lst_base_init(&a, g);
@@ -516,7 +516,7 @@ void small_graph_helper(const struct graph *g,
   post = NULL;
 }
 
-/**  
+/**
    Test dfs on large graphs.
 */
 
@@ -547,8 +547,8 @@ void run_max_edges_graph_test(size_t log_start, size_t log_end){
   struct bern_arg b;
   b.p = C_PROB_ONE;
   printf("Run a dfs test on graphs with n vertices, where "
-	 "2**%lu <= n <= 2**%lu, and n(n - 1) edges\n",
-	 TOLU(log_start),  TOLU(log_end));
+         "2**%lu <= n <= 2**%lu, and n(n - 1) edges\n",
+         TOLU(log_start),  TOLU(log_end));
   for (i = log_start; i <= log_end; i++){
     num_vts = pow_two_perror(i); /* num_vts > 0 */
     printf("\t\tvertices: %lu\n", TOLU(num_vts));
@@ -561,28 +561,28 @@ void run_max_edges_graph_test(size_t log_start, size_t log_end){
       adj_lst_rand_dir(&a, C_WRITE[j], bern, &b);
       start =  RANDOM() % num_vts;
       dfs(&a,
-	  start,
-	  pre,
-	  post,
-	  C_READ[j],
-	  C_WRITE[j],
-	  C_AT[j],
-	  C_CMPEQ[j],
-	  C_INCR[j]);
+          start,
+          pre,
+          post,
+          C_READ[j],
+          C_WRITE[j],
+          C_AT[j],
+          C_CMPEQ[j],
+          C_INCR[j]);
       for (k = 0; k < num_vts; k++){
-	if (k == start){
-	  res *=
-	    (C_READ[j](ptr(pre, k, C_VT_SIZES[j])) == 0 &&
-	     C_READ[j](ptr(post, k, C_VT_SIZES[j])) == 2 * num_vts - 1);
-	}else if (k < start){
-	  res *=
-	    (C_READ[j](ptr(pre, k, C_VT_SIZES[j])) == k + 1 &&
-	     C_READ[j](ptr(post, k, C_VT_SIZES[j])) == 2 * num_vts - 2 - k);
-	}else{
-	  res *=
-	    (C_READ[j](ptr(pre, k, C_VT_SIZES[j])) == k &&
-	     C_READ[j](ptr(post, k, C_VT_SIZES[j])) == 2 * num_vts - 1 - k);
-	}
+        if (k == start){
+          res *=
+            (C_READ[j](ptr(pre, k, C_VT_SIZES[j])) == 0 &&
+             C_READ[j](ptr(post, k, C_VT_SIZES[j])) == 2 * num_vts - 1);
+        }else if (k < start){
+          res *=
+            (C_READ[j](ptr(pre, k, C_VT_SIZES[j])) == k + 1 &&
+             C_READ[j](ptr(post, k, C_VT_SIZES[j])) == 2 * num_vts - 2 - k);
+        }else{
+          res *=
+            (C_READ[j](ptr(pre, k, C_VT_SIZES[j])) == k &&
+             C_READ[j](ptr(post, k, C_VT_SIZES[j])) == 2 * num_vts - 1 - k);
+        }
       }
       printf("\t\t\t%s correctness:     ", C_VT_TYPES[j]);
       print_test_result(res);
@@ -622,17 +622,17 @@ void run_no_edges_graph_test(size_t log_start, size_t log_end){
       adj_lst_rand_dir(&a, C_WRITE[j], bern, &b);
       start =  RANDOM() % num_vts;
       dfs(&a,
-	  start,
-	  pre,
-	  post,
-	  C_READ[j],
-	  C_WRITE[j],
-	  C_AT[j],
-	  C_CMPEQ[j],
-	  C_INCR[j]);
+          start,
+          pre,
+          post,
+          C_READ[j],
+          C_WRITE[j],
+          C_AT[j],
+          C_CMPEQ[j],
+          C_INCR[j]);
       for (k = 0; k < num_vts; k++){
         res *= (C_READ[j](ptr(post, k, C_VT_SIZES[j])) -
-		C_READ[j](ptr(pre, k, C_VT_SIZES[j])) == 1);
+                C_READ[j](ptr(pre, k, C_VT_SIZES[j])) == 1);
       }
       printf("\t\t\t%s correctness:     ", C_VT_TYPES[j]);
       print_test_result(res);
@@ -651,83 +651,83 @@ void run_no_edges_graph_test(size_t log_start, size_t log_end){
 */
 
 void run_random_dir_graph_helper(size_t num_vts,
-				 size_t vt_size,
-				 const char *type_string,
-				 size_t (*read_vt)(const void *),
-				 void (*write_vt)(void *, size_t),
-				 void *(*at_vt)(const void *, const void *),
-				 int (*cmp_vt)(const void *, const void *),
-				 void (*incr_vt)(void *),
-				 int bern(void *),
-				 struct bern_arg *b);
+                                 size_t vt_size,
+                                 const char *type_string,
+                                 size_t (*read_vt)(const void *),
+                                 void (*write_vt)(void *, size_t),
+                                 void *(*at_vt)(const void *, const void *),
+                                 int (*cmp_vt)(const void *, const void *),
+                                 void (*incr_vt)(void *),
+                                 int bern(void *),
+                                 struct bern_arg *b);
 
 void run_random_dir_graph_test(size_t log_start, size_t log_end){
   size_t i, j;
   size_t num_vts;
   struct bern_arg b;
   printf("Run a dfs test on random directed graphs from %lu random "
-	 "start vertices in each graph\n",  TOLU(C_ITER));
+         "start vertices in each graph\n",  TOLU(C_ITER));
   for (i = 0; i < C_PROBS_COUNT; i++){
     b.p = C_PROBS[i];
     printf("\tP[an edge is in a graph] = %.2f\n", b.p);
     for (j = log_start; j <= log_end; j++){
       num_vts = pow_two_perror(j);
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f\n",
-	     TOLU(num_vts), b.p * num_vts * (num_vts - 1));
+             TOLU(num_vts), b.p * num_vts * (num_vts - 1));
       run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[0],
-				  C_VT_TYPES[0],
-				  C_READ[0],
-				  C_WRITE[0],
-				  C_AT[0],
-				  C_CMPEQ[0],
-				  C_INCR[0],
-				  bern,
-				  &b);
+                                  C_VT_SIZES[0],
+                                  C_VT_TYPES[0],
+                                  C_READ[0],
+                                  C_WRITE[0],
+                                  C_AT[0],
+                                  C_CMPEQ[0],
+                                  C_INCR[0],
+                                  bern,
+                                  &b);
       run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[1],
-				  C_VT_TYPES[1],
-				  C_READ[1],
-				  C_WRITE[1],
-				  C_AT[1],
-				  C_CMPEQ[1],
-				  C_INCR[1],
-				  bern,
-				  &b);
+                                  C_VT_SIZES[1],
+                                  C_VT_TYPES[1],
+                                  C_READ[1],
+                                  C_WRITE[1],
+                                  C_AT[1],
+                                  C_CMPEQ[1],
+                                  C_INCR[1],
+                                  bern,
+                                  &b);
       run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[2],
-				  C_VT_TYPES[2],
-				  C_READ[2],
-				  C_WRITE[2],
-				  C_AT[2],
-				  C_CMPEQ[2],
-				  C_INCR[2],
-				  bern,
-				  &b);
+                                  C_VT_SIZES[2],
+                                  C_VT_TYPES[2],
+                                  C_READ[2],
+                                  C_WRITE[2],
+                                  C_AT[2],
+                                  C_CMPEQ[2],
+                                  C_INCR[2],
+                                  bern,
+                                  &b);
       run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[3],
-				  C_VT_TYPES[3],
-				  C_READ[3],
-				  C_WRITE[3],
-				  C_AT[3],
-				  C_CMPEQ[3],
-				  C_INCR[3],
-				  bern,
-				  &b);
+                                  C_VT_SIZES[3],
+                                  C_VT_TYPES[3],
+                                  C_READ[3],
+                                  C_WRITE[3],
+                                  C_AT[3],
+                                  C_CMPEQ[3],
+                                  C_INCR[3],
+                                  bern,
+                                  &b);
     }
   }
 }
 
 void run_random_dir_graph_helper(size_t num_vts,
-				 size_t vt_size,
-				 const char *type_string,
-				 size_t (*read_vt)(const void *),
-				 void (*write_vt)(void *, size_t),
-				 void *(*at_vt)(const void *, const void *),
-				 int (*cmp_vt)(const void *, const void *),
-				 void (*incr_vt)(void *),
-				 int bern(void *),
-				 struct bern_arg *b){
+                                 size_t vt_size,
+                                 const char *type_string,
+                                 size_t (*read_vt)(const void *),
+                                 void (*write_vt)(void *, size_t),
+                                 void *(*at_vt)(const void *, const void *),
+                                 int (*cmp_vt)(const void *, const void *),
+                                 void (*incr_vt)(void *),
+                                 int bern(void *),
+                                 struct bern_arg *b){
   size_t i;
   size_t *start = NULL;
   void *pre = NULL, *post = NULL;
@@ -750,7 +750,7 @@ void run_random_dir_graph_helper(size_t num_vts,
   }
   t = clock() - t;
   printf("\t\t\t%s ave runtime:     %.6f seconds\n",
-	 type_string, (double)t / C_ITER / CLOCKS_PER_SEC);
+         type_string, (double)t / C_ITER / CLOCKS_PER_SEC);
   adj_lst_free(&a); /* deallocates blocks with effective vertex type */
   free(start);
   free(pre);
@@ -768,10 +768,10 @@ void run_random_dir_graph_helper(size_t num_vts,
    Compares the elements of two arrays.
 */
 int cmp_arr(const void *a,
-	    const void *b,
-	    size_t size,
-	    size_t n,
-	    int (*cmp)(const void *, const void *)){
+            const void *b,
+            size_t size,
+            size_t n,
+            int (*cmp)(const void *, const void *)){
   int res = 1;
   size_t i;
   const void *ap = a;

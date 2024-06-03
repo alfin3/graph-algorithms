@@ -2,15 +2,15 @@
    graph.c
 
    Functions for representing a graph with generic integer vertices and
-   generic contiguous weights. 
+   generic contiguous weights.
 
-   Each list in an adjacency list is represented by a dynamically growing 
+   Each list in an adjacency list is represented by a dynamically growing
    stack. A vertex is of any integer type with values starting from 0 and
    is copied into an adjacency list as a "vt_size block". If a graph is
    weighted, an edge weight is an object within a contiguous memory block,
    such as an object of basic type (e.g. char, int, double) or a struct or
    an array, and is copied into the adjacency list as a "wt_size block".
-  
+
    A single stack of vt_size and wt_size block pairs with adjustable
    alignment in memory is used to achieve cache efficiency in graph
    algorithms. Depending on the problem size and a given system, the
@@ -76,9 +76,9 @@ static const size_t C_STACK_INIT_COUNT = 1;
                  sizeof
 */
 void graph_base_init(struct graph *g,
-		     size_t num_vts,
-		     size_t vt_size,
-		     size_t wt_size){
+                     size_t num_vts,
+                     size_t vt_size,
+                     size_t wt_size){
   g->num_vts = num_vts;
   g->num_es = 0;
   g->vt_size = vt_size;
@@ -114,11 +114,11 @@ void adj_lst_base_init(struct adj_lst *a, const struct graph *g){
   }else{
     wt_rem = a->vt_size % a->wt_size;
     a->wt_offset = add_sz_perror(a->vt_size,
-				 (wt_rem > 0) * (a->wt_size - wt_rem)); 
+                                 (wt_rem > 0) * (a->wt_size - wt_rem));
   }
   vt_rem = add_sz_perror(a->wt_offset, a->wt_size) % a->vt_size;
   a->pair_size = add_sz_perror(a->wt_offset + a->wt_size,
-			       (vt_rem > 0) * (a->vt_size - vt_rem));
+                               (vt_rem > 0) * (a->vt_size - vt_rem));
   a->buf = calloc_perror(1, a->pair_size);
   a->vt_wts = NULL;
   if (a->num_vts > 0){
@@ -133,12 +133,12 @@ void adj_lst_base_init(struct adj_lst *a, const struct graph *g){
 }
 
 /**
-   Aligns the vt_size and wt_size blocks in an adjacency list according to 
+   Aligns the vt_size and wt_size blocks in an adjacency list according to
    the values of the alignment parameters. If the alignment requirement
    of only one type is known, then the size of the other type can be used
    as a value of the other alignment parameter because size of
-   type >= alignment requirement of type (due to structure of arrays), 
-   which may result in overalignment. The call to this operation may 
+   type >= alignment requirement of type (due to structure of arrays),
+   which may result in overalignment. The call to this operation may
    result in the reduction of space requirements as compared to
    adj_lst_base_init alone. The operation is optionally called after
    adj_lst_base_init is completed and before any other adj_list_ operation
@@ -154,8 +154,8 @@ void adj_lst_base_init(struct adj_lst *a, const struct graph *g){
                   trailing padding according to sizeof
 */
 void adj_lst_align(struct adj_lst *a,
-		   size_t vt_alignment,
-		   size_t wt_alignment){
+                   size_t vt_alignment,
+                   size_t wt_alignment){
   size_t i;
   size_t wt_rem, vt_rem;
   if (a->wt_size == 0){
@@ -165,11 +165,11 @@ void adj_lst_align(struct adj_lst *a,
   }else{
     wt_rem = a->vt_size % wt_alignment;
     a->wt_offset = add_sz_perror(a->vt_size,
-				 (wt_rem > 0) * (wt_alignment - wt_rem));
+                                 (wt_rem > 0) * (wt_alignment - wt_rem));
   }
   vt_rem = add_sz_perror(a->wt_offset, a->wt_size) % vt_alignment;
   a->pair_size = add_sz_perror(a->wt_offset + a->wt_size,
-			       (vt_rem > 0) * (vt_alignment - vt_rem));
+                               (vt_rem > 0) * (vt_alignment - vt_rem));
   a->buf = realloc_perror(a->buf, 1, a->pair_size);
   memset(a->buf, 0, a->pair_size);
   /* initialize stacks */
@@ -179,7 +179,7 @@ void adj_lst_align(struct adj_lst *a,
     stack_bound(a->vt_wts[i], C_STACK_INIT_COUNT, a->num_vts);
   }
 }
-   
+
 /**
    Builds the adjacency list of a directed graph. The adjacency list keeps
    the effective type of the copied vt_size blocks (with integer values)
@@ -194,8 +194,8 @@ void adj_lst_align(struct adj_lst *a,
                   pointed to by the argument and returns a size_t value
 */
 void adj_lst_dir_build(struct adj_lst *a,
-		       const struct graph *g,
-		       size_t (*read_vt)(const void *)){
+                       const struct graph *g,
+                       size_t (*read_vt)(const void *)){
   size_t i;
   const void *u = g->u;
   const void *v = g->v;
@@ -228,8 +228,8 @@ void adj_lst_dir_build(struct adj_lst *a,
                   pointed to by the argument and returns a size_t value
 */
 void adj_lst_undir_build(struct adj_lst *a,
-			 const struct graph *g,
-			 size_t (*read_vt)(const void *)){
+                         const struct graph *g,
+                         size_t (*read_vt)(const void *)){
   size_t i;
   const void *u = g->u;
   const void *v = g->v;
@@ -271,12 +271,12 @@ void adj_lst_undir_build(struct adj_lst *a,
                   bern
 */
 void adj_lst_add_dir_edge(struct adj_lst *a,
-			  size_t u,
-			  size_t v,
-			  const void *wt,
-			  void (*write_vt)(void *, size_t),
-			  int (*bern)(void *),
-			  void *arg){
+                          size_t u,
+                          size_t v,
+                          const void *wt,
+                          void (*write_vt)(void *, size_t),
+                          int (*bern)(void *),
+                          void *arg){
   if (bern(arg)){
     write_vt(a->buf, v);
     if (a->wt_size > 0 && wt != NULL){
@@ -293,12 +293,12 @@ void adj_lst_add_dir_edge(struct adj_lst *a,
    specification in adj_lst_add_dir_edge.
 */
 void adj_lst_add_undir_edge(struct adj_lst *a,
-			    size_t u,
-			    size_t v,
-			    const void *wt,
-			    void (*write_vt)(void *, size_t),
-			    int (*bern)(void *),
-			    void *arg){
+                            size_t u,
+                            size_t v,
+                            const void *wt,
+                            void (*write_vt)(void *, size_t),
+                            int (*bern)(void *),
+                            void *arg){
   if (bern(arg)){
     write_vt(a->buf, v);
     if (a->wt_size > 0 && wt != NULL){
@@ -333,15 +333,15 @@ void adj_lst_add_undir_edge(struct adj_lst *a,
                   bern
 */
 void adj_lst_rand_dir(struct adj_lst *a,
-		      void (*write_vt)(void *, size_t),
-		      int (*bern)(void *),
-		      void *arg){
+                      void (*write_vt)(void *, size_t),
+                      int (*bern)(void *),
+                      void *arg){
   size_t i, j;
   if (a->num_vts > 0){
     for (i = 0; i < a->num_vts - 1; i++){
       for (j = i + 1; j < a->num_vts; j++){
-	adj_lst_add_dir_edge(a, i, j, NULL, write_vt, bern, arg);
-	adj_lst_add_dir_edge(a, j, i, NULL, write_vt, bern, arg);
+        adj_lst_add_dir_edge(a, i, j, NULL, write_vt, bern, arg);
+        adj_lst_add_dir_edge(a, j, i, NULL, write_vt, bern, arg);
       }
     }
   }
@@ -361,14 +361,14 @@ void adj_lst_rand_dir(struct adj_lst *a,
    in adj_lst_rand_dir.
 */
 void adj_lst_rand_undir(struct adj_lst *a,
-			void (*write_vt)(void *, size_t),
-			int (*bern)(void *),
-			void *arg){
+                        void (*write_vt)(void *, size_t),
+                        int (*bern)(void *),
+                        void *arg){
   size_t i, j;
   if (a->num_vts > 0){
     for (i = 0; i < a->num_vts - 1; i++){
       for (j = i + 1; j < a->num_vts; j++){
-	adj_lst_add_undir_edge(a, i, j, NULL, write_vt, bern, arg);
+        adj_lst_add_undir_edge(a, i, j, NULL, write_vt, bern, arg);
       }
     }
   }
@@ -484,7 +484,7 @@ int graph_cmpeq_sz(const void *a, const void *b){
 
 /**
    Increment values of different unsigned integer types. The argument
-   points to a value of the unsigned integer type used to represent 
+   points to a value of the unsigned integer type used to represent
    vertices.
 */
 
@@ -518,40 +518,40 @@ void graph_incr_sz(void *a){
 
 int graph_cmp_uchar(const void *a, const void *b){
   return ((*(const unsigned char *)a > *(const unsigned char *)b) -
-	  (*(const unsigned char *)a < *(const unsigned char *)b));
+          (*(const unsigned char *)a < *(const unsigned char *)b));
 }
 int graph_cmp_ushort(const void *a, const void *b){
   return ((*(const unsigned short *)a > *(const unsigned short *)b) -
-	  (*(const unsigned short *)a < *(const unsigned short *)b));
+          (*(const unsigned short *)a < *(const unsigned short *)b));
 }
 int graph_cmp_uint(const void *a, const void *b){
   return ((*(const unsigned int *)a > *(const unsigned int *)b) -
-	  (*(const unsigned int *)a < *(const unsigned int *)b));
+          (*(const unsigned int *)a < *(const unsigned int *)b));
 }
 int graph_cmp_ulong(const void *a, const void *b){
   return ((*(const unsigned long *)a > *(const unsigned long *)b) -
-	  (*(const unsigned long *)a < *(const unsigned long *)b));
+          (*(const unsigned long *)a < *(const unsigned long *)b));
 }
 int graph_cmp_sz(const void *a, const void *b){
   return ((*(const size_t *)a > *(const size_t *)b) -
-	  (*(const size_t *)a < *(const size_t *)b));
+          (*(const size_t *)a < *(const size_t *)b));
 }
 
 int graph_cmp_schar(const void *a, const void *b){
   return ((*(const signed char *)a > *(const signed char *)b) -
-	  (*(const signed char *)a < *(const signed char *)b));
+          (*(const signed char *)a < *(const signed char *)b));
 }
 int graph_cmp_short(const void *a, const void *b){
   return ((*(const short *)a > *(const short *)b) -
-	  (*(const short *)a < *(const short *)b));
+          (*(const short *)a < *(const short *)b));
 }
 int graph_cmp_int(const void *a, const void *b){
   return ((*(const int *)a > *(const int *)b) -
-	  (*(const int *)a < *(const int *)b));
+          (*(const int *)a < *(const int *)b));
 }
 int graph_cmp_long(const void *a, const void *b){
   return ((*(const long *)a > *(const long *)b) -
-	  (*(const long *)a < *(const long *)b));
+          (*(const long *)a < *(const long *)b));
 }
 
 /**

@@ -8,7 +8,7 @@
 #  Additional information is available at:
 #  https://gcc.gnu.org/onlinedocs/gcc/Submodel-Options.html#Submodel-Options
 #  https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#x86-Options
-#   
+#
 #  usage examples:
 #    make
 #    make BUILD_MODE=M32
@@ -48,14 +48,14 @@ OBJ = bfs-test-perf-uint.o            \
       $(UTILS_MOD_DIR)utilities-mod.o
 
 bfs-test-perf-uint : $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ 
+	$(CC) $(CFLAGS) -o $@ $^
 
 bfs-test-perf-uint.o            : $(BFS_DIR)bfs.h                 \
                                   $(GRAPH_DIR)graph.h             \
                                   $(STACK_DIR)stack.h             \
                                   $(UTILS_MEM_DIR)utilities-mem.h \
                                   $(UTILS_MOD_DIR)utilities-mod.h \
-                                  $(UTILS_LIM_DIR)utilities-lim.h 
+                                  $(UTILS_LIM_DIR)utilities-lim.h
 $(BFS_DIR)bfs.o                 : $(BFS_DIR)bfs.h                 \
                                   $(GRAPH_DIR)graph.h             \
                                   $(QUEUE_DIR)queue.h             \
@@ -77,5 +77,5 @@ $(UTILS_MOD_DIR)utilities-mod.o : $(UTILS_MOD_DIR)utilities-mod.h \
 
 clean :
 	rm $(OBJ)
-clean-all : 
+clean-all :
 	rm -f bfs-test-perf-uint $(OBJ)

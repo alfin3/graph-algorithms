@@ -3,18 +3,18 @@
 
    A hash table with generic contiguous or non-contiguous keys and generic
    contiguous or non-contiguous elements.
-   
+
    The implementation is based on a multiplication method for hashing into
    upto 2**(size_t width - 1) slots and an open addressing method with
    double hashing for resolving collisions.
-   
-   The load factor of a hash table is the expected number of keys in a slot 
-   under the simple uniform hashing assumption, and is upper-bounded by 
-   the alpha parameters. The expected number of probes in a search is 
-   upper-bounded by 1/(1 - load factor bound), under the uniform hashing
-   assumption. 
 
-   The alpha parameters do not provide an upper bound after the maximum 
+   The load factor of a hash table is the expected number of keys in a slot
+   under the simple uniform hashing assumption, and is upper-bounded by
+   the alpha parameters. The expected number of probes in a search is
+   upper-bounded by 1/(1 - load factor bound), under the uniform hashing
+   assumption.
+
+   The alpha parameters do not provide an upper bound after the maximum
    count of slots in a hash table is reached. After exceeding the load
    factor bound, the load factor is <= 1.0 due to open addressing, and the
    expected number of probes is upper-bounded by 1/(1 - load factor) before
@@ -97,7 +97,7 @@ static const size_t C_FIRST_PRIME_PARTS[1 + 8 * (2 + 3 + 4)] =
    0xbbc1u, 0x662cu, 0x4d90u, 0x0badu, /* 2**59 < 841413987972987841 < 2**60 */
    0xc647u, 0x3c91u, 0x46b2u, 0x2e9bu, /* 2**61 < 3358355678469146183 < 2**62 */
    0x8969u, 0x4c70u, 0x6dbeu, 0xdad8u  /* 2**63 < 15769474759331449193 < 2**64 */
-  }; 
+  };
 
 static const size_t C_SECOND_PRIME_PARTS[1 + 8 * (2 + 3 + 4)] =
   {0xc221u,                            /* 2**15 < 49697 < 2**16 */
@@ -130,9 +130,9 @@ static const size_t C_SECOND_PRIME_PARTS[1 + 8 * (2 + 3 + 4)] =
 static const size_t C_LAST_PRIME_IX = 1u + 8u * (2u + 3u + 4u) - 4u;
 static const size_t C_PARTS_PER_PRIME[4] = {1u, 2u, 3u, 4u};
 static const size_t C_PARTS_ACC_COUNTS[4] = {1u,
-					     1u + 8u * 2u,
-					     1u + 8u * (2u + 3u),
-					     1u + 8u * (2u + 3u + 4u)};
+                                             1u + 8u * 2u,
+                                             1u + 8u * (2u + 3u),
+                                             1u + 8u * (2u + 3u + 4u)};
 static const size_t C_BUILD_SHIFT = 16u;
 static const size_t C_BYTE_BIT = CHAR_BIT;
 static const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
@@ -146,13 +146,13 @@ static void ph_free(struct ke *ke);
 
 /* key element handling */
 static struct ke *ke_new(const struct ht_muloa *ht,
-			 size_t fval,
-			 size_t sval,
-			 const void *key,
-			 const void *elt);
+                         size_t fval,
+                         size_t sval,
+                         const void *key,
+                         const void *elt);
 static void ke_elt_update(const struct ht_muloa *ht,
-			  struct ke *ke,
-			  const void *elt);
+                          struct ke *ke,
+                          const void *elt);
 static void *ke_key_ptr(const struct ht_muloa *ht, const struct ke *ke);
 static void *ke_elt_ptr(const struct ht_muloa *ht, const struct ke *ke);
 static void ke_free(const struct ht_muloa *ht, struct ke *ke);
@@ -176,7 +176,7 @@ static size_t find_build_prime(const size_t *parts);
    Initializes a hash table. An in-table elt_size block is guaranteed to
    be accessible only with a pointer to a character, unless additional
    alignment is performed by calling ht_muloa_align.
-   ht          : a pointer to a preallocated block of size 
+   ht          : a pointer to a preallocated block of size
                  sizeof(struct ht_muloa).
    key_size    : non-zero size of a key_size block; must account for internal
                  and trailing padding according to sizeof
@@ -223,15 +223,15 @@ static size_t find_build_prime(const size_t *parts);
                  except the elt_size block pointed to by the argument
 */
 void ht_muloa_init(struct ht_muloa *ht,
-		   size_t key_size,
-		   size_t elt_size,
-		   size_t min_num,
-		   size_t alpha_n,
-		   size_t log_alpha_d,
-		   int (*cmp_key)(const void *, const void *),
-		   size_t (*rdc_key)(const void *),
-		   void (*free_key)(void *),
-		   void (*free_elt)(void *)){
+                   size_t key_size,
+                   size_t elt_size,
+                   size_t min_num,
+                   size_t alpha_n,
+                   size_t log_alpha_d,
+                   int (*cmp_key)(const void *, const void *),
+                   size_t (*rdc_key)(const void *),
+                   void (*free_key)(void *),
+                   void (*free_elt)(void *)){
   size_t i, rem;
   ht->key_size = key_size;
   ht->elt_size = elt_size;
@@ -242,7 +242,7 @@ void ht_muloa_init(struct ht_muloa *ht,
     rem = key_size % sizeof(size_t);
     ht->key_offset = key_size;
     ht->key_offset = add_sz_perror(ht->key_offset,
-				   (rem > 0) * (sizeof(size_t) - rem));
+                                   (rem > 0) * (sizeof(size_t) - rem));
   }
   /* elt_size block accessible with a character pointer */
   ht->elt_offset = sizeof(struct ke);
@@ -295,11 +295,11 @@ void ht_muloa_align(struct ht_muloa *ht, size_t elt_alignment){
   /* elt_offset to align elt_size block relative to malloc's pointer */
   if (alloc_ptr_offset <= elt_alignment){
     ht->elt_offset = add_sz_perror(ht->elt_offset,
-				   elt_alignment - alloc_ptr_offset);
+                                   elt_alignment - alloc_ptr_offset);
   }else{
     rem = alloc_ptr_offset % elt_alignment;
     ht->elt_offset = add_sz_perror(ht->elt_offset,
-				   (rem > 0) * (elt_alignment - rem));
+                                   (rem > 0) * (elt_alignment - rem));
   }
 }
 
@@ -309,7 +309,7 @@ void ht_muloa_align(struct ht_muloa *ht, size_t elt_alignment){
    the key parameter is already in the hash table according to cmp_key,
    then deletes the previous element according to free_elt and copies
    the elt_size block pointed to by the elt parameter.
-   ht          : pointer to an initialized ht_muloa struct   
+   ht          : pointer to an initialized ht_muloa struct
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to the elt_size block of an element
 */
@@ -327,13 +327,13 @@ void ht_muloa_insert(struct ht_muloa *ht, const void *key, const void *elt){
   ke = &ht->key_elts[ix];
   while (*ke != NULL){
     if (ht->cmp_key != NULL && /* loop invariant */
-	!is_ph(*ke) &&
-	ht->cmp_key(ke_key_ptr(ht, *ke), key) == 0){
+        !is_ph(*ke) &&
+        ht->cmp_key(ke_key_ptr(ht, *ke), key) == 0){
       ke_elt_update(ht, *ke, elt);
       return;
     }else if (ht->cmp_key == NULL && /* loop invariant */
-	      !is_ph(*ke) &&
-	      memcmp(ke_key_ptr(ht, *ke), key, ht->key_size) == 0){
+              !is_ph(*ke) &&
+              memcmp(ke_key_ptr(ht, *ke), key, ht->key_size) == 0){
       ke_elt_update(ht, *ke, elt);
       return;
     }
@@ -360,7 +360,7 @@ void ht_muloa_insert(struct ht_muloa *ht, const void *key, const void *elt){
    pointer to the elt_size block of its associated element in the hash table.
    Otherwise returns NULL. The returned pointer can be dereferenced according
    to the preceding calls to ht_muloa_init and ht_muloa_align_elt.
-   ht          : pointer to an initialized ht_muloa struct   
+   ht          : pointer to an initialized ht_muloa struct
    key         : non-NULL pointer to the key_size block of a key
 */
 void *ht_muloa_search(const struct ht_muloa *ht, const void *key){
@@ -380,7 +380,7 @@ void *ht_muloa_search(const struct ht_muloa *ht, const void *key){
    elt_size blocks in the hash table. If there is no matching key in the
    hash table according to cmp_key, leaves the hash table and the block
    pointed to by elt unchanged.
-   ht          : pointer to an initialized ht_muloa struct   
+   ht          : pointer to an initialized ht_muloa struct
    key         : non-NULL pointer to the key_size block of a key
    elt         : non-NULL pointer to a preallocated elt_size block
 */
@@ -400,7 +400,7 @@ void ht_muloa_remove(struct ht_muloa *ht, const void *key, void *elt){
    If there is a key in a hash table that equals to the key pointed to
    by the key parameter according to cmp_key, then deletes the in-table key
    element pair according to free_key and free_elt.
-   ht          : pointer to an initialized ht_muloa struct   
+   ht          : pointer to an initialized ht_muloa struct
    key         : non-NULL pointer to the key_size block of a key
 */
 void ht_muloa_delete(struct ht_muloa *ht, const void *key){
@@ -444,25 +444,25 @@ void ht_muloa_free(struct ht_muloa *ht){
 */
 
 void ht_muloa_init_helper(void *ht,
-			  size_t key_size,
-			  size_t elt_size,
-			  size_t min_num,
-			  size_t alpha_n,
-			  size_t log_alpha_d,
-			  int (*cmp_key)(const void *, const void *),
-			  size_t (*rdc_key)(const void *),
-			  void (*free_key)(void *),
-			  void (*free_elt)(void *)){
+                          size_t key_size,
+                          size_t elt_size,
+                          size_t min_num,
+                          size_t alpha_n,
+                          size_t log_alpha_d,
+                          int (*cmp_key)(const void *, const void *),
+                          size_t (*rdc_key)(const void *),
+                          void (*free_key)(void *),
+                          void (*free_elt)(void *)){
   ht_muloa_init(ht,
-		key_size,
-		elt_size,
-		min_num,
-		alpha_n,
-		log_alpha_d,
-		cmp_key,
-		rdc_key,
-		free_key,
-		free_elt);
+                key_size,
+                elt_size,
+                min_num,
+                alpha_n,
+                log_alpha_d,
+                cmp_key,
+                rdc_key,
+                free_key,
+                free_elt);
 }
 
 void ht_muloa_align_helper(void *ht, size_t elt_alignment){
@@ -518,16 +518,16 @@ static void ph_free(struct ke *ke){
 */
 
 static struct ke *ke_new(const struct ht_muloa *ht,
-			 size_t fval,
-			 size_t sval,
-			 const void *key,
-			 const void *elt){
+                         size_t fval,
+                         size_t sval,
+                         const void *key,
+                         const void *elt){
   void *ke_block = NULL;
   struct ke *ke = NULL;
-  ke_block =  
+  ke_block =
     malloc_perror(1, add_sz_perror(ht->key_offset,
-				   add_sz_perror(ht->elt_offset,
-						 ht->elt_size)));
+                                   add_sz_perror(ht->elt_offset,
+                                                 ht->elt_size)));
   ke = (struct ke *)((char *)ke_block + ht->key_offset);
   ke->fval = fval;
   ke->sval = sval;
@@ -537,8 +537,8 @@ static struct ke *ke_new(const struct ht_muloa *ht,
 }
 
 static void ke_elt_update(const struct ht_muloa *ht,
-			  struct ke *ke,
-			  const void *elt){
+                          struct ke *ke,
+                          const void *elt){
   if (ht->free_elt != NULL) ht->free_elt(ke_elt_ptr(ht, ke));
   memcpy(ke_elt_ptr(ht, ke), elt, ht->elt_size);
 }
@@ -559,7 +559,7 @@ static void ke_free(const struct ht_muloa *ht, struct ke *ke){
 }
 
 /**
-   Converts a key to a size_t value (standard key). If rdc_key is NULL, 
+   Converts a key to a size_t value (standard key). If rdc_key is NULL,
    applies a safe conversion of any bit pattern in the key_size block of a
    key to reduce it to size_t. Otherwise, returns the value after applying
    rdc_key to the key.
@@ -592,7 +592,7 @@ static size_t convert_std_key(const struct ht_muloa *ht, const void *key){
 }
 
 /**
-   Adjusts a probe distance to an odd distance, if necessary. 
+   Adjusts a probe distance to an odd distance, if necessary.
 */
 static size_t adjust_dist(size_t dist){
   size_t ret = dist;
@@ -623,12 +623,12 @@ static struct ke **search(const struct ht_muloa *ht, const void *key){
   ke = &ht->key_elts[ix];
   while (*ke != NULL){
     if (ht->cmp_key != NULL && /* loop invariant */
-	!is_ph(*ke) &&
-	ht->cmp_key(ke_key_ptr(ht, *ke), key) == 0){
+        !is_ph(*ke) &&
+        ht->cmp_key(ke_key_ptr(ht, *ke), key) == 0){
       return (struct ke **)ke;
     }else if (ht->cmp_key == NULL && /* loop invariant */
-	      !is_ph(*ke) &&
-	      memcmp(ke_key_ptr(ht, *ke), key, ht->key_size) == 0){
+              !is_ph(*ke) &&
+              memcmp(ke_key_ptr(ht, *ke), key, ht->key_size) == 0){
       return (struct ke **)ke;
     }else if (num_probes == ht->max_num_probes){
       break;
@@ -685,7 +685,7 @@ static void ht_grow(struct ht_muloa *ht){
   free(prev_key_elts);
   prev_key_elts = NULL;
 }
-		      
+
 /**
    Attempts to increase the count of a hash table. Returns 1 if the count
    was increased. Otherwise returns 0. Updates count, log_count, and max_sum
@@ -704,8 +704,8 @@ static int incr_count(struct ht_muloa *ht){
 
 /**
    Eliminates the placeholders left by delete and remove operations.
-   If called when num_elts < num_placeholders, then for every delete/remove 
-   operation at most one rehashing operation is performed, resulting in a 
+   If called when num_elts < num_placeholders, then for every delete/remove
+   operation at most one rehashing operation is performed, resulting in a
    constant overhead of at most one rehashing per delete/remove operation.
 */
 static void ht_clean(struct ht_muloa *ht){
@@ -729,8 +729,8 @@ static void ht_clean(struct ht_muloa *ht){
 }
 
 /**
-   Reinserts a key and an associated element into a new hash table during 
-   ht_grow and ht_clean operations by recomputing the hash values with 
+   Reinserts a key and an associated element into a new hash table during
+   ht_grow and ht_clean operations by recomputing the hash values with
    bit shifting and without multiplication.
 */
 static void reinsert(struct ht_muloa *ht, const struct ke *prev_ke){
@@ -793,7 +793,7 @@ static size_t find_build_prime(const size_t *parts){
   i += C_PARTS_PER_PRIME[j];
   if (i == C_PARTS_ACC_COUNTS[j]) j++;
   while (i <= C_LAST_PRIME_IX &&
-	 !is_overflow(parts, i, C_PARTS_PER_PRIME[j])){
+         !is_overflow(parts, i, C_PARTS_PER_PRIME[j])){
     p = build_prime(parts, i, C_PARTS_PER_PRIME[j]);
     i += C_PARTS_PER_PRIME[j];
     if (i == C_PARTS_ACC_COUNTS[j]) j++;

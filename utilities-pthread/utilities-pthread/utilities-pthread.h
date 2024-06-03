@@ -26,8 +26,8 @@ struct sema{
    with error checking.
 */
 void thread_create_perror(pthread_t *thread,
-			  void *(*start_routine)(void *),
-			  void *arg);
+                          void *(*start_routine)(void *),
+                          void *arg);
 
 void thread_join_perror(pthread_t thread, void **retval);
 

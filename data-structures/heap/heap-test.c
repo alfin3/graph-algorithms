@@ -2,7 +2,7 @@
    heap-test.c
 
    Tests of a (min) heap across i) division- and mutliplication-based hash
-   tables, ii) contiguous and noncontiguous elements, and iii) basic 
+   tables, ii) contiguous and noncontiguous elements, and iii) basic
    priority types.
 
    The following command line arguments can be used to customize tests:
@@ -73,8 +73,8 @@ const size_t C_FULL_BIT = PRECISION_FROM_ULIMIT((size_t)-1);
 const int C_PTY_TYPES_COUNT = 3;
 const char *C_PTY_TYPES[3] = {"size_t", "double", "long double"};
 const size_t C_PTY_SIZES[3] = {sizeof(size_t),
-			       sizeof(double),
-			       sizeof(long double)};
+                               sizeof(double),
+                               sizeof(long double)};
 
 int cmp_uint(const void *a, const void *b);
 int cmp_double(const void *a, const void *b);
@@ -84,33 +84,33 @@ void new_double(void *a, size_t val);
 void new_long_double(void *a, size_t val);
 
 int (*const C_CMP_PTY_ARR[3])(const void *, const void *) ={cmp_uint,
-							    cmp_double,
-							    cmp_long_double};
+                                                            cmp_double,
+                                                            cmp_long_double};
 void (*const C_NEW_PTY_ARR[3])(void *, size_t) = {new_uint,
-						  new_double,
-						  new_long_double};
+                                                  new_double,
+                                                  new_long_double};
 const size_t C_H_MIN_NUM = 1u;
 
 void push_pop_free(size_t num_ins,
-		   size_t pty_size,
-		   size_t elt_size,
-		   const struct heap_ht *hht,
-		   void (*new_pty)(void *, size_t),
-		   void (*new_elt)(void *, size_t),
-		   int (*cmp_pty)(const void *, const void *),
-		   int (*cmp_elt)(const void *, const void *),
-		   size_t (*rdc_elt)(const void *),
-		   void (*free_elt)(void *));
+                   size_t pty_size,
+                   size_t elt_size,
+                   const struct heap_ht *hht,
+                   void (*new_pty)(void *, size_t),
+                   void (*new_elt)(void *, size_t),
+                   int (*cmp_pty)(const void *, const void *),
+                   int (*cmp_elt)(const void *, const void *),
+                   size_t (*rdc_elt)(const void *),
+                   void (*free_elt)(void *));
 void update_search(size_t num_ins,
-		   size_t pty_size,
-		   size_t elt_size,
-		   const struct heap_ht *hht,
-		   void (*new_pty)(void *, size_t),
-		   void (*new_elt)(void *, size_t),
-		   int (*cmp_pty)(const void *, const void *),
-		   int (*cmp_elt)(const void *, const void *),
-		   size_t (*rdc_elt)(const void *),
-		   void (*free_elt)(void *));
+                   size_t pty_size,
+                   size_t elt_size,
+                   const struct heap_ht *hht,
+                   void (*new_pty)(void *, size_t),
+                   void (*new_elt)(void *, size_t),
+                   int (*cmp_pty)(const void *, const void *),
+                   int (*cmp_elt)(const void *, const void *),
+                   size_t (*rdc_elt)(const void *),
+                   void (*free_elt)(void *));
 void *ptr(const void *block, size_t i, size_t size);
 void print_test_result(int res);
 
@@ -137,15 +137,15 @@ void new_long_double(void *a, size_t val){
 
 int cmp_uint(const void *a, const void *b){
   return ((*(size_t *)a > *(size_t *)b) -
-	  (*(size_t *)a < *(size_t *)b));
+          (*(size_t *)a < *(size_t *)b));
 }
 int cmp_double(const void *a, const void *b){
   return ((*(double *)a > *(double *)b) -
-	  (*(double *)a < *(double *)b));
+          (*(double *)a < *(double *)b));
 }
 int cmp_long_double(const void *a, const void *b){
   return ((*(long double *)a > *(long double *)b) -
-	  (*(long double *)a < *(long double *)b));
+          (*(long double *)a < *(long double *)b));
 }
 
 size_t rdc_uint(const void *a){
@@ -157,8 +157,8 @@ size_t rdc_uint(const void *a){
    size_t elements across priority types.
 */
 void run_push_pop_free_divchn_uint_test(size_t log_ins,
-					size_t alpha_n,
-					size_t log_alpha_d){
+                                        size_t alpha_n,
+                                        size_t log_alpha_d){
   int i;
   size_t n;
   struct ht_divchn ht_divchn;
@@ -174,23 +174,23 @@ void run_push_pop_free_divchn_uint_test(size_t log_ins,
   hht.remove = ht_divchn_remove_helper;
   hht.free = ht_divchn_free_helper;
   printf("Run a heap_{push, pop, free} test with a ht_divchn "
-	 "hash table on size_t elements\n");
+         "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
-	   "\tload factor upper bound: %.4f\n"
-	   "\tpriority type:           %s\n",
-	   TOLU(n),
-	   (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
+           "\tload factor upper bound: %.4f\n"
+           "\tpriority type:           %s\n",
+           TOLU(n),
+           (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
     push_pop_free(n,
-		  C_PTY_SIZES[i],
-		  sizeof(size_t),
-		  &hht,
-		  C_NEW_PTY_ARR[i],
-		  new_uint,
-		  C_CMP_PTY_ARR[i],
-		  cmp_uint,
-		  rdc_uint,
-		  NULL);
+                  C_PTY_SIZES[i],
+                  sizeof(size_t),
+                  &hht,
+                  C_NEW_PTY_ARR[i],
+                  new_uint,
+                  C_CMP_PTY_ARR[i],
+                  cmp_uint,
+                  rdc_uint,
+                  NULL);
   }
 }
 
@@ -199,8 +199,8 @@ void run_push_pop_free_divchn_uint_test(size_t log_ins,
    size_t elements across priority types.
 */
 void run_update_search_divchn_uint_test(size_t log_ins,
-					size_t alpha_n,
-					size_t log_alpha_d){
+                                        size_t alpha_n,
+                                        size_t log_alpha_d){
   int i;
   size_t n;
   struct ht_divchn ht_divchn;
@@ -216,23 +216,23 @@ void run_update_search_divchn_uint_test(size_t log_ins,
   hht.remove = ht_divchn_remove_helper;
   hht.free = ht_divchn_free_helper;
   printf("Run a heap_{update, search} test with a ht_divchn "
-	 "hash table on size_t elements\n");
+         "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
-	   "\tload factor upper bound: %.4f\n"
-	   "\tpriority type:           %s\n",
-	   TOLU(n),
-	   (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
+           "\tload factor upper bound: %.4f\n"
+           "\tpriority type:           %s\n",
+           TOLU(n),
+           (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
     update_search(n,
-		  C_PTY_SIZES[i],
-		  sizeof(size_t),
-		  &hht,
-		  C_NEW_PTY_ARR[i],
-		  new_uint,
-		  C_CMP_PTY_ARR[i],
-		  cmp_uint,
-		  rdc_uint,
-		  NULL);
+                  C_PTY_SIZES[i],
+                  sizeof(size_t),
+                  &hht,
+                  C_NEW_PTY_ARR[i],
+                  new_uint,
+                  C_CMP_PTY_ARR[i],
+                  cmp_uint,
+                  rdc_uint,
+                  NULL);
   }
 }
 
@@ -241,8 +241,8 @@ void run_update_search_divchn_uint_test(size_t log_ins,
    size_t elements across priority types.
 */
 void run_push_pop_free_muloa_uint_test(size_t log_ins,
-				       size_t alpha_n,
-				       size_t log_alpha_d){
+                                       size_t alpha_n,
+                                       size_t log_alpha_d){
   int i;
   size_t n;
   struct ht_muloa ht_muloa;
@@ -258,24 +258,24 @@ void run_push_pop_free_muloa_uint_test(size_t log_ins,
   hht.remove = ht_muloa_remove_helper;
   hht.free = ht_muloa_free_helper;
   printf("Run a heap_{push, pop, free} test with a ht_muloa "
-	 "hash table on size_t elements\n");
+         "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
-	   "\tload factor upper bound: %.4f\n"
-	   "\tpriority type:           %s\n",
-	   TOLU(n),
-	   (float)alpha_n / pow_two_perror(log_alpha_d),
-	   C_PTY_TYPES[i]);
+           "\tload factor upper bound: %.4f\n"
+           "\tpriority type:           %s\n",
+           TOLU(n),
+           (float)alpha_n / pow_two_perror(log_alpha_d),
+           C_PTY_TYPES[i]);
     push_pop_free(n,
-		  C_PTY_SIZES[i],
-		  sizeof(size_t),
-		  &hht,
-		  C_NEW_PTY_ARR[i],
-		  new_uint,
-		  C_CMP_PTY_ARR[i],
-		  cmp_uint,
-		  rdc_uint,
-		  NULL);
+                  C_PTY_SIZES[i],
+                  sizeof(size_t),
+                  &hht,
+                  C_NEW_PTY_ARR[i],
+                  new_uint,
+                  C_CMP_PTY_ARR[i],
+                  cmp_uint,
+                  rdc_uint,
+                  NULL);
   }
 }
 
@@ -284,8 +284,8 @@ void run_push_pop_free_muloa_uint_test(size_t log_ins,
    size_t elements across priority types.
 */
 void run_update_search_muloa_uint_test(size_t log_ins,
-				       size_t alpha_n,
-				       size_t log_alpha_d){
+                                       size_t alpha_n,
+                                       size_t log_alpha_d){
   int i;
   size_t n;
   struct ht_muloa ht_muloa;
@@ -301,24 +301,24 @@ void run_update_search_muloa_uint_test(size_t log_ins,
   hht.remove = ht_muloa_remove_helper;
   hht.free = ht_muloa_free_helper;
   printf("Run a heap_{update, search} test with a ht_muloa "
-	 "hash table on size_t elements\n");
+         "hash table on size_t elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
-	   "\tload factor upper bound: %.4f\n"
-	   "\tpriority type:           %s\n",
-	   TOLU(n),
-	   (float)alpha_n / pow_two_perror(log_alpha_d),
-	   C_PTY_TYPES[i]);
+           "\tload factor upper bound: %.4f\n"
+           "\tpriority type:           %s\n",
+           TOLU(n),
+           (float)alpha_n / pow_two_perror(log_alpha_d),
+           C_PTY_TYPES[i]);
     update_search(n,
-		  C_PTY_SIZES[i],
-		  sizeof(size_t),
-		  &hht,
-		  C_NEW_PTY_ARR[i],
-		  new_uint,
-		  C_CMP_PTY_ARR[i],
-		  cmp_uint,
-		  rdc_uint,
-		  NULL);
+                  C_PTY_SIZES[i],
+                  sizeof(size_t),
+                  &hht,
+                  C_NEW_PTY_ARR[i],
+                  new_uint,
+                  C_CMP_PTY_ARR[i],
+                  cmp_uint,
+                  rdc_uint,
+                  NULL);
   }
 }
 
@@ -364,8 +364,8 @@ void free_uint_ptr(void *a){
    noncontiguous uint_ptr elements across priority types.
 */
 void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins,
-					    size_t alpha_n,
-					    size_t log_alpha_d){
+                                            size_t alpha_n,
+                                            size_t log_alpha_d){
   int i;
   size_t n;
   struct ht_divchn ht_divchn;
@@ -381,23 +381,23 @@ void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins,
   hht.remove = ht_divchn_remove_helper;
   hht.free = ht_divchn_free_helper;
   printf("Run a heap_{push, pop, free} test with a ht_divchn "
-	 "hash table on noncontiguous uint_ptr elements\n");
+         "hash table on noncontiguous uint_ptr elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
-	   "\tload factor upper bound: %.4f\n"
-	   "\tpriority type:           %s\n",
-	   TOLU(n),
-	   (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
+           "\tload factor upper bound: %.4f\n"
+           "\tpriority type:           %s\n",
+           TOLU(n),
+           (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
     push_pop_free(n,
-		  C_PTY_SIZES[i],
-		  sizeof(struct uint_ptr *),
-		  &hht,
-		  C_NEW_PTY_ARR[i],
-		  new_uint_ptr,
-		  C_CMP_PTY_ARR[i],
-		  cmp_uint_ptr,
-		  rdc_uint_ptr,
-		  free_uint_ptr);
+                  C_PTY_SIZES[i],
+                  sizeof(struct uint_ptr *),
+                  &hht,
+                  C_NEW_PTY_ARR[i],
+                  new_uint_ptr,
+                  C_CMP_PTY_ARR[i],
+                  cmp_uint_ptr,
+                  rdc_uint_ptr,
+                  free_uint_ptr);
   }
 }
 
@@ -406,8 +406,8 @@ void run_push_pop_free_divchn_uint_ptr_test(size_t log_ins,
    noncontiguous uint_ptr elements across priority types.
 */
 void run_update_search_divchn_uint_ptr_test(size_t log_ins,
-					    size_t alpha_n,
-					    size_t log_alpha_d){
+                                            size_t alpha_n,
+                                            size_t log_alpha_d){
   int i;
   size_t n;
   struct ht_divchn ht_divchn;
@@ -423,23 +423,23 @@ void run_update_search_divchn_uint_ptr_test(size_t log_ins,
   hht.remove = ht_divchn_remove_helper;
   hht.free = ht_divchn_free_helper;
   printf("Run a heap_{update, search} test with a ht_divchn "
-	 "hash table on noncontiguous uint_ptr elements\n");
+         "hash table on noncontiguous uint_ptr elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
-	   "\tload factor upper bound: %.4f\n"
-	   "\tpriority type:           %s\n",
-	   TOLU(n),
-	   (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
+           "\tload factor upper bound: %.4f\n"
+           "\tpriority type:           %s\n",
+           TOLU(n),
+           (float)alpha_n / pow_two_perror(log_alpha_d), C_PTY_TYPES[i]);
     update_search(n,
-		  C_PTY_SIZES[i],
-		  sizeof(struct uint_ptr *),
-		  &hht,
-		  C_NEW_PTY_ARR[i],
-		  new_uint_ptr,
-		  C_CMP_PTY_ARR[i],
-		  cmp_uint_ptr,
-		  rdc_uint_ptr,
-		  free_uint_ptr);
+                  C_PTY_SIZES[i],
+                  sizeof(struct uint_ptr *),
+                  &hht,
+                  C_NEW_PTY_ARR[i],
+                  new_uint_ptr,
+                  C_CMP_PTY_ARR[i],
+                  cmp_uint_ptr,
+                  rdc_uint_ptr,
+                  free_uint_ptr);
   }
 }
 
@@ -448,8 +448,8 @@ void run_update_search_divchn_uint_ptr_test(size_t log_ins,
    noncontiguous uint_ptr elements across priority types.
 */
 void run_push_pop_free_muloa_uint_ptr_test(size_t log_ins,
-					   size_t alpha_n,
-					   size_t log_alpha_d){
+                                           size_t alpha_n,
+                                           size_t log_alpha_d){
   int i;
   size_t n;
   struct ht_muloa ht_muloa;
@@ -465,24 +465,24 @@ void run_push_pop_free_muloa_uint_ptr_test(size_t log_ins,
   hht.remove = ht_muloa_remove_helper;
   hht.free = ht_muloa_free_helper;
   printf("Run a heap_{push, pop, free} test with a ht_muloa "
-	 "hash table on noncontiguous uint_ptr elements\n");
+         "hash table on noncontiguous uint_ptr elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
-	   "\tload factor upper bound: %.4f\n"
-	   "\tpriority type:           %s\n",
-	   TOLU(n),
-	   (float)alpha_n / pow_two_perror(log_alpha_d),
-	   C_PTY_TYPES[i]);
+           "\tload factor upper bound: %.4f\n"
+           "\tpriority type:           %s\n",
+           TOLU(n),
+           (float)alpha_n / pow_two_perror(log_alpha_d),
+           C_PTY_TYPES[i]);
     push_pop_free(n,
-		  C_PTY_SIZES[i],
-		  sizeof(struct uint_ptr *),
-		  &hht,
-		  C_NEW_PTY_ARR[i],
-		  new_uint_ptr,
-		  C_CMP_PTY_ARR[i],
-		  cmp_uint_ptr,
-		  rdc_uint_ptr,
-		  free_uint_ptr);
+                  C_PTY_SIZES[i],
+                  sizeof(struct uint_ptr *),
+                  &hht,
+                  C_NEW_PTY_ARR[i],
+                  new_uint_ptr,
+                  C_CMP_PTY_ARR[i],
+                  cmp_uint_ptr,
+                  rdc_uint_ptr,
+                  free_uint_ptr);
   }
 }
 
@@ -491,8 +491,8 @@ void run_push_pop_free_muloa_uint_ptr_test(size_t log_ins,
    noncontiguous uint_ptr elements across priority types.
 */
 void run_update_search_muloa_uint_ptr_test(size_t log_ins,
-					   size_t alpha_n,
-					   size_t log_alpha_d){
+                                           size_t alpha_n,
+                                           size_t log_alpha_d){
   int i;
   size_t n;
   struct ht_muloa ht_muloa;
@@ -508,34 +508,34 @@ void run_update_search_muloa_uint_ptr_test(size_t log_ins,
   hht.remove = ht_muloa_remove_helper;
   hht.free = ht_muloa_free_helper;
   printf("Run a heap_{update, search} test with a ht_muloa "
-	 "hash table on noncontiguous uint_ptr elements\n");
+         "hash table on noncontiguous uint_ptr elements\n");
   for (i = 0; i < C_PTY_TYPES_COUNT; i++){
     printf("\tnumber of elements:      %lu\n"
-	   "\tload factor upper bound: %.4f\n"
-	   "\tpriority type:           %s\n",
-	   TOLU(n),
-	   (float)alpha_n / pow_two_perror(log_alpha_d),
-	   C_PTY_TYPES[i]);
+           "\tload factor upper bound: %.4f\n"
+           "\tpriority type:           %s\n",
+           TOLU(n),
+           (float)alpha_n / pow_two_perror(log_alpha_d),
+           C_PTY_TYPES[i]);
     update_search(n,
-		  C_PTY_SIZES[i],
-		  sizeof(struct uint_ptr *),
-		  &hht,
-		  C_NEW_PTY_ARR[i],
-		  new_uint_ptr,
-		  C_CMP_PTY_ARR[i],
-		  cmp_uint_ptr,
-		  rdc_uint_ptr,
-		  free_uint_ptr);
+                  C_PTY_SIZES[i],
+                  sizeof(struct uint_ptr *),
+                  &hht,
+                  C_NEW_PTY_ARR[i],
+                  new_uint_ptr,
+                  C_CMP_PTY_ARR[i],
+                  cmp_uint_ptr,
+                  rdc_uint_ptr,
+                  free_uint_ptr);
   }
 }
 
-/** 
+/**
    Helper functions for heap_{push, pop, free} tests.
 */
 
 void push_ptys_elts(struct heap *h,
-		    const void *pty_elts,
-		    size_t count,
+                    const void *pty_elts,
+                    size_t count,
                     int *res){
   size_t half_count;
   size_t n = h->num_elts;
@@ -557,15 +557,15 @@ void push_ptys_elts(struct heap *h,
   }
   t_second = clock() - t_second;
   printf("\t\tpush 1/2 elements:                           "
-	 "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
   printf("\t\tpush residual elements:                      "
-	 "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
   *res *= (h->num_elts == n + count);
 }
 
 void push_rev_ptys_elts(struct heap *h,
-			const void *pty_elts,
-			size_t count,
+                        const void *pty_elts,
+                        size_t count,
                         int *res){
   const void *p = NULL, *p_start = NULL, *p_end = NULL;
   size_t half_count;
@@ -588,17 +588,17 @@ void push_rev_ptys_elts(struct heap *h,
   }
   t_second = clock() - t_second;
   printf("\t\tpush 1/2 elements, rev. pty order:           "
-	 "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
   printf("\t\tpush residual elements, rev. pty order:      "
-	 "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
   *res *= (h->num_elts == n + count);
 }
 
 void pop_ptys_elts(struct heap *h,
-		   const void *pty_elts,
-		   size_t count,
-		   int (*cmp_pty)(const void *, const void *),
-		   int (*cmp_elt)(const void *, const void *),
+                   const void *pty_elts,
+                   size_t count,
+                   int (*cmp_pty)(const void *, const void *),
+                   int (*cmp_elt)(const void *, const void *),
                    int *res){
   size_t i, half_count;
   size_t n = h->num_elts;
@@ -625,21 +625,21 @@ void pop_ptys_elts(struct heap *h,
   for (i = 0; i < count; i++){
     if (i == 0){
       *res *=
-	(cmp_elt((char *)ptr(pop_pty_elts, i, h->pair_size) + h->elt_offset,
-		 (char *)ptr(pty_elts, i, h->pair_size) + h->elt_offset) == 0);
+        (cmp_elt((char *)ptr(pop_pty_elts, i, h->pair_size) + h->elt_offset,
+                 (char *)ptr(pty_elts, i, h->pair_size) + h->elt_offset) == 0);
     }else{
       *res *=
-	(cmp_pty(ptr(pop_pty_elts, i, h->pair_size),
-		 ptr(pop_pty_elts, i - 1, h->pair_size)) >= 0);
+        (cmp_pty(ptr(pop_pty_elts, i, h->pair_size),
+                 ptr(pop_pty_elts, i - 1, h->pair_size)) >= 0);
       *res *=
-	(cmp_elt((char *)ptr(pop_pty_elts, i, h->pair_size) + h->elt_offset,
-		 (char *)ptr(pty_elts, i, h->pair_size) + h->elt_offset) == 0);
+        (cmp_elt((char *)ptr(pop_pty_elts, i, h->pair_size) + h->elt_offset,
+                 (char *)ptr(pty_elts, i, h->pair_size) + h->elt_offset) == 0);
     }
   }
   printf("\t\tpop 1/2 elements:                            "
-	 "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
   printf("\t\tpop residual elements:                       "
-	 "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
   free(pop_pty_elts);
   pop_pty_elts = NULL;
 }
@@ -650,16 +650,16 @@ void free_heap(struct heap *h){
   heap_free(h);
   t = clock() - t;
   printf("\t\tfree time:                                   "
-	 "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t / CLOCKS_PER_SEC);
 }
 
-/** 
+/**
    Helper functions for heap_{update, search} tests.
 */
 
 void update_ptys_elts(struct heap *h,
-		      const void *pty_elts,
-		      size_t count,
+                      const void *pty_elts,
+                      size_t count,
                       int *res){
   size_t half_count = count >> 1;
   size_t n = h->num_elts;
@@ -681,16 +681,16 @@ void update_ptys_elts(struct heap *h,
   }
   t_second = clock() - t_second;
   printf("\t\tupdate 1/2 elements:                         "
-	 "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_first / CLOCKS_PER_SEC);
   printf("\t\tupdate residual elements:                    "
-	 "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_second / CLOCKS_PER_SEC);
   *res *= (h->num_elts == n);
 }
 
 void search_ptys_elts(const struct heap *h,
-		      const void *pty_elts,
-		      const void *not_heap_elts,
-		      size_t count,
+                      const void *pty_elts,
+                      const void *not_heap_elts,
+                      size_t count,
                       int *res){
   size_t n = h->num_elts;
   void *rp = NULL;
@@ -720,39 +720,39 @@ void search_ptys_elts(const struct heap *h,
     *res *= (rp == NULL);
   }
   printf("\t\tin heap search:                              "
-	 "%.4f seconds\n", (float)t_heap / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_heap / CLOCKS_PER_SEC);
   printf("\t\tnot in heap search:                          "
-	 "%.4f seconds\n", (float)t_not_heap / CLOCKS_PER_SEC);
+         "%.4f seconds\n", (float)t_not_heap / CLOCKS_PER_SEC);
 }
 
-/** 
-   Helper functions for heap_{push, pop, free} and heap_{update, search} 
+/**
+   Helper functions for heap_{push, pop, free} and heap_{update, search}
    tests that are used in the upper-level test routines.
 */
 
 void push_pop_free(size_t num_ins,
-		   size_t pty_size,
-		   size_t elt_size,
-		   const struct heap_ht *hht,
-		   void (*new_pty)(void *, size_t),
-		   void (*new_elt)(void *, size_t),
-		   int (*cmp_pty)(const void *, const void *),
-		   int (*cmp_elt)(const void *, const void *),
-		   size_t (*rdc_elt)(const void *),
-		   void (*free_elt)(void *)){
+                   size_t pty_size,
+                   size_t elt_size,
+                   const struct heap_ht *hht,
+                   void (*new_pty)(void *, size_t),
+                   void (*new_elt)(void *, size_t),
+                   int (*cmp_pty)(const void *, const void *),
+                   int (*cmp_elt)(const void *, const void *),
+                   size_t (*rdc_elt)(const void *),
+                   void (*free_elt)(void *)){
   int res = 1;
   size_t i;
   void *pty_elts = NULL;
   struct heap h;
   heap_init(&h,
-	    pty_size,
-	    elt_size,
-	    C_H_MIN_NUM,
-	    hht,
-	    cmp_pty,
-	    cmp_elt,
-	    rdc_elt,
-	    free_elt);
+            pty_size,
+            elt_size,
+            C_H_MIN_NUM,
+            hht,
+            cmp_pty,
+            cmp_elt,
+            rdc_elt,
+            free_elt);
   /* num_ins > 0 */
   pty_elts = malloc_perror(num_ins, h.pair_size);
   for (i = 0; i < num_ins; i++){
@@ -772,27 +772,27 @@ void push_pop_free(size_t num_ins,
 }
 
 void update_search(size_t num_ins,
-		   size_t pty_size,
-		   size_t elt_size,
-		   const struct heap_ht *hht,
-		   void (*new_pty)(void *, size_t),
-		   void (*new_elt)(void *, size_t),
-		   int (*cmp_pty)(const void *, const void *),
-		   int (*cmp_elt)(const void *, const void *),
-		   size_t (*rdc_elt)(const void *),
-		   void (*free_elt)(void *)){
+                   size_t pty_size,
+                   size_t elt_size,
+                   const struct heap_ht *hht,
+                   void (*new_pty)(void *, size_t),
+                   void (*new_elt)(void *, size_t),
+                   int (*cmp_pty)(const void *, const void *),
+                   int (*cmp_elt)(const void *, const void *),
+                   size_t (*rdc_elt)(const void *),
+                   void (*free_elt)(void *)){
   int res = 1;
   size_t i;
   void *pty_elts = NULL, *pty_rev_elts = NULL, *not_heap_elts = NULL;
   struct heap h;
   heap_init(&h,
-	    pty_size,
-	    elt_size,
-	    C_H_MIN_NUM,
-	    hht, cmp_pty,
-	    cmp_elt,
-	    rdc_elt,
-	    free_elt);
+            pty_size,
+            elt_size,
+            C_H_MIN_NUM,
+            hht, cmp_pty,
+            cmp_elt,
+            rdc_elt,
+            free_elt);
    /* num_ins > 0 */
   pty_elts = malloc_perror(num_ins, h.pair_size);
   pty_rev_elts = malloc_perror(num_ins, h.pair_size);
@@ -805,8 +805,8 @@ void update_search(size_t num_ins,
   for (i = 0; i < num_ins; i++){
     new_pty(ptr(pty_rev_elts, i, h.pair_size), i);  /* no decrease with i */
     memcpy((char *)ptr(pty_rev_elts, i, h.pair_size) + h.elt_offset,
-	   (char *)ptr(pty_elts, num_ins - 1 - i, h.pair_size) + h.elt_offset,
-	   elt_size);
+           (char *)ptr(pty_elts, num_ins - 1 - i, h.pair_size) + h.elt_offset,
+           elt_size);
   }
   push_ptys_elts(&h, pty_rev_elts, num_ins, &res);
   update_ptys_elts(&h, pty_elts, num_ins, &res);

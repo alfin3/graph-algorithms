@@ -1,17 +1,17 @@
 /**
    graph.h
 
-   Struct declarations and declarations of accessible functions for 
+   Struct declarations and declarations of accessible functions for
    representing a graph with generic integer vertices and generic
    contiguous weights.
 
-   Each list in an adjacency list is represented by a dynamically growing 
+   Each list in an adjacency list is represented by a dynamically growing
    stack. A vertex is of any integer type with values starting from 0 and
    is copied into an adjacency list as a "vt_size block". If a graph is
    weighted, an edge weight is an object within a contiguous memory block,
    such as an object of basic type (e.g. char, int, double) or a struct or
    an array, and is copied into the adjacency list as a "wt_size block".
-  
+
    A single stack of vt_size and wt_size block pairs with adjustable
    alignment in memory is used to achieve cache efficiency in graph
    algorithms. Depending on the problem size and a given system, the
@@ -40,14 +40,14 @@
    as images as graph weights
 */
 
-#ifndef GRAPH_H  
+#ifndef GRAPH_H
 #define GRAPH_H
 
 #include <stdlib.h>
 #include "stack.h"
 
 struct graph{
-  size_t num_vts; 
+  size_t num_vts;
   size_t num_es;
   size_t vt_size;
   size_t wt_size; /* 0 if a graph is not weighted */
@@ -82,9 +82,9 @@ struct adj_lst{
                  sizeof
 */
 void graph_base_init(struct graph *g,
-		     size_t num_vts,
-		     size_t vt_size,
-		     size_t wt_size);
+                     size_t num_vts,
+                     size_t vt_size,
+                     size_t wt_size);
 
 /**
    Initializes an empty adjacency list according to a graph. The alignment
@@ -100,12 +100,12 @@ void graph_base_init(struct graph *g,
 void adj_lst_base_init(struct adj_lst *a, const struct graph *g);
 
 /**
-   Aligns the vt_size and wt_size blocks in an adjacency list according to 
+   Aligns the vt_size and wt_size blocks in an adjacency list according to
    the values of the alignment parameters. If the alignment requirement
    of only one type is known, then the size of the other type can be used
    as a value of the other alignment parameter because size of
-   type >= alignment requirement of type (due to structure of arrays), 
-   which may result in overalignment. The call to this operation may 
+   type >= alignment requirement of type (due to structure of arrays),
+   which may result in overalignment. The call to this operation may
    result in the reduction of space requirements as compared to
    adj_lst_base_init alone. The operation is optionally called after
    adj_lst_base_init is completed and before any other adj_list_ operation
@@ -121,8 +121,8 @@ void adj_lst_base_init(struct adj_lst *a, const struct graph *g);
                   trailing padding according to sizeof
 */
 void adj_lst_align(struct adj_lst *a,
-		   size_t vt_alignment,
-		   size_t wt_alignment);
+                   size_t vt_alignment,
+                   size_t wt_alignment);
 
 /**
    Builds the adjacency list of a directed graph. The adjacency list keeps
@@ -138,8 +138,8 @@ void adj_lst_align(struct adj_lst *a,
                   pointed to by the argument and returns a size_t value
 */
 void adj_lst_dir_build(struct adj_lst *a,
-		       const struct graph *g,
-		       size_t (*read_vt)(const void *));
+                       const struct graph *g,
+                       size_t (*read_vt)(const void *));
 
 /**
    Builds the adjacency list of an undirected graph. The adjacency list
@@ -155,8 +155,8 @@ void adj_lst_dir_build(struct adj_lst *a,
                   pointed to by the argument and returns a size_t value
 */
 void adj_lst_undir_build(struct adj_lst *a,
-			 const struct graph *g,
-			 size_t (*read_vt)(const void *));
+                         const struct graph *g,
+                         size_t (*read_vt)(const void *));
 
 /**
    Adds a directed edge (u, v) to the adjacency list of a directed
@@ -179,12 +179,12 @@ void adj_lst_undir_build(struct adj_lst *a,
                   bern
 */
 void adj_lst_add_dir_edge(struct adj_lst *a,
-			  size_t u,
-			  size_t v,
-			  const void *wt,
-			  void (*write_vt)(void *, size_t),
-			  int (*bern)(void *),
-			  void *arg);
+                          size_t u,
+                          size_t v,
+                          const void *wt,
+                          void (*write_vt)(void *, size_t),
+                          int (*bern)(void *),
+                          void *arg);
 
 /**
    Adds an undirected edge (u, v) to the adjacency list of an undirected
@@ -192,12 +192,12 @@ void adj_lst_add_dir_edge(struct adj_lst *a,
    specification in adj_lst_add_dir_edge.
 */
 void adj_lst_add_undir_edge(struct adj_lst *a,
-			    size_t u,
-			    size_t v,
-			    const void *wt,
-			    void (*write_vt)(void *, size_t),
-			    int (*bern)(void *),
-			    void *arg);
+                            size_t u,
+                            size_t v,
+                            const void *wt,
+                            void (*write_vt)(void *, size_t),
+                            int (*bern)(void *),
+                            void *arg);
 
 /**
    Builds the adjacency list of a directed graph with num_vts
@@ -221,9 +221,9 @@ void adj_lst_add_undir_edge(struct adj_lst *a,
                   bern
 */
 void adj_lst_rand_dir(struct adj_lst *a,
-		      void (*write_vt)(void *, size_t),
-		      int (*bern)(void *),
-		      void *arg);
+                      void (*write_vt)(void *, size_t),
+                      int (*bern)(void *),
+                      void *arg);
 
 /**
    Builds the adjacency list of an undirected graph with num_vts vertices,
@@ -239,9 +239,9 @@ void adj_lst_rand_dir(struct adj_lst *a,
    in adj_lst_rand_dir.
 */
 void adj_lst_rand_undir(struct adj_lst *a,
-			void (*write_vt)(void *, size_t),
-			int (*bern)(void *),
-			void *arg);
+                        void (*write_vt)(void *, size_t),
+                        int (*bern)(void *),
+                        void *arg);
 
 /**
    Frees the memory allocated by adj_lst_base_init and any subsequent
@@ -302,7 +302,7 @@ int graph_cmpeq_sz(const void *a, const void *b);
 
 /**
    Increment values of different unsigned integer types. The argument
-   points to a value of the unsigned integer type used to represent 
+   points to a value of the unsigned integer type used to represent
    vertices.
 */
 

@@ -1,6 +1,6 @@
-
-
-![alt text](https://github.com/alfin3/graph-algorithms/blob/master/readme/dll-node-alloc.jpg)
+<div align="center">
+    <img src="../../readme/dll-node-alloc.jpg"/>
+</div>
 
 Design guarantees:
 

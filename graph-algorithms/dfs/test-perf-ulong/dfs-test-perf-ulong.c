@@ -9,7 +9,7 @@
      [0, ulong width - 1) : a
      [0, ulong width - 1) : b s.t. 2**a <= V <= 2**b or rand graph test
 
-   usage examples: 
+   usage examples:
    ./dfs-test-perf-ulong
    ./dfs-test-perf-ulong 10 14
 
@@ -115,53 +115,53 @@ int bern(void *arg){
 }
 
 void run_random_dir_graph_helper(size_t num_vts,
-				 size_t vt_size,
-				 const char *type_string,
-				 size_t (*read_vt)(const void *),
-				 void (*write_vt)(void *, size_t),
-				 void *(*at_vt)(const void *, const void *),
-				 int (*cmp_vt)(const void *, const void *),
-				 void (*incr_vt)(void *),
-				 int bern(void *),
-				 struct bern_arg *b);
+                                 size_t vt_size,
+                                 const char *type_string,
+                                 size_t (*read_vt)(const void *),
+                                 void (*write_vt)(void *, size_t),
+                                 void *(*at_vt)(const void *, const void *),
+                                 int (*cmp_vt)(const void *, const void *),
+                                 void (*incr_vt)(void *),
+                                 int bern(void *),
+                                 struct bern_arg *b);
 
 void run_random_dir_graph_test(size_t log_start, size_t log_end){
   size_t i, j;
   size_t num_vts;
   struct bern_arg b;
   printf("Run a dfs test on random directed graphs from %lu random "
-	 "start vertices in each graph\n", TOLU(C_ITER));
+         "start vertices in each graph\n", TOLU(C_ITER));
   for (i = 0; i < C_PROBS_COUNT; i++){
     b.p = C_PROBS[i];
     printf("\tP[an edge is in a graph] = %.2f\n", b.p);
     for (j = log_start; j <= log_end; j++){
       num_vts = pow_two_perror(j);
       printf("\t\tvertices: %lu, E[# of directed edges]: %.1f\n",
-	     TOLU(num_vts), b.p * num_vts * (num_vts - 1));
+             TOLU(num_vts), b.p * num_vts * (num_vts - 1));
       run_random_dir_graph_helper(num_vts,
-				  C_VT_SIZES[2],
-				  C_VT_TYPES[2],
-				  C_READ[2],
-				  C_WRITE[2],
-				  C_AT[2],
-				  C_CMPEQ[2],
-				  C_INCR[2],
-				  bern,
-				  &b);
+                                  C_VT_SIZES[2],
+                                  C_VT_TYPES[2],
+                                  C_READ[2],
+                                  C_WRITE[2],
+                                  C_AT[2],
+                                  C_CMPEQ[2],
+                                  C_INCR[2],
+                                  bern,
+                                  &b);
     }
   }
 }
 
 void run_random_dir_graph_helper(size_t num_vts,
-				 size_t vt_size,
-				 const char *type_string,
-				 size_t (*read_vt)(const void *),
-				 void (*write_vt)(void *, size_t),
-				 void *(*at_vt)(const void *, const void *),
-				 int (*cmp_vt)(const void *, const void *),
-				 void (*incr_vt)(void *),
-				 int bern(void *),
-				 struct bern_arg *b){
+                                 size_t vt_size,
+                                 const char *type_string,
+                                 size_t (*read_vt)(const void *),
+                                 void (*write_vt)(void *, size_t),
+                                 void *(*at_vt)(const void *, const void *),
+                                 int (*cmp_vt)(const void *, const void *),
+                                 void (*incr_vt)(void *),
+                                 int bern(void *),
+                                 struct bern_arg *b){
   size_t i;
   size_t *start = NULL;
   void *pre = NULL, *post = NULL;
@@ -184,7 +184,7 @@ void run_random_dir_graph_helper(size_t num_vts,
   }
   t = clock() - t;
   printf("\t\t\t%s ave runtime:     %.6f seconds\n",
-	 type_string, (double)t / C_ITER / CLOCKS_PER_SEC);
+         type_string, (double)t / C_ITER / CLOCKS_PER_SEC);
   adj_lst_free(&a); /* deallocates blocks with effective vertex type */
   free(start);
   free(pre);
