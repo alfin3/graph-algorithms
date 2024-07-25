@@ -2,8 +2,8 @@
    mergesort-pthread.h
 
    Declarations of accessible functions and macro definitions for optimizing
-   and running a generic merge sort algorithm with parallel sorting and
-   parallel merging.
+   and running a generic merge sort algorithm with decoupled parallel sorting
+   and parallel merging during recursion.
 
    The design decouples merge and sort parallelisms in mergesort. The
    algorithm provides \Theta(n/log^{2}n) theoretical parallelism within the
@@ -30,10 +30,12 @@
    The implementation does not use stdint.h and is portable under C89/C90
    and C99. The requirement is that pthreads API is available.
 
-   On a 4-core machine, the optimization of the base case upper bound
-   parameters resulted in a speedup of approximately 2.6X in comparison
-   to serial qsort (stdlib.h) on arrays of 10M random integer or double
-   elements.
+   On a machine with 24 logical cores, with a 13th Gen Intel(R) Core(TM)
+   i7-13700HX Processor with Hyper-Threading on 8 of 16 physical cores,
+   the initial optimization of the base case upper bound parameters
+   resulted in speedups of approximately 11.22X and 9.67X in comparison
+   to serial qsort (stdlib.h) on arrays of 2**28 random integer and double
+   elements respectively.
 */
 
 

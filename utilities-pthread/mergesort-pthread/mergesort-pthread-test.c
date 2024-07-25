@@ -2,7 +2,7 @@
    mergesort-pthread-test.c
 
    Optimization and correctness tests of a generic merge sort algorithm with
-   parallel sorting and parallel merging.
+   decoupled parallel sorting and parallel merging during recursion.
 
    The following command line arguments can be used to customize tests:
    mergesort-pthread-test
@@ -22,6 +22,7 @@
    ./mergesort-pthread-test 17 17
    ./mergesort-pthread-test 20 20 15 20 15 20
    ./mergesort-pthread-test 20 20 15 20 15 20 0 1 0 1
+   ./mergesort-pthread-test 28 28 20 27 20 27 0 1 0 1
 
    mergesort-pthread-test can be run with any subset of command line
    arguments in the above-defined order. If the (i + 1)th argument is
