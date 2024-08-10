@@ -28,17 +28,18 @@ The provided implementations of division and multiplication-based hash tables, e
 
 # Highlights
 
-`./graph-algorithms/dfs/`
 
-A serial DFS algorithm with recursion emulated on a stack data structure on the memory heap. The performance of ~1.58 CPU cycles/edge was measured on random graphs with edge probability of 0.5 on an inexpensive laptop machine.
-
-`./data-structures-pthread/ht-divchn-pthread/`
+[data-structures-pthread/ht-divchn-pthread/README.md](data-structures-pthread/ht-divchn-pthread/README.md)
 
 A multithreaded highly parametrized generic hash table with chaining for resolving collisions. The design is expected to enable the multithreading of graph algorithms.
 
-`./utilities-pthread/mergesort-pthread/`
+[utilities-pthread/mergesort-pthread/README.md](utilities-pthread/mergesort-pthread/README.md)
 
-The design and implementation of mergesort with decoupled sort and merge parallelisms for optimization purposes. The implementation provides i) a set of parameters for setting the constant base case upper bounds for switching from parallel sorting to serial sorting and from parallel merging to serial merging during recursion, and ii) a macro for setting the constant upper bound for the number of recursive calls placed on the stack of a thread across sorting and merging operations.
+The algorithm design and its highly portable implementation may provide a multithreaded sorting benchmark for CPU manufacturers aiming to improve thread execution capability.
+
+graph-algorithms/dfs
+
+A serial DFS algorithm with recursion emulated on a stack data structure on the memory heap. The performance of ~1.58 CPU cycles/edge was measured on random graphs with edge probability of 0.5 on an inexpensive laptop machine.
 
 Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency are being profiled, which may result in implementation changes. Additional information related to the style of the provided implementation is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
