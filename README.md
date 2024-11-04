@@ -28,20 +28,53 @@ The provided implementations of division and multiplication-based hash tables, e
 
 # Highlights
 
+[graph-algorithms/dfs/README.md](graph-algorithms/dfs/README.md)<br>
+[graph-algorithms/dijkstra/README.md](graph-algorithms/dijkstra/README.md)<br>
+[graph-algorithms/prim/README.md](graph-algorithms/prim/README.md)<br>
+[graph-algorithms/tsp/README.md](graph-algorithms/tsp/README.md)<br>
+
+The relationship between the executable size and the number of types in a top translation unit was evaluated by compiling 20888 executables across the provided DFS, Dijkstra, Prim, and TSP algorithms. The executable size remained mostly flat as the number of types in top translation units increased. As stated above, the implementation complied rigorously with the C standards, including with respect to types.
+
+<div align="center">
+    <img src="readme/executable-size-vs-num-types/dfs-o3-proc-name.jpg" width="600"/>
+</div>
+
+<div align="center">
+    <img src="readme/executable-size-vs-num-types/dijkstra-o2-proc-name.jpg" width="600">
+</div>
+
+<div align="center">
+    <img src="readme/executable-size-vs-num-types/prim-o2-proc-name.jpg" width="600">
+</div>
+
+<div align="center">
+    <img src="readme/executable-size-vs-num-types/tsp-o3-proc-name.jpg" width="600">
+</div>
+
+<br>
 
 [data-structures-pthread/ht-divchn-pthread/README.md](data-structures-pthread/ht-divchn-pthread/README.md)
 
 A multithreaded highly parametrized generic hash table with chaining for resolving collisions. The design is expected to enable the multithreading of graph algorithms.
 
+
+<div align="center">
+    <img src="readme/divchn-eval/i22-k2-2-lock-opt-ht-growth-a-proc-name.jpg" width="600"/>
+</div>
+
+<br>
+
 [utilities-pthread/mergesort-pthread/README.md](utilities-pthread/mergesort-pthread/README.md)
 
 The algorithm design and its highly portable implementation may provide a multithreaded sorting benchmark for CPU manufacturers aiming to improve thread execution capability.
 
-graph-algorithms/dfs
+<div align="center">
+    <img src="readme/mergesort-pthread-eval/2a-i3-i7-sbase-mbase.jpg" width="600"/>
+</div>
 
-A serial DFS algorithm with recursion emulated on a stack data structure on the memory heap. The performance of ~1.58 CPU cycles/edge was measured on random graphs with edge probability of 0.5 on an inexpensive laptop machine.
+<br>
 
-Compilation was completed with gcc 7.5 in a 64-bit environment with and without -m32. Vectorization and cache efficiency are being profiled, which may result in implementation changes. Additional information related to the style of the provided implementation is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
+Vectorization and cache efficiency are being profiled, which may result in implementation changes. Additional information related to the style of the provided implementation is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
 In each directory with a Makefile, run:
 

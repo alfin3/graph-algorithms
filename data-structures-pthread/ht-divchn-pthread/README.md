@@ -23,6 +23,8 @@ The provided design and associated guarantees are suited for the use of hash tab
 
 ## Evaluation - December 11 2021 implementation
 
+The evaluation was performed on a 13th Generation Intel(R) Core(TM) i7-13700HX Processor (i7-13700HX) with Hyper-Threading on 8 of 16 physical cores, providing 24 logical cores.
+
 **An optimization of spatiotemporal collisions between threads during insertion into hash table was performed.**
 
 To insert 2**22 distinct nearly random 32-byte long keys and shorter elements, with hash table growth:
@@ -32,9 +34,11 @@ To insert 2**22 distinct nearly random 32-byte long keys and shorter elements, w
 The runtime difference between 2\**3, 2\**4, and 24 threads increased with the increasing number of locks.
 
 <div align="center">
-    <img src="../../readme/divchn-eval/i22-k2-2-lock-opt-ht-growth-a.jpg" width="600"/>
-    <img src="../../readme/divchn-eval/i22-k2-2-lock-opt-ht-growth-b.jpg" width="600">
+    <img src="../../readme/divchn-eval/i22-k2-2-lock-opt-ht-growth-a-proc-name.jpg" width="600"/>
+    <img src="../../readme/divchn-eval/i22-k2-2-lock-opt-ht-growth-b-proc-name.jpg" width="600">
 </div>
+
+<br>
 
 To insert 2\**22 distinct nearly random 32-byte long keys and shorter elements, without hash table growth:
 - 2\**7 locks resulted in approximately optimal runtime for 2\**1 and 2\**2 threads, and
@@ -43,8 +47,8 @@ To insert 2\**22 distinct nearly random 32-byte long keys and shorter elements, 
 The runtime difference between 2\**3, 2\**4, and 24 threads also increased with the increasing number of locks.
 
 <div align="center">
-    <img src="../../readme/divchn-eval/i22-k2-2-lock-opt-prealloc-a.jpg" width="600"/>
-    <img src="../../readme/divchn-eval/i22-k2-2-lock-opt-prealloc-b.jpg" width="600">
+    <img src="../../readme/divchn-eval/i22-k2-2-lock-opt-prealloc-a-proc-name.jpg" width="600"/>
+    <img src="../../readme/divchn-eval/i22-k2-2-lock-opt-prealloc-b-proc-name.jpg" width="600">
 </div>
 
 <br>
@@ -53,23 +57,27 @@ The runtime difference between 2\**3, 2\**4, and 24 threads also increased with 
 
 2\**22 distinct nearly random 32-byte long keys and shorter elements were inserted in a hash table. 2\**22 searches were then performed with the keys present in the hash table (in-searches), or with distinct nearly random keys not present in the hash table (out-searches).
 
+Search queries only required memory reading. Locks were not used to avoid thread synchronization overhead. Because an array of locks was a part of the memory layout, hash tables with different numbers of locks were evaluated to control for memory layout differences.
+
 The runtime variance of in-searches and out-searches decreased with the number of threads. The decrease in runtime variance was across the load factor bounds used for evaluation.
 
 <div align="center">
-    <img src="../../readme/divchn-eval/i22-k2-2-num-threads-lat-var-in-searches.jpg" width="600"/>
-    <img src="../../readme/divchn-eval/i22-k2-2-num-threads-lat-var-out-searches.jpg" width="600">
+    <img src="../../readme/divchn-eval/i22-k2-2-num-threads-lat-var-in-searches-proc-name.jpg" width="600"/>
+    <img src="../../readme/divchn-eval/i22-k2-2-num-threads-lat-var-out-searches-proc-name.jpg" width="600">
 </div>
+
+<br>
 
 The decrease in runtime variance was also across the key sizes used for evaluation.
 
 <div align="center">
-    <img src="../../readme/divchn-eval/0-i22-k2-2-num-threads-lat-var-in-searches-key-size.jpg" width="600"/>
-    <img src="../../readme/divchn-eval/0-i22-k2-2-num-threads-lat-var-out-searches-key-size.jpg" width="600">
+    <img src="../../readme/divchn-eval/0-i22-k2-2-num-threads-lat-var-in-searches-key-size-proc-name.jpg" width="600"/>
+    <img src="../../readme/divchn-eval/0-i22-k2-2-num-threads-lat-var-out-searches-key-size-proc-name.jpg" width="600">
 </div>
 
-Search queries only required memory reading. Locks were not used to avoid thread synchronization overhead. Because an array of locks was a part of the memory layout, hash tables with different numbers of locks were evaluated to control for memory layout differences.
+<br>
 
 In summary, the hash table design showed a i) scalable runtime speedup and ii) decrease in runtime variance with the increasing number of threads over a large number of search queries.
 
 ##
-*Note that the purpose of the above evaluation was to measure parallelism with the number of processors. The number of processors was modeled by the number of threads. The evaluation was performed on a 13th Gen Intel(R) Core(TM) i7-13700HX Processor with Hyper-Threading on 8 of 16 physical cores. The number of “cores” included Intel’s Hyper-Threading Technology and referred to logical cores. Because the hash table design and implementation are extremely portable, the evaluation may be expanded to other hardware settings. The Linux machine used for the above evaluation had a main memory of 16 GB.*
+*The i7-13700HX Linux machine used for the above evaluation had a main memory of 16 GB. Compilation was completed with GCC.*
