@@ -35,6 +35,8 @@ The provided implementations of division and multiplication-based hash tables, e
 
 The relationship between the executable size and the number of types in a top translation unit was evaluated by compiling 20888 executables across the provided DFS, Dijkstra, Prim, and TSP algorithms. The executable size remained mostly flat as the number of types in top translation units increased. As stated above, the implementation complied rigorously with the C standards, including with respect to types.
 
+The combinatorial generation of top translation units, shown in the provided Makefiles, enabled the compilation and linking of tens of thousands of executables across algorithms, compilers, and optimization levels. Parallel execution significantly sped up compilation and linking.
+
 <div align="center">
     <img src="readme/executable-size-vs-num-types/dfs-o3-proc-name.jpg" width="600"/>
 </div>

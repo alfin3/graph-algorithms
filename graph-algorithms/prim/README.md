@@ -9,6 +9,8 @@ Given a compiler and optimization level, the number of the compiled executables 
 
 The executable size remained mostly flat as the number of types in top translation units increased. The implementation complied rigorously with the C89/C90 and C99 standards, including with respect to types. The widths of the integer and floating point types were from 2\*\*4 to 2\*\*6 bits.
 
+The combinatorial generation of top translation units, shown in the Makefiles in `test-size/{def, def-divchn-muloa, divchn, muloa}`, enabled the compilation and linking of tens of thousands of executables across algorithms, compilers, and optimization levels. Parallel execution significantly sped up compilation and linking.
+
 <br>
 
 <div align="center">
@@ -20,6 +22,13 @@ The executable size remained mostly flat as the number of types in top translati
 </div>
 
 <br>
+
+The executables across 217 type sets of vertices and weights can be compiled and linked in `test-size/{def, def-divchn-muloa, divchn, muloa}` for each set of hash tables as follows:
+
+`make -jN`<br>
+`make clean` or `make clean-all`
+
+where `N` may be the number of logical cores on a system.
 
 For questions or comments, please feel free to reach out through github.
 
