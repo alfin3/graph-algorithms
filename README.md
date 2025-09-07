@@ -1,30 +1,18 @@
-# Low memory footprint: hashing parametrization and C generics
+# Objective
 
-A low memory footprint in graph algorithms and supporting data structures is achieved by parametrizing the hashing and using the generics in C.
+The minimization of the instruction footprint in memory is an objective in resource-constrained environments and may be beneficial in multithreaded settings. Approaches that are scalable across instruction set architectures are desirable.
 
-An original approach to in-memory alignment is provided to enable cache-efficient type generics. A decomposition of common graph algorithms into small type-specific operations is demonstrated, while utilizing the "understanding" of memcpy by modern compilers. The provided algorithms and data structures are extremely portable.
+Graph algorithms may provide a potential benchmark for the minimization of the instruction footprint. Graph algorithms provide i) modularity across supporting data structures, ii) a notion of algorithmic distance (e.g. Dijkstra is closer to Prim than to TSP), and iii) a sufficiently complex code base with dependencies across translation units, enabling evaluation that is meaningful for real applications.
 
-The implementation only uses integer and pointer operations (no floating point except in tests). Given parameter values within the specified ranges, the implementation provides an error message and an exit is executed if an integer overflow is attempted or an allocation is not completed due to insufficient resources. This behavior invariant holds across all abstraction levels.
+The provided implementation includes i) the construction of an evaluation environment based on a set of graph algorithms, and ii) the evaluation of an approach to the minimization of the instruction footprint, measured as executable size.
 
-The rigorous compliance with the C standards and adherence to program safety are combined with an exploration of the boundaries of the C language and its translation, which may potentially contribute to further C standardization and enable new mission-critical applications across a broad hardware spectrum.
+# Design and Implementation
 
-# Hashing optimization: graph-conscious hashing
+An original approach to in-memory alignment enabled cache-efficient type generics. A set of common graph algorithms were decomposed into small type-specific operations, while utilizing the "understanding" of memcpy by modern compilers. The provided algorithms and data structures were extremely portable.
 
-Graph-conscious hashing is formulated. The approach reflects the perspective that graph problems often reduce to hashing problems, where the topology of a graph informs an optimal hashing method.
+The implementation only used integer and pointer operations (no floating point except in tests). Given parameter values within the specified ranges, the implementation provided an error message and an exit was executed if an integer overflow was attempted or an allocation was not completed due to insufficient resources. This behavior invariant held across all abstraction levels. A detailed specification accompanied the generic interface to ensure the correct usage.
 
-A graph problem reduced to a hashing problem is an ordered set of a graph topology, an algorithm, and a hash function, where the set maps to a distribution of hash values.
-
-Information about a graph topology can often be obtained from a problem statement and/or the prior knowledge of a domain. Additional information, such as the indegree of each vertex in a graph or a subset of vertices, can be stored at the time of graph construction.
-
-Based on the preliminary data, the provided implementation motivates the development and evaluation of graph-conscious hashing methods. It is anticipated that the following examples will be evaluated in the near future:
-
-- the constant integers used for the multiplication and modulo operations in multiplication and division-based hash tables will be (automatically) selected from sets of integers with suitable properties to minimize collisions among frequent hash keys as determined at the time of graph construction,
-- a contiguous buffer for storing key element pairs (k, e), where k is in the set of frequent hash keys as determined at the time of graph construction or dynamically during an algorithm run, and e is in the set of the elements associated with k, will be maintained in memory to decrease the probability of eviction of the cache blocks with (k, e) pairs across LRU and LRU-related replacement policies (i.e. a frequent hash key helps keep another frequent hash key and its element in cache due to spatial proximity in memory).
-- contiguous buffers, each for storing key element pairs (k, e), where k is in the set of hash keys corresponding to a graph segment that can be determined in polynomial time at the time of graph construction or dynamically during an algorithm run and where an exact solution of an NP-hard problem runs in exponential time, will be maintained in memory in order to decrease the number of cache misses.
-
-The approach may be particularly suitable for computing and optimizing the exact solutions of small instances of NP-hard problems in memory-constrained environments. Small instances of NP-hard problems may require little space as graphs in memory. However, computing an exact solution may require extensive memory resources without hashing.
-
-The provided implementations of division and multiplication-based hash tables, enable the hashing of contiguous blocks of memory thereby accommodating the hashing of sets of vertices in exact solutions of NP-hard problems.
+The rigorous compliance with the C standards and adherence to program safety were combined with an exploration of the boundaries of the C language and its translation, which may potentially contribute to further C standardization and enable new mission-critical applications across a broad hardware spectrum.
 
 # Highlights
 
@@ -33,9 +21,11 @@ The provided implementations of division and multiplication-based hash tables, e
 [graph-algorithms/prim/README.md](graph-algorithms/prim/README.md)<br>
 [graph-algorithms/tsp/README.md](graph-algorithms/tsp/README.md)<br>
 
-The relationship between the executable size and the number of types in a top translation unit was evaluated by compiling 20888 executables across the provided DFS, Dijkstra, Prim, and TSP algorithms. The executable size remained mostly flat as the number of types in top translation units increased. As stated above, the implementation complied rigorously with the C standards, including with respect to types.
+The relationship between the executable size and the number of types in a top translation unit was evaluated by compiling 20888 executables across the provided DFS, Dijkstra, Prim, and TSP algorithms. The executable size remained mostly flat as the number of types in top translation units increased. The implementation complied rigorously with the C standards, including with respect to types.
 
-The combinatorial generation of top translation units, shown in the provided Makefiles, enabled the compilation and linking of tens of thousands of executables across algorithms, compilers, and optimization levels. Parallel execution significantly sped up compilation and linking.
+The combinatorial generation of top translation units, shown in the provided Makefiles, enabled the compilation and linking of tens of thousands of executables across algorithms, compilers, and optimization levels. Parallel execution significantly sped up the compilation and linking.
+
+<br>
 
 <div align="center">
     <img src="readme/executable-size-vs-num-types/dfs-o3-proc-name.jpg" width="600"/>
@@ -57,8 +47,9 @@ The combinatorial generation of top translation units, shown in the provided Mak
 
 [data-structures-pthread/ht-divchn-pthread/README.md](data-structures-pthread/ht-divchn-pthread/README.md)
 
-A multithreaded highly parametrized generic hash table with chaining for resolving collisions. The design is expected to enable the multithreading of graph algorithms.
+A multithreaded highly parametrized generic hash table with chaining for resolving collisions was designed and implemented. It is expected to enable the multithreading of graph algorithms, following a similar relationship between the executable size and the number of types in top translation units.
 
+<br>
 
 <div align="center">
     <img src="readme/divchn-eval/i22-k2-2-lock-opt-ht-growth-a-proc-name.jpg" width="600"/>
@@ -68,7 +59,9 @@ A multithreaded highly parametrized generic hash table with chaining for resolvi
 
 [utilities-pthread/mergesort-pthread/README.md](utilities-pthread/mergesort-pthread/README.md)
 
-The algorithm design and its highly portable implementation may provide a multithreaded sorting benchmark for CPU manufacturers aiming to improve thread execution capability.
+A version of the multithreaded mergesort algorithm was designed and implemented. Its highly portable implementation may provide a multithreaded sorting benchmark for CPU manufacturers aiming to improve thread execution capability.
+
+<br>
 
 <div align="center">
     <img src="readme/mergesort-pthread-eval/2a-i3-i7-sbase-mbase.jpg" width="600"/>
@@ -76,7 +69,7 @@ The algorithm design and its highly portable implementation may provide a multit
 
 <br>
 
-Vectorization and cache efficiency are being profiled, which may result in implementation changes. Additional information related to the style of the provided implementation is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
+Additional information related to the style of the provided implementation is available at https://wiki.sei.cmu.edu/confluence/display/c/3+Recommendations.
 
 In each directory with a Makefile, run:
 
@@ -85,3 +78,9 @@ In each directory with a Makefile, run:
 `./executable-name`
 
 `make clean` or `make clean-all`
+
+# Supplemental Information
+
+[readme/supplemental-info/README.md](readme/supplemental-info/README.md)
+
+Graph-conscious hashing was formulated, reflecting the perspective that the topology of a graph informs an optimal hashing method.
